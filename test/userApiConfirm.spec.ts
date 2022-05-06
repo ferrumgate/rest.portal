@@ -13,7 +13,7 @@ const expect = chai.expect;
 
 
 
-describe('userApi', async () => {
+describe('userApiConfirm', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
     const user: User = {
@@ -37,7 +37,7 @@ describe('userApi', async () => {
     it('GET /user/confirm/:key will return 200', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        await redisService.set('account_confirm_deneme', 'someid');
+        await redisService.set('user_confirm_deneme', 'someid');
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -51,14 +51,14 @@ describe('userApi', async () => {
         })
         expect(response.status).to.equal(200);
         //redis key must be absent
-        let value = await redisService.get(`account_confirm_deneme`, false);
+        let value = await redisService.get(`user_confirm_deneme`, false);
         expect(value).to.be.null;
     }).timeout(50000);
 
     it('GET /user/confirm/:key will return 401 not found key', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        await redisService.set('account_confirm_deneme2', 'someid');
+        await redisService.set('user_confirm_deneme2', 'someid');
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -72,7 +72,7 @@ describe('userApi', async () => {
         })
         expect(response.status).to.equal(401);
         //redis key must be absent
-        let value = await redisService.get(`account_confirm_deneme2`, false);
+        let value = await redisService.get(`user_confirm_deneme2`, false);
         expect(value).to.exist;
     }).timeout(50000);
 
@@ -80,7 +80,7 @@ describe('userApi', async () => {
     it('GET /user/confirm/:key will return 401 not found user', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        await redisService.set('account_confirm_deneme', 'someid2');
+        await redisService.set('user_confirm_deneme', 'someid2');
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -94,10 +94,9 @@ describe('userApi', async () => {
         })
         expect(response.status).to.equal(401);
         //redis key must be absent
-        let value = await redisService.get(`account_confirm_deneme`, false);
+        let value = await redisService.get(`user_confirm_deneme`, false);
         expect(value).to.exist;
     }).timeout(50000);
-
 
 
 })

@@ -1,6 +1,6 @@
 import express from "express";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { asyncHandler } from "../common";
+import { asyncHandler, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
 import { Util } from "../util";
@@ -24,13 +24,15 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
 
     inputService.checkPasswordPolicy(userInput.password);
     inputService.checkEmail(userInput.email);
-
+    logger.info(`someone is registering from ${req.clientIp} with email: ${userInput.email}`);
     const userDb = await configService.getUserByEmail(userInput.email);
     if (userDb) {
+        logger.info(`user email ${userDb.email} allready exits sending reset password link`);
         //send change password link over email
+
         const key = Util.createRandomHash(48);
-        const link = `${req.baseHost}/account/resetpass/${key}`
-        await redisService.set(`account_resetpass_${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
+        const link = `${req.baseHost}/user/resetpass/${key}`
+        await redisService.set(`user_resetpass_${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
 
         const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
         const logo = `${req.baseHost}/dassets/img/${logoPath}`;
@@ -40,7 +42,7 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
         await emailService.send({ to: userDb.email, subject: 'Reset your password', html: html });
         return res.status(200).json({ result: true });
     }
-
+    logger.info(`someone is not exits on db with email ${userInput.email}`);
     let userSave: User = {
         email: userInput.email,
         password: Util.bcryptHash(userInput.password),
@@ -52,13 +54,14 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     }
 
     const key = Util.createRandomHash(48);
-    const link = `${req.baseHost}/account/confirm/${key}`
-    await redisService.set(`account_confirm_${key}`, userSave.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//7 days
+    const link = `${req.baseHost}/user/confirm/${key}`
+    await redisService.set(`user_confirm_${key}`, userSave.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//7 days
 
     const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
     const logo = `${req.baseHost}/dassets/img/${logoPath}`;
     const html = await templateService.createEmailConfirmation(userSave.name, link, logo);
     //fs.writeFileSync('/tmp/abc.html', html);
+    logger.info(`sending email confirm to ${userSave.email}`);
     //send confirmation link over email
     await emailService.send({ to: userSave.email, subject: 'Verify your email', html: html })
     await configService.saveUser(userSave);

@@ -29,7 +29,7 @@ describe('templateService', async () => {
 
         const templateService = new TemplateService(configService);
         const logopath = (await configService.getLogo()).defaultPath || 'logo.png';
-        const template = await templateService.createEmailConfirmation('hamza', 'https://portal.ferrumgate.com/account/confirm/9sTVrjfbhA0iI15qVi8a7HXIXDtUg22VHTJt3Z9s8XXlqAH5', logopath);
+        const template = await templateService.createEmailConfirmation('hamza', 'https://portal.ferrumgate.com/user/confirm/9sTVrjfbhA0iI15qVi8a7HXIXDtUg22VHTJt3Z9s8XXlqAH5', logopath);
         fs.writeFileSync('/tmp/template1.html', template);
         expect(template).exist;
 
@@ -39,7 +39,7 @@ describe('templateService', async () => {
 
         const templateService = new TemplateService(configService);
         const logopath = (await configService.getLogo()).defaultPath || 'logo.png';
-        const template = await templateService.createForgotPassword('hamza', 'https://portal.ferrumgate.com/account/confirm/9sTVrjfbhA0iI15qVi8a7HXIXDtUg22VHTJt3Z9s8XXlqAH5', logopath);
+        const template = await templateService.createForgotPassword('hamza', 'https://portal.ferrumgate.com/user/confirm/9sTVrjfbhA0iI15qVi8a7HXIXDtUg22VHTJt3Z9s8XXlqAH5', logopath);
         fs.writeFileSync('/tmp/template2.html', template);
         expect(template).exist;
 
