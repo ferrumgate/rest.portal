@@ -12,7 +12,7 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 
 
-describe('simpleRedis', () => {
+describe('redisService', () => {
 
 
     it('test add remove get', async () => {
@@ -149,6 +149,25 @@ describe('simpleRedis', () => {
             retObj = await simpleRedis.get('test') as any;
             expect(retObj).not.null;
             expect(retObj.ttl).to.equal(10);
+        } catch (err) {
+            console.log(err);
+        }
+
+
+
+
+    }).timeout(10000)
+
+    it('redis set number', async () => {
+        try {
+            const simpleRedis = new RedisService('localhost:6379');
+            let obj = { ttl: 10 };
+            await simpleRedis.set('test', 10);
+            let retObj = await simpleRedis.get('test') as any;
+            expect(retObj).not.null;
+            expect(retObj).to.equal(10);
+
+
         } catch (err) {
             console.log(err);
         }

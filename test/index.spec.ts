@@ -2,6 +2,7 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
+import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 
 
@@ -13,7 +14,9 @@ const expect = chai.expect;
 
 describe('index testing application', async () => {
 
-
+    beforeEach(async () => {
+        await (app.appService as AppService).redisService.flushAll();
+    })
 
     it('GET /test', async () => {
 

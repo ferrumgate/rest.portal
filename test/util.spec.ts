@@ -330,19 +330,30 @@ describe('util ', () => {
 
     it('islocalnetwork ', (done) => {
         let start = "91.93.178.16";
-
         let result = Util.isLocalNetwork("91.93.178.16");
         expect(result).to.be.false;
-
         result = Util.isLocalNetwork("10.0.0.1");
         expect(result).to.be.true;
-
         result = Util.isLocalNetwork("::1");
         expect(result).to.be.true;
-
-
         done();
 
+    });
+
+    it('encrypt ', (done) => {
+        const str = 'DENEME';
+        const encrypted = Util.encrypt('Et2vSy5Pa98o2wdc9HH2SyQXjRdEKsDI', str);
+        expect(encrypted).to.equal('28cdbbf646f6fdb0a56704aba6105727');
+
+        done();
+    });
+
+    it('decrypt ', (done) => {
+        const str = '28cdbbf646f6fdb0a56704aba6105727';
+        const encrypted = Util.decrypt('Et2vSy5Pa98o2wdc9HH2SyQXjRdEKsDI', str);
+        expect(encrypted).to.equal('DENEME');
+
+        done();
     });
 
 
