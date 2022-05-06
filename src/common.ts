@@ -1,6 +1,7 @@
 
 import log4js from 'log4js';
-import { ErrorCodes } from './restfullException';
+import { ErrorCodes, RestfullException } from './restfullException';
+import { RedisService } from './service/redisService';
 
 
 log4js.configure({
@@ -23,6 +24,14 @@ export const asyncHandler = (fn: any) => (req: any, res: any, next: any) =>
         .resolve(fn(req, res, next))
         .catch(next)
 
+/**
+ * @description async handler for middleware
+ */
+export const asyncHandlerWithArgs = (fn: any, ...args: any) => (req: any, res: any, next: any) =>
+    Promise
+        .resolve(fn(req, res, next, args))
+        .catch(next)
+
 //error middleware
 
 /**
@@ -36,3 +45,7 @@ export function globalErrorHandler(err: any, req: any, res: any, nex: any) {
     else res.status(500).json({ status: 500, code: ErrorCodes.ErrInternalError, message: "internal server error" });
 
 };
+
+
+
+

@@ -1,7 +1,9 @@
 
 import * as IORedis from 'ioredis';
 
-
+/**
+ * redis wrappers
+ */
 export class RedisPipelineService {
     private pipeline: IORedis.ChainableCommander;
     constructor(redis: IORedis.Redis | IORedis.Cluster) {
@@ -154,7 +156,7 @@ export class RedisService {
     async set(key: string, value: any, options?: any): Promise<void> {
 
         let valueStr = value;
-        if (typeof value !== 'string') {
+        if (typeof value !== 'string' && typeof value !== 'number') {
             valueStr = JSON.stringify(value);
         }
         if (!options || !options.ttl)
@@ -209,7 +211,9 @@ export class RedisService {
         return new RedisPipelineService(this.redis);
     }
 
-
+    async flushAll(): Promise<void> {
+        await this.redis.flushall();
+    }
     async disconnect() {
         await this.redis.disconnect();
     }

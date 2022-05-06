@@ -1,4 +1,4 @@
-FROM node:16.15.0
+FROM node:16.13.2
 #Create app directory
 WORKDIR /usr/src/app
 
@@ -12,6 +12,6 @@ RUN npm install
 # RUN npm ci --only=production
 
 ADD build/src /usr/src/app/build/src
-
+WORKDIR /usr/src/app/build
 EXPOSE 9050
 ENTRYPOINT ["npm","run","startdocker"]

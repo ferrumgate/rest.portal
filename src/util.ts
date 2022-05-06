@@ -8,14 +8,11 @@ import { isIPv4 } from 'net';
 import { ZipAFolder } from 'zip-a-folder';
 import { logger } from './common';
 import { ErrorCodes, RestfullException } from './restfullException';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import randtoken from 'rand-token';
+import ip6addr from 'ip6addr';
 
-var randtoken = require('rand-token');
-
-var crypto = require('crypto');
-const bcrypt = require('bcrypt');
-
-
-const ip6addr = require('ip6addr')
 
 export interface IpRange {
     start: string;
@@ -229,6 +226,36 @@ export const Util = {
     findHttpProtocol: (req: any): string => {
         //logger.info("http headers:" + JSON.stringify(req.headers))
         return req.protocol || 'not found';
+    },
+    encrypt(key: string, data: string): string {
+
+        const keyBuffer = Buffer.from(key).slice(0, 32); //8f7403c9bb5eb04f
+
+        const iv = Buffer.from("5d97bf41edc9285f0ed88caa9e47218f", 'hex');
+        //const pass=crypto.scryptSync(key,initVector,initVector.length);
+        const algoritm = 'aes-256-cbc'
+        const cipher = crypto.createCipheriv(algoritm, keyBuffer, iv);
+        const encrypted = Buffer.concat([cipher.update(Buffer.from(data, 'utf-8')), cipher.final()]);
+
+        return encrypted.toString('hex');
+
+
+    },
+
+    decrypt(key: string, data: string): string {
+
+        const keyBuffer = Buffer.from(key).slice(0, 32); //8f7403c9bb5eb04f
+
+        const iv = Buffer.from("5d97bf41edc9285f0ed88caa9e47218f", 'hex');
+        //const pass=crypto.scryptSync(key,initVector,initVector.length);
+        const algoritm = 'aes-256-cbc'
+        const cipher = crypto.createDecipheriv(algoritm, keyBuffer, iv);
+        const decrpted = Buffer.concat([cipher.update(Buffer.from(data, 'hex')), cipher.final()]);
+
+        let value = decrpted.toString('utf-8');
+        return value;
+
+
     }
 
 

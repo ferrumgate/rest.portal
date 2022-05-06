@@ -37,5 +37,8 @@ export class ErrorCodes {
     static ErrInternalError: string = 'ErrInternalError';
     static ErrNotEnoughRight: string = 'ErrNotEnoughRight';
     static ErrTooManyRequests: string = 'ErrTooManyRequests';
+    static ErrPasswordPolicy: string = 'ErrPasswordPolicy';
+    static ErrEmailIsInvalid: string = 'ErrEmailIsInvalid';
+    static ErrCaptchaRequired: string = 'ErrCaptchaRequired';
 
 }
