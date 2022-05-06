@@ -12,7 +12,7 @@ const expect = chai.expect;
 
 
 
-describe('/api/test ', async () => {
+describe('testApi ', async () => {
 
 
     beforeEach(async () => {

@@ -1,5 +1,6 @@
 import { assert } from "console";
 import { routerRegister } from "./api/registerApi";
+import { routerUserConfirm, routerUserResetPassword } from "./api/userApi";
 import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "./common";
 import { ErrorCodes, RestfullException } from "./restfullException";
 import { AppService } from "./service/appService";
@@ -80,6 +81,26 @@ app.use('(\/api)?/register',
     asyncHandlerWithArgs(rateLimit, 'registerDay', 1000),
     asyncHandler(app.setAuthMethodsNone),
     routerRegister);
+
+
+app.use('(\/api)?/user/confirm',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'userConfirm', 10),
+    asyncHandlerWithArgs(rateLimit, 'userConfirmHourly', 100),
+    asyncHandlerWithArgs(rateLimit, 'userConfirmDay', 1000),
+    asyncHandler(app.setAuthMethodsNone),
+    routerUserConfirm);
+
+app.use('(\/api)?/user/resetpass',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(checkCaptcha, 'userResetPassCaptcha', 5),
+    asyncHandlerWithArgs(rateLimit, 'userResetPass', 10),
+    asyncHandlerWithArgs(rateLimit, 'userResetPassHourly', 100),
+    asyncHandlerWithArgs(rateLimit, 'userResetPassDay', 1000),
+    asyncHandler(app.setAuthMethodsNone),
+    routerUserResetPassword);
 
 
 

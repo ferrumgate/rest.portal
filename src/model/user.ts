@@ -7,4 +7,5 @@ export interface User {
     source: string;
     [key: string]: any;
     groupIds: string[];
+    isVerified?: boolean;
 }

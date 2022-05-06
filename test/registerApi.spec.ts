@@ -13,16 +13,21 @@ const expect = chai.expect;
 
 
 
-describe('registerApi testing application', async () => {
+describe.skip('registerApi', async () => {
     const appService = app.appService as AppService;
-    appService.configService.setEmailOptions({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
-    appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
-    await appService.configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
-    await appService.configService.saveConfigToFile();
-    await appService.configService.loadConfigFromFile();
 
-    beforeEach(() => {
+    before(async () => {
+        await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
+        await appService.configService.setEmailOptions({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
+
+        await appService.configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
+        await appService.configService.saveConfigToFile();
+        await appService.configService.loadConfigFromFile();
+    })
+
+    beforeEach(async () => {
         appService.configService.config.users = [];
+
     })
 
 
@@ -88,7 +93,8 @@ describe('registerApi testing application', async () => {
         expect(response.status).to.equal(400);
     }).timeout(5000);
 
-    it('POST /register will return 200 because allready user exits', async () => {
+
+    it('POST /register will return 200 because allready user exits, will send a reset password email', async () => {
         //we must send right paramters
 
         appService.configService.config.users.push({ email: 'hamza@hamzakilic.com' } as User);

@@ -8,17 +8,6 @@ import fs from 'fs';
 
 export const routerRegister = express.Router();
 
-/* 
-routerRegister.post('/', asyncHandler(setCacheAndAuth), asyncHandler(authenticate), asyncHandler(authoriseAsUser), asyncHandler(async (req: any, res: any, next: any) => {
-    let agents = await getLocation(req);
-    return res.status(200).json(agents);
-
-})); */
-
-
-
-
-
 routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     const userInput = req.body;
     if (!userInput.email || !userInput.password)
@@ -39,9 +28,19 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     const userDb = await configService.getUserByEmail(userInput.email);
     if (userDb) {
         //send change password link over email
+        const key = Util.createRandomHash(48);
+        const link = `${req.baseHost}/account/resetpass/${key}`
+        await redisService.set(`account_resetpass_${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
 
-        return res.status(200).json({});
+        const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
+        const logo = `${req.baseHost}/dassets/img/${logoPath}`;
+        const html = await templateService.createForgotPassword(userDb.name, link, logo);
+        //fs.writeFileSync('/tmp/abc.html', html);
+        //send reset link over email
+        await emailService.send({ to: userDb.email, subject: 'Reset your password', html: html });
+        return res.status(200).json({ result: true });
     }
+
     let userSave: User = {
         email: userInput.email,
         password: Util.bcryptHash(userInput.password),
@@ -60,10 +59,11 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     const logo = `${req.baseHost}/dassets/img/${logoPath}`;
     const html = await templateService.createEmailConfirmation(userSave.name, link, logo);
     //fs.writeFileSync('/tmp/abc.html', html);
+    //send confirmation link over email
     await emailService.send({ to: userSave.email, subject: 'Verify your email', html: html })
     await configService.saveUser(userSave);
 
-    //send confirmation link over email
+
     return res.status(200).json({ result: true });
 
 }));

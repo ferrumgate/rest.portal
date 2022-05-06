@@ -18,7 +18,7 @@ const expect = chai.expect;
 
 
 
-describe('emailService ', async () => {
+describe.skip('emailService ', async () => {
 
     beforeEach(async () => {
 
