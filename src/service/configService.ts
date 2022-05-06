@@ -40,7 +40,7 @@ export class ConfigService {
         this.configfile = path;
     }
     private writeAsset(name: string, image: string) {
-        const type = image.substring(image.indexOf('/'), image.indexOf(';'));
+        const type = image.substring(image.indexOf('/') + 1, image.indexOf(';'));
         const base64Image = image.split(';base64,').pop();
         let path = `./dassets/img`;
         fs.mkdirSync(path, { recursive: true });

@@ -50,6 +50,12 @@ export class RedisPipelineService {
         return this;
 
     }
+    async delete(key: string): Promise<RedisPipelineService> {
+
+        this.pipeline = await this.pipeline.del(key)
+        return this;
+
+    }
 
     async containsKey(key: string): Promise<RedisPipelineService> {
 
@@ -174,6 +180,11 @@ export class RedisService {
     }
 
     async remove(key: string): Promise<number> {
+
+        return await this.redis.del(key)
+
+    }
+    async delete(key: string): Promise<number> {
 
         return await this.redis.del(key)
 
