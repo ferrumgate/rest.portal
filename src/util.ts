@@ -14,6 +14,7 @@ import randtoken from 'rand-token';
 import ip6addr from 'ip6addr';
 
 
+
 export interface IpRange {
     start: string;
     end: string;
@@ -31,7 +32,7 @@ export const Util = {
     /**
      * verify a jwt token with public certificate
      */
-    verifyJwt: (token: string, key: string) => { //returns token or restfull 401
+    /*verifyJwt: (token: string, key: string) => { //returns token or restfull 401
         try {
             let JWT_VERIFY_OPTIONS = { algorithms: ['RS256'] } as unknown as JWT.VerifyOptions;
             let decoded = JWT.verify(token, key, JWT_VERIFY_OPTIONS) as any;
@@ -43,11 +44,10 @@ export const Util = {
             return decoded;
 
         } catch (err) {
-            let logvalue = Util.replaceNewLine(key);
-            logger.error(`jwt auth failed with ${token} ${logvalue}`)
+            logger.error(`jwt auth failed with ${token} ${err}`)
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authorized');
         }
-    },
+    }, */
     /**
      * create bcyrpt hash of string
      * 
@@ -256,6 +256,19 @@ export const Util = {
         return value;
 
 
+    },
+
+    async sleep(microseconds: number) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve('timeout');
+            }, microseconds)
+        })
+    },
+
+    clone(x: any) {
+        if (!x) return x;
+        return JSON.parse(JSON.stringify(x));
     }
 
 

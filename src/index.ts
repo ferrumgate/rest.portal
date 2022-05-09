@@ -1,4 +1,5 @@
 import { assert } from "console";
+import { routerAuth } from "./api/authApi";
 import { routerRegister } from "./api/registerApi";
 import { routerUserConfirm, routerUserForgotPassword, routerUserResetPassword } from "./api/userApi";
 import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "./common";
@@ -17,8 +18,11 @@ const port = Number(process.env.PORT) | 8080;
 
 //express app
 export const app = express();
-app.use(express.static('dassets'))
+app.use(express.static('dassets'));
 app.appService = new AppService();
+
+//disable powerer by
+app.disable('x-powered-by');
 
 const setAppService = async (req: any, res: any, next: any) => {
     req.appService = app.appService;//important
@@ -50,7 +54,7 @@ const findClientIp = async (req: any, res: any, next: any) => {
 }
 
 
-app.setAuthMethodsNone = (req: any, res: any, next: any) => {
+const noAuthentication = (req: any, res: any, next: any) => {
     next();
 };
 
@@ -79,7 +83,7 @@ app.use('(\/api)?/register',
     asyncHandlerWithArgs(rateLimit, 'register', 10),
     asyncHandlerWithArgs(rateLimit, 'registerHourly', 100),
     asyncHandlerWithArgs(rateLimit, 'registerDay', 1000),
-    asyncHandler(app.setAuthMethodsNone),
+    asyncHandler(noAuthentication),
     routerRegister);
 
 
@@ -90,7 +94,7 @@ app.use('(\/api)?/user/confirm',
     asyncHandlerWithArgs(rateLimit, 'userConfirm', 10),
     asyncHandlerWithArgs(rateLimit, 'userConfirmHourly', 100),
     asyncHandlerWithArgs(rateLimit, 'userConfirmDay', 1000),
-    asyncHandler(app.setAuthMethodsNone),
+    asyncHandler(noAuthentication),
     routerUserConfirm);
 
 
@@ -101,7 +105,7 @@ app.use('(\/api)?/user/forgotpass',
     asyncHandlerWithArgs(rateLimit, 'userForgotPass', 10),
     asyncHandlerWithArgs(rateLimit, 'userForgotPassHourly', 100),
     asyncHandlerWithArgs(rateLimit, 'userForgotPassDay', 1000),
-    asyncHandler(app.setAuthMethodsNone),
+    asyncHandler(noAuthentication),
     routerUserForgotPassword);
 
 app.use('(\/api)?/user/resetpass',
@@ -111,8 +115,19 @@ app.use('(\/api)?/user/resetpass',
     asyncHandlerWithArgs(rateLimit, 'userResetPass', 10),
     asyncHandlerWithArgs(rateLimit, 'userResetPassHourly', 100),
     asyncHandlerWithArgs(rateLimit, 'userResetPassDay', 1000),
-    asyncHandler(app.setAuthMethodsNone),
+    asyncHandler(noAuthentication),
     routerUserResetPassword);
+
+
+app.use('(\/api)?/auth',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(checkCaptcha, 'authCaptcha', 5),
+    asyncHandlerWithArgs(rateLimit, 'auth', 10),
+    asyncHandlerWithArgs(rateLimit, 'authHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'authDaily', 20000),
+    asyncHandler(noAuthentication),
+    routerAuth);
 
 
 

@@ -6,6 +6,13 @@ import { Util } from "../util";
 import { User } from "../model/user";
 import { EmailOption } from "../model/emailOption";
 import { LogoOption } from "../model/logoOption";
+import { Captcha } from "../model/captcha";
+import { SSLCertificate } from "../model/sslCertificate";
+import { SSHCertificate } from "../model/sshCertificate";
+import { ErrorCodes, RestfullException } from "../restfullException";
+import { AuthOption } from "../model/authOption";
+
+
 
 export class ConfigService {
 
@@ -13,6 +20,7 @@ export class ConfigService {
     config: Config;
     protected configfile = '/etc/rest.portal/config.yaml';
     private secretKey = '';
+    lastUpdateTime = '';
     /**
      *
      */
@@ -25,16 +33,34 @@ export class ConfigService {
         this.config = {
             users: [],
             captcha: {},
-            sshCertificates: {},
-            certificates: {},
+            sshCertificate: {},
+            sslCertificate: {},
             domain: 'ferrumgate.com',
+            url: 'https://portal.ferrumgate.com',
             email: {
                 type: 'unknown',
                 fromname: '', pass: '', user: ''
             },
-            logo: {}
+            logo: {},
+            auth: {},
+
+        }
+        //for testing
+        if (process.env.NODE_ENV == 'development') {
+            this.config.auth.google = {
+                clientID: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
+                clientSecret: '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',
+            }
+            this.config.auth.linkedin = {
+                clientID: '866dr29tuc5uy5',
+                clientSecret: '1E3DHw0FJFUsp1Um'
+            }
+            this.config.url = 'http://local.ferrumgate.com:8080';
+            if (fs.existsSync('/tmp/config.yaml'))
+                fs.rmSync('/tmp/config.yaml');
         }
         this.loadConfigFromFile();
+        this.lastUpdateTime = new Date().toISOString();
     }
     setConfigPath(path: string) {
         this.configfile = path;
@@ -70,66 +96,153 @@ export class ConfigService {
         const str = yaml.stringify(this.config);
         const encrypted = Util.encrypt(this.secretKey, str);
         fs.writeFileSync(this.configfile, encrypted, { encoding: 'utf-8' });
+        this.lastUpdateTime = new Date().toISOString();
     }
     saveConfigToString() {
         const str = yaml.stringify(this.config);
         const encrypted = Util.encrypt(this.secretKey, str);
         return encrypted;
     }
+    private static clone(x: any) {
+
+    }
     async getUserByEmail(email: string): Promise<User | undefined> {
-        return this.config.users.find(x => x.email == email);
+        let user = Util.clone(this.config.users.find(x => x.email == email));
+        delete user?.password;
+        return user;
     }
     async getUserById(id: string): Promise<User | undefined> {
-        return this.config.users.find(x => x.id == id);
+        let user = Util.clone(this.config.users.find(x => x.id == id));
+        delete user?.password;
+        return user;
+    }
+    async getUserByEmailAndPass(email: string, pass: string): Promise<User | undefined> {
+        let user = this.config.users
+            .find(x => x.source == 'local' && x.email == email);
+
+        if (user && Util.bcryptCompare(pass, user.password || '')) {
+            delete user.password;
+            return Util.clone(user);
+        }
+        return undefined;
+
     }
     async saveUser(user: User) {
+        let cloned = Util.clone(user);
         let finded = this.config.users.find(x => x.email == user.email);
-        if (!finded)
-            this.config.users.push(user);
+        if (!finded) {
+            this.config.users.push(cloned);
+            finded = cloned;
+        }
         else {
             user.id = finded.id;//security
             finded = {
                 ...finded,
-                ...user
+                ...cloned
             }
+        }
+        if (finded) {
+            if (!finded.source) {
+                throw new Error('user source must exits');
+            }
+            if (finded.source != 'local') {
+                delete finded.password;
+            }
+
         }
         await this.saveConfigToFile();
     }
-    async getCaptchaServerKey(): Promise<string | undefined> {
-        return this.config.captcha?.serverKey;
+    async getCaptcha(): Promise<Captcha> {
+        return Util.clone(this.config.captcha);
     }
-    async setCaptchaServerKey(key: string) {
-        this.config.captcha.serverKey = key;
-        await this.saveConfigToFile();
-    }
-    async getCaptchaClientKey(): Promise<string | undefined> {
-        return this.config.captcha.clientKey;
-    }
-    async setCaptchaClientKey(key: string) {
-        this.config.captcha.clientKey = key;
+    async setCaptcha(captcha: Captcha | {}) {
+        let cloned = Util.clone(captcha);
+        this.config.captcha = {
+            ...this.config.captcha,
+            ...cloned
+        }
         await this.saveConfigToFile();
     }
 
+    async getSSLCertificate(): Promise<SSLCertificate> {
+        return Util.clone(this.config.sslCertificate);
+    }
+    async setSSLCertificate(cert: SSLCertificate | {}) {
+        let cloned = Util.clone(cert);
+        this.config.sslCertificate = {
+            ...this.config.sslCertificate,
+            ...cloned
+        }
+        await this.saveConfigToFile();
+    }
+    async getSSHCertificate(): Promise<SSHCertificate> {
+        return Util.clone(this.config.sshCertificate);
+    }
+    async setSSHCertificate(cert: SSHCertificate | {}) {
+        let cloned = Util.clone(cert);
+        this.config.sshCertificate = {
+            ...this.config.sshCertificate,
+            ...cloned
+        }
+        await this.saveConfigToFile();
+    }
+
+
     async getEmailOptions(): Promise<EmailOption> {
-        return this.config.email;
+        return Util.clone(this.config.email);
     }
 
     async setEmailOptions(options: EmailOption | {}) {
+        let cloned = Util.clone(options);
         this.config.email = {
             ...this.config.email,
-            ...options
+            ...cloned
         }
         await this.saveConfigToFile();
     }
 
     async getLogo(): Promise<LogoOption> {
-        return this.config.logo;
+        return Util.clone(this.config.logo);
     }
     async setLogo(logo: LogoOption | {}) {
+        let cloned = Util.clone(logo);
         this.config.logo = {
             ...this.config.logo,
-            ...logo
+            ...cloned
         }
+        await this.saveConfigToFile();
+    }
+
+    async getAuthOption(): Promise<AuthOption> {
+        return Util.clone(this.config.auth);
+    }
+    // needs a sync version
+    getAuthOptionSync(): AuthOption {
+        return Util.clone(this.config.auth);
+    }
+    async setAuthOption(option: AuthOption | {}) {
+        let cloned = Util.clone(option);
+        this.config.auth = {
+            ...this.config.auth,
+            ...cloned
+        }
+        await this.saveConfigToFile();
+    }
+    async getDomain(): Promise<string> {
+        return this.config.domain;
+    }
+
+    async setDomain(domain: string) {
+        this.config.domain = domain;
+        await this.saveConfigToFile();
+    }
+
+
+    async getUrl(): Promise<string> {
+        return this.config.url;
+    }
+    async setUrl(url: string) {
+        this.config.url = url;
         await this.saveConfigToFile();
     }
 }

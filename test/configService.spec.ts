@@ -5,6 +5,7 @@ import fs, { read } from 'fs';
 import { ConfigService } from '../src/service/configService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';
+import { Util } from '../src/util';
 
 
 chai.use(chaiHttp);
@@ -27,7 +28,9 @@ describe('configService', async () => {
             id: 'someid',
             email: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
-            password: 'passwordWithHash', groupIds: []
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         configService.config.users.push(aUser);
@@ -44,7 +47,9 @@ describe('configService', async () => {
             id: 'someid2',
             email: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
-            password: 'passwordWithHash', groupIds: []
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         configService.config.users.push(aUser);
@@ -64,7 +69,9 @@ describe('configService', async () => {
             id: 'someid',
             email: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
-            password: 'passwordWithHash', groupIds: []
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         configService.config.users.push(aUser);
@@ -83,12 +90,39 @@ describe('configService', async () => {
             id: 'someid',
             email: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
-            password: 'passwordWithHash', groupIds: []
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         configService.config.users.push(aUser);
         const user = await configService.getUserByEmail('hamza.kilic@ferrumgate.com');
-        expect(user).to.equal(aUser);
+        delete aUser.password;
+        expect(user).to.deep.include(aUser);
+
+    });
+
+    it('getUserByEmailAndPass', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        let aUser: User = {
+            id: 'someid',
+            email: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: Util.bcryptHash('passwordWithHash'), groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        const user = await configService.getUserByEmailAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash');
+        delete aUser.password;
+        expect(user).to.deep.include(aUser);
+
+        const user2 = await configService.getUserByEmailAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash2');
+
+        expect(user2).to.be.undefined;
 
     });
     it('getUserById', async () => {
@@ -99,12 +133,15 @@ describe('configService', async () => {
             id: 'someid',
             email: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
-            password: 'passwordWithHash', groupIds: []
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         configService.config.users.push(aUser);
         const user = await configService.getUserById('someid');
-        expect(user).to.equal(aUser);
+        delete aUser.password;
+        expect(user).to.deep.include(aUser);
 
     });
     it('saveUser', async () => {
@@ -115,7 +152,9 @@ describe('configService', async () => {
             id: 'someid',
             email: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
-            password: 'passwordWithHash', groupIds: []
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         configService.config.users.push(aUser);

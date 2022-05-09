@@ -14,7 +14,7 @@ const expect = chai.expect;
 
 
 
-describe('templateService', async () => {
+describe.skip('templateService', async () => {
     const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', '/tmp/bla.config');
 
     before(async () => {

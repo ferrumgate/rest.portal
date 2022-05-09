@@ -11,10 +11,14 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "cwd": "${workspaceFolder}/build",
             "program": "${workspaceFolder}/build/src/index.js",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ],
+            "env": {
+                "NODE_ENV": "development"
+            },
             "outputCapture": "console",
             "preLaunchTask": "build"
         }

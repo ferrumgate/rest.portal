@@ -50,7 +50,9 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
         id: Util.randomNumberString(16),
         name: userInput.name || userInput.email.substr(0, userInput.email.indexOf('@')),
         source: 'local',
-        isVerified: false
+        isVerified: false,
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
     }
 
     const key = Util.createRandomHash(48);
