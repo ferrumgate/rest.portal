@@ -44,12 +44,12 @@ describe('util ', () => {
             })
 
     })
-    it('must verify', (done) => {
+    /* it('must verify', (done) => {
         Util.verifyJwt(token, key);
         done();
 
-    });
-    it('must not verify', (done) => {
+    }); */
+    /* it('must not verify', (done) => {
         try {
 
             Util.verifyJwt(token, key.slice(0, key.length - 10));
@@ -60,7 +60,7 @@ describe('util ', () => {
         }
 
 
-    });
+    }); */
 
     it('hash must create', (done) => {
 

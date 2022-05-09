@@ -29,7 +29,7 @@ export class AppService {
         redis?: RedisService, input?: InputService,
         captcha?: CaptchaService, licence?: LicenceService,
         template?: TemplateService, email?: EmailService) {
-        this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), '/etc/rest.portal/config.yaml');
+        this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? '/tmp/config.yaml' : '/etc/rest.portal/config.yaml');
         this.redisService = redis || new RedisService(process.env.REDIS_HOST || "localhost:6379")
         this.rateLimit = rateLimit || new RateLimitService(this.configService, this.redisService);
         this.inputService = input || new InputService();

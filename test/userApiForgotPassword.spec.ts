@@ -13,7 +13,7 @@ const expect = chai.expect;
 
 
 
-describe('userApiForgotPassword', async () => {
+describe.skip('userApiForgotPassword', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
     const user: User = {
@@ -21,7 +21,9 @@ describe('userApiForgotPassword', async () => {
         groupIds: [],
         id: 'someid',
         name: 'hamza',
-        source: 'local'
+        source: 'local',
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
 
     }
     before(async () => {
