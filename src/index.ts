@@ -1,5 +1,6 @@
 import { assert } from "console";
 import { routerAuth } from "./api/authApi";
+import { routerConfig } from "./api/configApi";
 import { routerRegister } from "./api/registerApi";
 import { routerUserConfirm, routerUserForgotPassword, routerUserResetPassword } from "./api/userApi";
 import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "./common";
@@ -37,14 +38,17 @@ const rateLimit = async (req: any, res: any, next: any, ...args: any) => {
 const checkCaptcha = async (req: any, res: any, next: any, ...args: any) => {
     const appService = req.appService as AppService;
     if (req.body.captcha) {
-        await appService.captchaService.check(req.body.captcha);
-    } else {
-        try {
-            await appService.rateLimit.check(req.clientIp, args[0][0], args[0][1]);
-        } catch (err: any) {
-            throw new RestfullException(428, ErrorCodes.ErrCaptchaRequired, 'captcha required');
+        await appService.captchaService.check(req.body.captcha, req.body.action);
+    } else
+        if (req.query.captcha) {
+            await appService.captchaService.check(req.query.captcha, req.query.action);
+        } else {
+            try {
+                await appService.rateLimit.check(req.clientIp, args[0][0], args[0][1]);
+            } catch (err: any) {
+                throw new RestfullException(428, ErrorCodes.ErrCaptchaRequired, 'captcha required');
+            }
         }
-    }
     next();
 };
 const findClientIp = async (req: any, res: any, next: any) => {
@@ -79,10 +83,10 @@ app.use("(\/api)?/test",
 app.use('(\/api)?/register',
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
-    asyncHandlerWithArgs(checkCaptcha, 'registerCaptcha', 5),
     asyncHandlerWithArgs(rateLimit, 'register', 10),
     asyncHandlerWithArgs(rateLimit, 'registerHourly', 100),
     asyncHandlerWithArgs(rateLimit, 'registerDay', 1000),
+    asyncHandlerWithArgs(checkCaptcha, 'registerCaptcha', 5),
     asyncHandler(noAuthentication),
     routerRegister);
 
@@ -90,10 +94,10 @@ app.use('(\/api)?/register',
 app.use('(\/api)?/user/confirm',
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
-    asyncHandlerWithArgs(checkCaptcha, 'userConfirmCaptcha', 5),
     asyncHandlerWithArgs(rateLimit, 'userConfirm', 10),
     asyncHandlerWithArgs(rateLimit, 'userConfirmHourly', 100),
     asyncHandlerWithArgs(rateLimit, 'userConfirmDay', 1000),
+    asyncHandlerWithArgs(checkCaptcha, 'userConfirmCaptcha', 5),
     asyncHandler(noAuthentication),
     routerUserConfirm);
 
@@ -101,20 +105,20 @@ app.use('(\/api)?/user/confirm',
 app.use('(\/api)?/user/forgotpass',
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
-    asyncHandlerWithArgs(checkCaptcha, 'userForgotPassCaptcha', 5),
     asyncHandlerWithArgs(rateLimit, 'userForgotPass', 10),
     asyncHandlerWithArgs(rateLimit, 'userForgotPassHourly', 100),
     asyncHandlerWithArgs(rateLimit, 'userForgotPassDay', 1000),
+    asyncHandlerWithArgs(checkCaptcha, 'userForgotPassCaptcha', 5),
     asyncHandler(noAuthentication),
     routerUserForgotPassword);
 
 app.use('(\/api)?/user/resetpass',
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
-    asyncHandlerWithArgs(checkCaptcha, 'userResetPassCaptcha', 5),
     asyncHandlerWithArgs(rateLimit, 'userResetPass', 10),
     asyncHandlerWithArgs(rateLimit, 'userResetPassHourly', 100),
     asyncHandlerWithArgs(rateLimit, 'userResetPassDay', 1000),
+    asyncHandlerWithArgs(checkCaptcha, 'userResetPassCaptcha', 5),
     asyncHandler(noAuthentication),
     routerUserResetPassword);
 
@@ -122,12 +126,22 @@ app.use('(\/api)?/user/resetpass',
 app.use('(\/api)?/auth',
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
-    asyncHandlerWithArgs(checkCaptcha, 'authCaptcha', 5),
     asyncHandlerWithArgs(rateLimit, 'auth', 10),
     asyncHandlerWithArgs(rateLimit, 'authHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'authDaily', 20000),
+    asyncHandlerWithArgs(checkCaptcha, 'authCaptcha', 5),
     asyncHandler(noAuthentication),
     routerAuth);
+
+
+app.use('(\/api)?/config/public',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'configpublic', 10),
+    asyncHandlerWithArgs(rateLimit, 'configpublicHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'configpublicDaily', 10000),
+    asyncHandler(noAuthentication),
+    routerConfig);
 
 
 
@@ -148,6 +162,8 @@ app.start = function () {
 }
 
 app.start();
+
+
 
 
 

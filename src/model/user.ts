@@ -13,4 +13,7 @@ export interface User {
     twoFAType?: 'google' | 'authy';
     insertDate: string;
     updateDate: string;
+    isApiKey?: boolean;
+    apiKey?: string;
+
 }

@@ -8,7 +8,7 @@ import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { config } from 'process';
 import { AuthOption } from '../src/model/authOption';
-
+import * as twofactor from 'node-2fa';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -90,6 +90,7 @@ describe('authApi ', async () => {
         expect(response.body.key).exist;
         expect(response.body.key.length).to.equal(48);
         expect(response.body.is2FA).to.be.true;
+        expect(response.body.twoFASecret).exist;
 
     }).timeout(50000);
 
@@ -245,6 +246,41 @@ describe('authApi ', async () => {
 
     }).timeout(50000);
 
+
+    it('POST /auth/2fa with result 200', async () => {
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/local')
+                .send({ username: 'hamza@ferrumgate.com', password: 'somepass' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        const resp = response.body;
+        const twoFAToken = twofactor.generateToken(resp.twoFASecret);
+
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/2fa')
+                .send({ key: resp.key, twoFASecret: resp.twoFASecret, twoFAToken: twoFAToken?.token })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        const resp2 = response.body;
+        expect(resp2.key).exist
+
+    }).timeout(50000);
 
 
 

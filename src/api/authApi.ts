@@ -7,9 +7,10 @@ import { Util } from "../util";
 import fs from 'fs';
 import passport from 'passport';
 
-import { localInit } from "./auth/local";
+import { checkUser, localInit } from "./auth/local";
 import { googleInit } from "./auth/google";
 import { linkedinInit } from "./auth/linkedin";
+
 
 
 
@@ -47,15 +48,19 @@ async function execute2FA(req: any) {
     const appService = req.appService as AppService;
     const configService = appService.configService;
     const redisService = appService.redisService;
+    const twoFAService = appService.twoFAService;
     if (currentUser.is2FA) {
         const rKey = `next_2fa_for_${randomKey}`;
         await redisService.set(rKey, currentUser.id, { ttl: 60 * 1000 });
+        return { key: randomKey, twoFAKey: twoFAService.generateSecret() };
     }
     else {
         const rKey = `next_access_for_${randomKey}`;
         await redisService.set(rKey, currentUser.id, { ttl: 60 * 1000 });
+        return { key: randomKey };
     }
-    return randomKey;
+
+
 }
 /////////////////////////////////  /auth/local  //////////////////////////////////
 
@@ -66,10 +71,12 @@ routerAuth.post('/local',
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
-        const randomKey = await execute2FA(req);
-        return res.status(200).json({ key: randomKey, is2FA: currentUser.is2FA || false, twoFAType: currentUser.twoFAType });
+        logger.info(`authenticated user: ${currentUser.email}`);
+        const two2FA = await execute2FA(req);
+        return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false, twoFASecret: two2FA.twoFAKey });
     })
 );
+
 
 
 /////////////////////////// /auth/google //////////////////////////
@@ -81,8 +88,9 @@ routerAuth.use('/google/callback',
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
-        const randomKey = await execute2FA(req);
-        return res.status(200).json({ key: randomKey, is2FA: currentUser.is2FA || false, twoFAType: 'google' });
+        logger.info(`authenticated user: ${currentUser.email}`);
+        const two2FA = await execute2FA(req);
+        return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false, twoFASecret: two2FA.twoFAKey });
     })
 );
 
@@ -106,8 +114,9 @@ routerAuth.use('/linkedin/callback',
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
-        const randomKey = await execute2FA(req);
-        return res.status(200).json({ key: randomKey, is2FA: currentUser.is2FA || false, twoFAType: 'google' });
+        logger.info(`authenticated user: ${currentUser.email}`);
+        const two2FA = await execute2FA(req);
+        return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false, twoFASecret: two2FA.twoFAKey });
     })
 );
 
@@ -119,6 +128,42 @@ routerAuth.get('/linkedin',
         return res.status(200).json({});
     })
 );
+
+
+
+///////////////////////// /auth/2fa     ////////////////////////////////
+
+
+routerAuth.post('/2fa',
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const redisService = appService.redisService;
+        const twoFAService = appService.twoFAService;
+
+        const request = req.body as { key: string, twoFASecret: string, twoFAToken: string };
+        if (!request.key || !request.twoFASecret || !request.twoFAToken)
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs key, 2FASecret and 2FAToken");
+        logger.info(`2fa check with key:${request.key}`);
+
+        twoFAService.verifyToken(request.twoFASecret, request.twoFAToken);
+        const rKey = `next_2fa_for_${request.key}`;
+        const userId = await redisService.get(rKey, false) as string;
+        if (!userId)
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'key not found');
+
+        const user = await configService.getUserById(userId);
+        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authorized');
+        checkUser(user);
+        const randomKey = Util.randomNumberString(48);
+        const key = `next_access_for_${randomKey}`;
+        await redisService.set(key, user.id, { ttl: 60 * 1000 });
+        return res.status(200).json({ key: randomKey });
+
+    })
+);
+
 
 
 
