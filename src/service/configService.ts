@@ -55,8 +55,13 @@ export class ConfigService {
                 clientID: '866dr29tuc5uy5',
                 clientSecret: '1E3DHw0FJFUsp1Um'
             }
+            this.config.email = { fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' };
             this.config.url = 'http://local.ferrumgate.com:8080';
-            if (fs.existsSync('/tmp/config.yaml'))
+            this.config.captcha = {
+                client: '6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH',
+                server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
+            }
+            if (fs.existsSync('/tmp/config.yaml') && !process.env.LOCAL_TEST)
                 fs.rmSync('/tmp/config.yaml');
         }
         this.loadConfigFromFile();
@@ -87,21 +92,34 @@ export class ConfigService {
         logger.info(`loading configuration from ${this.configfile}`);
         if (fs.existsSync(this.configfile)) {
             const content = fs.readFileSync(this.configfile, 'utf-8').toString();
-            const decrpted = Util.decrypt(this.secretKey, content);
-            this.config = yaml.parse(decrpted);
+            if (process.env.NODE_ENV == 'development') {
+                this.config = yaml.parse(content);
+            } else {
+                const decrpted = Util.decrypt(this.secretKey, content);
+                this.config = yaml.parse(decrpted);
+            }
         }
         this.saveAssets();
     }
     saveConfigToFile() {
         const str = yaml.stringify(this.config);
-        const encrypted = Util.encrypt(this.secretKey, str);
-        fs.writeFileSync(this.configfile, encrypted, { encoding: 'utf-8' });
+        if (process.env.NODE_ENV == 'development') {
+
+            fs.writeFileSync(this.configfile, str, { encoding: 'utf-8' });
+        } else {
+            const encrypted = Util.encrypt(this.secretKey, str);
+            fs.writeFileSync(this.configfile, encrypted, { encoding: 'utf-8' });
+        }
         this.lastUpdateTime = new Date().toISOString();
     }
     saveConfigToString() {
         const str = yaml.stringify(this.config);
-        const encrypted = Util.encrypt(this.secretKey, str);
-        return encrypted;
+        if (process.env.NODE_ENV == 'development') {
+            return str;
+        } else {
+            const encrypted = Util.encrypt(this.secretKey, str);
+            return encrypted;
+        }
     }
     private static clone(x: any) {
 

@@ -7,6 +7,8 @@ import { app } from '../src/index';
 import { InputService } from '../src/service/inputService';
 import { RestfullException } from '../src/restfullException';
 import { ErrorCodes } from '../src/restfullException';
+import { CaptchaService } from '../src/service/captchaService';
+import { ConfigService } from '../src/service/configService';
 
 
 
@@ -18,12 +20,20 @@ const expect = chai.expect;
 
 describe('captchaService ', async () => {
 
+    const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
     beforeEach(async () => {
-
+        configService.setCaptcha({ server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0' })
     })
-    it('checkPasswordPolicy throws error', (done) => {
+    it('captchaService throws error', async () => {
+        let isError = false;
+        try {
+            const captchaService = new CaptchaService(configService);
+            await captchaService.check('test');
+        } catch (ignored) {
+            isError = true;
+        }
+        expect(isError).to.be.true;
 
-        done();
 
     }).timeout(5000);
 

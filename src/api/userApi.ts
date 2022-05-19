@@ -11,7 +11,7 @@ import fs from 'fs';
 /////////////////////////////////  confirm //////////////////////////////////
 export const routerUserConfirm = express.Router();
 //user/confirm
-routerUserConfirm.get('/:key', asyncHandler(async (req: any, res: any, next: any) => {
+routerUserConfirm.post('/email/:key', asyncHandler(async (req: any, res: any, next: any) => {
     const key = req.params.key;
 
     logger.info(`user confirm with key: ${key}`);

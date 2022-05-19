@@ -9,6 +9,18 @@ import { User } from '../../model/user';
 import { Util } from '../../util';
 import { ErrorCodes, RestfullException } from '../../restfullException';
 
+
+
+export async function checkUser(user: User | undefined) {
+    if (!user)
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not found');
+    if (!user.isVerified)
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not found');
+    if (user.isLocked)
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not found');
+
+}
+
 export function localInit() {
     passport.use(new passportlocal.Strategy(
         { session: false, passReqToCallback: true },
@@ -21,10 +33,7 @@ export function localInit() {
                 if (!username || !password)
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
                 const user = await configService.getUserByEmailAndPass(username, password);
-                if (!user)
-                    throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authorized');
-                if (!user.isVerified || user.isLocked)
-                    throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authorized');
+                await checkUser(user);
                 //set user to request object
                 req.currentUser = user;
                 return done(null, user);

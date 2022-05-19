@@ -34,6 +34,7 @@
     "jsbn": "^1.1.0",
     "jsonwebtoken": "^8.5.1",
     "log4js": "^6.4.6",
+    "node-2fa": "^2.0.3",
     "node-cache": "^5.1.2",
     "nodemailer": "^6.7.5",
     "oauth2-server": "^3.1.1",

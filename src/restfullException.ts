@@ -42,5 +42,8 @@ export class ErrorCodes {
     static ErrCaptchaRequired: string = 'ErrCaptchaRequired';
     static ErrJWTVerifyFailed: string = 'ErrJWTVerifyFailed';
     static ErrUserLockedOrNotVerified: string = 'ErrUserLockedOrNotVerified';
+    static ErrCaptchaVerifyFailed: string = 'ErrCaptchaVerifyFailed';
+    static Err2FAVerifyFailed: string = 'Err2FAVerifyFailed';
+
 
 }
