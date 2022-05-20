@@ -3,6 +3,7 @@ import { ConfigService } from './configService';
 import JWT from 'jsonwebtoken';
 import { logger } from '../common';
 import { ErrorCodes, RestfullException } from '../restfullException';
+import { HelperService } from './helperService';
 
 
 
@@ -105,16 +106,10 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
             throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal error");
         })
 
-        if (!user)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'unauthorized access');
-        if (user.isLocked || !user.isVerified)
-            throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
-
-        delete user.password;
-
+        HelperService.isValidUser(user);
         let token = {
             accessTokenExpiresAt: new Date(decoded.expires),
-            user: user,
+            user: { id: user?.id },
             client: decoded.client,
             type: decoded.type,
             accessToken: accessToken
@@ -161,17 +156,11 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
             throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal server error");
         })
 
-        if (!user)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'unauthorized access');
+        HelperService.isValidUser(user);
 
-        if (user.isLocked || !user.isVerified)
-            throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
-
-
-        delete user.password;
         let token = {
             refreshTokenExpiresAt: new Date(decoded.expires),
-            user: user,
+            user: { id: user?.id },
             client: decoded.client,
             type: decoded.type,
             refreshToken: refreshToken

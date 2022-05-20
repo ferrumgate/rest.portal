@@ -27,9 +27,9 @@ export class HelperService {
         if (!user)
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not found');
         if (!user.isVerified)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not found');
+            throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
         if (user.isLocked)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not found');
+            throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
 
     }
 }

@@ -171,6 +171,83 @@ routerAuth.post('/2fa',
     })
 );
 
+/////////////////////////////// /auth/token/access ///////////////////////////////
+
+routerAuth.post('/token/access',
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const redisService = appService.redisService;
+        const oauth2Service = appService.oauth2Service;
+        const request = req.body as { key: string };
+        if (!request.key) {
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs parameters");
+        }
+        logger.info(`getting access token with key ${request.key}`);
+        const key = `/access/${request.key}`;
+        const userId = await redisService.get(key, false) as string;
+        if (!userId) {
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+        }
+
+        const user = await configService.getUserById(userId);
+        await HelperService.isValidUser(user);
+        //set user to request object
+        req.currentUser = user;
+        if (!user?.id) {
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, "something went wrong");
+        }
 
 
+        const accessTokenStr = await oauth2Service.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id }, 'ferrum')
+        const accessToken = await oauth2Service.getAccessToken(accessTokenStr);
+        const refreshTokenStr = await oauth2Service.generateRefreshToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id }, 'ferrum');
+        const refreshToken = await oauth2Service.getRefreshToken(refreshTokenStr);
+        await redisService.delete(key);
+
+        return res.status(200).json({ ...accessToken, ...refreshToken });
+    })
+);
+
+
+/////////////////////////////// /auth/token/access ///////////////////////////////
+
+routerAuth.post('/token/refresh',
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const redisService = appService.redisService;
+        const oauth2Service = appService.oauth2Service;
+        const request = req.body as { refreshToken: string };
+        if (!request.refreshToken) {
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs parameters");
+        }
+        logger.info(`getting refresh token with key ${request.refreshToken}`);
+
+        const inputRefreshToken = await oauth2Service.getRefreshToken(request.refreshToken);
+        if (!inputRefreshToken)
+            throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed");
+
+        const userId = inputRefreshToken.user.id;
+        //checkuser
+        const user = await configService.getUserById(userId);
+        await HelperService.isValidUser(user);
+        //set user to request object
+        req.currentUser = user;
+        if (!user?.id) {
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, "something went wrong");
+        }
+
+
+        const accessTokenStr = await oauth2Service.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id }, 'ferrum')
+        const accessToken = await oauth2Service.getAccessToken(accessTokenStr);
+        const refreshTokenStr = await oauth2Service.generateRefreshToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id }, 'ferrum');
+        const refreshToken = await oauth2Service.getRefreshToken(refreshTokenStr);
+
+
+        return res.status(200).json({ ...accessToken, ...refreshToken });
+    })
+);
 

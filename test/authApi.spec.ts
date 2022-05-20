@@ -64,6 +64,7 @@ describe('authApi ', async () => {
         }
         await configService.setAuthOption(auth);
         await configService.setUrl('http://local.ferrumgate.com:8080')
+        await configService.setSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
     })
 
     beforeEach(async () => {
@@ -316,6 +317,72 @@ describe('authApi ', async () => {
         expect(response.status).to.equal(200);
         const resp2 = response.body;
         expect(resp2.key).exist
+
+    }).timeout(50000);
+
+
+    it('POST /auth/token/access with result 200', async () => {
+
+        await redisService.set(`/access/test`, 'someid');
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/token/access')
+                .send({ key: 'test' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.accessToken).exist;
+        expect(response.body.refreshToken).exist;
+
+
+    }).timeout(50000);
+
+
+    it('POST /auth/token/refresh with result 200', async () => {
+
+        await redisService.set(`/access/test`, 'someid');
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/token/access')
+                .send({ key: 'test' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.accessToken).exist;
+        expect(response.body.refreshToken).exist;
+
+        const refreshToken = response.body.refreshToken;
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/token/refresh')
+                .send({ refreshToken: refreshToken })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.accessToken).exist;
+        expect(response.body.refreshToken).exist;
+
+
+
+
 
     }).timeout(50000);
 

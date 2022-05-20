@@ -5,6 +5,7 @@ import { ConfigService } from "./configService";
 import { EmailService } from "./emailService";
 import { InputService } from "./inputService";
 import { LicenceService } from "./licenceService";
+import { OAuth2Service } from "./oauth2Service";
 import { RateLimitService } from "./rateLimitService";
 import { RedisService } from "./redisService";
 import { TemplateService } from "./templateService";
@@ -23,6 +24,7 @@ export class AppService {
     public templateService: TemplateService;
     public emailService: EmailService;
     public twoFAService: TwoFAService;
+    public oauth2Service: OAuth2Service;
     /**
      *
      */
@@ -31,7 +33,7 @@ export class AppService {
         redis?: RedisService, input?: InputService,
         captcha?: CaptchaService, licence?: LicenceService,
         template?: TemplateService, email?: EmailService,
-        twoFA?: TwoFAService) {
+        twoFA?: TwoFAService, oauth2?: OAuth2Service) {
         this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? '/tmp/config.yaml' : '/etc/rest.portal/config.yaml');
         this.redisService = redis || new RedisService(process.env.REDIS_HOST || "localhost:6379")
         this.rateLimit = rateLimit || new RateLimitService(this.configService, this.redisService);
@@ -41,6 +43,7 @@ export class AppService {
         this.templateService = template || new TemplateService(this.configService);
         this.emailService = email || new EmailService(this.configService);
         this.twoFAService = twoFA || new TwoFAService();
+        this.oauth2Service = oauth2 || new OAuth2Service(this.configService);
 
     }
 

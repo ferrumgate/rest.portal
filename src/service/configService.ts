@@ -61,6 +61,8 @@ export class ConfigService {
                 client: '6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH',
                 server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
             }
+            this.config.sslCertificate.privateKey = fs.readFileSync(`./ferrumgate.com.key`).toString();
+            this.config.sslCertificate.publicKey = fs.readFileSync(`./ferrumgate.com.crt`).toString();
             if (fs.existsSync('/tmp/config.yaml') && !process.env.LOCAL_TEST)
                 fs.rmSync('/tmp/config.yaml');
         }
