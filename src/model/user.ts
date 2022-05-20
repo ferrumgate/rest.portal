@@ -10,10 +10,12 @@ export interface User {
     isVerified?: boolean;
     isLocked?: boolean;
     is2FA?: boolean;
-    twoFAType?: 'google' | 'authy';
+    twoFASecret?: string;
     insertDate: string;
     updateDate: string;
-    isApiKey?: boolean;
+    isOnlyApiKey?: boolean;
     apiKey?: string;
 
 }
+
+

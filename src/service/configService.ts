@@ -65,6 +65,7 @@ export class ConfigService {
                 fs.rmSync('/tmp/config.yaml');
         }
         this.loadConfigFromFile();
+
         this.lastUpdateTime = new Date().toISOString();
     }
     setConfigPath(path: string) {
@@ -121,29 +122,42 @@ export class ConfigService {
             return encrypted;
         }
     }
-    private static clone(x: any) {
 
+    private deleteUserSensitiveData(user?: User) {
+        delete user?.apiKey;
+        delete user?.twoFASecret;
+        delete user?.password;
     }
     async getUserByEmail(email: string): Promise<User | undefined> {
         let user = Util.clone(this.config.users.find(x => x.email == email));
-        delete user?.password;
+        this.deleteUserSensitiveData(user);
+        return user;
+    }
+    async getUserByApiKey(key: string): Promise<User | undefined> {
+        let user = Util.clone(this.config.users.find(x => x.apiKey == key));
+        this.deleteUserSensitiveData(user);
         return user;
     }
     async getUserById(id: string): Promise<User | undefined> {
         let user = Util.clone(this.config.users.find(x => x.id == id));
-        delete user?.password;
+        this.deleteUserSensitiveData(user);
         return user;
     }
     async getUserByEmailAndPass(email: string, pass: string): Promise<User | undefined> {
         let user = this.config.users
-            .find(x => x.source == 'local' && x.email == email);
+            .find(x => x.email == email);
 
         if (user && Util.bcryptCompare(pass, user.password || '')) {
-            delete user.password;
-            return Util.clone(user);
+            let cloned = Util.clone(user);
+            this.deleteUserSensitiveData(cloned);
+            return cloned;
         }
         return undefined;
 
+    }
+    async getUserSensitiveData(id: string) {
+        let user = Util.clone(this.config.users.find(x => x.id == id)) as User;
+        return { twoFASecret: user?.twoFASecret };
     }
     async saveUser(user: User) {
         let cloned = Util.clone(user);
@@ -153,21 +167,22 @@ export class ConfigService {
             finded = cloned;
         }
         else {
-            user.id = finded.id;//security
-            finded = {
+            cloned.id = finded.id;//security
+            let newone = {
                 ...finded,
                 ...cloned
             }
+            Object.assign(finded, newone)
         }
-        if (finded) {
-            if (!finded.source) {
-                throw new Error('user source must exits');
-            }
-            if (finded.source != 'local') {
-                delete finded.password;
-            }
+        /*  if (finded) {
+             if (!finded.source) {
+                 throw new Error('user source must exits');
+             }
+               if (finded.source != 'local') {
+                  this.deleteUserSensitiveData(user);
+              }
 
-        }
+            }*/
         await this.saveConfigToFile();
     }
     async getCaptcha(): Promise<Captcha> {

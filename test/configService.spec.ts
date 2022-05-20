@@ -167,4 +167,24 @@ describe('configService', async () => {
         expect(userDb?.id).to.equal('someid');
 
     });
+
+    it('getUserByApiKey', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        let aUser: User = {
+            id: '6hiryy8ujv3n',
+            email: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            apiKey: '1fviqq286bmcm',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        const userDb = await configService.getUserByApiKey('1fviqq286bmcm');
+        expect(userDb?.id).to.equal('6hiryy8ujv3n');
+
+    });
 });
