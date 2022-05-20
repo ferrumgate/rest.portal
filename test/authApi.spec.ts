@@ -380,9 +380,45 @@ describe('authApi ', async () => {
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
 
+    }).timeout(50000);
 
 
 
+    it('POST /auth/token/test with result 200', async () => {
+
+        await redisService.set(`/access/test`, 'someid');
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/token/access')
+                .send({ key: 'test' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.accessToken).exist;
+        expect(response.body.refreshToken).exist;
+
+        const accessToken = response.body.accessToken;
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/token/test')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ something: 'blada' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.works).to.be.true;
 
     }).timeout(50000);
 

@@ -39,6 +39,7 @@
     "nodemailer": "^6.7.5",
     "oauth2-server": "^3.1.1",
     "passport": "^0.5.2",
+    "passport-custom": "^1.1.1",
     "passport-google-oauth2": "^0.2.0",
     "passport-headerapikey": "^1.2.2",
     "passport-linkedin-oauth2": "^2.0.0",

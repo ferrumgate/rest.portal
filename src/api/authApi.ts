@@ -12,6 +12,7 @@ import { googleInit } from "./auth/google";
 import { linkedinInit } from "./auth/linkedin";
 import { HelperService } from "../service/helperService";
 import { apiKeyInit } from "./auth/apikey";
+import { jwtInit } from "./auth/jwt";
 
 
 
@@ -31,6 +32,8 @@ async function passportInit(req: any, res: any, next: any) {
         localInit();
         //init apikey
         apiKeyInit();
+        //init jwt verification
+        jwtInit();
         // init google
         if (auth.google) {
             googleInit(auth, url);
@@ -248,6 +251,15 @@ routerAuth.post('/token/refresh',
 
 
         return res.status(200).json({ ...accessToken, ...refreshToken });
+    })
+);
+
+
+routerAuth.post('/token/test',
+    asyncHandler(passportInit),
+    passport.authenticate(['headerapikey', 'jwt'], { session: false }),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        return res.status(200).json({ works: true });
     })
 );
 
