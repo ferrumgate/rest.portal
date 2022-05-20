@@ -85,7 +85,7 @@ describe('util ', () => {
         let random2 = Util.randomNumberString(7);
         expect(random2.length).to.equal(7);
         for (const iterator of random2) {
-            var chars = "0123456789abcdefghiklmnopqrstuvwxyz";
+            var chars = "0123456789abcdefghiklmnopqrstuvwxyzABCDEFGHIKLMNOPQRSTUVWXYZ";
             let founded = false;
             for (const iterator2 of chars) {
                 if (iterator2 == iterator) {

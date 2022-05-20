@@ -74,7 +74,7 @@ export const Util = {
     randomNumberString: (string_length: number = 6) => {
 
 
-        var chars = "0123456789abcdefghiklmnopqrstuvwxyz";
+        var chars = "0123456789abcdefghiklmnopqrstuvwxyzABCDEFGHIKLMNOPQRSTUVWXYZ";
 
         var randomstring = '';
         for (var i = 0; i < string_length; i++) {

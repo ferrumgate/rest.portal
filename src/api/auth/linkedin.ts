@@ -7,6 +7,7 @@ import { logger } from '../../common';
 import { AppService } from '../../service/appService';
 import { User } from '../../model/user';
 import { Util } from '../../util';
+import { HelperService } from '../../service/helperService';
 
 export function linkedinInit(authOption: AuthOption, url: string) {
     passport.use(new passportlinkedin.Strategy({
@@ -27,19 +28,8 @@ export function linkedinInit(authOption: AuthOption, url: string) {
 
                 let user = await configService.getUserByEmail(email);
                 if (!user) {
-                    let userSave: User = {
-                        source: 'linkedin',
-                        email: email,
-                        id: Util.randomNumberString(16),
-                        name: name,
-                        isLocked: false,
-                        isVerified: true,
-                        groupIds: [],
-                        password: Util.bcryptHash(Util.createRandomHash(64)),
-                        is2FA: false,
-                        insertDate: new Date().toISOString(),
-                        updateDate: new Date().toISOString()
-                    }
+                    let userSave: User = HelperService.createUser('linkedin', email, name);
+                    userSave.isVerified = true;
                     await configService.saveUser(userSave);
 
                 }

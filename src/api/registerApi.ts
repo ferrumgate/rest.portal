@@ -5,6 +5,7 @@ import { AppService } from "../service/appService";
 import { User } from "../model/user";
 import { Util } from "../util";
 import fs from 'fs';
+import { HelperService } from "../service/helperService";
 
 export const routerRegister = express.Router();
 
@@ -19,7 +20,7 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     const templateService = appService.templateService;
     const emailService = appService.emailService;
     const redisService = appService.redisService;
-
+    const twoFAService = appService.twoFAService;
 
 
     inputService.checkPasswordPolicy(userInput.password);
@@ -43,17 +44,11 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
         return res.status(200).json({ result: true });
     }
     logger.info(`someone is not exits on db with email ${userInput.email}`);
-    let userSave: User = {
-        email: userInput.email,
-        password: Util.bcryptHash(userInput.password),
-        groupIds: [],
-        id: Util.randomNumberString(16),
-        name: userInput.name || userInput.email.substr(0, userInput.email.indexOf('@')),
-        source: 'local',
-        isVerified: false,
-        insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
-    }
+    let userSave: User = HelperService.createUser('local',
+        userInput.email,
+        userInput.name || userInput.email.substr(0, userInput.email.indexOf('@')),
+        userInput.password);
+
 
     const key = Util.createRandomHash(48);
     const link = `${req.baseHost}/user/confirm/email/${key}`
@@ -67,7 +62,6 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     //send confirmation link over email
     await emailService.send({ to: userSave.email, subject: 'Verify your email', html: html })
     await configService.saveUser(userSave);
-
 
     return res.status(200).json({ result: true });
 
