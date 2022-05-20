@@ -30,6 +30,7 @@ describe('authApi ', async () => {
         isVerified: true,
         isLocked: false,
         is2FA: true,
+        twoFASecret: twofactor.generateSecret().secret,
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString()
 
@@ -90,7 +91,7 @@ describe('authApi ', async () => {
         expect(response.body.key).exist;
         expect(response.body.key.length).to.equal(48);
         expect(response.body.is2FA).to.be.true;
-        expect(response.body.twoFASecret).exist;
+
 
     }).timeout(50000);
 
@@ -262,12 +263,12 @@ describe('authApi ', async () => {
         })
 
         const resp = response.body;
-        const twoFAToken = twofactor.generateToken(resp.twoFASecret);
+        const twoFAToken = twofactor.generateToken(user.twoFASecret || '')
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/2fa')
-                .send({ key: resp.key, twoFASecret: resp.twoFASecret, twoFAToken: twoFAToken?.token })
+                .send({ key: resp.key, twoFAToken: twoFAToken?.token })
                 .end((err, res) => {
                     if (err)
                         reject(err);
