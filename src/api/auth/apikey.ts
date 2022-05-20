@@ -1,31 +1,27 @@
 
 import passport from 'passport';
-import passportlocal from 'passport-local';
-import passportgoogle from 'passport-google-oauth2';
-import { AuthOption } from '../../model/authOption';
+import * as passportapikey from 'passport-headerapikey';
 import { logger } from '../../common';
 import { AppService } from '../../service/appService';
-import { User } from '../../model/user';
-import { Util } from '../../util';
 import { ErrorCodes, RestfullException } from '../../restfullException';
 import { HelperService } from '../../service/helperService';
 
+export function apiKeyInit() {
+    passport.use(new passportapikey.HeaderAPIKeyStrategy(
+        {
+            header: 'ApiKey', prefix: '',
 
-
-
-
-export function localInit() {
-    passport.use(new passportlocal.Strategy(
-        { session: false, passReqToCallback: true },
-        async (req: any, username: any, password: any, done: any) => {
+        }, true,
+        async (apikey: string, done: any, req: any) => {
             try {
-                logger.info(`passport local with username: ${username}`);
+                logger.info(`passport local with apikey: ${apikey.substring(0, 10)}`);
                 const appService = req.appService as AppService;
                 const configService = appService.configService;
                 const redisService = appService.redisService;
-                if (!username || !password)
+
+                if (!apikey)
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
-                const user = await configService.getUserByEmailAndPass(username, password);
+                const user = await configService.getUserByApiKey(apikey);
                 await HelperService.isValidUser(user);
                 //set user to request object
                 req.currentUser = user;

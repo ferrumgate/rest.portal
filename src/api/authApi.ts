@@ -7,9 +7,11 @@ import { Util } from "../util";
 import fs from 'fs';
 import passport from 'passport';
 
-import { checkUser, localInit } from "./auth/local";
+import { localInit } from "./auth/local";
 import { googleInit } from "./auth/google";
 import { linkedinInit } from "./auth/linkedin";
+import { HelperService } from "../service/helperService";
+import { apiKeyInit } from "./auth/apikey";
 
 
 
@@ -27,6 +29,8 @@ async function passportInit(req: any, res: any, next: any) {
 
         //init local 
         localInit();
+        //init apikey
+        apiKeyInit();
         // init google
         if (auth.google) {
             googleInit(auth, url);
@@ -68,7 +72,7 @@ async function execute2FA(req: any) {
 
 routerAuth.post('/local',
     asyncHandler(passportInit),
-    passport.authenticate('local', { session: false }),
+    passport.authenticate(['local', 'headerapikey'], { session: false }),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
@@ -155,7 +159,7 @@ routerAuth.post('/2fa',
 
         const user = await configService.getUserById(userId);
         if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authorized');
-        checkUser(user);
+        HelperService.isValidUser(user);
         const sensitiveData = await configService.getUserSensitiveData(userId);
         twoFAService.verifyToken(sensitiveData.twoFASecret || '', request.twoFAToken);
 

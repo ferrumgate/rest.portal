@@ -152,6 +152,42 @@ describe('authApi ', async () => {
 
     }).timeout(50000);
 
+    it('POST /auth/local with result 200 and apikey', async () => {
+
+        const user5: User = {
+            email: 'hamza4@ferrumgate.com',
+            groupIds: [],
+            id: 'someid',
+            name: 'hamza',
+            password: Util.bcryptHash('somepass'),
+            source: 'local',
+            isVerified: true,
+            isLocked: false,
+            is2FA: true,
+            apiKey: 'test',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        await configService.saveUser(user5);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/local')
+                .set('ApiKey', 'test')
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+
+
+    }).timeout(50000);
+
 
 
     it('POST /auth/local with result 401', async () => {

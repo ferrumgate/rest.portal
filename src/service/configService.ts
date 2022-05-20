@@ -65,6 +65,7 @@ export class ConfigService {
                 fs.rmSync('/tmp/config.yaml');
         }
         this.loadConfigFromFile();
+
         this.lastUpdateTime = new Date().toISOString();
     }
     setConfigPath(path: string) {
@@ -132,6 +133,11 @@ export class ConfigService {
         this.deleteUserSensitiveData(user);
         return user;
     }
+    async getUserByApiKey(key: string): Promise<User | undefined> {
+        let user = Util.clone(this.config.users.find(x => x.apiKey == key));
+        this.deleteUserSensitiveData(user);
+        return user;
+    }
     async getUserById(id: string): Promise<User | undefined> {
         let user = Util.clone(this.config.users.find(x => x.id == id));
         this.deleteUserSensitiveData(user);
@@ -161,21 +167,22 @@ export class ConfigService {
             finded = cloned;
         }
         else {
-            user.id = finded.id;//security
-            finded = {
+            cloned.id = finded.id;//security
+            let newone = {
                 ...finded,
                 ...cloned
             }
+            Object.assign(finded, newone)
         }
-        if (finded) {
-            if (!finded.source) {
-                throw new Error('user source must exits');
-            }
-            /*  if (finded.source != 'local') {
-                 this.deleteUserSensitiveData(user);
-             } */
+        /*  if (finded) {
+             if (!finded.source) {
+                 throw new Error('user source must exits');
+             }
+               if (finded.source != 'local') {
+                  this.deleteUserSensitiveData(user);
+              }
 
-        }
+            }*/
         await this.saveConfigToFile();
     }
     async getCaptcha(): Promise<Captcha> {
