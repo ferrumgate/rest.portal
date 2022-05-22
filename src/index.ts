@@ -7,7 +7,7 @@ import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "
 import { ErrorCodes, RestfullException } from "./restfullException";
 import { AppService } from "./service/appService";
 import { Util } from "./util";
-
+import * as helmet from 'helmet';
 
 
 const bodyParser = require('body-parser');
@@ -23,8 +23,9 @@ app.use(express.static('dassets'));
 app.appService = new AppService();
 
 //disable powerer by
-app.disable('x-powered-by');
+//app.disable('x-powered-by');
 
+app.use(helmet.default());
 const setAppService = async (req: any, res: any, next: any) => {
     req.appService = app.appService;//important
     next();

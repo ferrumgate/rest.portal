@@ -28,6 +28,7 @@
     "email-validator": "^2.0.4",
     "express": "^4.18.1",
     "extract-zip": "^2.0.1",
+    "helmet": "^5.1.0",
     "ioredis": "^5.0.4",
     "ip-address": "^8.1.0",
     "ip6addr": "^0.2.5",
