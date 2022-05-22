@@ -217,6 +217,8 @@ routerAuth.post('/token/access',
 /////////////////////////////// /auth/token/access ///////////////////////////////
 
 routerAuth.post('/token/refresh',
+    asyncHandler(passportInit),
+    passport.authenticate('jwt', { session: false }),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const appService = req.appService as AppService;
@@ -234,9 +236,17 @@ routerAuth.post('/token/refresh',
             throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed");
 
         const userId = inputRefreshToken.user.id;
+
         //checkuser
         const user = await configService.getUserById(userId);
         await HelperService.isValidUser(user);
+        if (!user)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+        //check also currentUser that comes from accessToken
+        if (req.currentUser.id != user.id)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+
+
         //set user to request object
         req.currentUser = user;
         if (!user?.id) {

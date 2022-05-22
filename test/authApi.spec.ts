@@ -367,6 +367,7 @@ describe('authApi ', async () => {
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/token/refresh')
+                .set('Authorization', `Bearer ${response.body.accessToken}`)
                 .send({ refreshToken: refreshToken })
                 .end((err, res) => {
                     if (err)
