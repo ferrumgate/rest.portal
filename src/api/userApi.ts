@@ -64,7 +64,13 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
 
     const userDb = await configService.getUserByEmail(email);
     if (!userDb) {
+
         logger.error(`forgot password no user found with email ${email}`);
+        return res.status(200).json({ result: true });
+    }
+    if (userDb.source != 'local') {
+        //security check only local users can forgot password
+        logger.error(`forgot password user is not local with email ${email}`);
         return res.status(200).json({ result: true });
     }
     const key = Util.createRandomHash(48);
@@ -116,6 +122,12 @@ routerUserResetPassword.post('/:key', asyncHandler(async (req: any, res: any, ne
     const user = await configService.getUserById(userId);
     if (!user) {
         logger.fatal(`reset password user not found with userId: ${userId}`);
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+    }
+
+    if (user.source != 'local') {
+        //security check only local users can reset password
+        logger.fatal(`reset password user is not local with userId: ${userId}`);
         throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
     }
 
