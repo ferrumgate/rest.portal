@@ -36,14 +36,14 @@ describe.skip('userApiConfirm', async () => {
     })
 
 
-    it('POST /user/confirm/email/:key will return 200', async () => {
+    it('POST /user/emailconfirm will return 200', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         await redisService.set('user_confirm_deneme', 'someid');
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/confirm/deneme')
+                .post('/user/emailconfirm?key=deneme')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -57,14 +57,14 @@ describe.skip('userApiConfirm', async () => {
         expect(value).to.be.null;
     }).timeout(50000);
 
-    it('POST /user/confirm/:key will return 401 not found key', async () => {
+    it('POST /user/confirm will return 401 not found key', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         await redisService.set('user_confirm_deneme2', 'someid');
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/confirm/deneme')
+                .post('/user/confirm?key=deneme')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -79,14 +79,14 @@ describe.skip('userApiConfirm', async () => {
     }).timeout(50000);
 
 
-    it('POST /user/confirm/:key will return 401 not found user', async () => {
+    it('POST /user/confirm will return 401 not found user', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         await redisService.set('user_confirm_deneme', 'someid2');
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/confirm/deneme')
+                .post('/user/confirm?key=deneme')
                 .end((err, res) => {
                     if (err)
                         reject(err);

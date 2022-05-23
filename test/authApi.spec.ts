@@ -321,12 +321,12 @@ describe('authApi ', async () => {
     }).timeout(50000);
 
 
-    it('POST /auth/token/access with result 200', async () => {
+    it('POST /authaccesstoken with result 200', async () => {
 
         await redisService.set(`/access/test`, 'someid');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/token/access')
+                .post('/auth/accesstoken')
                 .send({ key: 'test' })
                 .end((err, res) => {
                     if (err)
@@ -344,12 +344,12 @@ describe('authApi ', async () => {
     }).timeout(50000);
 
 
-    it('POST /auth/token/refresh with result 200', async () => {
+    it('POST /auth/refreshtoken with result 200', async () => {
 
         await redisService.set(`/access/test`, 'someid');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/token/access')
+                .post('/auth/accesstoken')
                 .send({ key: 'test' })
                 .end((err, res) => {
                     if (err)
@@ -366,7 +366,7 @@ describe('authApi ', async () => {
         const refreshToken = response.body.refreshToken;
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/token/refresh')
+                .post('/auth/refreshtoken')
                 .set('Authorization', `Bearer ${response.body.accessToken}`)
                 .send({ refreshToken: refreshToken })
                 .end((err, res) => {
@@ -390,7 +390,7 @@ describe('authApi ', async () => {
         await redisService.set(`/access/test`, 'someid');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/token/access')
+                .post('/auth/accesstoken')
                 .send({ key: 'test' })
                 .end((err, res) => {
                     if (err)

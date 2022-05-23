@@ -174,9 +174,9 @@ routerAuth.post('/2fa',
     })
 );
 
-/////////////////////////////// /auth/token/access ///////////////////////////////
+/////////////////////////////// /authaccesstoken ///////////////////////////////
 
-routerAuth.post('/token/access',
+routerAuth.post('/accesstoken',
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const appService = req.appService as AppService;
@@ -214,9 +214,9 @@ routerAuth.post('/token/access',
 );
 
 
-/////////////////////////////// /auth/token/access ///////////////////////////////
+/////////////////////////////// /auth/refreshtoken ///////////////////////////////
 
-routerAuth.post('/token/refresh',
+routerAuth.post('/refreshtoken',
     asyncHandler(passportInit),
     passport.authenticate('jwt', { session: false }),
     asyncHandler(async (req: any, res: any, next: any) => {

@@ -9,10 +9,12 @@ import fs from 'fs';
 
 
 /////////////////////////////////  confirm //////////////////////////////////
-export const routerUserConfirm = express.Router();
+export const routerUserEmailConfirm = express.Router();
 //user/confirm
-routerUserConfirm.post('/email/:key', asyncHandler(async (req: any, res: any, next: any) => {
-    const key = req.params.key;
+routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: any) => {
+    const key = req.query.key;
+    if (!key)
+        throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs key argument");
 
     logger.info(`user confirm with key: ${key}`);
     const appService = req.appService as AppService;
@@ -74,7 +76,7 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
         return res.status(200).json({ result: true });
     }
     const key = Util.createRandomHash(48);
-    const link = `${req.baseHost}/user/resetpass/${key}`
+    const link = `${req.baseHost}/user/resetpass?key=${key}`
     await redisService.set(`user_resetpass_${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
 
     const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
@@ -93,16 +95,17 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
 export const routerUserResetPassword = express.Router();
 
 
-routerUserResetPassword.post('/:key', asyncHandler(async (req: any, res: any, next: any) => {
+routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: any) => {
 
     const pass = req.body.pass;
-    if (!pass) {
-        logger.error(`reset password pass parameter absent`);
+    const key = req.body.key;
+    if (!pass || !key) {
+        logger.error(`reset password pass parameter absent or key absent`);
         throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs pass parameter");
     }
 
 
-    const key = req.params.key;
+
     const rkey = `user_resetpass_${key}`;
     logger.info(`reset password with key: ${key} `)
     const appService = req.appService as AppService;

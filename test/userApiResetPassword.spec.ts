@@ -46,7 +46,8 @@ describe.skip('userApiResetPassword', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/resetpass/deneme')
+                .post('/user/resetpass')
+                .send({ key: 'deneme' })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -64,8 +65,8 @@ describe.skip('userApiResetPassword', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/resetpass/denememe')
-                .send({ pass: 'somepassDea1321' })
+                .post('/user/resetpass')
+                .send({ pass: 'somepassDea1321', key: 'denememe' })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -82,8 +83,8 @@ describe.skip('userApiResetPassword', async () => {
         await appService.configService.saveUser(user);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/resetpass/denememe')
-                .send({ pass: 'somepass' })
+                .post('/user/resetpass')
+                .send({ pass: 'somepass', key: 'denememe' })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -103,8 +104,8 @@ describe.skip('userApiResetPassword', async () => {
         await appService.redisService.set(`user_resetpass_deneme`, 'someid2');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/resetpass/deneme')
-                .send({ pass: 'somePas232323' })
+                .post('/user/resetpass')
+                .send({ pass: 'somePas232323', key: 'deneme' })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -122,8 +123,8 @@ describe.skip('userApiResetPassword', async () => {
         await appService.redisService.set(`user_resetpass_deneme`, 'someid');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/resetpass/deneme')
-                .send({ pass: 'deneSad223111' })
+                .post('/user/resetpass')
+                .send({ pass: 'deneSad223111', key: 'deneme' })
                 .end((err, res) => {
                     if (err)
                         reject(err);

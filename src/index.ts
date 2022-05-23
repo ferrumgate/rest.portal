@@ -2,7 +2,7 @@ import { assert } from "console";
 import { routerAuth } from "./api/authApi";
 import { routerConfig } from "./api/configApi";
 import { routerRegister } from "./api/registerApi";
-import { routerUserConfirm, routerUserForgotPassword, routerUserResetPassword } from "./api/userApi";
+import { routerUserEmailConfirm, routerUserForgotPassword, routerUserResetPassword } from "./api/userApi";
 import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "./common";
 import { ErrorCodes, RestfullException } from "./restfullException";
 import { AppService } from "./service/appService";
@@ -92,7 +92,7 @@ app.use('(\/api)?/register',
     routerRegister);
 
 
-app.use('(\/api)?/user/confirm',
+app.use('(\/api)?/user/emailconfirm',
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
     asyncHandlerWithArgs(rateLimit, 'userConfirm', 10),
@@ -100,7 +100,7 @@ app.use('(\/api)?/user/confirm',
     asyncHandlerWithArgs(rateLimit, 'userConfirmDay', 1000),
     asyncHandlerWithArgs(checkCaptcha, 'userConfirmCaptcha', 5),
     asyncHandler(noAuthentication),
-    routerUserConfirm);
+    routerUserEmailConfirm);
 
 
 app.use('(\/api)?/user/forgotpass',
