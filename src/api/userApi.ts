@@ -12,7 +12,7 @@ import fs from 'fs';
 export const routerUserEmailConfirm = express.Router();
 //user/confirm
 routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: any) => {
-    const key = req.query.key;
+    const key = req.body.key;
     if (!key)
         throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs key argument");
 
