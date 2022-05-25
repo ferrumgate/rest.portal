@@ -62,6 +62,7 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
     const emailService = appService.emailService;
 
     logger.info(`forgot password with email ${email}`);
+    //this is security check if input is not valid email then throw exception
     await inputService.checkEmail(email);
 
     const userDb = await configService.getUserByEmail(email);
@@ -70,11 +71,11 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
         logger.error(`forgot password no user found with email ${email}`);
         return res.status(200).json({ result: true });
     }
-    if (userDb.source != 'local') {
+    /* if (userDb.source != 'local') {
         //security check only local users can forgot password
         logger.error(`forgot password user is not local with email ${email}`);
         return res.status(200).json({ result: true });
-    }
+    } */
     const key = Util.createRandomHash(48);
     const link = `${req.baseHost}/user/resetpass?key=${key}`
     await redisService.set(`user_resetpass_${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
@@ -128,12 +129,11 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
         throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
     }
 
-    if (user.source != 'local') {
+    /* if (user.source != 'local') {
         //security check only local users can reset password
         logger.fatal(`reset password user is not local with userId: ${userId}`);
         throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
-    }
-
+    }*/
 
     user.password = Util.bcryptHash(pass);
     await configService.saveUser(user);
