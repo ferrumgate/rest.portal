@@ -11,6 +11,7 @@ import { SSLCertificate } from "../model/sslCertificate";
 import { SSHCertificate } from "../model/sshCertificate";
 import { ErrorCodes, RestfullException } from "../restfullException";
 import { AuthOption } from "../model/authOption";
+import { RBAC, RBACDefault, Role } from "../model/rbac";
 
 
 
@@ -43,6 +44,10 @@ export class ConfigService {
             },
             logo: {},
             auth: {},
+            rbac: {
+                roles: [RBACDefault.roleAdmin, RBACDefault.roleReporter, RBACDefault.roleUser],
+                rights: [RBACDefault.rightAdmin, RBACDefault.rightReporter, RBACDefault.rightUser]
+            }
 
         }
         //for testing
@@ -129,6 +134,7 @@ export class ConfigService {
         delete user?.apiKey;
         delete user?.twoFASecret;
         delete user?.password;
+        delete user?.roleIds;
     }
     async getUserByEmail(email: string): Promise<User | undefined> {
         let user = Util.clone(this.config.users.find(x => x.email == email));
@@ -280,4 +286,39 @@ export class ConfigService {
         this.config.url = url;
         await this.saveConfigToFile();
     }
+
+    async getRBAC(): Promise<RBAC> {
+        return Util.clone(this.config.rbac);
+    }
+    /**
+     * @summary save or update role
+     * @param role 
+     * @remark this is implemented but not used, because we dont need it I think
+     * lets think more about this functionality
+     * I did not implement a test code for this
+     */
+    /*  async setRBAC(role: Role) {
+         const cloned = Util.clone(role) as Role;
+         //security check, one one can add default admin rights to any role
+         if (RBACDefault.systemRoleIds.includes(cloned.id)) {
+             logger.error(`no one can use default role id: ${cloned.id}`);
+             throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'role id problem')
+         }
+         if (RBACDefault.systemRightIds.find(x => cloned.rightIds?.includes(x))) {
+             logger.error(`no one can use default right id: ${cloned.id}`);
+             throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'right id problem')
+         }
+         if (cloned.rightIds) {
+             //only defined right ids
+             cloned.rightIds = cloned.rightIds.filter(x => RBACDefault.rightIds.includes(x));
+         }
+         const finded = this.config.rbac.roles.find(x => x.id == cloned.id);
+         if (finded) {
+             finded.name = cloned.name;
+             finded.rightIds = cloned.rightIds;
+         } else
+             this.config.rbac.roles.push(role);
+         await this.saveConfigToFile();
+ 
+     } */
 }

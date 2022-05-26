@@ -32,7 +32,8 @@ describe('authApi ', async () => {
         is2FA: true,
         twoFASecret: twofactor.generateSecret().secret,
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
+        roleIds: []
 
     }
 
@@ -46,7 +47,8 @@ describe('authApi ', async () => {
         isVerified: true,
         isLocked: false,
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
+        roleIds: []
     }
     before(async () => {
         if (fs.existsSync('/tmp/config.yaml'))
@@ -131,7 +133,8 @@ describe('authApi ', async () => {
             isLocked: false,
             is2FA: true,
             insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
+            updateDate: new Date().toISOString(),
+            roleIds: []
 
         }
         await configService.saveUser(user5);
@@ -167,7 +170,8 @@ describe('authApi ', async () => {
             is2FA: true,
             apiKey: 'test',
             insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
+            updateDate: new Date().toISOString(),
+            roleIds: []
 
         }
         await configService.saveUser(user5);
@@ -204,7 +208,8 @@ describe('authApi ', async () => {
             isLocked: true,
             is2FA: true,
             insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
+            updateDate: new Date().toISOString(),
+            roleIds: []
 
         }
         await configService.saveUser(user6);

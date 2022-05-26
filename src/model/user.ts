@@ -1,3 +1,4 @@
+import { Role } from "./rbac";
 
 export interface User {
     id: string;
@@ -15,6 +16,7 @@ export interface User {
     updateDate: string;
     isOnlyApiKey?: boolean;
     apiKey?: string;
+    roleIds?: string[];
 
 }
 
