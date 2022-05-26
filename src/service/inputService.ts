@@ -10,6 +10,10 @@ import { ErrorCodes, RestfullException } from '../restfullException';
  */
 export class InputService {
     checkEmail(email: string) {
+        if (!email)
+            throw new RestfullException(400, ErrorCodes.ErrEmailIsInvalid, 'email is invalid');
+        if (!email.trim())
+            throw new RestfullException(400, ErrorCodes.ErrEmailIsInvalid, 'email is invalid');
         if (!emailValidator.validate(email))
             throw new RestfullException(400, ErrorCodes.ErrEmailIsInvalid, 'email is invalid');
 

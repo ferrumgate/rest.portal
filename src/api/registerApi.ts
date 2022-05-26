@@ -24,7 +24,7 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
 
 
     inputService.checkPasswordPolicy(userInput.password);
-    inputService.checkEmail(userInput.email);
+    inputService.checkEmail(userInput.email);//important we need to check
     logger.info(`someone is registering from ${req.clientIp} with email: ${userInput.email}`);
     const userDb = await configService.getUserByEmail(userInput.email);
     if (userDb) {
@@ -47,6 +47,7 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     let userSave: User = HelperService.createUser('local',
         userInput.email,
         userInput.name || userInput.email.substr(0, userInput.email.indexOf('@')),
+        '',
         userInput.password);
 
 

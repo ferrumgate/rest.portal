@@ -25,7 +25,9 @@ export function localInit() {
                 const redisService = appService.redisService;
                 if (!username || !password)
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
-                const user = await configService.getUserByEmailAndPass(username, password);
+                let user = await configService.getUserByEmailAndPass(username, password);
+                if (!user)
+                    user = await configService.getUserByUsernameAndPass(username, password);
                 await HelperService.isValidUser(user);
                 //set user to request object
                 req.currentUser = user;

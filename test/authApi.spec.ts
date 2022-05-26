@@ -193,6 +193,96 @@ describe('authApi ', async () => {
 
     }).timeout(50000);
 
+    it('POST /auth/local with result 200 and username', async () => {
+
+        const user5: User = {
+            email: '',
+            username: 'hx\\domain',
+            groupIds: [],
+            id: 'someid',
+            name: 'hamza',
+            password: Util.bcryptHash('somepass'),
+            source: 'local',
+            isVerified: true,
+            isLocked: false,
+            is2FA: true,
+            apiKey: 'test',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            roleIds: []
+
+        }
+        await configService.saveUser(user5);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/local')
+                .send({ username: 'hx\\domain', password: 'somepass' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+
+
+    }).timeout(50000);
+
+    it('POST /auth/local with result 401 with empty username', async () => {
+
+        const user5: User = {
+            email: '',
+            username: '',
+            groupIds: [],
+            id: 'someid',
+            name: 'hamza',
+            password: Util.bcryptHash('somepass'),
+            source: 'local',
+            isVerified: true,
+            isLocked: false,
+            is2FA: true,
+            apiKey: 'test',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            roleIds: []
+
+        }
+        await configService.saveUser(user5);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/local')
+                .send({ username: '', password: 'somepass' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/local')
+                .send({ username: ' ', password: 'somepass' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(401);
+
+
+    }).timeout(50000);
+
 
 
     it('POST /auth/local with result 401', async () => {
@@ -230,6 +320,7 @@ describe('authApi ', async () => {
 
 
     }).timeout(50000);
+
 
 
 

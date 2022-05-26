@@ -28,7 +28,7 @@ export function googleInit(authOption: AuthOption, url: string) {
 
                 let user = await configService.getUserByEmail(email);
                 if (!user) {
-                    let userSave: User = HelperService.createUser('google', email, name);
+                    let userSave: User = HelperService.createUser('google', email, name, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
 

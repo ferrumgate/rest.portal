@@ -12,6 +12,7 @@ import { SSHCertificate } from "../model/sshCertificate";
 import { ErrorCodes, RestfullException } from "../restfullException";
 import { AuthOption } from "../model/authOption";
 import { RBAC, RBACDefault, Role } from "../model/rbac";
+import { HelperService } from "./helperService";
 
 
 
@@ -32,7 +33,7 @@ export class ConfigService {
         if (configFile)
             this.configfile = configFile;
         this.config = {
-            users: [],
+            users: [HelperService.createUser('default', '', 'default admin', 'admin', 'ferrumgate')],
             captcha: {},
             sshCertificate: {},
             sslCertificate: {},
@@ -137,7 +138,14 @@ export class ConfigService {
         delete user?.roleIds;
     }
     async getUserByEmail(email: string): Promise<User | undefined> {
+        if (!email) return undefined;
         let user = Util.clone(this.config.users.find(x => x.email == email));
+        this.deleteUserSensitiveData(user);
+        return user;
+    }
+    async getUserByUsername(username: string): Promise<User | undefined> {
+        if (!username) return undefined;
+        let user = Util.clone(this.config.users.find(x => x.username == username));
         this.deleteUserSensitiveData(user);
         return user;
     }
@@ -152,8 +160,24 @@ export class ConfigService {
         return user;
     }
     async getUserByEmailAndPass(email: string, pass: string): Promise<User | undefined> {
+        if (!email) return undefined;
+        if (!email.trim()) return undefined;
         let user = this.config.users
             .find(x => x.email == email);
+
+        if (user && Util.bcryptCompare(pass, user.password || '')) {
+            let cloned = Util.clone(user);
+            this.deleteUserSensitiveData(cloned);
+            return cloned;
+        }
+        return undefined;
+
+    }
+    async getUserByUsernameAndPass(username: string, pass: string): Promise<User | undefined> {
+        if (!username) return undefined;
+        if (!username.trim()) return undefined;
+        let user = this.config.users
+            .find(x => x.username == username);
 
         if (user && Util.bcryptCompare(pass, user.password || '')) {
             let cloned = Util.clone(user);
