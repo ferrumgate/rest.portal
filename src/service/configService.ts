@@ -11,6 +11,8 @@ import { SSLCertificate } from "../model/sslCertificate";
 import { SSHCertificate } from "../model/sshCertificate";
 import { ErrorCodes, RestfullException } from "../restfullException";
 import { AuthOption } from "../model/authOption";
+import { RBAC, RBACDefault, Role } from "../model/rbac";
+import { HelperService } from "./helperService";
 
 
 
@@ -31,7 +33,7 @@ export class ConfigService {
         if (configFile)
             this.configfile = configFile;
         this.config = {
-            users: [],
+            users: [HelperService.createUser('default', '', 'default admin', 'admin', 'ferrumgate')],
             captcha: {},
             sshCertificate: {},
             sslCertificate: {},
@@ -43,6 +45,10 @@ export class ConfigService {
             },
             logo: {},
             auth: {},
+            rbac: {
+                roles: [RBACDefault.roleAdmin, RBACDefault.roleReporter, RBACDefault.roleUser],
+                rights: [RBACDefault.rightAdmin, RBACDefault.rightReporter, RBACDefault.rightUser]
+            }
 
         }
         //for testing
@@ -129,9 +135,17 @@ export class ConfigService {
         delete user?.apiKey;
         delete user?.twoFASecret;
         delete user?.password;
+        delete user?.roleIds;
     }
     async getUserByEmail(email: string): Promise<User | undefined> {
+        if (!email) return undefined;
         let user = Util.clone(this.config.users.find(x => x.email == email));
+        this.deleteUserSensitiveData(user);
+        return user;
+    }
+    async getUserByUsername(username: string): Promise<User | undefined> {
+        if (!username) return undefined;
+        let user = Util.clone(this.config.users.find(x => x.username == username));
         this.deleteUserSensitiveData(user);
         return user;
     }
@@ -146,8 +160,24 @@ export class ConfigService {
         return user;
     }
     async getUserByEmailAndPass(email: string, pass: string): Promise<User | undefined> {
+        if (!email) return undefined;
+        if (!email.trim()) return undefined;
         let user = this.config.users
             .find(x => x.email == email);
+
+        if (user && Util.bcryptCompare(pass, user.password || '')) {
+            let cloned = Util.clone(user);
+            this.deleteUserSensitiveData(cloned);
+            return cloned;
+        }
+        return undefined;
+
+    }
+    async getUserByUsernameAndPass(username: string, pass: string): Promise<User | undefined> {
+        if (!username) return undefined;
+        if (!username.trim()) return undefined;
+        let user = this.config.users
+            .find(x => x.username == username);
 
         if (user && Util.bcryptCompare(pass, user.password || '')) {
             let cloned = Util.clone(user);
@@ -280,4 +310,39 @@ export class ConfigService {
         this.config.url = url;
         await this.saveConfigToFile();
     }
+
+    async getRBAC(): Promise<RBAC> {
+        return Util.clone(this.config.rbac);
+    }
+    /**
+     * @summary save or update role
+     * @param role 
+     * @remark this is implemented but not used, because we dont need it I think
+     * lets think more about this functionality
+     * I did not implement a test code for this
+     */
+    /*  async setRBAC(role: Role) {
+         const cloned = Util.clone(role) as Role;
+         //security check, one one can add default admin rights to any role
+         if (RBACDefault.systemRoleIds.includes(cloned.id)) {
+             logger.error(`no one can use default role id: ${cloned.id}`);
+             throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'role id problem')
+         }
+         if (RBACDefault.systemRightIds.find(x => cloned.rightIds?.includes(x))) {
+             logger.error(`no one can use default right id: ${cloned.id}`);
+             throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'right id problem')
+         }
+         if (cloned.rightIds) {
+             //only defined right ids
+             cloned.rightIds = cloned.rightIds.filter(x => RBACDefault.rightIds.includes(x));
+         }
+         const finded = this.config.rbac.roles.find(x => x.id == cloned.id);
+         if (finded) {
+             finded.name = cloned.name;
+             finded.rightIds = cloned.rightIds;
+         } else
+             this.config.rbac.roles.push(role);
+         await this.saveConfigToFile();
+ 
+     } */
 }

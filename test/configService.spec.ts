@@ -57,7 +57,8 @@ describe('configService', async () => {
         expect(fs.existsSync(filename));
 
         let result = configService.loadConfigFromFile();
-        expect(configService.config.users[0].id).to.equal('someid2');
+        //default user added
+        expect(configService.config.users[1].id).to.equal('someid2');
 
     });
 

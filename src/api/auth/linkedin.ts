@@ -28,7 +28,7 @@ export function linkedinInit(authOption: AuthOption, url: string) {
 
                 let user = await configService.getUserByEmail(email);
                 if (!user) {
-                    let userSave: User = HelperService.createUser('linkedin', email, name);
+                    let userSave: User = HelperService.createUser('linkedin', email, name, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
 

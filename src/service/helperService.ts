@@ -2,12 +2,14 @@ import { User } from "../model/user";
 import { Util } from "../util";
 import *  as twofactor from 'node-2fa';
 import { ErrorCodes, RestfullException } from "../restfullException";
+import { RBACDefault } from "../model/rbac";
 
 export class HelperService {
-    static createUser(source: string, email: string, name: string, password?: string) {
+    static createUser(source: string, email: string, name: string, username: string, password?: string) {
         const user: User = {
             source: source,
             email: email,
+            username: username,
             id: Util.randomNumberString(16),
             name: name,
             isLocked: false,
@@ -17,7 +19,8 @@ export class HelperService {
             is2FA: false,
             twoFASecret: twofactor.generateSecret().secret,
             insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
+            updateDate: new Date().toISOString(),
+            roleIds: [RBACDefault.roleUser.id]//every user is with Role User
         }
 
         return user;
