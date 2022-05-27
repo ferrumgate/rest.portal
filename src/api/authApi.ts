@@ -13,40 +13,13 @@ import { linkedinInit } from "./auth/linkedin";
 import { HelperService } from "../service/helperService";
 import { apiKeyInit } from "./auth/apikey";
 import { jwtInit } from "./auth/jwt";
+import { passportInit } from "./auth/passportInit";
 
 
 
 
 
-// check if config changed
-let lastConfigServiceUpdateTime = '';
-async function passportInit(req: any, res: any, next: any) {
 
-    const configService = (req.appService as AppService).configService;
-    if (configService.lastUpdateTime != lastConfigServiceUpdateTime) {//if config changed
-        const auth = await configService.getAuthOption();
-        const domain = await configService.getDomain();
-        const url = await configService.getUrl();
-
-        //init local 
-        localInit();
-        //init apikey
-        apiKeyInit();
-        //init jwt verification
-        jwtInit();
-        // init google
-        if (auth.google) {
-            googleInit(auth, url);
-        }
-        // init linkedin
-        if (auth.linkedin) {
-            linkedinInit(auth, url);
-        }
-        lastConfigServiceUpdateTime = configService.lastUpdateTime;
-
-    }
-    next();
-}
 
 export const routerAuth = express.Router();
 async function execute2FA(req: any) {
