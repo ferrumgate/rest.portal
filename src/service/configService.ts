@@ -150,6 +150,7 @@ export class ConfigService {
         return user;
     }
     async getUserByApiKey(key: string): Promise<User | undefined> {
+        if (!key) return undefined;
         let user = Util.clone(this.config.users.find(x => x.apiKey == key));
         this.deleteUserSensitiveData(user);
         return user;
@@ -173,6 +174,11 @@ export class ConfigService {
         return undefined;
 
     }
+    async getUserRoles(user: User) {
+        const rbac = await this.getRBAC();
+        const sensitiveData = await this.getUserSensitiveData(user.id);
+        return RBACDefault.convert2RoleList(rbac, sensitiveData.roleIds);
+    }
     async getUserByUsernameAndPass(username: string, pass: string): Promise<User | undefined> {
         if (!username) return undefined;
         if (!username.trim()) return undefined;
@@ -189,7 +195,7 @@ export class ConfigService {
     }
     async getUserSensitiveData(id: string) {
         let user = Util.clone(this.config.users.find(x => x.id == id)) as User;
-        return { twoFASecret: user?.twoFASecret };
+        return { twoFASecret: user?.twoFASecret, roleIds: user.roleIds };
     }
     async saveUser(user: User) {
         let cloned = Util.clone(user);

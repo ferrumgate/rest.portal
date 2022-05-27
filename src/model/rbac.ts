@@ -1,7 +1,10 @@
+import { Util } from "../util";
+
 export interface Role {
     id: string;
     name: string;
     rightIds?: string[];
+    [key: string]: any;
 }
 
 export interface Right {
@@ -26,6 +29,7 @@ export class RBACDefault {
     static rightUser: Right = { id: 'User', name: 'User' };
 
 
+
     // new rights here
     static rightIds: string[] = [];
 
@@ -35,11 +39,13 @@ export class RBACDefault {
      * @summary system defined role ids
      */
     static systemRoleIds = ['Admin', 'Reporter', 'User'];
-    static roleAdmin: Role = { id: 'Admin', name: 'Admin', rightIds: [this.rightAdmin.id, this.rightReporter.id, this.rightUser.id] };
-    static roleReporter: Role = { id: 'Reporter', name: 'Reporter', rightIds: [this.rightReporter.id, this.rightUser.id] };
+    static roleAdmin: Role = { id: 'Admin', name: 'Admin', rightIds: [this.rightAdmin.id] };
+    static roleReporter: Role = { id: 'Reporter', name: 'Reporter', rightIds: [this.rightReporter.id] };
     static roleUser: Role = { id: 'User', name: 'User', rightIds: [this.rightUser.id] };
 
-    static convert2RightList(rbac: RBAC, roleIds: string[]) {
+
+    static convert2RightList(rbac: RBAC, roleIds?: string[]) {
+        if (!roleIds) return [];
         const distinctList = new Set();
         const roles = rbac.roles.filter(x => roleIds.includes(x.id));
         roles.forEach(y => {
@@ -51,7 +57,17 @@ export class RBACDefault {
             if (right)
                 rights.push(right);
         })
-        return rights;
+        return Util.clone(rights) as Right[];
+    }
+
+    static convert2RoleList(rbac: RBAC, roleIds?: string[]) {
+        if (!roleIds) return [];
+        const rbacCloned = Util.clone(rbac) as RBAC;
+        const roles = rbacCloned.roles.filter(x => roleIds.includes(x.id));
+        roles.forEach(y => {
+            y.rights = rbacCloned.rights.filter(x => y.rightIds?.includes(x.id));
+        })
+        return roles;
     }
 
 }

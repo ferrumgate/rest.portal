@@ -2,12 +2,13 @@ import { assert } from "console";
 import { routerAuth } from "./api/authApi";
 import { routerConfig } from "./api/configApi";
 import { routerRegister } from "./api/registerApi";
-import { routerUserEmailConfirm, routerUserForgotPassword, routerUserResetPassword } from "./api/userApi";
+import { routerUserAuthenticated, routerUserEmailConfirm, routerUserForgotPassword, routerUserResetPassword } from "./api/userApi";
 import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "./common";
 import { ErrorCodes, RestfullException } from "./restfullException";
 import { AppService } from "./service/appService";
 import { Util } from "./util";
 import * as helmet from 'helmet';
+import passport from "passport";
 
 
 const bodyParser = require('body-parser');
@@ -124,6 +125,15 @@ app.use('(\/api)?/user/resetpass',
     routerUserResetPassword);
 
 
+app.use('(\/api)?/user',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'user', 1000),
+    asyncHandlerWithArgs(rateLimit, 'user', 10000),
+    asyncHandlerWithArgs(rateLimit, 'user', 100000),
+    routerUserAuthenticated);
+
+
 app.use('(\/api)?/auth',
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
@@ -157,14 +167,13 @@ app.use(globalErrorHandler);
 
 app.start = function () {
 
+
     app.listen(port, () => {
         logger.info('service started on ', port);
     })
 }
 
 app.start();
-
-
 
 
 

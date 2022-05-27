@@ -5,6 +5,10 @@ import { AppService } from "../service/appService";
 import { User } from "../model/user";
 import { Util } from "../util";
 import fs from 'fs';
+import { passportInit } from "./auth/passportInit";
+import passport from "passport";
+import { RBACDefault } from "../model/rbac";
+import { config } from "process";
 
 
 
@@ -142,4 +146,33 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
     return res.status(200).json({ result: true });
 
 }))
+
+
+//////////////////////////////// authenticated user /////////////////////
+/////////////////////////////// current user ////////////////////////////
+
+export const routerUserAuthenticated = express.Router();
+
+routerUserAuthenticated.get('/current',
+    asyncHandler(passportInit),
+    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const user = req.currentUser as User;
+
+        const roles = await configService.getUserRoles(user);
+        //send min data for security
+        return res.status(200).json(
+            {
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                is2FA: user.is2FA,
+                roles: roles
+            });
+    })
+);
+
 
