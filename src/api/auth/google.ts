@@ -26,14 +26,14 @@ export function googleInit(authOption: AuthOption, url: string) {
                 const configService = appService.configService;
                 const redisService = appService.redisService;
 
-                let user = await configService.getUserByEmail(email);
+                let user = await configService.getUserByUsername(email);
                 if (!user) {
                     let userSave: User = HelperService.createUser('google', email, name, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
 
                 }
-                user = await configService.getUserByEmail(email);
+                user = await configService.getUserByUsername(email);
                 //set user to request object
                 req.currentUser = user;
                 return done(null, user);

@@ -17,7 +17,7 @@ describe.skip('userApiForgotPassword', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
     const user: User = {
-        email: 'hamza@ferrumgate.com',
+        username: 'hamza@ferrumgate.com',
         groupIds: [],
         id: 'someid',
         name: 'hamza',
@@ -65,7 +65,7 @@ describe.skip('userApiForgotPassword', async () => {
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/user/forgotpass')
-                .send({ email: 'deneme@ferrumgate.com' })
+                .send({ username: 'deneme@ferrumgate.com' })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -86,7 +86,7 @@ describe.skip('userApiForgotPassword', async () => {
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/user/forgotpass')
-                .send({ email: user.email })
+                .send({ username: user.username })
                 .end((err, res) => {
                     if (err)
                         reject(err);

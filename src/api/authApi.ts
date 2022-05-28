@@ -52,7 +52,7 @@ routerAuth.post('/local',
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
-        logger.info(`authenticated user: ${currentUser.email}`);
+        logger.info(`authenticated user: ${currentUser.username}`);
         const two2FA = await execute2FA(req);
         return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false });
     })
@@ -69,7 +69,7 @@ routerAuth.use('/google/callback',
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
-        logger.info(`authenticated user: ${currentUser.email}`);
+        logger.info(`authenticated user: ${currentUser.username}`);
         const two2FA = await execute2FA(req);
         return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false });
     })
@@ -95,7 +95,7 @@ routerAuth.use('/linkedin/callback',
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
-        logger.info(`authenticated user: ${currentUser.email}`);
+        logger.info(`authenticated user: ${currentUser.username}`);
         const two2FA = await execute2FA(req);
         return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false });
     })

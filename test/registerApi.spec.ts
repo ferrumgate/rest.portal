@@ -13,7 +13,7 @@ const expect = chai.expect;
 
 
 
-describe.skip('registerApi', async () => {
+describe('registerApi', async () => {
     const appService = app.appService as AppService;
 
     before(async () => {
@@ -51,7 +51,7 @@ describe.skip('registerApi', async () => {
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/register')
-                .send({ name: "test", email: "hamza@hamzakilic.com", password: "passDeneme122" })
+                .send({ name: "test", username: "hamza@hamzakilic.com", password: "passDeneme122" })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -67,7 +67,7 @@ describe.skip('registerApi', async () => {
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/register')
-                .send({ name: "test", email: "hamza@hamzakilic", password: "passDene12321" })
+                .send({ name: "test", username: "hamza@hamzakilic", password: "passDene12321" })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -82,7 +82,7 @@ describe.skip('registerApi', async () => {
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/register')
-                .send({ name: "test", email: "hamza@hamzakilic.com", password: "pass12321" })
+                .send({ name: "test", username: "hamza@hamzakilic.com", password: "pass12321" })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -97,11 +97,11 @@ describe.skip('registerApi', async () => {
     it('POST /register will return 200 because allready user exits, will send a reset password email', async () => {
         //we must send right paramters
 
-        appService.configService.config.users.push({ email: 'hamza@hamzakilic.com' } as User);
+        appService.configService.config.users.push({ username: 'hamza@hamzakilic.com' } as User);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/register')
-                .send({ name: "test", email: "hamza@hamzakilic.com", password: "passDe121ad!!" })
+                .send({ name: "test", username: "hamza@hamzakilic.com", password: "passDe121ad!!" })
                 .end((err, res) => {
                     if (err)
                         reject(err);

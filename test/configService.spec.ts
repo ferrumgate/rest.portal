@@ -26,7 +26,7 @@ describe('configService', async () => {
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         let aUser: User = {
             id: 'someid',
-            email: 'hamza.kilic@ferrumgate.com',
+            username: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
             password: 'passwordWithHash', groupIds: [],
             insertDate: new Date().toISOString(),
@@ -45,7 +45,7 @@ describe('configService', async () => {
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         let aUser: User = {
             id: 'someid2',
-            email: 'hamza.kilic@ferrumgate.com',
+            username: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
             password: 'passwordWithHash', groupIds: [],
             insertDate: new Date().toISOString(),
@@ -68,7 +68,7 @@ describe('configService', async () => {
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         let aUser: User = {
             id: 'someid',
-            email: 'hamza.kilic@ferrumgate.com',
+            username: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
             password: 'passwordWithHash', groupIds: [],
             insertDate: new Date().toISOString(),
@@ -89,7 +89,7 @@ describe('configService', async () => {
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         let aUser: User = {
             id: 'someid',
-            email: 'hamza.kilic@ferrumgate.com',
+            username: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
             password: 'passwordWithHash', groupIds: [],
             insertDate: new Date().toISOString(),
@@ -97,7 +97,7 @@ describe('configService', async () => {
         };
 
         configService.config.users.push(aUser);
-        const user = await configService.getUserByEmail('hamza.kilic@ferrumgate.com');
+        const user = await configService.getUserByUsername('hamza.kilic@ferrumgate.com');
         delete aUser.password;
         expect(user).to.deep.include(aUser);
 
@@ -109,7 +109,7 @@ describe('configService', async () => {
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         let aUser: User = {
             id: 'someid',
-            email: 'hamza.kilic@ferrumgate.com',
+            username: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
             password: Util.bcryptHash('passwordWithHash'), groupIds: [],
             insertDate: new Date().toISOString(),
@@ -117,11 +117,11 @@ describe('configService', async () => {
         };
 
         configService.config.users.push(aUser);
-        const user = await configService.getUserByEmailAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash');
+        const user = await configService.getUserByUsernameAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash');
         delete aUser.password;
         expect(user).to.deep.include(aUser);
 
-        const user2 = await configService.getUserByEmailAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash2');
+        const user2 = await configService.getUserByUsernameAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash2');
 
         expect(user2).to.be.undefined;
 
@@ -132,7 +132,7 @@ describe('configService', async () => {
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         let aUser: User = {
             id: 'someid',
-            email: 'hamza.kilic@ferrumgate.com',
+            username: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
             password: 'passwordWithHash', groupIds: [],
             insertDate: new Date().toISOString(),
@@ -151,7 +151,7 @@ describe('configService', async () => {
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         let aUser: User = {
             id: 'someid',
-            email: 'hamza.kilic@ferrumgate.com',
+            username: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
             password: 'passwordWithHash', groupIds: [],
             insertDate: new Date().toISOString(),
@@ -164,7 +164,7 @@ describe('configService', async () => {
         }
         fakeUser.id = 'test';
         await configService.saveUser(fakeUser);
-        const userDb = await configService.getUserByEmail('hamza.kilic@ferrumgate.com');
+        const userDb = await configService.getUserByUsername('hamza.kilic@ferrumgate.com');
         expect(userDb?.id).to.equal('someid');
 
     });
@@ -175,7 +175,7 @@ describe('configService', async () => {
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         let aUser: User = {
             id: '6hiryy8ujv3n',
-            email: 'hamza.kilic@ferrumgate.com',
+            username: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
             password: 'passwordWithHash', groupIds: [],
             apiKey: '1fviqq286bmcm',

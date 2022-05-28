@@ -14,9 +14,12 @@ export class InputService {
             throw new RestfullException(400, ErrorCodes.ErrEmailIsInvalid, 'email is invalid');
         if (!email.trim())
             throw new RestfullException(400, ErrorCodes.ErrEmailIsInvalid, 'email is invalid');
-        if (!emailValidator.validate(email))
+        if (!this.isEmail(email))
             throw new RestfullException(400, ErrorCodes.ErrEmailIsInvalid, 'email is invalid');
 
+    }
+    isEmail(email: string) {
+        return emailValidator.validate(email);
     }
     checkPasswordPolicy(pass: string) {
         const result = passwordStrength(pass);

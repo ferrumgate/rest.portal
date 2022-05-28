@@ -17,7 +17,7 @@ describe.skip('userApiConfirm', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
     const user: User = {
-        email: 'hamza@ferrumgate.com',
+        username: 'hamza@ferrumgate.com',
         groupIds: [],
         id: 'someid',
         name: 'hamza',
@@ -64,7 +64,7 @@ describe.skip('userApiConfirm', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/confirm?key=deneme')
+                .post('/user/emailconfirm?key=deneme')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -86,7 +86,7 @@ describe.skip('userApiConfirm', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/confirm?key=deneme')
+                .post('/user/emailconfirm?key=deneme')
                 .end((err, res) => {
                     if (err)
                         reject(err);
