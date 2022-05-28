@@ -16,7 +16,7 @@ import { config } from "process";
 export const routerUserEmailConfirm = express.Router();
 //user/confirm
 routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: any) => {
-    const key = req.body.key;
+    const key = req.query.key || req.body.key;
     if (!key)
         throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs key argument");
 
@@ -52,10 +52,10 @@ export const routerUserForgotPassword = express.Router();
 
 //user/forgotpass
 routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next: any) => {
-    const email = req.body.email;
+    const email = req.body.username || req.query.username;
     if (!email) {
         logger.error(`forgot password email parameter absent`);
-        throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs email parameter");
+        throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs username parameter");
     }
 
     const appService = req.appService as AppService;
@@ -69,7 +69,7 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
     //this is security check if input is not valid email then throw exception
     await inputService.checkEmail(email);
 
-    const userDb = await configService.getUserByEmail(email);
+    const userDb = await configService.getUserByUsername(email);
     if (!userDb) {
 
         logger.error(`forgot password no user found with email ${email}`);
@@ -88,9 +88,9 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
     const logo = `${req.baseHost}/dassets/img/${logoPath}`;
     const html = await templateService.createForgotPassword(userDb.name, link, logo);
     //fs.writeFileSync('/tmp/abc.html', html);
-    logger.info(`forgot password sending reset link to ${userDb.email}`);
+    logger.info(`forgot password sending reset link to ${userDb.username}`);
     //send reset link over email
-    await emailService.send({ to: userDb.email, subject: 'Reset your password', html: html });
+    await emailService.send({ to: userDb.username, subject: 'Reset your password', html: html });
     return res.status(200).json({ result: true });
 
 }))
@@ -132,16 +132,11 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
         logger.fatal(`reset password user not found with userId: ${userId}`);
         throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
     }
-
-    /* if (user.source != 'local') {
-        //security check only local users can reset password
-        logger.fatal(`reset password user is not local with userId: ${userId}`);
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
-    }*/
+    inputService.checkEmail(user.username);//username must be email, security barrier
 
     user.password = Util.bcryptHash(pass);
     await configService.saveUser(user);
-    logger.info(`reset password pass changed for ${user.email}`);
+    logger.info(`reset password pass changed for ${user.username}`);
     await redisService.delete(rkey);
     return res.status(200).json({ result: true });
 
@@ -168,7 +163,6 @@ routerUserAuthenticated.get('/current',
                 id: user.id,
                 name: user.name,
                 username: user.username,
-                email: user.email,
                 is2FA: user.is2FA,
                 roles: roles
             });

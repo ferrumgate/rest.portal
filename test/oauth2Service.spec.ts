@@ -25,7 +25,7 @@ describe('oauth2Service ', async () => {
     const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
     let aUser: User = {
         id: 'someid',
-        email: 'hamza.kilic@ferrumgate.com',
+        username: 'hamza.kilic@ferrumgate.com',
         name: 'test', source: 'local',
         password: 'passwordWithHash', groupIds: [],
         isLocked: false, isVerified: true,

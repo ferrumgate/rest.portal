@@ -21,7 +21,7 @@ describe('authApi ', async () => {
     const redisService = appService.redisService;
     const configService = appService.configService;
     const user: User = {
-        email: 'hamza@ferrumgate.com',
+        username: 'hamza@ferrumgate.com',
         groupIds: [],
         id: 'someid',
         name: 'hamza',
@@ -38,7 +38,7 @@ describe('authApi ', async () => {
     }
 
     const user2: User = {
-        email: 'hamza2@ferrumgate.com',
+        username: 'hamza2@ferrumgate.com',
         groupIds: [],
         id: 'someid',
         name: 'hamza',
@@ -123,7 +123,7 @@ describe('authApi ', async () => {
     it('POST /auth/local with result 401', async () => {
 
         const user5: User = {
-            email: 'hamza4@ferrumgate.com',
+            username: 'hamza4@ferrumgate.com',
             groupIds: [],
             id: 'someid',
             name: 'hamza',
@@ -159,7 +159,7 @@ describe('authApi ', async () => {
     it('POST /auth/local with result 200 and apikey', async () => {
 
         const user5: User = {
-            email: 'hamza4@ferrumgate.com',
+            username: 'hamza4@ferrumgate.com',
             groupIds: [],
             id: 'someid',
             name: 'hamza',
@@ -196,7 +196,6 @@ describe('authApi ', async () => {
     it('POST /auth/local with result 200 and username', async () => {
 
         const user5: User = {
-            email: '',
             username: 'hx\\domain',
             groupIds: [],
             id: 'someid',
@@ -271,7 +270,7 @@ describe('authApi ', async () => {
     it('POST /auth/local with result 401', async () => {
 
         const user6: User = {
-            email: 'hamza6@ferrumgate.com',
+            username: 'hamza6@ferrumgate.com',
             groupIds: [],
             id: 'someid',
             name: 'hamza',

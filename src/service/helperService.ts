@@ -5,10 +5,9 @@ import { ErrorCodes, RestfullException } from "../restfullException";
 import { RBACDefault } from "../model/rbac";
 
 export class HelperService {
-    static createUser(source: string, email: string, name: string, username: string, password?: string) {
+    static createUser(source: string, username: string, name: string, password?: string) {
         const user: User = {
             source: source,
-            email: email,
             username: username,
             id: Util.randomNumberString(16),
             name: name,

@@ -34,7 +34,7 @@ export class ConfigService {
             this.configfile = configFile;
         this.config = {
             users: [
-                HelperService.createUser('default', '', 'default admin', 'admin', 'ferrumgate'),
+                HelperService.createUser('default', 'admin', 'default admin', 'ferrumgate'),
 
             ],
             captcha: {},
@@ -74,13 +74,13 @@ export class ConfigService {
             this.config.sslCertificate.publicKey = fs.readFileSync(`./ferrumgate.com.crt`).toString();
             if (fs.existsSync('/tmp/config.yaml') && !process.env.LOCAL_TEST)
                 fs.rmSync('/tmp/config.yaml');
-            const adminUser = HelperService.createUser('local', 'hamza@hamzakilic.com', 'hamzaadmin', '', 'Deneme123');
+            const adminUser = HelperService.createUser('local', 'hamza@hamzakilic.com', 'hamzaadmin', 'Deneme123');
             adminUser.isLocked = false;
             adminUser.isVerified = true;
             adminUser.roleIds = ['Admin'];
             this.config.users.push(adminUser);
 
-            const standartUser = HelperService.createUser('local', 'hamzauser@hamzakilic.com', 'hamzauser', '', 'Deneme123');
+            const standartUser = HelperService.createUser('local', 'hamzauser@hamzakilic.com', 'hamzauser', 'Deneme123');
             standartUser.isLocked = false;
             standartUser.isVerified = true;
             standartUser.roleIds = ['User'];
@@ -152,12 +152,7 @@ export class ConfigService {
         delete user?.password;
         delete user?.roleIds;
     }
-    async getUserByEmail(email: string): Promise<User | undefined> {
-        if (!email) return undefined;
-        let user = Util.clone(this.config.users.find(x => x.email == email));
-        this.deleteUserSensitiveData(user);
-        return user;
-    }
+
     async getUserByUsername(username: string): Promise<User | undefined> {
         if (!username) return undefined;
         let user = Util.clone(this.config.users.find(x => x.username == username));
@@ -175,20 +170,7 @@ export class ConfigService {
         this.deleteUserSensitiveData(user);
         return user;
     }
-    async getUserByEmailAndPass(email: string, pass: string): Promise<User | undefined> {
-        if (!email) return undefined;
-        if (!email.trim()) return undefined;
-        let user = this.config.users
-            .find(x => x.email == email);
 
-        if (user && Util.bcryptCompare(pass, user.password || '')) {
-            let cloned = Util.clone(user);
-            this.deleteUserSensitiveData(cloned);
-            return cloned;
-        }
-        return undefined;
-
-    }
     async getUserRoles(user: User) {
         const rbac = await this.getRBAC();
         const sensitiveData = await this.getUserSensitiveData(user.id);
@@ -215,16 +197,8 @@ export class ConfigService {
     async saveUser(user: User) {
         let cloned = Util.clone(user);
         let finded: User | undefined = undefined;
-        //security bariers
-        if (!user.email && !user.username)
-            throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'user must have username or email');
-        //security bariers
-        if (user.email && user.username)
-            throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'user cannot have username and email at same time');
-        if (user.email)
-            finded = this.config.users.find(x => x.email == user.email);
-        if (user.username)
-            finded = this.config.users.find(x => x.username == user.username);
+
+        finded = this.config.users.find(x => x.username == user.username);
 
         if (!finded) {
             this.config.users.push(cloned);

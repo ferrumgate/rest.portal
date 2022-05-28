@@ -10,9 +10,9 @@ import { HelperService } from "../service/helperService";
 export const routerRegister = express.Router();
 
 routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
-    const userInput = req.body;
-    if (!userInput.email || !userInput.password)
-        throw new RestfullException(400, ErrorCodes.ErrBadArgument, "email and password required");
+    const userInput = req.body as { username: string, password: string, name?: string };
+    if (!userInput.username || !userInput.password)
+        throw new RestfullException(400, ErrorCodes.ErrBadArgument, "username and password required");
 
     const appService = req.appService as AppService;
     const configService = appService.configService;
@@ -24,11 +24,11 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
 
 
     inputService.checkPasswordPolicy(userInput.password);
-    inputService.checkEmail(userInput.email);//important we need to check
-    logger.info(`someone is registering from ${req.clientIp} with email: ${userInput.email}`);
-    const userDb = await configService.getUserByEmail(userInput.email);
+    inputService.checkEmail(userInput.username);//important we need to check,and this must be email
+    logger.info(`someone is registering from ${req.clientIp} with email: ${userInput.username}`);
+    const userDb = await configService.getUserByUsername(userInput.username);
     if (userDb) {
-        logger.info(`user email ${userDb.email} allready exits sending reset password link`);
+        logger.info(`user email ${userDb.username} allready exits sending reset password link`);
         //send change password link over email
 
         const key = Util.createRandomHash(48);
@@ -40,14 +40,13 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
         const html = await templateService.createForgotPassword(userDb.name, link, logo);
         //fs.writeFileSync('/tmp/abc.html', html);
         //send reset link over email
-        await emailService.send({ to: userDb.email, subject: 'Reset your password', html: html });
+        await emailService.send({ to: userDb.username, subject: 'Reset your password', html: html });
         return res.status(200).json({ result: true });
     }
-    logger.info(`someone is not exits on db with email ${userInput.email}`);
+    logger.info(`someone is not exits on db with email ${userInput.username}`);
     let userSave: User = HelperService.createUser('local',
-        userInput.email,
-        userInput.name || userInput.email.substr(0, userInput.email.indexOf('@')),
-        '',
+        userInput.username,
+        userInput.name || userInput.username.substr(0, userInput.username.indexOf('@')),
         userInput.password);
 
 
@@ -59,9 +58,9 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     const logo = `${req.baseHost}/dassets/img/${logoPath}`;
     const html = await templateService.createEmailConfirmation(userSave.name, link, logo);
     //fs.writeFileSync('/tmp/abc.html', html);
-    logger.info(`sending email confirm to ${userSave.email}`);
+    logger.info(`sending email confirm to ${userSave.username}`);
     //send confirmation link over email
-    await emailService.send({ to: userSave.email, subject: 'Verify your email', html: html })
+    await emailService.send({ to: userSave.username, subject: 'Verify your email', html: html })
     await configService.saveUser(userSave);
 
     return res.status(200).json({ result: true });

@@ -20,7 +20,7 @@ describe('userApiAuthenticated', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
     const user: User = {
-        email: 'hamza@ferrumgate.com',
+        username: 'hamza@ferrumgate.com',
         groupIds: [],
         id: 'someid',
         name: 'hamza',
