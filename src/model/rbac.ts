@@ -47,15 +47,17 @@ export class RBACDefault {
     static convert2RightList(rbac: RBAC, roleIds?: string[]) {
         if (!roleIds) return [];
         const distinctList = new Set();
-        const roles = rbac.roles.filter(x => roleIds.includes(x.id));
+        const rbacCloned = Util.clone(rbac) as RBAC;
+        const roles = rbacCloned.roles.filter(x => roleIds.includes(x.id));
         roles.forEach(y => {
             y.rightIds?.forEach(a => distinctList.add(a));
         })
         const rights: Right[] = [];
         distinctList.forEach(x => {
-            const right = rbac.rights.find(y => y.id == x);
-            if (right)
+            const right = rbacCloned.rights.find(y => y.id == x);
+            if (right) {
                 rights.push(right);
+            }
         })
         return Util.clone(rights) as Right[];
     }
@@ -66,6 +68,7 @@ export class RBACDefault {
         const roles = rbacCloned.roles.filter(x => roleIds.includes(x.id));
         roles.forEach(y => {
             y.rights = rbacCloned.rights.filter(x => y.rightIds?.includes(x.id));
+            delete y.rightIds;
         })
         return roles;
     }

@@ -233,24 +233,7 @@ describe('authApi ', async () => {
 
     it('POST /auth/local with result 401 with empty username', async () => {
 
-        const user5: User = {
-            email: '',
-            username: '',
-            groupIds: [],
-            id: 'someid',
-            name: 'hamza',
-            password: Util.bcryptHash('somepass'),
-            source: 'local',
-            isVerified: true,
-            isLocked: false,
-            is2FA: true,
-            apiKey: 'test',
-            insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString(),
-            roleIds: []
 
-        }
-        await configService.saveUser(user5);
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)

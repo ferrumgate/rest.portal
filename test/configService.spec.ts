@@ -58,7 +58,7 @@ describe('configService', async () => {
 
         let result = configService.loadConfigFromFile();
         //default user added
-        expect(configService.config.users[1].id).to.equal('someid2');
+        expect(configService.config.users.find(x => x.id === 'someid2')?.id).to.equal('someid2');
 
     });
 
