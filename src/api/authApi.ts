@@ -14,7 +14,8 @@ import { HelperService } from "../service/helperService";
 import { apiKeyInit } from "./auth/apikey";
 import { jwtInit } from "./auth/jwt";
 import { passportInit } from "./auth/passportInit";
-
+import cors from 'cors';
+import { corsOptionsDelegate } from "./cors";
 
 
 
@@ -74,6 +75,7 @@ routerAuth.use('/google/callback',
         return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false });
     })
 );
+
 
 routerAuth.get('/google',
     asyncHandler(passportInit),

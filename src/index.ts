@@ -8,7 +8,8 @@ import { ErrorCodes, RestfullException } from "./restfullException";
 import { AppService } from "./service/appService";
 import { Util } from "./util";
 import * as helmet from 'helmet';
-import passport from "passport";
+import cors from 'cors';
+import { corsOptionsDelegate } from "./api/cors";
 
 
 const bodyParser = require('body-parser');
@@ -27,6 +28,10 @@ app.appService = new AppService();
 //app.disable('x-powered-by');
 
 app.use(helmet.default());
+
+
+
+
 const setAppService = async (req: any, res: any, next: any) => {
     req.appService = app.appService;//important
     next();
@@ -72,7 +77,9 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 
 
+
 app.use("(\/api)?/test",
+    asyncHandler(cors(corsOptionsDelegate)),
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
     asyncHandlerWithArgs(rateLimit, 'test', 2),

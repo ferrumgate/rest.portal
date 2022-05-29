@@ -13,7 +13,7 @@ export function googleInit(authOption: AuthOption, url: string) {
     passport.use(new passportgoogle.Strategy({
         clientID: authOption.google?.clientID || '',
         clientSecret: authOption.google?.clientSecret || '',
-        callbackURL: `${url}/api/auth/google/callback`,
+        callbackURL: `${url}/login/callback/google`,
         passReqToCallback: true,
         scope: ['email', 'profile', 'openid'],
     },
@@ -33,7 +33,6 @@ export function googleInit(authOption: AuthOption, url: string) {
                     await configService.saveUser(userSave);
 
                 }
-                user = await configService.getUserByUsername(email);
                 //set user to request object
                 req.currentUser = user;
                 return done(null, user);

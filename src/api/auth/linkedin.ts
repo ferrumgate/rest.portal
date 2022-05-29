@@ -13,7 +13,7 @@ export function linkedinInit(authOption: AuthOption, url: string) {
     passport.use(new passportlinkedin.Strategy({
         clientID: authOption.linkedin?.clientID || '',
         clientSecret: authOption.linkedin?.clientSecret || '',
-        callbackURL: `${url}/api/auth/linkedin/callback`,
+        callbackURL: `${url}/login/callback/google`,
         passReqToCallback: true,
         scope: ['r_emailaddress', 'r_liteprofile'],
     },
@@ -33,7 +33,6 @@ export function linkedinInit(authOption: AuthOption, url: string) {
                     await configService.saveUser(userSave);
 
                 }
-                user = await configService.getUserByUsername(email);
                 //set user to request object
                 req.currentUser = user;
                 return done(null, user);

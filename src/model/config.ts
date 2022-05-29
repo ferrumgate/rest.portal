@@ -12,8 +12,13 @@ import { User } from "./user";
 export interface Config {
     /**
      * @summary domain for creating certificates
+     * @example ferrumgate.com
      */
     domain: string;
+    /**
+     * @summary web page serving adress
+     * @example http://local.ferrumgate.com
+     */
     url: string;
     auth: AuthOption,
     sslCertificate: SSLCertificate,

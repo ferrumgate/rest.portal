@@ -29,12 +29,17 @@ export class ConfigService {
     constructor(encryptKey: string, configFile?: string) {
         if (!encryptKey)
             throw new Error('needs and encyption key with lenght 32');
+        //default user
+        const adminUser = HelperService.createUser('default', 'admin', 'default admin', 'ferrumgate');
+        adminUser.isVerified = true;
+        adminUser.roleIds = ['Admin'];
+
         this.secretKey = encryptKey;
         if (configFile)
             this.configfile = configFile;
         this.config = {
             users: [
-                HelperService.createUser('default', 'admin', 'default admin', 'ferrumgate'),
+                adminUser
 
             ],
             captcha: {},
@@ -65,7 +70,7 @@ export class ConfigService {
                 clientSecret: '1E3DHw0FJFUsp1Um'
             }
             this.config.email = { fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' };
-            this.config.url = 'http://local.ferrumgate.com:8080';
+            this.config.url = 'http://localhost:4200';
             this.config.captcha = {
                 client: '6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH',
                 server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
