@@ -100,7 +100,7 @@ app.use('(\/api)?/register',
     routerRegister);
 
 
-app.use('(\/api)?/user/emailconfirm',
+app.use('(\/api)?/user/confirmemail',
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
     asyncHandlerWithArgs(rateLimit, 'userConfirm', 10),

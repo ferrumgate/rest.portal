@@ -36,14 +36,14 @@ describe.skip('userApiConfirm', async () => {
     })
 
 
-    it('POST /user/emailconfirm will return 200', async () => {
+    it('POST /user/confirmemail will return 200', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         await redisService.set('user_confirm_deneme', 'someid');
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/emailconfirm?key=deneme')
+                .post('/user/confirmemail?key=deneme')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -86,7 +86,7 @@ describe.skip('userApiConfirm', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/emailconfirm?key=deneme')
+                .post('/user/confirmemail?key=deneme')
                 .end((err, res) => {
                     if (err)
                         reject(err);

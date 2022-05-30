@@ -83,6 +83,7 @@ export class ConfigService {
             adminUser.isLocked = false;
             adminUser.isVerified = true;
             adminUser.roleIds = ['Admin'];
+            //adminUser.is2FA = true;
             this.config.users.push(adminUser);
 
             const standartUser = HelperService.createUser('local', 'hamzauser@hamzakilic.com', 'hamzauser', 'Deneme123');
