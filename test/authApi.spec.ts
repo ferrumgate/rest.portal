@@ -401,7 +401,7 @@ describe('authApi ', async () => {
 
     it('POST /authaccesstoken with result 200', async () => {
 
-        await redisService.set(`/access/test`, 'someid');
+        await redisService.set(`/auth/access/test`, 'someid');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/accesstoken')
@@ -422,9 +422,36 @@ describe('authApi ', async () => {
     }).timeout(50000);
 
 
+    it('POST /authaccesstoken with session parameter with result 200', async () => {
+
+        await redisService.set(`/auth/access/test`, 'someid');
+        await redisService.hset(`/session/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100' });
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/accesstoken')
+                .send({ key: 'test', session: 'testsession' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.accessToken).exist;
+        expect(response.body.refreshToken).exist;
+
+        const retVAl = await redisService.hgetAll('/session/testsession');
+        expect(retVAl.assignedClientIp).exist;
+
+
+    }).timeout(50000);
+
+
     it('POST /auth/refreshtoken with result 200', async () => {
 
-        await redisService.set(`/access/test`, 'someid');
+        await redisService.set(`/auth/access/test`, 'someid');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/accesstoken')
@@ -465,7 +492,7 @@ describe('authApi ', async () => {
 
     it('POST /auth/token/test with result 200', async () => {
 
-        await redisService.set(`/access/test`, 'someid');
+        await redisService.set(`/auth/access/test`, 'someid');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/accesstoken')

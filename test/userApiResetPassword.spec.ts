@@ -101,7 +101,7 @@ describe.skip('userApiResetPassword', async () => {
     it('POST /user/resetpass will return 401 with not found user', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        await appService.redisService.set(`user_resetpass_deneme`, 'someid2');
+        await appService.redisService.set(`/user/resetpass/deneme`, 'someid2');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/user/resetpass')
@@ -120,7 +120,7 @@ describe.skip('userApiResetPassword', async () => {
     it('POST /user/resetpass will return 200 with found user', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        await appService.redisService.set(`user_resetpass_deneme`, 'someid');
+        await appService.redisService.set(`/user/resetpass/deneme`, 'someid');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/user/resetpass')
@@ -133,7 +133,7 @@ describe.skip('userApiResetPassword', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        const value = await appService.redisService.get(`user_resetpass_deneme`);
+        const value = await appService.redisService.get(`/user/resetpass/deneme`);
         expect(value).to.be.null;
 
     }).timeout(50000);

@@ -32,12 +32,12 @@ async function execute2FA(req: any) {
     const twoFAService = appService.twoFAService;
     const sensitiveData = await configService.getUserSensitiveData(currentUser.id);
     if (currentUser.is2FA && sensitiveData.twoFASecret) {
-        const rKey = `/2fa/${randomKey}`;
+        const rKey = `/auth/2fa/${randomKey}`;
         await redisService.set(rKey, currentUser.id, { ttl: 60 * 1000 });
         return { key: randomKey };
     }
     else {
-        const rKey = `/access/${randomKey}`;
+        const rKey = `/auth/access/${randomKey}`;
         await redisService.set(rKey, currentUser.id, { ttl: 60 * 1000 });
         return { key: randomKey };
     }
@@ -130,7 +130,7 @@ routerAuth.post('/2fa',
             throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs key, 2FASecret and 2FAToken");
         logger.info(`2fa check with key:${request.key}`);
 
-        const rKey = `/2fa/${request.key}`;
+        const rKey = `/auth/2fa/${request.key}`;
         const userId = await redisService.get(rKey, false) as string;
         if (!userId)
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'key not found');
@@ -142,7 +142,7 @@ routerAuth.post('/2fa',
         twoFAService.verifyToken(sensitiveData.twoFASecret || '', request.twoFAToken);
 
         const randomKey = Util.randomNumberString(48);
-        const key = `/access/${randomKey}`;
+        const key = `/auth/access/${randomKey}`;
         await redisService.set(key, user.id, { ttl: 60 * 1000 });
         return res.status(200).json({ key: randomKey });
 
@@ -151,6 +151,10 @@ routerAuth.post('/2fa',
 
 /////////////////////////////// /authaccesstoken ///////////////////////////////
 
+
+
+
+
 routerAuth.post('/accesstoken',
     asyncHandler(async (req: any, res: any, next: any) => {
 
@@ -158,12 +162,14 @@ routerAuth.post('/accesstoken',
         const configService = appService.configService;
         const redisService = appService.redisService;
         const oauth2Service = appService.oauth2Service;
-        const request = req.body as { key: string };
+        const tunnelService = appService.tunnelService;
+        //session field is the tunnel session key
+        const request = req.body as { key: string, session?: string };
         if (!request.key) {
             throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs parameters");
         }
         logger.info(`getting access token with key ${request.key}`);
-        const key = `/access/${request.key}`;
+        const key = `/auth/access/${request.key}`;
         const userId = await redisService.get(key, false) as string;
         if (!userId) {
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
@@ -177,6 +183,10 @@ routerAuth.post('/accesstoken',
             throw new RestfullException(500, ErrorCodes.ErrInternalError, "something went wrong");
         }
 
+        //check tunnel session
+        if (request.session) {
+            await tunnelService.createTunnel(user, redisService, request.session);
+        }
 
         const accessTokenStr = await oauth2Service.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id }, 'ferrum')
         const accessToken = await oauth2Service.getAccessToken(accessTokenStr);

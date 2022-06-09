@@ -56,7 +56,9 @@ export class ConfigService {
             rbac: {
                 roles: [RBACDefault.roleAdmin, RBACDefault.roleReporter, RBACDefault.roleUser],
                 rights: [RBACDefault.rightAdmin, RBACDefault.rightReporter, RBACDefault.rightUser]
-            }
+            },
+            clientNetwork: "100.64.0.0/10",
+            serviceNetwork: "172.16.0.0/12"
 
         }
         //for testing
@@ -83,7 +85,8 @@ export class ConfigService {
             adminUser.isLocked = false;
             adminUser.isVerified = true;
             adminUser.roleIds = ['Admin'];
-            //adminUser.is2FA = true;
+            adminUser.is2FA = true;
+            adminUser.twoFASecret = 'GZTM2CLFZFQA4W3QSCOGG53QKU23CAZW';
             this.config.users.push(adminUser);
 
             const standartUser = HelperService.createUser('local', 'hamzauser@hamzakilic.com', 'hamzauser', 'Deneme123');
@@ -326,6 +329,22 @@ export class ConfigService {
     async getRBAC(): Promise<RBAC> {
         return Util.clone(this.config.rbac);
     }
+    async getClientNetwork(): Promise<string> {
+        return this.config.clientNetwork;
+    }
+    async setClientNetwork(network: string) {
+        this.config.clientNetwork = network;
+        await this.saveConfigToFile();
+    }
+    async getServiceNetwork(): Promise<string> {
+        return this.config.serviceNetwork;
+    }
+    async setServiceNetwork(network: string) {
+        this.config.serviceNetwork = network;
+        await this.saveConfigToFile();
+    }
+
+
     /**
      * @summary save or update role
      * @param role 

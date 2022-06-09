@@ -46,7 +46,7 @@ describe('registerApi', async () => {
         expect(response.status).to.equal(400);
     }).timeout(5000);
 
-    it('POST /register will return 200', async () => {
+    it.skip('POST /register will return 200', async () => {
         //we must send right paramters
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -94,7 +94,7 @@ describe('registerApi', async () => {
     }).timeout(5000);
 
 
-    it('POST /register will return 200 because allready user exits, will send a reset password email', async () => {
+    it.skip('POST /register will return 200 because allready user exits, will send a reset password email', async () => {
         //we must send right paramters
 
         appService.configService.config.users.push({ username: 'hamza@hamzakilic.com' } as User);

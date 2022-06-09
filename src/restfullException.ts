@@ -44,6 +44,8 @@ export class ErrorCodes {
     static ErrUserLockedOrNotVerified: string = 'ErrUserLockedOrNotVerified';
     static ErrCaptchaVerifyFailed: string = 'ErrCaptchaVerifyFailed';
     static Err2FAVerifyFailed: string = 'Err2FAVerifyFailed';
+    static ErrSecureTunnelFailed: string = 'ErrSecureTunnelFailed';
+    static ErrIpAssignFailed: string = 'ErrIpAssignFailed';
 
 
 }

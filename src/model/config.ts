@@ -32,4 +32,13 @@ export interface Config {
      * @summary RBAC roles and rights
      */
     rbac: RBAC;
+    /**
+     * @summary client sub net like 10.0.0.0/8
+     */
+    clientNetwork: string;
+
+    /**
+     * @summary service ip network
+     */
+    serviceNetwork: string;
 }
