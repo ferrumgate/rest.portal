@@ -32,6 +32,7 @@ export class ErrorCodes {
 
     static ErrNotAuthorized: string = 'ErrNotAuthorized';
     static ErrApiKeyIsNotValid: string = 'ErrApiKeyIsNotValid';
+    static ErrTunnelKeyIsNotValid: string = 'ErrTunnelKeyIsNotValid';
     static ErrBadArgument: string = 'ErrBadArgument';
     static ErrNotFound: string = 'ErrNotFound';
     static ErrInternalError: string = 'ErrInternalError';

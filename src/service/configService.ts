@@ -58,7 +58,7 @@ export class ConfigService {
                 rights: [RBACDefault.rightAdmin, RBACDefault.rightReporter, RBACDefault.rightUser]
             },
             clientNetwork: "100.64.0.0/10",
-            serviceNetwork: "172.16.0.0/12"
+            serviceNetwork: "172.16.0.0/14"
 
         }
         //for testing

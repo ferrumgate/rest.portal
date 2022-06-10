@@ -5,6 +5,7 @@ import { jwtInit } from "./jwt";
 import { googleInit } from "./google";
 import { linkedinInit } from "./linkedin";
 import { AppService } from "../../service/appService";
+import { tunnelKeyInit } from "./tunnelKey";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -22,6 +23,8 @@ export async function passportInit(req: any, res: any, next: any) {
         apiKeyInit();
         //init jwt verification
         jwtInit();
+        // init sessionkey
+        tunnelKeyInit();
         // init google
         if (auth.google) {
             googleInit(auth, url);

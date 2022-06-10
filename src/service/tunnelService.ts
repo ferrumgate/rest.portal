@@ -4,6 +4,8 @@ import { ErrorCodes, RestfullException } from "../restfullException";
 import { ConfigService } from "./configService";
 import { RedisService } from "./redisService";
 import { Util } from "../util";
+import { Tunnel } from "../model/tunnel";
+import { HelperService } from "./helperService";
 
 
 /**
@@ -48,9 +50,9 @@ export class TunnelService {
         logger.fatal("client ip pool is over");
         throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, 'ip pool is over');
     }
-    async createTunnel(user: User, redisService: RedisService, session: string) {
-        const key = `/session/${session}`;
-        const ses = await redisService.hgetAll(key) as { id?: string, clientIp?: string, tun?: string, authenticatedTime?: string };
+    async createTunnel(user: User, redisService: RedisService, tunnelKey: string) {
+        const key = `/tunnel/${tunnelKey}`;
+        const ses = await redisService.hgetAll(key) as unknown as Tunnel;
         if (!ses || !ses.id || !ses.clientIp) {
             logger.error(`session not found or some fields are absent => ${ses || ''}`);
             throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
@@ -68,17 +70,34 @@ export class TunnelService {
             //client will set this ip to its interface
             // then will confirm ok
             // and system will prepare additional network settings
-            await redisService.set(`/client/${ipstr}`, session, { ttl: 5 * 60 * 1000 });
+            await redisService.set(`/tunnel/${ipstr}`, tunnelKey, { ttl: 5 * 60 * 1000 });
 
 
-            const authenticationChannel = `/session/authentication/${session}`;
+            const authenticationChannel = `/tunnel/authentication/${tunnelKey}`;
             //send every thing ok message to waiting client to finish tunneling
             await redisService.publish(authenticationChannel, 'ok:');
             await redisService.hset(key, { authenticatedTime: new Date().toISOString() });
-            await redisService.expire(key, 5 * 60);
+            await redisService.expire(key, 5 * 60 * 1000);
         }
 
+        return await redisService.hgetAll(key) as unknown as Tunnel;
 
+
+    }
+    async renewIp(tunnelKey: string, redisService: RedisService,) {
+        const key = `/tunnel/${tunnelKey}`;
+        const ses = await redisService.hgetAll(key) as unknown as Tunnel;
+        HelperService.isValidTunnel(ses);
+        const tmp = ses.assignedClientIp;
+        //peer ip must be set before 
+        const ip = await this.getEmptyIp(redisService);
+        const ipstr = Util.bigIntegerToIp(ip);
+        this._lastUsedIp = ip;
+        await redisService.hset(key, { assignedClientIp: ipstr });
+        await redisService.sadd(this.clientNetworkUsedList, Util.bigIntegerToIp(ip));
+        if (tmp)
+            await redisService.sremove(this.clientNetworkUsedList, tmp);
+        return await redisService.hgetAll(key) as unknown as Tunnel;
 
     }
 }

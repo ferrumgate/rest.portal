@@ -163,8 +163,8 @@ routerAuth.post('/accesstoken',
         const redisService = appService.redisService;
         const oauth2Service = appService.oauth2Service;
         const tunnelService = appService.tunnelService;
-        //session field is the tunnel session key
-        const request = req.body as { key: string, session?: string };
+        //tunnel field is the tunnel tunnel key
+        const request = req.body as { key: string, tunnelKey?: string };
         if (!request.key) {
             throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs parameters");
         }
@@ -184,8 +184,8 @@ routerAuth.post('/accesstoken',
         }
 
         //check tunnel session
-        if (request.session) {
-            await tunnelService.createTunnel(user, redisService, request.session);
+        if (request.tunnelKey) {
+            await tunnelService.createTunnel(user, redisService, request.tunnelKey);
         }
 
         const accessTokenStr = await oauth2Service.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id }, 'ferrum')

@@ -422,14 +422,14 @@ describe('authApi ', async () => {
     }).timeout(50000);
 
 
-    it('POST /authaccesstoken with session parameter with result 200', async () => {
+    it('POST /authaccesstoken with tunnel parameter with result 200', async () => {
 
         await redisService.set(`/auth/access/test`, 'someid');
-        await redisService.hset(`/session/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100' });
+        await redisService.hset(`/tunnel/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100' });
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/accesstoken')
-                .send({ key: 'test', session: 'testsession' })
+                .send({ key: 'test', tunnelKey: 'testsession' })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -442,7 +442,7 @@ describe('authApi ', async () => {
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
 
-        const retVAl = await redisService.hgetAll('/session/testsession');
+        const retVAl = await redisService.hgetAll('/tunnel/testsession');
         expect(retVAl.assignedClientIp).exist;
 
 

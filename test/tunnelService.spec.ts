@@ -9,6 +9,7 @@ import { ConfigService } from '../src/service/configService';
 import { RedisService } from '../src/service/redisService';
 import { Util } from '../src/util';
 import { User } from '../src/model/user';
+import { Tunnel } from '../src/model/tunnel';
 
 
 
@@ -64,7 +65,7 @@ describe('tunnelService', () => {
         //
         let isError = false;
         try {
-            await tunnel.createTunnel(user, simpleRedis, 'asessionid');
+            await tunnel.createTunnel(user, simpleRedis, 'randomtunnelid');
         } catch (err) { isError = true; };
         expect(isError).to.be.true;
 
@@ -77,25 +78,51 @@ describe('tunnelService', () => {
         await configService2.setClientNetwork('192.168.0.0/24')
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
-        await simpleRedis.hset(`/session/asessionid`, { id: 'asessionid', clientIp: '192.168.1.100' })
+        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', clientIp: '192.168.1.100' })
         //
 
 
-        await tunnel.createTunnel(user, simpleRedis, 'asessionid');
+        await tunnel.createTunnel(user, simpleRedis, 'randomtunnelid');
         //check every redis data 
         const ipExits = await simpleRedis.sismember(`/clientNetwork/used`, '192.168.0.1');
         expect(ipExits == 1).to.be.true;
         //ip
         expect(Util.bigIntegerToIp(tunnel.lastUsedIp)).to.equal('192.168.0.1');
-        //client ip session
-        const sessionId = await simpleRedis.get('/client/192.168.0.1', false)
-        expect(sessionId).to.equal('asessionid');
+        //client ip 
+        const tunnelId = await simpleRedis.get('/tunnel/192.168.0.1', false)
+        expect(tunnelId).to.equal('randomtunnelid');
 
-        //session
-        const session = await simpleRedis.hgetAll(`/session/asessionid`);
-        expect(session.id).to.equal('asessionid');
+        //tunnel
+        const session = await simpleRedis.hgetAll(`/tunnel/randomtunnelid`);
+        expect(session.id).to.equal('randomtunnelid');
         expect(session.authenticatedTime).exist;
         expect(session.assignedClientIp).to.equal('192.168.0.1');
+
+
+    }).timeout(10000)
+
+
+    it('renewIp', async () => {
+        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
+        await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
+        await configService2.setClientNetwork('192.168.0.0/24')
+        const tunnel = new TunnelService(configService2);
+        const user: User = { id: 'adfaf' } as User;
+        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', clientIp: '192.168.1.100', tun: 'tun0' })
+        //
+
+
+        await tunnel.createTunnel(user, simpleRedis, 'randomtunnelid');
+        await tunnel.renewIp('randomtunnelid', simpleRedis);
+
+        let exists = await simpleRedis.sismember('/clientNetwork/used', '192.168.0.1');
+        expect(exists == 1).to.be.false;
+
+        exists = await simpleRedis.sismember('/clientNetwork/used', '192.168.0.2');
+        expect(exists == 1).to.be.true;
+
+        const newtunnel: Tunnel = await simpleRedis.hgetAll('/tunnel/randomtunnelid');
+        expect(newtunnel.assignedClientIp).to.equal('192.168.0.2');
 
 
     }).timeout(10000)

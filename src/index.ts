@@ -10,6 +10,7 @@ import { Util } from "./util";
 import * as helmet from 'helmet';
 import cors from 'cors';
 import { corsOptionsDelegate } from "./api/cors";
+import { routerClientTunnelAuthenticated } from "./api/clientApi";
 
 
 const bodyParser = require('body-parser');
@@ -160,6 +161,18 @@ app.use('(\/api)?/config/public',
     asyncHandlerWithArgs(rateLimit, 'configpublicDaily', 10000),
     asyncHandler(noAuthentication),
     routerConfig);
+
+
+app.use('(\/api)?/client/tunnel',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'clientTunnel', 10),
+    asyncHandlerWithArgs(rateLimit, 'clientTunnelHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'clientTunnelDaily', 10000),
+    routerClientTunnelAuthenticated);
+
+
+
 
 
 
