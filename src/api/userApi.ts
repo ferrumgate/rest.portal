@@ -25,7 +25,7 @@ routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: a
     const configService = appService.configService;
     const redisService = appService.redisService;
     //check key from redis
-    const rkey = `user_confirm_${key}`;
+    const rkey = `/user/confirm/${key}`;
     const userId = await redisService.get(rkey, false) as string;
     if (!userId) {
         logger.fatal(`user confirm key not found key: ${key}`);
@@ -82,7 +82,7 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
     } */
     const key = Util.createRandomHash(48);
     const link = `${req.baseHost}/user/resetpass?key=${key}`
-    await redisService.set(`user_resetpass_${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
+    await redisService.set(`/user/resetpass/${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
 
     const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
     const logo = `${req.baseHost}/dassets/img/${logoPath}`;
@@ -111,7 +111,7 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
 
 
 
-    const rkey = `user_resetpass_${key}`;
+    const rkey = `/user/resetpass/${key}`;
     logger.info(`reset password with key: ${key} `)
     const appService = req.appService as AppService;
     const configService = appService.configService;

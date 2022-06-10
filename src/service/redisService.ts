@@ -1,5 +1,6 @@
 
 import * as IORedis from 'ioredis';
+import { JsonWebTokenError } from 'jsonwebtoken';
 
 /**
  * redis wrappers
@@ -222,6 +223,7 @@ export class RedisService {
         return new RedisPipelineService(this.redis);
     }
 
+
     async flushAll(): Promise<void> {
         await this.redis.flushall();
     }
@@ -231,5 +233,42 @@ export class RedisService {
     async connect() {
         await this.redis.connect(() => { });
     }
+
+    async hset(key: string, values: any): Promise<number> {
+
+        return await this.redis.hset(key, values)
+
+    }
+    async hget(key: string, field: string): Promise<string | null> {
+
+        return await this.redis.hget(key, field);
+
+    }
+    async hgetAll(key: string): Promise<Record<string, string>> {
+
+        return await this.redis.hgetall(key);
+
+    }
+
+    async publish(channel: string, msg: any) {
+        return await this.redis.publish(channel, typeof (msg) !== 'string' ? JSON.stringify(msg) : msg);
+    }
+
+    async sadd(key: string, value: string | number | any[]) {
+        if (Array.isArray(value))
+            return await this.redis.sadd(key, ...(value as []));
+        else
+            return await this.redis.sadd(key, value);
+    }
+    async sremove(key: string, value: string | number | any[]) {
+        if (Array.isArray(value))
+            return await this.redis.srem(key, ...(value as []));
+        else
+            return await this.redis.srem(key, value);
+    }
+    async sismember(key: string, value: string | number) {
+        return await this.redis.sismember(key, value);
+    }
 }
+
 

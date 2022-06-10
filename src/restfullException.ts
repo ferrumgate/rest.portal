@@ -32,6 +32,7 @@ export class ErrorCodes {
 
     static ErrNotAuthorized: string = 'ErrNotAuthorized';
     static ErrApiKeyIsNotValid: string = 'ErrApiKeyIsNotValid';
+    static ErrTunnelKeyIsNotValid: string = 'ErrTunnelKeyIsNotValid';
     static ErrBadArgument: string = 'ErrBadArgument';
     static ErrNotFound: string = 'ErrNotFound';
     static ErrInternalError: string = 'ErrInternalError';
@@ -44,6 +45,8 @@ export class ErrorCodes {
     static ErrUserLockedOrNotVerified: string = 'ErrUserLockedOrNotVerified';
     static ErrCaptchaVerifyFailed: string = 'ErrCaptchaVerifyFailed';
     static Err2FAVerifyFailed: string = 'Err2FAVerifyFailed';
+    static ErrSecureTunnelFailed: string = 'ErrSecureTunnelFailed';
+    static ErrIpAssignFailed: string = 'ErrIpAssignFailed';
 
 
 }

@@ -26,7 +26,7 @@ export function localInit() {
                 if (!username || !password)
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
                 let user = await configService.getUserByUsernameAndPass(username, password);
-                await HelperService.isValidUser(user);
+                HelperService.isValidUser(user);
                 //set user to request object
                 req.currentUser = user;
                 return done(null, user);

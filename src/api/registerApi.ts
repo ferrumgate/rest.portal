@@ -33,7 +33,7 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
 
         const key = Util.createRandomHash(48);
         const link = `${req.baseHost}/user/resetpass?key=${key}`
-        await redisService.set(`user_resetpass_${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
+        await redisService.set(`/user/resetpass/${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
 
         const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
         const logo = `${req.baseHost}/dassets/img/${logoPath}`;
@@ -52,7 +52,7 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
 
     const key = Util.createRandomHash(48);
     const link = `${req.baseHost}/user/emailconfirm?key=${key}`
-    await redisService.set(`user_confirm_${key}`, userSave.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//7 days
+    await redisService.set(`/user/confirm/${key}`, userSave.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//7 days
 
     const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
     const logo = `${req.baseHost}/dassets/img/${logoPath}`;

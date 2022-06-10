@@ -3,6 +3,8 @@ import { Util } from "../util";
 import *  as twofactor from 'node-2fa';
 import { ErrorCodes, RestfullException } from "../restfullException";
 import { RBACDefault } from "../model/rbac";
+import { Tunnel } from "../model/tunnel";
+
 
 export class HelperService {
     static createUser(source: string, username: string, name: string, password?: string) {
@@ -32,6 +34,24 @@ export class HelperService {
             throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
         if (user.isLocked)
             throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
+
+    }
+
+    /**
+     * @summary check if tunnel session is valid
+     * @param ses 
+     */
+    static isValidTunnel(tun: Tunnel | undefined) {
+        if (!tun)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not found');
+        if (!tun.authenticatedTime)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authenticated');
+        if (!tun.tun)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not tunned');
+        if (!tun.userId)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authenticated');
+        if (!tun.assignedClientIp)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authenticated');
 
     }
 }
