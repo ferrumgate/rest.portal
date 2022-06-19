@@ -18,6 +18,7 @@ import { HelperService } from "../service/helperService";
 
 
 
+
 //////////////////////////////// authenticated tunnel await redisService.hgetAll(key) as unknown as Tunnel;rom client /////////////////////
 
 
@@ -58,6 +59,9 @@ routerClientTunnelAuthenticated.get('/renewip',
     })
 );
 
+/**
+ * @summary after client created tunnel successfuly, it confirms 
+ */
 routerClientTunnelAuthenticated.post('/confirm',
     asyncHandler(passportInit),
     passport.authenticate(['headertunnelkey'], { session: false, }),
@@ -65,13 +69,30 @@ routerClientTunnelAuthenticated.post('/confirm',
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const redisService = appService.redisService;
+        const tunnelService = appService.tunnelService;
         const user = req.currentUser as User;
         const tunnel = req.currentTunnel as Tunnel;
+        await tunnelService.confirm(tunnel.id || '', redisService);
 
-        // add to a list
-        await redisService.sadd('/tunnel/configure', tunnel.id || '');
-        // and publish to listener for configuring all network settings
-        await redisService.publish(`/tunnel/configure`, tunnel.id);
+        return res.status(200).json({});
+    })
+);
+
+/**
+ * @summary every client sends i am alive request
+ */
+routerClientTunnelAuthenticated.get('/alive',
+    asyncHandler(passportInit),
+    passport.authenticate(['headertunnelkey'], { session: false, }),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const user = req.currentUser as User;
+        const tunnel = req.currentTunnel as Tunnel;
+        const redisService = appService.redisService;
+        const tunnelService = appService.tunnelService;
+        await tunnelService.alive(tunnel.id || '', redisService);
+
         return res.status(200).json({});
     })
 );

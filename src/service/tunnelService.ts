@@ -52,14 +52,14 @@ export class TunnelService {
     }
     async createTunnel(user: User, redisService: RedisService, tunnelKey: string) {
         const key = `/tunnel/${tunnelKey}`;
-        const ses = await redisService.hgetAll(key) as unknown as Tunnel;
-        if (!ses || !ses.id || !ses.clientIp) {
-            logger.error(`session not found or some fields are absent => ${ses || ''}`);
+        const tunnel = await redisService.hgetAll(key) as unknown as Tunnel;
+        if (!tunnel || !tunnel.id || !tunnel.clientIp) {
+            logger.error(`tunnel not found or some fields are absent => ${tunnel || ''}`);
             throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
         }
 
         //security check
-        if (!ses.authenticatedTime) {
+        if (!tunnel.authenticatedTime) {
             //peer ip must be set before 
             const ip = await this.getEmptyIp(redisService);
             const ipstr = Util.bigIntegerToIp(ip);
@@ -84,11 +84,18 @@ export class TunnelService {
 
 
     }
+
+    /**
+     * @summary renew assigned ip
+     * @param tunnelKey 
+     * @param redisService 
+     * @returns 
+     */
     async renewIp(tunnelKey: string, redisService: RedisService,) {
         const key = `/tunnel/${tunnelKey}`;
-        const ses = await redisService.hgetAll(key) as unknown as Tunnel;
-        HelperService.isValidTunnel(ses);
-        const tmp = ses.assignedClientIp;
+        const tunnel = await redisService.hgetAll(key) as unknown as Tunnel;
+        HelperService.isValidTunnel(tunnel);
+        const tmp = tunnel.assignedClientIp;
         //peer ip must be set before 
         const ip = await this.getEmptyIp(redisService);
         const ipstr = Util.bigIntegerToIp(ip);
@@ -98,6 +105,36 @@ export class TunnelService {
         if (tmp)
             await redisService.sremove(this.clientNetworkUsedList, tmp);
         return await redisService.hgetAll(key) as unknown as Tunnel;
+
+    }
+
+    /**
+     * @summary confirm tunnel
+     * @param tunnelKey 
+     * @param redisService 
+     */
+    async confirm(tunnelKey: string, redisService: RedisService) {
+        const key = `/tunnel/${tunnelKey}`;
+        const tunnel = await redisService.hgetAll(key) as unknown as Tunnel;
+        HelperService.isValidTunnel(tunnel);
+        // add to a list
+        await redisService.sadd('/tunnel/configure', tunnel.id || '');
+        // and publish to listener for configuring all network settings
+        await redisService.publish(`/tunnel/configure`, tunnel.id);
+    }
+
+    /**
+     * @summary every client sends I am alive request
+     * @param tunnelKey 
+     * @param redisService 
+     */
+    async alive(tunnelKey: string, redisService: RedisService) {
+        const key = `/tunnel/${tunnelKey}`;
+        const tunnel = await redisService.hgetAll(key) as unknown as Tunnel;
+        HelperService.isValidTunnel(tunnel);
+        //2 important keys for system
+        await redisService.expire(key, 3 * 60 * 1000);
+        await redisService.expire(`/tunnel/${tunnel.assignedClientIp}`, 3 * 60 * 1000);
 
     }
 }
