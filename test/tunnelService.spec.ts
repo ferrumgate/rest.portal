@@ -128,6 +128,47 @@ describe('tunnelService', () => {
     }).timeout(10000)
 
 
+    it('confirm', async () => {
+        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
+        await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
+        await configService2.setClientNetwork('192.168.0.0/24')
+        const tunnel = new TunnelService(configService2);
+        const user: User = { id: 'adfaf' } as User;
+        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', clientIp: '192.168.1.100', tun: 'tun0' })
+        //
+
+
+        await tunnel.createTunnel(user, simpleRedis, 'randomtunnelid');
+        await tunnel.confirm('randomtunnelid', simpleRedis);
+
+        let exists = await simpleRedis.sismember('/tunnel/configure', 'randomtunnelid');
+        expect(exists == 1).to.be.true;
+
+
+    }).timeout(10000)
+
+
+    it('alive', async () => {
+        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
+        await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
+        await configService2.setClientNetwork('192.168.0.0/24')
+        const tunnel = new TunnelService(configService2);
+        const user: User = { id: 'adfaf' } as User;
+        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', userId: 100, authenticatedTime: new Date().toString(), assignedClientIp: '10.0.0.3', clientIp: '192.168.1.100', tun: 'tun0' })
+        await simpleRedis.set(`/tunnel/10.0.0.3`, 'randomtunnelid');
+
+        await tunnel.alive('randomtunnelid', simpleRedis);
+
+        let ttl1 = await simpleRedis.ttl('/tunnel/randomtunnelid');
+        expect(ttl1).to.be.greaterThan(2 * 60 * 1000);
+
+        let ttl2 = await simpleRedis.ttl('/tunnel/10.0.0.3');
+        expect(ttl2).to.be.greaterThan(2 * 60 * 1000);
+
+
+    }).timeout(10000)
+
+
 
 
 
