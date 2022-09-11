@@ -8,7 +8,7 @@
     "testintegration": "DEBUG=nock.* node ./node_modules/mocha/bin/mocha --exit  --require ts-node/register test/**/*.spec.integration.ts",
     "build": "tsc && cp -R src/service/templates build/src/service/ && cp ferrumgate.* build/",
     "start": "tsc && NODE_ENV=development  node ./build/src/index.js",
-    "startdocker": "node ./src/index.js"
+    "startdocker": "node ./build/src/index.js"
   },
   "repository": {
     "type": "git",
