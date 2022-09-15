@@ -12,7 +12,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import randtoken from 'rand-token';
 import ip6addr from 'ip6addr';
-
+import ChildProcess from 'child_process';
 
 
 export interface IpRange {
@@ -269,6 +269,35 @@ export const Util = {
     clone(x: any) {
         if (!x) return x;
         return JSON.parse(JSON.stringify(x));
+    },
+    /**
+     * 
+     * @param cmd 
+     * @param isStdErr  some programs write output to err, because of redirection usage like openssl, writing to err is nor always error,
+     * just follow return code
+     * @returns 
+     */
+    async exec(cmd: string, isStdErr = true) {
+        return new Promise((resolve, reject) => {
+            ChildProcess.exec(cmd, (error, stdout, stderr) => {
+                if (error)
+                    reject(error);
+                else
+                    if (stderr && isStdErr)
+                        reject(stderr);
+                    else
+                        if (stdout)
+                            resolve(stdout);
+                        else
+                            resolve('');
+
+            })
+        })
+    },
+
+    async createSelfSignedCrt(domain: string) {
+        //openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${domain}.key -out ${domain}.crt -subj "/CN=${domain}/O=${domain}"
+        await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${domain}.key -out ${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false)
     }
 
 

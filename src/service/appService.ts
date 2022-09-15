@@ -37,7 +37,9 @@ export class AppService {
         template?: TemplateService, email?: EmailService,
         twoFA?: TwoFAService, oauth2?: OAuth2Service,
         tunnel?: TunnelService) {
-        this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? '/tmp/config.yaml' : '/etc/rest.portal/config.yaml');
+        //create self signed certificates for JWT
+
+        this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? '/tmp/config.yaml' : '/etc/ferrumgate/config.yaml');
         this.redisService = redis || new RedisService(process.env.REDIS_HOST || "localhost:6379")
         this.rateLimit = rateLimit || new RateLimitService(this.configService, this.redisService);
         this.inputService = input || new InputService();

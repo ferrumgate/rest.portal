@@ -11,6 +11,7 @@ import * as helmet from 'helmet';
 import cors from 'cors';
 import { corsOptionsDelegate } from "./api/cors";
 import { routerClientTunnelAuthenticated } from "./api/clientApi";
+import fs from "fs";
 
 
 const bodyParser = require('body-parser');
@@ -185,7 +186,13 @@ app.use('(\/api)?/client/tunnel',
 app.use(globalErrorHandler);
 
 
-app.start = function () {
+app.start = async function () {
+    //create new jwt certificates
+    await Util.createSelfSignedCrt("ferrumgate.com");
+    (app.appService as AppService).configService.setJWTSSLCertificate({
+        privateKey: fs.readFileSync('./ferrumgate.com.key').toString('utf-8'),
+        publicKey: fs.readFileSync('./ferrumgate.com.crt').toString('utf-8'),
+    })
 
 
     app.listen(port, () => {

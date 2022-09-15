@@ -118,9 +118,10 @@ export class TunnelService {
         const tunnel = await redisService.hgetAll(key) as unknown as Tunnel;
         HelperService.isValidTunnel(tunnel);
         // add to a list
-        await redisService.sadd('/tunnel/configure', tunnel.id || '');
-        // and publish to listener for configuring all network settings
-        await redisService.publish(`/tunnel/configure`, tunnel.id);
+        await redisService.sadd(`/tunnel/configure/${tunnel.hostId}`, tunnel.id || '');
+        await redisService.expire(`/tunnel/configure/${tunnel.hostId}`, 3 * 60 * 1000);
+        // and publish to listener for configuring all network settings to the destination host
+        await redisService.publish(`/tunnel/configure/${tunnel.hostId}`, tunnel.id);
     }
 
     /**

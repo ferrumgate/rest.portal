@@ -2,9 +2,10 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
-import fs from 'fs'
-import del from 'del'
-import nock from 'nock'
+import fs from 'fs';
+import del from 'del';
+import nock from 'nock';
+import fspromise from 'fs/promises';
 
 
 
@@ -354,6 +355,19 @@ describe('util ', () => {
         expect(encrypted).to.equal('DENEME');
 
         done();
+    });
+    it('exec ', async () => {
+        const output = await Util.exec("ls")
+        expect(output).to.be.exist;//if output is not empty
+
+    });
+
+    it('createSelfSignedCrt ', async () => {
+        const domain = `${Util.randomNumberString(8)}.com`;
+        const output = await Util.createSelfSignedCrt(domain)
+        expect(fs.existsSync(`${domain}.crt`)).to.be.true
+        expect(fs.existsSync(`${domain}.key`)).to.be.true
+
     });
 
 
