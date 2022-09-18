@@ -50,6 +50,11 @@ export class TunnelService {
         logger.fatal("client ip pool is over");
         throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, 'ip pool is over');
     }
+    async getServiceNetwork(tunnel: Tunnel) {
+        //for any host
+        const serviceNetwork = await this.config.getServiceNetwork();
+        return serviceNetwork;
+    }
     async createTunnel(user: User, redisService: RedisService, tunnelKey: string) {
         const key = `/tunnel/${tunnelKey}`;
         const tunnel = await redisService.hgetAll(key) as unknown as Tunnel;
@@ -73,11 +78,15 @@ export class TunnelService {
             await redisService.set(`/tunnel/${ipstr}`, tunnelKey, { ttl: 5 * 60 * 1000 });
 
 
-            const authenticationChannel = `/tunnel/authentication/${tunnelKey}`;
-            //send every thing ok message to waiting client to finish tunneling
-            await redisService.publish(authenticationChannel, 'ok:');
+
+
             await redisService.hset(key, { authenticatedTime: new Date().toISOString() });
+            await redisService.hset(key, { serviceNetwork: await this.getServiceNetwork(tunnel) });
             await redisService.expire(key, 5 * 60 * 1000);
+            // at the end
+            //send every thing ok message to waiting client to finish tunneling
+            const authenticationChannel = `/tunnel/authentication/${tunnelKey}`;
+            await redisService.publish(authenticationChannel, 'ok:');
         }
 
         return await redisService.hgetAll(key) as unknown as Tunnel;

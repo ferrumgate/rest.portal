@@ -54,6 +54,8 @@ export class HelperService {
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authenticated');
         if (!tun.hostId)
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authenticated")
+        if (!tun.serviceNetwork)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authenticated")
 
     }
 }

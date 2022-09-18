@@ -17,6 +17,6 @@ export interface Tunnel {
     authenticatedTime?: string;
     // host id
     hostId?: string
-
-
+    // service network
+    serviceNetwork?: string;
 }
