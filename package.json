@@ -7,7 +7,7 @@
     "test": "NODE_ENV=development DEBUG2=nock.* node ./node_modules/mocha/bin/mocha --exit --timeout 30000 --require ts-node/register test/**/*.spec.ts",
     "testintegration": "DEBUG=nock.* node ./node_modules/mocha/bin/mocha --exit  --require ts-node/register test/**/*.spec.integration.ts",
     "build": "tsc && cp -R src/service/templates build/src/service/ && cp ferrumgate.* build/",
-    "start": "tsc && NODE_ENV=development  node ./build/src/index.js",
+    "start": "tsc && NODE_ENV=development REDIS_PASS=123456  node ./build/src/index.js",
     "startdocker": "node ./build/src/index.js"
   },
   "repository": {

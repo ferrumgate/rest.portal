@@ -57,7 +57,9 @@ describe('clientApi ', async () => {
         const tunnel: Tunnel = {
             id: 'akey', assignedClientIp: '10.0.0.1',
             authenticatedTime: new Date().toISOString(),
-            clientIp: '192.168.8.8', tun: 'tun0', userId: user.id, hostId: '1231'
+            clientIp: '192.168.8.8', tun: 'tun0',
+            userId: user.id, hostId: '1231',
+            serviceNetwork: '192.168.0.0/24'
         };
         await redisService.hset('/tunnel/akey', tunnel)
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -83,7 +85,9 @@ describe('clientApi ', async () => {
         const tunnel: Tunnel = {
             id: 'akey', assignedClientIp: '10.0.0.1',
             authenticatedTime: new Date().toISOString(),
-            clientIp: '192.168.8.8', tun: 'tun0', userId: user.id, hostId: '1234'
+            clientIp: '192.168.8.8', tun: 'tun0',
+            userId: user.id, hostId: '1234',
+            serviceNetwork: '192.168.0.0/24'
         };
         await redisService.sadd('/clientNetwork/used', '10.0.0.1');
         // first get 

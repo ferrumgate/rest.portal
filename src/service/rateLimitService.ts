@@ -11,7 +11,7 @@ export class RateLimitService {
     protected redis: RedisService;
     protected baseLimit: number = 10;
     constructor(private config: ConfigService, redis?: RedisService,) {
-        this.redis = redis || new RedisService(process.env.REDIS_HOST || 'localhost:6379');
+        this.redis = redis || new RedisService(process.env.REDIS_HOST || 'localhost:6379', process.env.REDIS_PASS);
         this.baseLimit = Number(process.env.BASE_RATE_LIMIT) || 10;
 
     }
