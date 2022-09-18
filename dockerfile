@@ -1,4 +1,7 @@
-FROM node:16.13.2-slim
+FROM node:16.13.2-bullseye-slim
+RUN apt update &&\
+    apt install --assume-yes --no-install-recommends openssl \
+    ca-certificates gnupg
 #Create app directory
 WORKDIR /usr/src/app
 
@@ -12,6 +15,6 @@ RUN npm install
 # RUN npm ci --only=production
 
 ADD build/src /usr/src/app/build/src
-WORKDIR /usr/src/app/build
+WORKDIR /usr/src/app
 EXPOSE 9050
 ENTRYPOINT ["npm","run","startdocker"]

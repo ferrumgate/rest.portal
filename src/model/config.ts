@@ -21,7 +21,7 @@ export interface Config {
      */
     url: string;
     auth: AuthOption,
-    sslCertificate: SSLCertificate,
+    jwtSSLCertificate: SSLCertificate,
     sshCertificate: SSHCertificate,
 
     users: User[];

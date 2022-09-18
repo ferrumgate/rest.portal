@@ -20,7 +20,7 @@ export class ConfigService {
 
 
     config: Config;
-    protected configfile = '/etc/rest.portal/config.yaml';
+    protected configfile = '/etc/ferrumgate/config.yaml';
     private secretKey = '';
     lastUpdateTime = '';
     /**
@@ -44,7 +44,7 @@ export class ConfigService {
             ],
             captcha: {},
             sshCertificate: {},
-            sslCertificate: {},
+            jwtSSLCertificate: {},
             domain: 'ferrumgate.com',
             url: 'https://portal.ferrumgate.com',
             email: {
@@ -77,8 +77,9 @@ export class ConfigService {
                 client: '6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH',
                 server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
             }
-            this.config.sslCertificate.privateKey = fs.readFileSync(`./ferrumgate.com.key`).toString();
-            this.config.sslCertificate.publicKey = fs.readFileSync(`./ferrumgate.com.crt`).toString();
+
+            this.config.jwtSSLCertificate.privateKey = fs.readFileSync(`./ferrumgate.com.key`).toString();
+            this.config.jwtSSLCertificate.publicKey = fs.readFileSync(`./ferrumgate.com.crt`).toString();
             if (fs.existsSync('/tmp/config.yaml') && !process.env.LOCAL_TEST)
                 fs.rmSync('/tmp/config.yaml');
             const adminUser = HelperService.createUser('local', 'hamza@hamzakilic.com', 'hamzaadmin', 'Deneme123');
@@ -244,13 +245,13 @@ export class ConfigService {
         await this.saveConfigToFile();
     }
 
-    async getSSLCertificate(): Promise<SSLCertificate> {
-        return Util.clone(this.config.sslCertificate);
+    async getJWTSSLCertificate(): Promise<SSLCertificate> {
+        return Util.clone(this.config.jwtSSLCertificate);
     }
-    async setSSLCertificate(cert: SSLCertificate | {}) {
+    async setJWTSSLCertificate(cert: SSLCertificate | {}) {
         let cloned = Util.clone(cert);
-        this.config.sslCertificate = {
-            ...this.config.sslCertificate,
+        this.config.jwtSSLCertificate = {
+            ...this.config.jwtSSLCertificate,
             ...cloned
         }
         await this.saveConfigToFile();

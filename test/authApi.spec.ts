@@ -66,7 +66,7 @@ describe('authApi ', async () => {
         }
         await configService.setAuthOption(auth);
         await configService.setUrl('http://local.ferrumgate.com:8080')
-        await configService.setSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
     })
 
     beforeEach(async () => {

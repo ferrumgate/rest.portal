@@ -19,7 +19,7 @@ import { HelperService } from "../service/helperService";
 
 
 
-//////////////////////////////// authenticated tunnel await redisService.hgetAll(key) as unknown as Tunnel;rom client /////////////////////
+//////////////////////////////// authenticated tunnel  /////////////////////
 
 
 export const routerClientTunnelAuthenticated = express.Router();
@@ -39,6 +39,9 @@ routerClientTunnelAuthenticated.get('/ip',
     })
 );
 
+/**
+ * client needs a new ip because of conflict
+ */
 routerClientTunnelAuthenticated.get('/renewip',
     asyncHandler(passportInit),
     passport.authenticate(['headertunnelkey'], { session: false, }),

@@ -108,7 +108,7 @@ describe('tunnelService', () => {
         await configService2.setClientNetwork('192.168.0.0/24')
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
-        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', clientIp: '192.168.1.100', tun: 'tun0' })
+        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', clientIp: '192.168.1.100', tun: 'tun0', hostId: '1234' })
         //
 
 
@@ -134,14 +134,14 @@ describe('tunnelService', () => {
         await configService2.setClientNetwork('192.168.0.0/24')
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
-        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', clientIp: '192.168.1.100', tun: 'tun0' })
+        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', clientIp: '192.168.1.100', tun: 'tun0', hostId: '12345' })
         //
 
 
         await tunnel.createTunnel(user, simpleRedis, 'randomtunnelid');
         await tunnel.confirm('randomtunnelid', simpleRedis);
 
-        let exists = await simpleRedis.sismember('/tunnel/configure', 'randomtunnelid');
+        let exists = await simpleRedis.sismember(`/tunnel/configure/12345`, 'randomtunnelid');
         expect(exists == 1).to.be.true;
 
 
@@ -154,7 +154,7 @@ describe('tunnelService', () => {
         await configService2.setClientNetwork('192.168.0.0/24')
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
-        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', userId: 100, authenticatedTime: new Date().toString(), assignedClientIp: '10.0.0.3', clientIp: '192.168.1.100', tun: 'tun0' })
+        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', userId: 100, authenticatedTime: new Date().toString(), assignedClientIp: '10.0.0.3', clientIp: '192.168.1.100', tun: 'tun0', hostId: '1234' })
         await simpleRedis.set(`/tunnel/10.0.0.3`, 'randomtunnelid');
 
         await tunnel.alive('randomtunnelid', simpleRedis);
