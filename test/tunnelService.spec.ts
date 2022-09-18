@@ -154,7 +154,11 @@ describe('tunnelService', () => {
         await configService2.setClientNetwork('192.168.0.0/24')
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
-        await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', userId: 100, authenticatedTime: new Date().toString(), assignedClientIp: '10.0.0.3', clientIp: '192.168.1.100', tun: 'tun0', hostId: '1234' })
+        await simpleRedis.hset(`/tunnel/randomtunnelid`,
+            {
+                id: 'randomtunnelid', userId: 100, authenticatedTime: new Date().toString(), assignedClientIp: '10.0.0.3',
+                clientIp: '192.168.1.100', tun: 'tun0', hostId: '1234', serviceNetwork: '192.168.0.0/24'
+            })
         await simpleRedis.set(`/tunnel/10.0.0.3`, 'randomtunnelid');
 
         await tunnel.alive('randomtunnelid', simpleRedis);

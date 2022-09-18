@@ -88,3 +88,5 @@ coverage
 node_modules
 *.sqlite
 package-lock.json
+*.com.crt
+*.com.key
