@@ -17,7 +17,7 @@ export class TunnelService {
      *
      */
     private _lastUsedIp: bigint = BigInt(0);
-    private clientNetworkUsedList = '/clientNetwork/used';
+    //private clientNetworkUsedList = '/clientNetwork/used';
     constructor(private config: ConfigService) {
 
 
@@ -43,7 +43,7 @@ export class TunnelService {
 
         for (let s = start; s < end; s++) {
             const ip = Util.bigIntegerToIp(s);
-            const isExists = await redisService.sismember(this.clientNetworkUsedList, ip);
+            const isExists = await redisService.containsKey(`/client/${ip}`);
             if (!isExists) return s;
         }
 
@@ -70,12 +70,12 @@ export class TunnelService {
             const ipstr = Util.bigIntegerToIp(ip);
             this._lastUsedIp = ip;
             await redisService.hset(key, { assignedClientIp: ipstr, userId: user.id });
-            await redisService.sadd(this.clientNetworkUsedList, Util.bigIntegerToIp(ip));
+            //await redisService.sadd(this.clientNetworkUsedList, Util.bigIntegerToIp(ip));
             //all client checking will be over this ip
             //client will set this ip to its interface
             // then will confirm ok
             // and system will prepare additional network settings
-            await redisService.set(`/tunnel/${ipstr}`, tunnelKey, { ttl: 5 * 60 * 1000 });
+            await redisService.set(`/client/${ipstr}`, tunnelKey, { ttl: 5 * 60 * 1000 });
 
 
 
@@ -110,9 +110,11 @@ export class TunnelService {
         const ipstr = Util.bigIntegerToIp(ip);
         this._lastUsedIp = ip;
         await redisService.hset(key, { assignedClientIp: ipstr });
-        await redisService.sadd(this.clientNetworkUsedList, Util.bigIntegerToIp(ip));
+        await redisService.set(`/client/${ipstr}`, tunnelKey, { ttl: 5 * 60 * 1000 });
         if (tmp)
-            await redisService.sremove(this.clientNetworkUsedList, tmp);
+            await redisService.delete(`/client/${tmp}`);
+        await redisService.expire(`/host/${tunnel.hostId}/tun/${tunnel.tun}`, 5 * 60 * 1000);
+        await redisService.expire(key, 5 * 60 * 1000);
         return await redisService.hgetAll(key) as unknown as Tunnel;
 
     }
@@ -126,6 +128,7 @@ export class TunnelService {
         const key = `/tunnel/${tunnelKey}`;
         const tunnel = await redisService.hgetAll(key) as unknown as Tunnel;
         HelperService.isValidTunnel(tunnel);
+        await redisService.set(`/host/${tunnel.hostId}/tun/${tunnel.tun}`, tunnelKey, { ttl: 5 * 60 * 1000 });
         // add to a list
         await redisService.sadd(`/tunnel/configure/${tunnel.hostId}`, tunnel.id || '');
         await redisService.expire(`/tunnel/configure/${tunnel.hostId}`, 3 * 60 * 1000);
@@ -142,9 +145,11 @@ export class TunnelService {
         const key = `/tunnel/${tunnelKey}`;
         const tunnel = await redisService.hgetAll(key) as unknown as Tunnel;
         HelperService.isValidTunnel(tunnel);
-        //2 important keys for system
+        //3 important keys for system
         await redisService.expire(key, 3 * 60 * 1000);
-        await redisService.expire(`/tunnel/${tunnel.assignedClientIp}`, 3 * 60 * 1000);
+        // at least 5 minutes, because we must not use same ip, a little bit more security 
+        await redisService.expire(`/client/${tunnel.assignedClientIp}`, 5 * 60 * 1000);
+        await redisService.expire(`/host/${tunnel.hostId}/tun/${tunnel.tun}`, 3 * 60 * 1000);
 
     }
 }
