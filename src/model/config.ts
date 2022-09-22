@@ -1,7 +1,7 @@
-import { AuthGoogle, AuthOption } from "./authOption";
+import { AuthGoogle, AuthSettings } from "./authSettings";
 import { Captcha } from "./captcha";
-import { EmailOption } from "./emailOption";
-import { LogoOption } from "./logoOption";
+import { EmailSettings } from "./emailSettings";
+import { LogoSettings } from "./logoSettings";
 import { RBAC, Right, Role } from "./rbac";
 import { SSHCertificate } from "./sshCertificate";
 import { SSLCertificate } from "./sslCertificate";
@@ -11,8 +11,12 @@ import { User } from "./user";
 
 export interface Config {
     /**
+     * @summary is default configuration reconfigured
+     */
+    isConfigured: number;
+    /**
      * @summary domain for creating certificates
-     * @example ferrumgate.com
+     * @example ferrumgate.local
      */
     domain: string;
     /**
@@ -20,14 +24,14 @@ export interface Config {
      * @example http://local.ferrumgate.com
      */
     url: string;
-    auth: AuthOption,
+    auth: AuthSettings,
     jwtSSLCertificate: SSLCertificate,
     sshCertificate: SSHCertificate,
 
     users: User[];
     captcha: Captcha,
-    email: EmailOption,
-    logo: LogoOption,
+    email: EmailSettings,
+    logo: LogoSettings,
     /**
      * @summary RBAC roles and rights
      */

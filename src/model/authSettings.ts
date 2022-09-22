@@ -10,7 +10,9 @@ export interface AuthLinkedIn {
     clientSecret: string,
     //callbackURL: string will  be ${url}/login/linkedin/callback
 }
-export interface AuthOption {
+
+export interface AuthSettings {
     google?: AuthGoogle,
-    linkedin?: AuthLinkedIn
+    linkedin?: AuthLinkedIn,
+    isLocal?: number;
 }

@@ -125,18 +125,18 @@ export class EmailService {
 
     }
     async send(email: Email) {
-        const emailOptions = await this.configService.getEmailOptions();
+        const emailSettings = await this.configService.getEmailSettings();
         if (!this.sender) {
 
-            switch (emailOptions.type) {
+            switch (emailSettings.type) {
                 case 'google':
-                    this.sender = new GmailAccount("gmail", emailOptions.fromname, emailOptions.user, emailOptions.pass);
+                    this.sender = new GmailAccount("gmail", emailSettings.fromname, emailSettings.user, emailSettings.pass);
                     break;
                 case 'office365':
-                    this.sender = new Office365Account("office", emailOptions.fromname, emailOptions.user, emailOptions.pass);
+                    this.sender = new Office365Account("office", emailSettings.fromname, emailSettings.user, emailSettings.pass);
                     break;
                 case 'smtp':
-                    this.sender = new SmtpAccount('smtp', emailOptions.fromname, emailOptions.host || 'localhost', emailOptions.port || 25, emailOptions.isSecure || false, emailOptions.user, emailOptions.pass);
+                    this.sender = new SmtpAccount('smtp', emailSettings.fromname, emailSettings.host || 'localhost', emailSettings.port || 25, emailSettings.isSecure || false, emailSettings.user, emailSettings.pass);
                     break;
                 default:
                     logger.fatal(`unknown email type`);
@@ -145,7 +145,7 @@ export class EmailService {
 
         }
         let tmp = {
-            from: { name: emailOptions.fromName, address: emailOptions.user },
+            from: { name: emailSettings.fromName, address: emailSettings.user },
             to: email.to,
             cc: email.cc,
             bcc: email.bcc,

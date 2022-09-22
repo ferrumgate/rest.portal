@@ -4,13 +4,13 @@ import { Config } from "../model/config";
 import yaml from 'yaml';
 import { Util } from "../util";
 import { User } from "../model/user";
-import { EmailOption } from "../model/emailOption";
-import { LogoOption } from "../model/logoOption";
+import { EmailSettings } from "../model/emailSettings";
+import { LogoSettings } from "../model/logoSettings";
 import { Captcha } from "../model/captcha";
 import { SSLCertificate } from "../model/sslCertificate";
 import { SSHCertificate } from "../model/sshCertificate";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { AuthOption } from "../model/authOption";
+import { AuthSettings } from "../model/authSettings";
 import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
 
@@ -38,6 +38,7 @@ export class ConfigService {
         if (configFile)
             this.configfile = configFile;
         this.config = {
+            isConfigured: 0,
             users: [
                 adminUser
 
@@ -45,20 +46,22 @@ export class ConfigService {
             captcha: {},
             sshCertificate: {},
             jwtSSLCertificate: {},
-            domain: 'ferrumgate.com',
+            domain: 'ferrumgate.local',
             url: 'https://portal.ferrumgate.com',
             email: {
                 type: 'unknown',
                 fromname: '', pass: '', user: ''
             },
             logo: {},
-            auth: {},
+            auth: {
+                isLocal: 1
+            },
             rbac: {
                 roles: [RBACDefault.roleAdmin, RBACDefault.roleReporter, RBACDefault.roleUser],
                 rights: [RBACDefault.rightAdmin, RBACDefault.rightReporter, RBACDefault.rightUser]
             },
             clientNetwork: "100.64.0.0/10",
-            serviceNetwork: "172.16.0.0/14"
+            serviceNetwork: "172.29.0.0/16"
 
         }
         //for testing
@@ -269,11 +272,11 @@ export class ConfigService {
     }
 
 
-    async getEmailOptions(): Promise<EmailOption> {
+    async getEmailSettings(): Promise<EmailSettings> {
         return Util.clone(this.config.email);
     }
 
-    async setEmailOptions(options: EmailOption | {}) {
+    async setEmailSettings(options: EmailSettings | {}) {
         let cloned = Util.clone(options);
         this.config.email = {
             ...this.config.email,
@@ -282,10 +285,10 @@ export class ConfigService {
         await this.saveConfigToFile();
     }
 
-    async getLogo(): Promise<LogoOption> {
+    async getLogo(): Promise<LogoSettings> {
         return Util.clone(this.config.logo);
     }
-    async setLogo(logo: LogoOption | {}) {
+    async setLogo(logo: LogoSettings | {}) {
         let cloned = Util.clone(logo);
         this.config.logo = {
             ...this.config.logo,
@@ -294,14 +297,14 @@ export class ConfigService {
         await this.saveConfigToFile();
     }
 
-    async getAuthOption(): Promise<AuthOption> {
+    async getAuthSettings(): Promise<AuthSettings> {
         return Util.clone(this.config.auth);
     }
     // needs a sync version
-    getAuthOptionSync(): AuthOption {
+    getAuthSettingsSync(): AuthSettings {
         return Util.clone(this.config.auth);
     }
-    async setAuthOption(option: AuthOption | {}) {
+    async setAuthSettings(option: AuthSettings | {}) {
         let cloned = Util.clone(option);
         this.config.auth = {
             ...this.config.auth,
@@ -342,6 +345,15 @@ export class ConfigService {
     }
     async setServiceNetwork(network: string) {
         this.config.serviceNetwork = network;
+        await this.saveConfigToFile();
+    }
+
+    async getIsConfigured(): Promise<number> {
+        return this.config.isConfigured;
+    }
+
+    async setIsConfigured(val: number) {
+        this.config.isConfigured = val;
         await this.saveConfigToFile();
     }
 

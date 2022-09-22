@@ -7,7 +7,7 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { config } from 'process';
-import { AuthOption } from '../src/model/authOption';
+import { AuthSettings } from '../src/model/authSettings';
 import * as twofactor from 'node-2fa';
 
 chai.use(chaiHttp);
@@ -54,7 +54,7 @@ describe('authApi ', async () => {
         if (fs.existsSync('/tmp/config.yaml'))
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
-        const auth: AuthOption = {
+        const auth: AuthSettings = {
             google: {
                 clientID: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
                 clientSecret: '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',
@@ -64,7 +64,7 @@ describe('authApi ', async () => {
                 clientSecret: '1E3DHw0FJFUsp1Um',
             }
         }
-        await configService.setAuthOption(auth);
+        await configService.setAuthSettings(auth);
         await configService.setUrl('http://local.ferrumgate.com:8080')
         await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
     })

@@ -163,6 +163,17 @@ app.use('(\/api)?/config/public',
     asyncHandler(noAuthentication),
     routerConfig);
 
+app.use('(\/api)?/config/public',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'configpublic', 100),
+    asyncHandlerWithArgs(rateLimit, 'configpublicHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'configpublicDaily', 10000),
+    asyncHandler(noAuthentication),
+    routerConfig);
+
+
+
 
 app.use('(\/api)?/client/tunnel',
     asyncHandler(setAppService),

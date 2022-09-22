@@ -18,7 +18,7 @@ describe('registerApi', async () => {
 
     before(async () => {
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
-        await appService.configService.setEmailOptions({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
+        await appService.configService.setEmailSettings({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
 
         await appService.configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
         await appService.configService.saveConfigToFile();

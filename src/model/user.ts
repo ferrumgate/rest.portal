@@ -18,6 +18,20 @@ export interface User {
     apiKey?: string;
     roleIds?: string[];
 
+    /**
+     * if client has problem with it networks settings
+     */
+    networkSettings?: UserOverrideNetworkSettings[];
+
+}
+
+/**
+ * if user needs to override some settings for a network
+ */
+export interface UserOverrideNetworkSettings {
+    networkId: string;
+    ip?: string;
+    serviceNetwork?: string;
 }
 
 

@@ -2,17 +2,17 @@
 import passport from 'passport';
 import passportlocal from 'passport-local';
 import passportlinkedin from 'passport-linkedin-oauth2';
-import { AuthOption } from '../../model/authOption';
+import { AuthSettings } from '../../model/authSettings';
 import { logger } from '../../common';
 import { AppService } from '../../service/appService';
 import { User } from '../../model/user';
 import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
 
-export function linkedinInit(authOption: AuthOption, url: string) {
+export function linkedinInit(auth: AuthSettings, url: string) {
     passport.use(new passportlinkedin.Strategy({
-        clientID: authOption.linkedin?.clientID || '',
-        clientSecret: authOption.linkedin?.clientSecret || '',
+        clientID: auth.linkedin?.clientID || '',
+        clientSecret: auth.linkedin?.clientSecret || '',
         callbackURL: `${url}/login/callback/google`,
         passReqToCallback: true,
         scope: ['r_emailaddress', 'r_liteprofile'],

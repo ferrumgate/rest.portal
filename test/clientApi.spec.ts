@@ -7,7 +7,7 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { config } from 'process';
-import { AuthOption } from '../src/model/authOption';
+import { AuthSettings } from '../src/model/authSettings';
 import { Tunnel } from '../src/model/tunnel';
 import * as twofactor from 'node-2fa';
 chai.use(chaiHttp);
