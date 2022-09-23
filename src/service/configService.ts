@@ -47,14 +47,14 @@ export class ConfigService {
             sshCertificate: {},
             jwtSSLCertificate: {},
             domain: 'ferrumgate.local',
-            url: 'https://portal.ferrumgate.com',
+            url: 'https://secure.yourdomain.com',
             email: {
                 type: 'unknown',
                 fromname: '', pass: '', user: ''
             },
             logo: {},
             auth: {
-                isLocal: 1
+                local: { isForgotPassword: 0, isRegister: 0 }
             },
             rbac: {
                 roles: [RBACDefault.roleAdmin, RBACDefault.roleReporter, RBACDefault.roleUser],

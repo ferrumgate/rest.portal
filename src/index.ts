@@ -12,6 +12,7 @@ import cors from 'cors';
 import { corsOptionsDelegate } from "./api/cors";
 import { routerClientTunnelAuthenticated } from "./api/clientApi";
 import fs from "fs";
+import { routerConfigureAuthenticated } from "./api/configureApi";
 
 
 const bodyParser = require('body-parser');
@@ -48,13 +49,20 @@ const checkCaptcha = async (req: any, res: any, next: any, ...args: any) => {
     const appService = req.appService as AppService;
     if (req.body.captcha) {
         await appService.captchaService.check(req.body.captcha, req.body.action);
+        // TODO delete ratelimit 
+        // await appService.rateLimit.delete(req.clientIp, args[0][0], args[0][1]);
     } else
         if (req.query.captcha) {
             await appService.captchaService.check(req.query.captcha, req.query.action);
+            // TODO delete ratelimit 
+            // await appService.rateLimit.delete(req.clientIp, args[0][0], args[0][1]);
         } else {
             try {
                 await appService.rateLimit.check(req.clientIp, args[0][0], args[0][1]);
             } catch (err: any) {
+                // TODO check here if captcha key exists
+                // otherwise dont check captcha
+
                 throw new RestfullException(428, ErrorCodes.ErrCaptchaRequired, 'captcha required');
             }
         }
@@ -157,20 +165,13 @@ app.use('(\/api)?/auth',
 app.use('(\/api)?/config/public',
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
-    asyncHandlerWithArgs(rateLimit, 'configpublic', 100),
-    asyncHandlerWithArgs(rateLimit, 'configpublicHourly', 1000),
-    asyncHandlerWithArgs(rateLimit, 'configpublicDaily', 10000),
+    asyncHandlerWithArgs(rateLimit, 'configPublic', 100),
+    asyncHandlerWithArgs(rateLimit, 'configPublicHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'configPublicDaily', 10000),
     asyncHandler(noAuthentication),
     routerConfig);
 
-app.use('(\/api)?/config/public',
-    asyncHandler(setAppService),
-    asyncHandler(findClientIp),
-    asyncHandlerWithArgs(rateLimit, 'configpublic', 100),
-    asyncHandlerWithArgs(rateLimit, 'configpublicHourly', 1000),
-    asyncHandlerWithArgs(rateLimit, 'configpublicDaily', 10000),
-    asyncHandler(noAuthentication),
-    routerConfig);
+
 
 
 
@@ -183,6 +184,15 @@ app.use('(\/api)?/client/tunnel',
     asyncHandlerWithArgs(rateLimit, 'clientTunnelDaily', 10000),
     routerClientTunnelAuthenticated);
 
+
+app.use('(\/api)?/configure',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'configure', 100),
+    asyncHandlerWithArgs(rateLimit, 'configureHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'configureDaily', 5000),
+    asyncHandlerWithArgs(checkCaptcha, 'configureCaptcha', 50),
+    routerConfigureAuthenticated);
 
 
 
@@ -199,6 +209,7 @@ app.use(globalErrorHandler);
 
 app.start = async function () {
     //create new jwt certificates
+
     await Util.createSelfSignedCrt("ferrumgate.com");
     (app.appService as AppService).configService.setJWTSSLCertificate({
         privateKey: fs.readFileSync('./ferrumgate.com.key').toString('utf-8'),

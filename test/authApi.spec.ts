@@ -55,6 +55,9 @@ describe('authApi ', async () => {
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
         const auth: AuthSettings = {
+            local: {
+
+            },
             google: {
                 clientID: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
                 clientSecret: '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',

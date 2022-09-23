@@ -7,51 +7,48 @@ import { Util } from "../util";
 import fs from 'fs';
 import { passportInit } from "./auth/passportInit";
 import passport from "passport";
+import { ConfigService } from "../service/configService";
 
 
 
 /////////////////////////////////  public //////////////////////////////////
 export const routerConfig = express.Router();
 ///   /config/public
+
+/*
+ * 
+ * @param configService 
+ * @returns public config data without authentication
+ * @remark dont put sensitive data in this function
+ */
+async function getPublicConfig(configService: ConfigService) {
+    const captcha = await configService.getCaptcha();
+    const isConfigured = await configService.getIsConfigured();
+    const authSettings = await configService.getAuthSettings();
+
+
+    return {
+        captchaSiteKey: captcha.client,
+        isConfigured: isConfigured,
+        login: {
+            local: {
+                isForgotPassword: authSettings.local.isForgotPassword,
+                isRegister: authSettings.local.isRegister
+            },
+            google: authSettings.google ? {} : undefined,
+            linkedin: authSettings.linkedin ? {} : undefined
+        }
+    };
+}
+
 routerConfig.get('/', asyncHandler(async (req: any, res: any, next: any) => {
 
     logger.info(`getting public config`);
     const appService = req.appService as AppService;
     const configService = appService.configService;
 
-    const captcha = await configService.getCaptcha();
-    const isConfigured = await configService.getIsConfigured();
-    const authSettings = await configService.getAuthSettings();
-
-    return res.status(200).json({
-        captchaSiteKey: captcha.client,
-
-
-    });
+    const publicConfig = await getPublicConfig(configService);
+    return res.status(200).json(publicConfig);
 
 }))
 
-
-////////////////////////////  login ////////////////////////////////////
-
-routerConfig.get('/',
-    asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
-    asyncHandler(async (req: any, res: any, next: any) => {
-
-        logger.info(`getting login config`);
-        const appService = req.appService as AppService;
-        const configService = appService.configService;
-
-        const isConfigured = await configService.getIsConfigured();
-        const authSettings = await configService.getAuthSettings();
-
-        return res.status(200).json({
-            isConfigured: isConfigured,
-            isLocal: authSettings.isLocal ? 1 : 0,
-            isGoogle: authSettings.google ? 1 : 0,
-            isLinkedIn: authSettings.linkedin ? 1 : 0
-
-        });
-
-    }))

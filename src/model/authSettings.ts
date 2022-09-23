@@ -11,8 +11,13 @@ export interface AuthLinkedIn {
     //callbackURL: string will  be ${url}/login/linkedin/callback
 }
 
+export interface AuthLocal {
+    isForgotPassword?: number;
+    isRegister?: number;
+}
+
 export interface AuthSettings {
     google?: AuthGoogle,
     linkedin?: AuthLinkedIn,
-    isLocal?: number;
+    local: AuthLocal;
 }
