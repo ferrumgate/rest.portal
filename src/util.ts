@@ -266,9 +266,9 @@ export const Util = {
         })
     },
 
-    clone(x: any) {
+    clone<T>(x: T) {
         if (!x) return x;
-        return JSON.parse(JSON.stringify(x));
+        return JSON.parse(JSON.stringify(x)) as T;
     },
     /**
      * 
@@ -295,9 +295,12 @@ export const Util = {
         })
     },
 
-    async createSelfSignedCrt(domain: string) {
+    async createSelfSignedCrt(domain: string, folder?: string) {
         //openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${domain}.key -out ${domain}.crt -subj "/CN=${domain}/O=${domain}"
-        await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${domain}.key -out ${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false)
+        if (!folder)
+            await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${domain}.key -out ${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false)
+        else
+            await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${folder}/${domain}.key -out ${folder}/${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false)
     }
 
 

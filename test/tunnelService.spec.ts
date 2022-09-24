@@ -10,6 +10,7 @@ import { RedisService } from '../src/service/redisService';
 import { Util } from '../src/util';
 import { User } from '../src/model/user';
 import { Tunnel } from '../src/model/tunnel';
+import { Gateway, Network } from '../src/model/network';
 
 
 
@@ -30,24 +31,59 @@ describe('tunnelService', () => {
     it('getEmptyIp will return an ip', async () => {
         const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
         await configService.setConfigPath('/tmp/rest.portal.config.yaml');
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24'
+        }
+        const gateway: Gateway = {
+            id: '123kasdfa',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id,
+            isActive: 1, isJoined: 1
+        }
+        await configService.setNetwork(net);
+        await configService.setGateway(gateway);
+
         const tunnel = new TunnelService(configService);
-        const ip = await tunnel.getEmptyIp(simpleRedis);
+        const { network, ip } = await tunnel.getEmptyIp(simpleRedis, gateway.id);
+        expect(network).exist;
         expect(ip).exist;
         const ipstr = Util.bigIntegerToIp(ip);
-        expect(ipstr).to.equal('100.64.0.1');
+        expect(ipstr).to.equal('192.168.0.1');
 
     }).timeout(10000)
 
     it('getEmptyIp will throw because of finished ip pool', async () => {
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
         await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
-        await configService2.setClientNetwork('192.168.0.0/24')
+
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24'
+        }
+        const gateway: Gateway = {
+            id: '123kasdfa',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id
+        }
+        await configService2.setNetwork(net);
+        await configService2.setGateway(gateway);
+
+
         for (let i = 0; i < 255; ++i)
             await simpleRedis.set(`/client/192.168.0.${i}`, i);
         let isError = false;
         try {
             const tunnel = new TunnelService(configService2);
-            const ip = await tunnel.getEmptyIp(simpleRedis);
+            const ip = await tunnel.getEmptyIp(simpleRedis, gateway.id);
         } catch (err) {
             isError = true;
         }
@@ -58,7 +94,25 @@ describe('tunnelService', () => {
     it('create tunnel will throw exception because of not found session', async () => {
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
         await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
-        await configService2.setClientNetwork('192.168.0.0/24')
+
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24'
+        }
+        const gateway: Gateway = {
+            id: '123kasdfa',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id,
+            isActive: 1, isJoined: 1
+        }
+        await configService2.setNetwork(net);
+        await configService2.setGateway(gateway);
+
+
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
 
@@ -75,7 +129,24 @@ describe('tunnelService', () => {
     it('create tunnel will return with out error', async () => {
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
         await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
-        await configService2.setClientNetwork('192.168.0.0/24')
+
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24'
+        }
+        const gateway: Gateway = {
+            id: 'w20kaaoe',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id,
+            isActive: 1, isJoined: 1
+        }
+        await configService2.setNetwork(net);
+        await configService2.setGateway(gateway);
+
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
         await simpleRedis.hset(`/tunnel/randomtunnelid`, {
@@ -91,7 +162,8 @@ describe('tunnelService', () => {
         expect(ipExits).to.be.true;
 
         //ip
-        expect(Util.bigIntegerToIp(tunnel.lastUsedIp)).to.equal('192.168.0.1');
+        const lastUsedIp = tunnel.lastUsedIps.get(net.id) || BigInt(1);
+        expect(Util.bigIntegerToIp(lastUsedIp)).to.equal('192.168.0.1');
         //client ip 
         const tunnelId = await simpleRedis.get('/client/192.168.0.1', false)
         expect(tunnelId).to.equal('randomtunnelid');
@@ -109,7 +181,25 @@ describe('tunnelService', () => {
     it('renewIp', async () => {
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
         await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
-        await configService2.setClientNetwork('192.168.0.0/24')
+
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24'
+        }
+        const gateway: Gateway = {
+            id: '1234',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id,
+            isActive: 1, isJoined: 1
+        }
+        await configService2.setNetwork(net);
+        await configService2.setGateway(gateway);
+
+
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
         await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', clientIp: '192.168.1.100', tun: 'tun0', hostId: '1234' })
@@ -135,7 +225,25 @@ describe('tunnelService', () => {
     it('confirm', async () => {
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
         await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
-        await configService2.setClientNetwork('192.168.0.0/24')
+
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24'
+        }
+        const gateway: Gateway = {
+            id: '12345',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id,
+            isActive: 1, isJoined: 1
+        }
+        await configService2.setNetwork(net);
+        await configService2.setGateway(gateway);
+
+
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
         await simpleRedis.hset(`/tunnel/randomtunnelid`,
@@ -159,7 +267,24 @@ describe('tunnelService', () => {
     it('alive', async () => {
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
         await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
-        await configService2.setClientNetwork('192.168.0.0/24')
+
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24'
+        }
+        const gateway: Gateway = {
+            id: '1234',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id,
+            isActive: 1, isJoined: 1
+        }
+        await configService2.setNetwork(net);
+        await configService2.setGateway(gateway);
+
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
         await simpleRedis.hset(`/tunnel/randomtunnelid`,

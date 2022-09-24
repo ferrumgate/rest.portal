@@ -13,6 +13,7 @@ import { ErrorCodes, RestfullException } from "../restfullException";
 import { AuthSettings } from "../model/authSettings";
 import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
+import { Gateway, Network } from "../model/network";
 
 
 
@@ -34,6 +35,15 @@ export class ConfigService {
         adminUser.isVerified = true;
         adminUser.roleIds = ['Admin'];
 
+        //default network
+        const defaultNetwork: Network = {
+            id: Util.randomNumberString(16),
+            name: 'default',
+            labels: ['default'],
+            clientNetwork: '100.64.0.0/16',
+            serviceNetwork: '172.28.28.0/24'
+        }
+
         this.secretKey = encryptKey;
         if (configFile)
             this.configfile = configFile;
@@ -41,7 +51,6 @@ export class ConfigService {
             isConfigured: 0,
             users: [
                 adminUser
-
             ],
             captcha: {},
             sshCertificate: {},
@@ -60,8 +69,11 @@ export class ConfigService {
                 roles: [RBACDefault.roleAdmin, RBACDefault.roleReporter, RBACDefault.roleUser],
                 rights: [RBACDefault.rightAdmin, RBACDefault.rightReporter, RBACDefault.rightUser]
             },
-            clientNetwork: "100.64.0.0/10",
-            serviceNetwork: "172.29.0.0/16"
+            networks: [
+                defaultNetwork
+            ],
+            gateways: []
+
 
         }
         //for testing
@@ -236,6 +248,15 @@ export class ConfigService {
             }*/
         await this.saveConfigToFile();
     }
+    async changeAdminUser(email: string, password: string) {
+        let finded = this.config.users.find(x => x.username == 'admin');
+        if (!finded)
+            return;
+        finded.username = email;
+        finded.password = Util.bcryptHash(password);
+        finded.updateDate = new Date().toISOString();
+        await this.saveConfigToFile();
+    }
     async getCaptcha(): Promise<Captcha> {
         return Util.clone(this.config.captcha);
     }
@@ -312,8 +333,70 @@ export class ConfigService {
         }
         await this.saveConfigToFile();
     }
+
+    async getNetwork(id: string) {
+        const network = this.config.networks.find(x => x.id == id);
+        if (!network) {
+            return network;
+        }
+        return Util.clone(network);
+    }
+    async getNetworkByName(name: string) {
+        const network = this.config.networks.find(x => x.name == name);
+        if (!network) {
+            return network;
+        }
+        return Util.clone(network);
+    }
+    async getNetworkByHost(hostId: string) {
+        const gateway = this.config.gateways.find(x => x.id == hostId);
+        if (!gateway || !gateway.networkId) {
+            return null;
+        }
+        const network = this.config.networks.find(x => x.id == gateway.networkId);
+        if (!network) return null;
+        return Util.clone(network);
+    }
+
+
+    async setNetwork(network: Network) {
+        let findedIndex = this.config.networks.findIndex(x => x.id == network.id);
+        let finded = findedIndex >= 0 ? this.config.networks[findedIndex] : null;
+        const cloned = Util.clone(network);
+        if (!finded) {
+            this.config.networks.push(cloned);
+        } else {
+            this.config.networks[findedIndex] = {
+                ...finded,
+                ...cloned
+            }
+        }
+        await this.saveConfigToFile();
+    }
     async getDomain(): Promise<string> {
         return this.config.domain;
+    }
+
+    async getGateway(id: string) {
+        const gateway = this.config.gateways.find(x => x.id == id);
+        if (!gateway) {
+            return gateway;
+        }
+        return Util.clone(gateway);
+    }
+    async setGateway(gateway: Gateway) {
+        let findedIndex = this.config.gateways.findIndex(x => x.id == gateway.id);
+        let finded = findedIndex >= 0 ? this.config.gateways[findedIndex] : null;
+        const cloned = Util.clone(gateway);
+        if (!finded) {
+            this.config.gateways.push(cloned);
+        } else {
+            this.config.gateways[findedIndex] = {
+                ...finded,
+                ...cloned
+            }
+        }
+        await this.saveConfigToFile();
     }
 
     async setDomain(domain: string) {
@@ -332,20 +415,6 @@ export class ConfigService {
 
     async getRBAC(): Promise<RBAC> {
         return Util.clone(this.config.rbac);
-    }
-    async getClientNetwork(): Promise<string> {
-        return this.config.clientNetwork;
-    }
-    async setClientNetwork(network: string) {
-        this.config.clientNetwork = network;
-        await this.saveConfigToFile();
-    }
-    async getServiceNetwork(): Promise<string> {
-        return this.config.serviceNetwork;
-    }
-    async setServiceNetwork(network: string) {
-        this.config.serviceNetwork = network;
-        await this.saveConfigToFile();
     }
 
     async getIsConfigured(): Promise<number> {

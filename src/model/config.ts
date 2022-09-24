@@ -2,6 +2,7 @@ import { AuthGoogle, AuthSettings } from "./authSettings";
 import { Captcha } from "./captcha";
 import { EmailSettings } from "./emailSettings";
 import { LogoSettings } from "./logoSettings";
+import { Gateway, Network } from "./network";
 import { RBAC, Right, Role } from "./rbac";
 import { SSHCertificate } from "./sshCertificate";
 import { SSLCertificate } from "./sslCertificate";
@@ -36,13 +37,6 @@ export interface Config {
      * @summary RBAC roles and rights
      */
     rbac: RBAC;
-    /**
-     * @summary client sub net like 10.0.0.0/8
-     */
-    clientNetwork: string;
-
-    /**
-     * @summary service ip network
-     */
-    serviceNetwork: string;
+    networks: Network[];
+    gateways: Gateway[];
 }
