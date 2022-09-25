@@ -38,15 +38,16 @@ routerConfigureAuthenticated.post('/',
             logger.error(`current user is not admin`)
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
         }
-        if (!user.roleIds?.find(x => x == RBACDefault.roleAdmin.id)) {
+        const roles = await configService.getUserRoles(user);
+        if (!roles.find(x => x.id == RBACDefault.roleAdmin.id)) {
             logger.error(`current user role is not admin`)
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
         }
 
         const isConfiguredBefore = await configService.getIsConfigured();
-        if (!isConfiguredBefore) {
+        if (isConfiguredBefore) {
             logger.error("system is allready configured");
-            throw new RestfullException(500, ErrorCodes.ErrAllreadyConfigured, "allready configured system");
+            throw new RestfullException(405, ErrorCodes.ErrAllreadyConfigured, "allready configured system");
         }
 
         //check data
@@ -70,7 +71,7 @@ routerConfigureAuthenticated.post('/',
         const adminUser = await configService.getUserByUsername('admin');
         if (!adminUser) {
             logger.fatal("no admin user for configure");
-            throw new RestfullException(500, ErrorCodes.ErrInternalError, "no admin user");
+            throw new RestfullException(412, ErrorCodes.ErrInternalError, "no admin user");
         }
         await configService.setIsConfigured(1);
         await configService.changeAdminUser(data.email, data.password);
@@ -80,7 +81,7 @@ routerConfigureAuthenticated.post('/',
         const defaultNetwork = await configService.getNetworkByName('default');
         if (!defaultNetwork) {
             logger.fatal(`no default network`);
-            throw new RestfullException(500, ErrorCodes.ErrInternalError, "no default network");
+            throw new RestfullException(412, ErrorCodes.ErrInternalError, "no default network");
         }
 
         defaultNetwork.clientNetwork = data.clientNetwork;
