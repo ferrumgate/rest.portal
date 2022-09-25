@@ -64,7 +64,7 @@ export class InputService {
      */
     checkUrl(url: string) {
         if (!url) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'url is invalid');
-        const result = url.startsWith('https') && validator.isURL(url);
+        const result = (url.startsWith('http://') || url.startsWith('https://')) && validator.isURL(url);
         if (!result) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'url is invalid');
     }
 

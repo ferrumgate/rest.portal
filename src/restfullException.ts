@@ -48,6 +48,7 @@ export class ErrorCodes {
     static ErrSecureTunnelFailed: string = 'ErrSecureTunnelFailed';
     static ErrIpAssignFailed: string = 'ErrIpAssignFailed';
     static ErrAllreadyConfigured: string = 'ErrAllreadyConfigured';
+    static ErrNotConfigured: string = 'ErrNotConfigured';
     static ErrMethodNotAllowed: string = 'ErrMethodNotAllowed';
 
 

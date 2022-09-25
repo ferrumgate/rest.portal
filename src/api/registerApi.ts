@@ -22,6 +22,17 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     const redisService = appService.redisService;
     const twoFAService = appService.twoFAService;
 
+    const isSystemConfigured = await configService.getIsConfigured();
+    if (!isSystemConfigured) {
+        logger.warn(`system is not configured yet`);
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, "not configured yet");
+    }
+    const authSettings = await configService.getAuthSettings();
+    if (!authSettings.local.isRegister) {
+        logger.warn(`register is not allowed`);
+        throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, "register not enabled");
+    }
+
 
     inputService.checkPasswordPolicy(userInput.password);
     inputService.checkEmail(userInput.username);//important we need to check,and this must be email
