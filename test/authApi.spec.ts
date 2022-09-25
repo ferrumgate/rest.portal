@@ -7,8 +7,10 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { config } from 'process';
-import { AuthOption } from '../src/model/authOption';
+import { AuthSettings } from '../src/model/authSettings';
 import * as twofactor from 'node-2fa';
+import { Gateway } from '../src/model/network';
+import { Network } from '../src/model/network';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -50,11 +52,32 @@ describe('authApi ', async () => {
         updateDate: new Date().toISOString(),
         roleIds: []
     }
+
+
+    const net: Network = {
+        id: '1ksfasdfasf',
+        name: 'somenetwork',
+        labels: [],
+        serviceNetwork: '100.64.0.0/16',
+        clientNetwork: '192.168.0.0/24'
+    }
+    const gateway: Gateway = {
+        id: '123kasdfa',
+        name: 'aserver',
+        labels: [],
+        networkId: net.id,
+        isActive: 1, isJoined: 1
+    }
+    await configService.setNetwork(net);
+    await configService.setGateway(gateway);
     before(async () => {
         if (fs.existsSync('/tmp/config.yaml'))
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
-        const auth: AuthOption = {
+        const auth: AuthSettings = {
+            local: {
+
+            },
             google: {
                 clientID: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
                 clientSecret: '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',
@@ -64,9 +87,11 @@ describe('authApi ', async () => {
                 clientSecret: '1E3DHw0FJFUsp1Um',
             }
         }
-        await configService.setAuthOption(auth);
+        await configService.setAuthSettings(auth);
         await configService.setUrl('http://local.ferrumgate.com:8080')
         await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await configService.setNetwork(net);
+        await configService.setGateway(gateway);
     })
 
     beforeEach(async () => {
@@ -425,7 +450,7 @@ describe('authApi ', async () => {
     it('POST /authaccesstoken with tunnel parameter with result 200', async () => {
 
         await redisService.set(`/auth/access/test`, 'someid');
-        await redisService.hset(`/tunnel/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100' });
+        await redisService.hset(`/tunnel/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: gateway.id });
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/accesstoken')

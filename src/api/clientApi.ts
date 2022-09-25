@@ -12,6 +12,7 @@ import { config } from "process";
 import { Tunnel } from "../model/tunnel";
 import { TunnelService } from "../service/tunnelService";
 import { HelperService } from "../service/helperService";
+import { getNetworkByHostId } from "./commonApi";
 
 
 
@@ -33,8 +34,9 @@ routerClientTunnelAuthenticated.get('/ip',
         const user = req.currentUser as User;
         const tunnel = req.currentTunnel as Tunnel;
 
+        const network = await getNetworkByHostId(configService, tunnel.hostId);
         return res.status(200).json(
-            { assignedIp: tunnel.assignedClientIp, serviceNetwork: await configService.getServiceNetwork() }
+            { assignedIp: tunnel.assignedClientIp, serviceNetwork: network.serviceNetwork }
         );
     })
 );
@@ -53,11 +55,11 @@ routerClientTunnelAuthenticated.get('/renewip',
         const user = req.currentUser as User;
         const tunnel = req.currentTunnel as Tunnel;
         HelperService.isValidTunnel(tunnel);
-
+        const network = await getNetworkByHostId(configService, tunnel.hostId);
         const newtunnel = await tunnelService.renewIp(tunnel.id || '', redisService);
 
         return res.status(200).json({
-            assignedIp: newtunnel.assignedClientIp, serviceNetwork: await configService.getServiceNetwork()
+            assignedIp: newtunnel.assignedClientIp, serviceNetwork: network.serviceNetwork
         });
     })
 );

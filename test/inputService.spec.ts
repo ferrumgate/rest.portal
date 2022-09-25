@@ -80,6 +80,84 @@ describe('inputService ', async () => {
     }).timeout(5000);
 
 
+    it('checkCidr ', (done) => {
+        const inputService = new InputService();
+        let error = false;
+        try {
+            expect(inputService.checkCidr('10.0.0.1'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.true;
+
+
+        error = false;
+        try {
+            expect(inputService.checkCidr('10.0.0.1/34'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.true;
+
+        error = false;
+        try {
+            expect(inputService.checkCidr('10.0.0.1/24'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.false;
+        done();
+
+    }).timeout(5000);
+
+
+    it('checkDomain ', (done) => {
+        const inputService = new InputService();
+        let error = false;
+        try {
+            expect(inputService.checkDomain('localhost'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.true;
+
+
+        error = false;
+        try {
+            expect(inputService.checkDomain('ferrumgate.local'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.false;
+
+        done();
+
+    }).timeout(5000);
+
+    it('checkUrl ', (done) => {
+        const inputService = new InputService();
+        let error = false;
+        try {
+            expect(inputService.checkUrl('secure.ferrumgate.local'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.true;
+
+
+        error = false;
+        try {
+            expect(inputService.checkUrl('https://secure.ferrumgate.local'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.false;
+
+        done();
+
+    }).timeout(5000);
+
+
 
 })
 

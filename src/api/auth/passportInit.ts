@@ -13,7 +13,7 @@ export async function passportInit(req: any, res: any, next: any) {
 
     const configService = (req.appService as AppService).configService;
     if (configService.lastUpdateTime != lastConfigServiceUpdateTime) {//if config changed
-        const auth = await configService.getAuthOption();
+        const auth = await configService.getAuthSettings();
         const domain = await configService.getDomain();
         const url = await configService.getUrl();
 

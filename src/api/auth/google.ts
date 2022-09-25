@@ -2,17 +2,17 @@
 import passport from 'passport';
 import passportlocal from 'passport-local';
 import passportgoogle from 'passport-google-oauth2';
-import { AuthOption } from '../../model/authOption';
+import { AuthSettings } from '../../model/authSettings';
 import { logger } from '../../common';
 import { AppService } from '../../service/appService';
 import { User } from '../../model/user';
 import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
 
-export function googleInit(authOption: AuthOption, url: string) {
+export function googleInit(auth: AuthSettings, url: string) {
     passport.use(new passportgoogle.Strategy({
-        clientID: authOption.google?.clientID || '',
-        clientSecret: authOption.google?.clientSecret || '',
+        clientID: auth.google?.clientID || '',
+        clientSecret: auth.google?.clientSecret || '',
         callbackURL: `${url}/login/callback/google`,
         passReqToCallback: true,
         scope: ['email', 'profile', 'openid'],

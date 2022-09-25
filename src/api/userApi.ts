@@ -65,6 +65,17 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
     const templateService = appService.templateService;
     const emailService = appService.emailService;
 
+    const isSystemConfigured = await configService.getIsConfigured();
+    if (!isSystemConfigured) {
+        logger.warn(`system is not configured yet`);
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, "not configured yet");
+    }
+    const authSettings = await configService.getAuthSettings();
+    if (!authSettings.local.isForgotPassword) {
+        logger.warn(`forgotpassword is not allowed`);
+        throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, "forgotpassword not enabled");
+    }
+
     logger.info(`forgot password with email ${email}`);
     //this is security check if input is not valid email then throw exception
     await inputService.checkEmail(email);

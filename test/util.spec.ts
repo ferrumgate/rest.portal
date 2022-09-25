@@ -364,9 +364,9 @@ describe('util ', () => {
 
     it('createSelfSignedCrt ', async () => {
         const domain = `${Util.randomNumberString(8)}.com`;
-        const output = await Util.createSelfSignedCrt(domain)
-        expect(fs.existsSync(`${domain}.crt`)).to.be.true
-        expect(fs.existsSync(`${domain}.key`)).to.be.true
+        const output = await Util.createSelfSignedCrt(domain, '/tmp')
+        expect(fs.existsSync(`/tmp/${domain}.crt`)).to.be.true
+        expect(fs.existsSync(`/tmp/${domain}.key`)).to.be.true
 
     });
 

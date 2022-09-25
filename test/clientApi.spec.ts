@@ -7,9 +7,12 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { config } from 'process';
-import { AuthOption } from '../src/model/authOption';
+import { AuthSettings } from '../src/model/authSettings';
 import { Tunnel } from '../src/model/tunnel';
 import * as twofactor from 'node-2fa';
+import { Network } from '../src/model/network';
+import { Gateway } from '../src/model/network';
+
 chai.use(chaiHttp);
 const expect = chai.expect;
 
@@ -37,13 +40,32 @@ describe('clientApi ', async () => {
         roleIds: []
 
     }
+    const net: Network = {
+        id: '1ksfasdfasf',
+        name: 'somenetwork',
+        labels: [],
+        clientNetwork: '10.0.0.0/24',
+        serviceNetwork: '172.18.0.0/24'
+    }
+    const gateway: Gateway = {
+        id: 'w20kaaoe',
+        name: 'aserver',
+        labels: [],
+        networkId: net.id,
+        isActive: 1,
+        isJoined: 1
+    }
 
     before(async () => {
         if (fs.existsSync('/tmp/config.yaml'))
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
-        await configService.setServiceNetwork('172.18.0.0/24')
-        await configService.setClientNetwork('10.0.0.0/24');
+
+
+        await configService.setNetwork(net);
+        await configService.setGateway(gateway);
+
+
     })
 
     beforeEach(async () => {
@@ -58,7 +80,7 @@ describe('clientApi ', async () => {
             id: 'akey', assignedClientIp: '10.0.0.1',
             authenticatedTime: new Date().toISOString(),
             clientIp: '192.168.8.8', tun: 'tun0',
-            userId: user.id, hostId: '1231',
+            userId: user.id, hostId: gateway.id,
             serviceNetwork: '192.168.0.0/24'
         };
         await redisService.hset('/tunnel/akey', tunnel)

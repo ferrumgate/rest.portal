@@ -2,7 +2,7 @@
 import passport from 'passport';
 import passportlocal from 'passport-local';
 import passportgoogle from 'passport-google-oauth2';
-import { AuthOption } from '../../model/authOption';
+import { AuthSettings } from '../../model/authSettings';
 import { logger } from '../../common';
 import { AppService } from '../../service/appService';
 import { User } from '../../model/user';

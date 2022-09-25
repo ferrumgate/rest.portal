@@ -18,7 +18,7 @@ describe('registerApi', async () => {
 
     before(async () => {
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
-        await appService.configService.setEmailOptions({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
+        await appService.configService.setEmailSettings({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
 
         await appService.configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
         await appService.configService.saveConfigToFile();
@@ -27,6 +27,8 @@ describe('registerApi', async () => {
 
     beforeEach(async () => {
         appService.configService.config.users = [];
+        await appService.configService.setIsConfigured(1);
+        await appService.configService.setAuthSettings({ local: { isRegister: 1 } })
 
     })
 
@@ -62,6 +64,42 @@ describe('registerApi', async () => {
         expect(response.status).to.equal(200);
     }).timeout(50000);
 
+    it('POST /register will return 417 because of not configured system', async () => {
+        //we must send right paramters
+        await appService.configService.setIsConfigured(0);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/register')
+                .send({ name: "test", username: "hamza@hamzakilic", password: "passDene12321" })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(417);
+    }).timeout(5000);
+
+    it('POST /register will return 405 because of register not enabled', async () => {
+        //we must send right paramters
+
+        await appService.configService.setAuthSettings({ local: { isRegister: 0 } })
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/register')
+                .send({ name: "test", username: "hamza@hamzakilic", password: "passDene12321" })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(405);
+    }).timeout(5000);
+
     it('POST /register will return 400 because of invalid email', async () => {
         //we must send right paramters
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -77,6 +115,8 @@ describe('registerApi', async () => {
         })
         expect(response.status).to.equal(400);
     }).timeout(5000);
+
+
     it('POST /register will return 400 because of invalid password', async () => {
         //we must send right paramters
         let response: any = await new Promise((resolve: any, reject: any) => {

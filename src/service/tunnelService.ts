@@ -6,6 +6,7 @@ import { RedisService } from "./redisService";
 import { Util } from "../util";
 import { Tunnel } from "../model/tunnel";
 import { HelperService } from "./helperService";
+import { getNetworkByHostId } from "../api/commonApi";
 
 
 /**
@@ -16,24 +17,24 @@ export class TunnelService {
     /**
      *
      */
-    private _lastUsedIp: bigint = BigInt(0);
-    //private clientNetworkUsedList = '/clientNetwork/used';
+
+    lastUsedIps: Map<string, bigint> = new Map();
     constructor(private config: ConfigService) {
 
 
     }
-    get lastUsedIp() {
-        return this._lastUsedIp;
-    }
-    async getEmptyIp(redisService: RedisService) {
-        const network = await this.config.getClientNetwork();
-        if (!network.includes('/')) {
+
+    async getEmptyIp(redisService: RedisService, hostId: string) {
+        const network = await getNetworkByHostId(this.config, hostId);
+        const clientCidr = network.clientNetwork;
+        if (!clientCidr.includes('/')) {
             logger.error("config client network is not valid");
             throw new RestfullException(500, ErrorCodes.ErrInternalError, "client network is not valid");
         }
-        const parts = network.split('/');
+        const parts = clientCidr.split('/');
         const range = Util.ipCidrToRange(parts[0], Number(parts[1]));
-        let start = this.lastUsedIp || Util.ipToBigInteger(range.start) + 1n;//for performance track last used ip
+        const lastUsedIp = this.lastUsedIps.get(network.id);
+        let start = lastUsedIp || Util.ipToBigInteger(range.start) + 1n;//for performance track last used ip
         let end = Util.ipToBigInteger(range.end);
         if (start >= end)// if all pool ips used, then start from beginning for search
             start = Util.ipToBigInteger(range.start);
@@ -44,16 +45,15 @@ export class TunnelService {
         for (let s = start; s < end; s++) {
             const ip = Util.bigIntegerToIp(s);
             const isExists = await redisService.containsKey(`/client/${ip}`);
-            if (!isExists) return s;
+            if (!isExists) return { network: network, ip: s };
         }
 
         logger.fatal("client ip pool is over");
         throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, 'ip pool is over');
     }
     async getServiceNetwork(tunnel: Tunnel) {
-        //for any host
-        const serviceNetwork = await this.config.getServiceNetwork();
-        return serviceNetwork;
+        const network = getNetworkByHostId(this.config, tunnel.hostId);
+        return network;
     }
     async createTunnel(user: User, redisService: RedisService, tunnelKey: string) {
         const key = `/tunnel/${tunnelKey}`;
@@ -66,9 +66,9 @@ export class TunnelService {
         //security check
         if (!tunnel.authenticatedTime) {
             //peer ip must be set before 
-            const ip = await this.getEmptyIp(redisService);
+            const { network, ip } = await this.getEmptyIp(redisService, tunnel.hostId || '');
             const ipstr = Util.bigIntegerToIp(ip);
-            this._lastUsedIp = ip;
+            this.lastUsedIps.set(network.id, ip);
             await redisService.hset(key, { assignedClientIp: ipstr, userId: user.id });
             //await redisService.sadd(this.clientNetworkUsedList, Util.bigIntegerToIp(ip));
             //all client checking will be over this ip
@@ -106,9 +106,9 @@ export class TunnelService {
         HelperService.isValidTunnel(tunnel);
         const tmp = tunnel.assignedClientIp;
         //peer ip must be set before 
-        const ip = await this.getEmptyIp(redisService);
+        const { network, ip } = await this.getEmptyIp(redisService, tunnel.hostId || '');
         const ipstr = Util.bigIntegerToIp(ip);
-        this._lastUsedIp = ip;
+        this.lastUsedIps.set(network.id, ip);
         await redisService.hset(key, { assignedClientIp: ipstr });
         await redisService.set(`/client/${ipstr}`, tunnelKey, { ttl: 5 * 60 * 1000 });
         if (tmp)

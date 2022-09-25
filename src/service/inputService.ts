@@ -3,7 +3,8 @@ import { passwordStrength } from 'check-password-strength'
 import emailValidator from 'email-validator';
 import { logger } from '../common';
 import { ErrorCodes, RestfullException } from '../restfullException';
-
+import isCidr from 'ip-cidr';
+import validator from 'validator';
 
 /**
  * checks input data
@@ -35,6 +36,36 @@ export class InputService {
         }
 
 
+    }
+    /**
+     * 
+     * @param net 
+     * @returns throw exception or return 4 (ipv4) or 6 (ipv6)
+     */
+    checkCidr(net: string) {
+        if (!net) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'cidr is invalid');
+        const result = isCidr.isValidCIDR(net);
+        if (!result) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'cidr is invalid');
+
+    }
+    /**
+     * @summary check if fqdn is valid
+     * @param domain 
+     */
+    checkDomain(domain: string) {
+        if (!domain) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'fqdn is invalid');
+        const result = validator.isFQDN(domain);
+        if (!result) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'fqdn is invalid');
+    }
+
+    /**
+     * @summary check if login url is valid
+     * @param url 
+     */
+    checkUrl(url: string) {
+        if (!url) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'url is invalid');
+        const result = (url.startsWith('http://') || url.startsWith('https://')) && validator.isURL(url);
+        if (!result) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'url is invalid');
     }
 
 }
