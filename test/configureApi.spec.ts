@@ -37,8 +37,7 @@ describe('configureApi ', async () => {
         name: 'aserver',
         labels: [],
         networkId: net.id,
-        isActive: 1,
-        isJoined: 1
+        isEnabled: 1
     }
 
     before(async () => {

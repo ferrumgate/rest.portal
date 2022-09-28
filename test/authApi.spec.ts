@@ -66,7 +66,7 @@ describe('authApi ', async () => {
         name: 'aserver',
         labels: [],
         networkId: net.id,
-        isActive: 1, isJoined: 1
+        isEnabled: 1
     }
     await configService.setNetwork(net);
     await configService.setGateway(gateway);

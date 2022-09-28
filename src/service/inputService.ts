@@ -68,4 +68,9 @@ export class InputService {
         if (!result) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'url is invalid');
     }
 
+    checkNotEmpty(value: string) {
+        if (!value) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'property is empty');
+
+    }
+
 }

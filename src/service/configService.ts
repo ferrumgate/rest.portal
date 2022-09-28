@@ -341,6 +341,20 @@ export class ConfigService {
         }
         return Util.clone(network);
     }
+
+    async deleteNetwork(id: string) {
+        const indexId = this.config.networks.findIndex(x => x.id == id);
+        if (indexId >= 0) {
+            this.config.networks.splice(indexId, 1);
+
+        }
+        this.config.gateways.forEach(x => {
+            if (x.networkId == id)
+                x.networkId = '';
+        })
+        await this.saveConfigToFile();
+    }
+
     async getNetworkByName(name: string) {
         const network = this.config.networks.find(x => x.name == name);
         if (!network) {
@@ -356,6 +370,21 @@ export class ConfigService {
         const network = this.config.networks.find(x => x.id == gateway.networkId);
         if (!network) return null;
         return Util.clone(network);
+    }
+
+    async getNetworkBySearch(query: string) {
+        const networks = this.config.networks.filter(x => {
+            if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(query)))
+                return true;
+            if (x.name?.toLowerCase().includes(query))
+                return true;
+            if (x.serviceNetwork.includes(query))
+                return true;
+            if (x.clientNetwork.includes(query))
+                return true;
+            return false;
+        });
+        return networks;
     }
 
 
@@ -384,6 +413,34 @@ export class ConfigService {
         }
         return Util.clone(gateway);
     }
+    async deleteGateway(id: string) {
+        const indexId = this.config.gateways.findIndex(x => x.id == id);
+        if (indexId >= 0) {
+            this.config.gateways.splice(indexId, 1);
+
+        }
+        await this.saveConfigToFile();
+    }
+    async getGatewaysByNetworkId(id: string) {
+        if (id) {
+            const gateways = this.config.gateways.filter(x => x.networkId == id);
+            return gateways.map(x => Util.clone(x));
+        } else {
+            const gateways = this.config.gateways.filter(x => !x.networkId);
+            return gateways.map(x => Util.clone(x));
+        }
+    }
+    async getGatewaysBySearch(query: string) {
+        const gateways = this.config.gateways.filter(x => {
+            if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(query)))
+                return true;
+            if (x.name?.toLowerCase().includes(query))
+                return true;
+            return false;
+        });
+        return gateways;
+    }
+
     async setGateway(gateway: Gateway) {
         let findedIndex = this.config.gateways.findIndex(x => x.id == gateway.id);
         let finded = findedIndex >= 0 ? this.config.gateways[findedIndex] : null;

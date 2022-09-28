@@ -1,6 +1,9 @@
+import { User } from "../model/user";
+import { AppService } from "../service/appService";
 import { logger } from "../common";
 import { ErrorCodes, RestfullException } from "../restfullException";
 import { ConfigService } from "../service/configService";
+import { RBACDefault } from "../model/rbac";
 
 /**
  * @summary get network by host id and also check is it is joined and active
@@ -17,7 +20,9 @@ export async function getNetworkByHostId(configService: ConfigService, hostId?: 
         logger.error(`no gateway found ${hostId}`)
         throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'no gateway found');
     }
-    if (!gateway.isActive || !gateway.isJoined) {
+
+    //this check is important because of security
+    if (!gateway.isEnabled) {
         logger.error(`gateway is not active or joined ${hostId}`)
         throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'gateway not joined or active');
     }
@@ -32,4 +37,45 @@ export async function getNetworkByHostId(configService: ConfigService, hostId?: 
     }
     return network;
 
+}
+
+/**
+ * @summary authorize system according to rights
+ * @param req 
+ * @param res 
+ * @param next 
+ * @param rights 
+ */
+export async function authorize(req: any, res: any, next: any, rights: string[]) {
+    logger.info(`authorizing with for rights ${rights.join(',')}`);
+    const appService = req.appService as AppService;
+    const configService = appService.configService;
+    const user = req.currentUser as User;
+    if (!user)
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authorized');
+
+
+    const roles = await configService.getUserRoles(user);
+    let founded = false;
+    for (const role of roles) {
+        if (role.rights) {
+            for (const right of role.rights) {
+                if (rights.find(y => y == right.id)) {
+                    founded = true;
+                    break;
+                }
+            }
+        }
+        if (founded) break;
+
+    }
+    if (founded)
+        next();
+    else
+        throw new RestfullException(401, ErrorCodes.ErrNotEnoughRight, `not authorized,not enough right`);
+
+}
+
+export async function authorizeAsAdmin(req: any, res: any, next: any) {
+    await authorize(req, res, next, [RBACDefault.rightAdmin.id]);
 }
