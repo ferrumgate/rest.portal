@@ -372,7 +372,7 @@ export class ConfigService {
         return Util.clone(network);
     }
 
-    async getNetworkBySearch(query: string) {
+    async getNetworksBySearch(query: string) {
         const networks = this.config.networks.filter(x => {
             if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(query)))
                 return true;
@@ -384,11 +384,14 @@ export class ConfigService {
                 return true;
             return false;
         });
-        return networks;
+        return networks.map(x => Util.clone(x));
+    }
+    async getNetworksAll() {
+        return this.config.networks.map(x => Util.clone(x));
     }
 
 
-    async setNetwork(network: Network) {
+    async saveNetwork(network: Network) {
         let findedIndex = this.config.networks.findIndex(x => x.id == network.id);
         let finded = findedIndex >= 0 ? this.config.networks[findedIndex] : null;
         const cloned = Util.clone(network);
@@ -413,6 +416,7 @@ export class ConfigService {
         }
         return Util.clone(gateway);
     }
+
     async deleteGateway(id: string) {
         const indexId = this.config.gateways.findIndex(x => x.id == id);
         if (indexId >= 0) {
@@ -441,7 +445,11 @@ export class ConfigService {
         return gateways;
     }
 
-    async setGateway(gateway: Gateway) {
+    async getGatewaysAll() {
+        return this.config.gateways.map(x => Util.clone(x));
+    }
+
+    async saveGateway(gateway: Gateway) {
         let findedIndex = this.config.gateways.findIndex(x => x.id == gateway.id);
         let finded = findedIndex >= 0 ? this.config.gateways[findedIndex] : null;
         const cloned = Util.clone(gateway);

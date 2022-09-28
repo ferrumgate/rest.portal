@@ -45,8 +45,8 @@ describe('tunnelService', () => {
             networkId: net.id,
             isEnabled: 1
         }
-        await configService.setNetwork(net);
-        await configService.setGateway(gateway);
+        await configService.saveNetwork(net);
+        await configService.saveGateway(gateway);
 
         const tunnel = new TunnelService(configService);
         const { network, ip } = await tunnel.getEmptyIp(simpleRedis, gateway.id);
@@ -74,8 +74,8 @@ describe('tunnelService', () => {
             labels: [],
             networkId: net.id
         }
-        await configService2.setNetwork(net);
-        await configService2.setGateway(gateway);
+        await configService2.saveNetwork(net);
+        await configService2.saveGateway(gateway);
 
 
         for (let i = 0; i < 255; ++i)
@@ -109,8 +109,8 @@ describe('tunnelService', () => {
             networkId: net.id,
             isEnabled: 1
         }
-        await configService2.setNetwork(net);
-        await configService2.setGateway(gateway);
+        await configService2.saveNetwork(net);
+        await configService2.saveGateway(gateway);
 
 
         const tunnel = new TunnelService(configService2);
@@ -144,8 +144,8 @@ describe('tunnelService', () => {
             networkId: net.id,
             isEnabled: 1
         }
-        await configService2.setNetwork(net);
-        await configService2.setGateway(gateway);
+        await configService2.saveNetwork(net);
+        await configService2.saveGateway(gateway);
 
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;
@@ -196,8 +196,8 @@ describe('tunnelService', () => {
             networkId: net.id,
             isEnabled: 1
         }
-        await configService2.setNetwork(net);
-        await configService2.setGateway(gateway);
+        await configService2.saveNetwork(net);
+        await configService2.saveGateway(gateway);
 
 
         const tunnel = new TunnelService(configService2);
@@ -240,8 +240,8 @@ describe('tunnelService', () => {
             networkId: net.id,
             isEnabled: 1
         }
-        await configService2.setNetwork(net);
-        await configService2.setGateway(gateway);
+        await configService2.saveNetwork(net);
+        await configService2.saveGateway(gateway);
 
 
         const tunnel = new TunnelService(configService2);
@@ -282,8 +282,8 @@ describe('tunnelService', () => {
             networkId: net.id,
             isEnabled: 1
         }
-        await configService2.setNetwork(net);
-        await configService2.setGateway(gateway);
+        await configService2.saveNetwork(net);
+        await configService2.saveGateway(gateway);
 
         const tunnel = new TunnelService(configService2);
         const user: User = { id: 'adfaf' } as User;

@@ -6,7 +6,7 @@ import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
-import { Network } from '../src/model/network';
+import { Gateway, Network } from '../src/model/network';
 import { config } from 'process';
 
 
@@ -18,7 +18,7 @@ const expect = chai.expect;
 /**
  * authenticated user api tests
  */
-describe('networkApi', async () => {
+describe('gatewayApi', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
     const user: User = {
@@ -54,18 +54,16 @@ describe('networkApi', async () => {
         await appService.configService.saveUser(clonedUser);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-        const network: Network = {
+        const gateway: Gateway = {
             id: Util.randomNumberString(),
             name: 'test',
-            labels: [],
-            clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            labels: []
         }
-        await appService.configService.saveNetwork(network);
+        await appService.configService.saveGateway(gateway);
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/network/${network.id}`)
+                .get(`/gateway/${gateway.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -79,23 +77,23 @@ describe('networkApi', async () => {
     }).timeout(50000);
 
 
-    it('GET /network/:id will return 200', async () => {
+    it('GET /gateway/:id returns 200', async () => {
         //prepare data
+
         await appService.configService.saveUser(user);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-        const network: Network = {
+        const gateway: Gateway = {
             id: Util.randomNumberString(),
             name: 'test',
             labels: [],
-            clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            networkId: '2aksa'
         }
-        await appService.configService.saveNetwork(network);
+        await appService.configService.saveGateway(gateway);
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/network/${network.id}`)
+                .get(`/gateway/${gateway.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -105,13 +103,13 @@ describe('networkApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).exist;
-        expect(response.body).to.deep.equal(network);
+        expect(response.body).to.deep.equal(gateway);
 
     }).timeout(50000);
 
-    it('GET /network/:id will return 401', async () => {
+    it('GET /gateway/:id returns 401', async () => {
         //prepare data
+
         await appService.configService.saveUser(user);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
@@ -119,7 +117,7 @@ describe('networkApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/network/someid`)
+                .get(`/gateway/id`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -134,48 +132,61 @@ describe('networkApi', async () => {
     }).timeout(50000);
 
 
-
-    it('GET /network/search will return 200', async () => {
+    it('GET /gateway?search=bla returns 200', async () => {
         //prepare data
+
         await appService.configService.saveUser(user);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-        const network: Network = {
+        const gateway: Gateway = {
             id: Util.randomNumberString(),
             name: 'test',
-            labels: ['mest'],
-            clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
-        }
-        await appService.configService.saveNetwork(network);
-
-
-
-
-        const network2: Network = {
-            id: Util.randomNumberString(),
-            name: 'mest2',
             labels: [],
-            clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            networkId: '2aksa'
         }
-        await appService.configService.saveNetwork(network2);
+        await appService.configService.saveGateway(gateway);
 
-
-
-        const network3: Network = {
+        const gateway2: Gateway = {
             id: Util.randomNumberString(),
-            name: 'est2',
+            name: 'test2',
+            labels: ['mest'],
+            networkId: '2aksa'
+        }
+        await appService.configService.saveGateway(gateway2);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/gateway?search=mest`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body.items[0]).to.deep.equal(gateway2);
+
+    }).timeout(50000);
+
+    it('DELETE /gateway/:id returns 200', async () => {
+        //prepare data
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const gateway: Gateway = {
+            id: Util.randomNumberString(),
+            name: 'test',
             labels: [],
-            clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            networkId: '2aksa'
         }
-        await appService.configService.saveNetwork(network3);
+        await appService.configService.saveGateway(gateway);
 
-        // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/network?search=mest`)
+                .delete(`/gateway/${gateway.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -185,51 +196,31 @@ describe('networkApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).exist;
-        expect(response.body.items.length).to.equal(2);
-        expect(response.body.items[0]).to.deep.equal(network);
-
-        //test ids
-
-        response = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .get(`/network?ids=${network2.id},${network.id}`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-        expect(response.body).exist;
-        expect(response.body.items.length).to.equal(2);
-        expect(response.body.items[0]).to.deep.equal(network2);
+        const itemDb = await appService.configService.getGateway(gateway.id);
+        expect(itemDb).not.exist;
 
     }).timeout(50000);
 
 
-    it('DELETE /network/id will return 200', async () => {
+    it('PUT /gateway returns 200', async () => {
         //prepare data
+
         await appService.configService.saveUser(user);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-        const network: Network = {
+        const gateway: Gateway = {
             id: Util.randomNumberString(),
             name: 'test',
-            labels: ['mest'],
-            clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            labels: [],
+            networkId: '2aksa'
         }
-        await appService.configService.saveNetwork(network);
-
-
-
+        await appService.configService.saveGateway(gateway);
+        gateway.name = 'blabla'
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/network/${network.id}`)
+                .put(`/gateway`)
                 .set(`Authorization`, `Bearer ${token}`)
+                .send(gateway)
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -238,73 +229,31 @@ describe('networkApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        const netdb = await appService.configService.getNetwork(network.id);
-        expect(netdb).not.exist;
+        const itemDb = await appService.configService.getGateway(gateway.id);
+        expect(itemDb).to.deep.equal(gateway);
 
     }).timeout(50000);
 
 
-    it('PUT /network will return 200', async () => {
+
+    it('POST /gateway returns 200', async () => {
         //prepare data
+
         await appService.configService.saveUser(user);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-        const network: Network = {
-            id: Util.randomNumberString(),
-            name: 'test',
-            labels: ['mest'],
-            clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
-        }
-        await appService.configService.saveNetwork(network);
-
-        network.name = 'test2';
-        // test search 
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .put(`/network`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .send(network)
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-        expect(response.body).exist;
-
-        expect(response.body).to.deep.equal(network);
-
-
-        const netdb = await appService.configService.getNetwork(network.id);
-        expect(netdb).to.deep.equal(network);
-
-    }).timeout(50000);
-
-
-    it('POST /network will return 200', async () => {
-        //prepare data
-        await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
-
-        const network: Network = {
+        const gateway: Gateway = {
             id: '',
             name: 'test',
-            labels: ['mest'],
-            clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            labels: [],
+            networkId: '2aksa'
         }
-        await appService.configService.saveNetwork(network);
 
-
-        // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/network`)
+                .post(`/gateway`)
                 .set(`Authorization`, `Bearer ${token}`)
-                .send(network)
+                .send(gateway)
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -313,16 +262,11 @@ describe('networkApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).exist;
-        //posting creates a new id
-        network.id = response.body.id;
-        expect(response.body).to.deep.equal(network);
-        expect(response.body.id).exist;
 
-
+        gateway.id = response.body.id;
+        expect(response.body).to.deep.equal(gateway);
 
     }).timeout(50000);
-
 
 
 

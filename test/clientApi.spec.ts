@@ -61,8 +61,8 @@ describe('clientApi ', async () => {
         await configService.setConfigPath('/tmp/config.yaml');
 
 
-        await configService.setNetwork(net);
-        await configService.setGateway(gateway);
+        await configService.saveNetwork(net);
+        await configService.saveGateway(gateway);
 
 
     })

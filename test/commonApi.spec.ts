@@ -69,8 +69,8 @@ describe('commonApi', async () => {
             networkId: net.id,
             isEnabled: 0
         }
-        await configService.setNetwork(net);
-        await configService.setGateway(gateway);
+        await configService.saveNetwork(net);
+        await configService.saveGateway(gateway);
 
         let exception = false;
         try {
@@ -99,8 +99,8 @@ describe('commonApi', async () => {
             networkId: net.id + '111',
             isEnabled: 0
         }
-        await configService.setNetwork(net);
-        await configService.setGateway(gateway);
+        await configService.saveNetwork(net);
+        await configService.saveGateway(gateway);
 
         let exception = false;
         try {

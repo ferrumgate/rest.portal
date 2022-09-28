@@ -38,6 +38,43 @@ routerGatewayAuthenticated.get('/:id',
 
     }))
 
+routerGatewayAuthenticated.get('/',
+    asyncHandler(passportInit),
+    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const search = req.query.search;
+        const ids = req.query.ids as string;
+        const notJoined = req.query.notJoined;
+        logger.info(`configuring system for startup`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        let items: Gateway[] = [];
+        if (search) {
+            const networks = await configService.getGatewaysBySearch(search.toLowerCase());
+            items = items.concat(networks);
+
+        } else
+            if (ids) {
+                const parts = ids.split(',');
+                for (const id of parts) {
+                    const network = await configService.getGateway(id);
+                    if (network)
+                        items.push(network);
+                }
+
+            } else
+                if (notJoined) {
+                    const networks = await configService.getGatewaysByNetworkId('');
+                    items = items.concat(networks);
+                } else
+                    items = await configService.getGatewaysAll();
+        return res.status(200).json({
+            items: items
+        });
+
+    }))
+
 routerGatewayAuthenticated.delete('/:id',
     asyncHandler(passportInit),
     passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
@@ -70,13 +107,14 @@ routerGatewayAuthenticated.put('/',
         const configService = appService.configService;
         const inputService = appService.inputService;
 
+        await inputService.checkNotEmpty(input.id);
         const gateway = await configService.getGateway(input.id);
         if (!gateway) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no gateway');
-        await inputService.checkNotEmpty(gateway.id);
+
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
-        await configService.setGateway(gateway);
+        await configService.saveGateway(input);
         // TODO audit here
         return res.status(200).json(input);
 
@@ -98,44 +136,12 @@ routerGatewayAuthenticated.post('/',
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
-        await configService.setGateway(input);
+        await configService.saveGateway(input);
         //TODO audit
-        return res.status(200).json({});
+        return res.status(200).json(input);
 
     }))
 
-routerGatewayAuthenticated.get('/',
-    asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
-    asyncHandler(authorizeAsAdmin),
-    asyncHandler(async (req: any, res: any, next: any) => {
-        const search = req.search;
-        const ids = req.ids as string;
-        const notJoined = req.notJoined;
-        logger.info(`configuring system for startup`);
-        const appService = req.appService as AppService;
-        const configService = appService.configService;
-        let items: Gateway[] = [];
-        if (search) {
-            const networks = await configService.getGatewaysBySearch(search.toLowerCase());
-            items = items.concat(networks);
 
-        } else
-            if (ids) {
-                const parts = ids.split(',');
-                for (const id of parts) {
-                    const network = await configService.getGateway(id);
-                    if (network)
-                        items.push(network);
-                }
-
-            } else
-                if (notJoined) {
-                    const networks = await configService.getGatewaysByNetworkId('');
-                    items = items.concat(networks);
-                }
-        return res.status(200).json(items);
-
-    }))
 
 

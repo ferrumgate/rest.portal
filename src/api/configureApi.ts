@@ -87,7 +87,7 @@ routerConfigureAuthenticated.post('/',
         defaultNetwork.clientNetwork = data.clientNetwork;
         defaultNetwork.serviceNetwork = data.serviceNetwork;
 
-        await configService.setNetwork(defaultNetwork);
+        await configService.saveNetwork(defaultNetwork);
 
         return res.status(200).json({});
 

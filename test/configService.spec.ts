@@ -191,7 +191,7 @@ describe('configService', async () => {
     });
 
 
-    it('setNetwork getNetwork getNetworkByName', async () => {
+    it('saveNetwork getNetwork getNetworkByName', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
@@ -203,7 +203,7 @@ describe('configService', async () => {
             serviceNetwork: '172.16.0.0/24'
         };
 
-        await configService.setNetwork(network);
+        await configService.saveNetwork(network);
         const networkDb = await configService.getNetwork(network.id);
         expect(networkDb).to.deep.include(network);
         const networkDb2 = await configService.getNetworkByName('default2');
@@ -231,8 +231,8 @@ describe('configService', async () => {
             networkId: network.id
         }
 
-        await configService.setNetwork(network);
-        await configService.setGateway(gateway);
+        await configService.saveNetwork(network);
+        await configService.saveGateway(gateway);
         const networkDb = await configService.getNetworkByHost(gateway.id);
         expect(networkDb).to.deep.include(network);
 
@@ -259,8 +259,8 @@ describe('configService', async () => {
             networkId: network.id
         }
 
-        await configService.setNetwork(network);
-        await configService.setGateway(gateway);
+        await configService.saveNetwork(network);
+        await configService.saveGateway(gateway);
         await configService.deleteNetwork(network.id);
         const net = await configService.getNetwork(network.id)
         expect(net).not.exist;
@@ -269,7 +269,7 @@ describe('configService', async () => {
 
     });
 
-    it('getGateway setGateway', async () => {
+    it('getGateway saveGateway', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
@@ -284,7 +284,7 @@ describe('configService', async () => {
         }
 
 
-        await configService.setGateway(gateway);
+        await configService.saveGateway(gateway);
         const gatewayDb = await configService.getGateway(gateway.id);
         expect(gatewayDb).to.deep.include(gateway);
 
@@ -304,7 +304,7 @@ describe('configService', async () => {
         }
 
 
-        await configService.setGateway(gateway);
+        await configService.saveGateway(gateway);
         await configService.deleteGateway(gateway.id);
         const gatewayDb = await configService.getGateway(gateway.id);
         expect(gatewayDb).not.exist;

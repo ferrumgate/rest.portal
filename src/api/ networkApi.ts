@@ -53,21 +53,22 @@ routerNetworkAuthenticated.get('/',
         const configService = appService.configService;
         let items: Network[] = [];
         if (search) {
-            const networks = await configService.getNetworkBySearch(search.toLowerCase());
+            const networks = await configService.getNetworksBySearch(search.toLowerCase());
             items = items.concat(networks);
 
-        }
-        if (ids) {
-            const parts = ids.split(',');
-            for (const id of parts) {
-                const network = await configService.getNetwork(id);
-                if (network)
-                    items.push(network);
-            }
+        } else
+            if (ids) {
+                const parts = ids.split(',');
+                for (const id of parts) {
+                    const network = await configService.getNetwork(id);
+                    if (network)
+                        items.push(network);
+                }
 
-        }
+            } else
+                items = await configService.getNetworksAll();
 
-        return res.status(200).json(items);
+        return res.status(200).json({ items: items });
 
     }))
 
@@ -103,14 +104,15 @@ routerNetworkAuthenticated.put('/',
         const configService = appService.configService;
         const inputService = appService.inputService;
 
+        await inputService.checkNotEmpty(input.id);
         const network = await configService.getNetwork(input.id);
         if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no network');
-        await inputService.checkNotEmpty(network.id);
+
         await inputService.checkCidr(input.clientNetwork);
         await inputService.checkCidr(input.serviceNetwork);
         input.name = input.name || 'network';
         input.labels = input.labels || [];
-        await configService.setNetwork(input);
+        await configService.saveNetwork(input);
         // TODO audit here
         return res.status(200).json(input);
 
@@ -133,7 +135,7 @@ routerNetworkAuthenticated.post('/',
         await inputService.checkCidr(input.serviceNetwork);
         input.name = input.name || 'network';
         input.labels = input.labels || [];
-        await configService.setNetwork(input);
+        await configService.saveNetwork(input);
         //TODO audit
         return res.status(200).json(input);
 
