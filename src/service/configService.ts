@@ -111,6 +111,23 @@ export class ConfigService {
             standartUser.roleIds = ['User'];
             this.config.users.push(standartUser);
 
+            // some networks
+            let net: Network = {
+
+                id: '312', name: 'ops', labels: ['deneme2'],
+                serviceNetwork: '1.1.1.1/16',
+                clientNetwork: '1.2.3.4/24'
+            }
+            this.config.networks.push(net);
+            let gateways: Gateway[] = [
+                { id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: 1 },
+                { id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: 1 },
+                { id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: 0 },
+                { id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: 0 },
+                { id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: 0 }
+            ];
+            gateways.forEach(x => this.config.gateways.push(x));
+
         }
         this.loadConfigFromFile();
 
