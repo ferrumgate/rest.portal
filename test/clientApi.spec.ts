@@ -52,8 +52,7 @@ describe('clientApi ', async () => {
         name: 'aserver',
         labels: [],
         networkId: net.id,
-        isActive: 1,
-        isJoined: 1
+        isEnabled: 1
     }
 
     before(async () => {
@@ -62,8 +61,8 @@ describe('clientApi ', async () => {
         await configService.setConfigPath('/tmp/config.yaml');
 
 
-        await configService.setNetwork(net);
-        await configService.setGateway(gateway);
+        await configService.saveNetwork(net);
+        await configService.saveGateway(gateway);
 
 
     })

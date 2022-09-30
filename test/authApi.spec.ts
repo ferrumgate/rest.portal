@@ -66,10 +66,10 @@ describe('authApi ', async () => {
         name: 'aserver',
         labels: [],
         networkId: net.id,
-        isActive: 1, isJoined: 1
+        isEnabled: 1
     }
-    await configService.setNetwork(net);
-    await configService.setGateway(gateway);
+    await configService.saveNetwork(net);
+    await configService.saveGateway(gateway);
     before(async () => {
         if (fs.existsSync('/tmp/config.yaml'))
             fs.rmSync('/tmp/config.yaml')
@@ -90,8 +90,8 @@ describe('authApi ', async () => {
         await configService.setAuthSettings(auth);
         await configService.setUrl('http://local.ferrumgate.com:8080')
         await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
-        await configService.setNetwork(net);
-        await configService.setGateway(gateway);
+        await configService.saveNetwork(net);
+        await configService.saveGateway(gateway);
     })
 
     beforeEach(async () => {

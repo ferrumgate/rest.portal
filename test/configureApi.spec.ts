@@ -37,8 +37,7 @@ describe('configureApi ', async () => {
         name: 'aserver',
         labels: [],
         networkId: net.id,
-        isActive: 1,
-        isJoined: 1
+        isEnabled: 1
     }
 
     before(async () => {
@@ -47,8 +46,8 @@ describe('configureApi ', async () => {
         await configService.setConfigPath('/tmp/config.yaml');
         await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
 
-        await configService.setNetwork(net);
-        await configService.setGateway(gateway);
+        await configService.saveNetwork(net);
+        await configService.saveGateway(gateway);
 
 
     })

@@ -13,6 +13,8 @@ import { corsOptionsDelegate } from "./api/cors";
 import { routerClientTunnelAuthenticated } from "./api/clientApi";
 import fs from "fs";
 import { routerConfigureAuthenticated } from "./api/configureApi";
+import { routerNetworkAuthenticated } from "./api/ networkApi";
+import { routerGatewayAuthenticated } from "./api/gatewayApi";
 
 
 const bodyParser = require('body-parser');
@@ -193,6 +195,26 @@ app.use('(\/api)?/configure',
     asyncHandlerWithArgs(rateLimit, 'configureDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'configureCaptcha', 50),
     routerConfigureAuthenticated);
+
+
+app.use('(\/api)?/network',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'network', 1000),
+    asyncHandlerWithArgs(rateLimit, 'networkHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'networkDaily', 5000),
+    asyncHandlerWithArgs(checkCaptcha, 'networkCaptcha', 50),
+    routerNetworkAuthenticated);
+
+
+app.use('(\/api)?/gateway',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'gateway', 1000),
+    asyncHandlerWithArgs(rateLimit, 'gatewayHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'gatewayDaily', 5000),
+    asyncHandlerWithArgs(checkCaptcha, 'gatewayCaptcha', 50),
+    routerGatewayAuthenticated);
 
 
 
