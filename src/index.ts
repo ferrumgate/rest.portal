@@ -1,6 +1,6 @@
 import { assert } from "console";
 import { routerAuth } from "./api/authApi";
-import { routerConfig } from "./api/configApi";
+import { routerConfig, routerConfigAuthenticated } from "./api/configApi";
 import { routerRegister } from "./api/registerApi";
 import { routerUserAuthenticated, routerUserEmailConfirm, routerUserForgotPassword, routerUserResetPassword } from "./api/userApi";
 import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "./common";
@@ -49,25 +49,33 @@ const rateLimit = async (req: any, res: any, next: any, ...args: any) => {
 };
 const checkCaptcha = async (req: any, res: any, next: any, ...args: any) => {
     const appService = req.appService as AppService;
-    if (req.body.captcha) {
-        await appService.captchaService.check(req.body.captcha, req.body.action);
-        // TODO delete ratelimit 
-        // await appService.rateLimit.delete(req.clientIp, args[0][0], args[0][1]);
-    } else
-        if (req.query.captcha) {
-            await appService.captchaService.check(req.query.captcha, req.query.action);
+    const configService = appService.configService;
+    const captcha = await configService.getCaptcha();
+    const captchaIsOK = captcha.client && captcha.server;
+    if (captchaIsOK) {
+        if (req.body.captcha) {
+            await appService.captchaService.check(req.body.captcha, req.body.action);
             // TODO delete ratelimit 
             // await appService.rateLimit.delete(req.clientIp, args[0][0], args[0][1]);
-        } else {
-            try {
-                await appService.rateLimit.check(req.clientIp, args[0][0], args[0][1]);
-            } catch (err: any) {
-                // TODO check here if captcha key exists
-                // otherwise dont check captcha
+        } else
+            if (req.query.captcha) {
+                await appService.captchaService.check(req.query.captcha, req.query.action);
+                // TODO delete ratelimit 
+                // await appService.rateLimit.delete(req.clientIp, args[0][0], args[0][1]);
+            } else {
+                try {
+                    await appService.rateLimit.check(req.clientIp, args[0][0], args[0][1]);
+                } catch (err: any) {
+                    // TODO check here if captcha key exists
+                    // otherwise dont check captcha
 
-                throw new RestfullException(428, ErrorCodes.ErrCaptchaRequired, 'captcha required');
+                    throw new RestfullException(428, ErrorCodes.ErrCaptchaRequired, 'captcha required');
+                }
             }
-        }
+    } else {
+        //no captcha settings
+        logger.warn(`captcha settings is empty, please fill it`);
+    }
     next();
 };
 const findClientIp = async (req: any, res: any, next: any) => {
@@ -150,6 +158,7 @@ app.use('(\/api)?/user',
     asyncHandlerWithArgs(rateLimit, 'user', 1000),
     asyncHandlerWithArgs(rateLimit, 'userHourly', 10000),
     asyncHandlerWithArgs(rateLimit, 'userDaily', 50000),
+    asyncHandlerWithArgs(checkCaptcha, 'userCaptcha', 5),
     routerUserAuthenticated);
 
 
@@ -170,8 +179,20 @@ app.use('(\/api)?/config/public',
     asyncHandlerWithArgs(rateLimit, 'configPublic', 100),
     asyncHandlerWithArgs(rateLimit, 'configPublicHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'configPublicDaily', 10000),
+    //asyncHandlerWithArgs(checkCaptcha, 'configPublic', 1000),//specialy disabled
     asyncHandler(noAuthentication),
     routerConfig);
+
+
+app.use('(\/api)?/config',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'config', 100),
+    asyncHandlerWithArgs(rateLimit, 'configHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'configDaily', 10000),
+    asyncHandlerWithArgs(checkCaptcha, 'config', 50),
+    asyncHandler(noAuthentication),
+    routerConfigAuthenticated);
 
 
 
@@ -184,6 +205,7 @@ app.use('(\/api)?/client/tunnel',
     asyncHandlerWithArgs(rateLimit, 'clientTunnel', 100),
     asyncHandlerWithArgs(rateLimit, 'clientTunnelHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'clientTunnelDaily', 10000),
+    asyncHandlerWithArgs(checkCaptcha, 'clientTunnelCaptcha', 50),
     routerClientTunnelAuthenticated);
 
 

@@ -27,6 +27,7 @@ export class AppService {
     public twoFAService: TwoFAService;
     public oauth2Service: OAuth2Service;
     public tunnelService: TunnelService;
+
     /**
      *
      */
