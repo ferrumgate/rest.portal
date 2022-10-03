@@ -9,6 +9,7 @@ import { Util } from '../src/util';
 import { config } from 'process';
 import { AuthSettings } from '../src/model/authSettings';
 import { RedisService } from '../src/service/redisService';
+import { EmailSettings } from '../src/model/emailSettings';
 
 
 chai.use(chaiHttp);
@@ -247,6 +248,152 @@ describe('configApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.server).to.equal('serverkey');
         expect(response.body.client).to.equal('clientkey');
+
+
+
+    }).timeout(50000);
+
+    /// email
+
+
+    it('GET /config/email will return settings', async () => {
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const emailSettings: EmailSettings = {
+            fromname: 'testferrum', pass: 'apass', type: 'google', user: 'auser'
+        }
+        await appService.configService.setEmailSettings(emailSettings);
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/config/email')
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.fromname).to.equal(emailSettings.fromname);
+        expect(response.body.pass).exist;
+
+
+    }).timeout(50000);
+
+    it('GET /config/email will return 401, only admin users', async () => {
+        const clonedUser = Util.clone(user);
+        clonedUser.roleIds = ['User'];
+        await appService.configService.saveUser(clonedUser);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/config/email')
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(401);
+
+
+
+    }).timeout(50000);
+
+
+    it('PUT /config/email will return 200, with new fields', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const emailSettings: EmailSettings = {
+            fromname: 'testferrum', pass: 'apass', type: 'google', user: 'auser'
+        }
+        await appService.configService.setEmailSettings(emailSettings);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/config/captcha')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ ...emailSettings, fromname: 'ferrumgate' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.fromname).to.equal('ferrumgate');
+
+
+
+
+    }).timeout(50000);
+
+
+    it('DELETE /config/email will return 200, with new fields', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const emailSettings: EmailSettings = {
+            fromname: 'testferrum', pass: 'apass', type: 'google', user: 'auser'
+        }
+        await appService.configService.setEmailSettings(emailSettings);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .delete('/config/email')
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.fromname).to.equal('');
+        expect(response.body.type).to.equal('empty');
+
+
+
+
+    }).timeout(50000);
+
+    it.skip('POST /config/email/check will return 200, with no error', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const emailSettings: EmailSettings = {
+            fromname: 'testferrum', pass: 'nqquxankumksakon', type: 'google', user: 'ferrumgates@gmail.com'
+        }
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/config/email/check')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ settings: emailSettings, to: 'hamza@hamzakilic.com' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.isError).to.equal(false);
+        expect(response.body.errorMessage).to.equal('');
+
 
 
 

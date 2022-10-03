@@ -58,7 +58,7 @@ export class ConfigService {
             domain: 'ferrumgate.local',
             url: 'https://secure.yourdomain.com',
             email: {
-                type: 'unknown',
+                type: 'empty',
                 fromname: '', pass: '', user: ''
             },
             logo: {},
@@ -86,7 +86,7 @@ export class ConfigService {
                 clientID: '866dr29tuc5uy5',
                 clientSecret: '1E3DHw0FJFUsp1Um'
             }
-            this.config.email = { fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' };
+            this.config.email = { fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: 'nqquxankumksakon' };
             this.config.url = 'http://localhost:4200';
             this.config.captcha = {
                 client: '6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH',
@@ -314,7 +314,7 @@ export class ConfigService {
         return Util.clone(this.config.email);
     }
 
-    async setEmailSettings(options: EmailSettings | {}) {
+    async setEmailSettings(options: EmailSettings) {
         let cloned = Util.clone(options);
         this.config.email = {
             ...this.config.email,

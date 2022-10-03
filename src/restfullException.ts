@@ -50,6 +50,11 @@ export class ErrorCodes {
     static ErrAllreadyConfigured: string = 'ErrAllreadyConfigured';
     static ErrNotConfigured: string = 'ErrNotConfigured';
     static ErrMethodNotAllowed: string = 'ErrMethodNotAllowed';
+    static ErrNetworkCidrNotValid: string = 'ErrNetworkCidrNotValid';
+    static ErrUrlNotValid: string = 'ErrUrlNotValid';
+    static ErrDomainNotValid: string = 'ErrDomainNotValid';
+    static ErrEmptyNotValid: string = 'ErrEmptyNotValid';
+    static ErrNotExists: string = 'ErrNotExists';
 
 
 

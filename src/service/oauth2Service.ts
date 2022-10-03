@@ -81,7 +81,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
     async getAccessToken(accessToken: string): Promise<false | "" | 0 | OAuth2Server.Token | null | undefined> {
 
-        logger.info(`getAccessToken ${accessToken}`)
+        logger.info(`getAccessToken ${accessToken.substring(0, 6)}`)
         let decoded = undefined;
         const publicssl = (await this.config.getJWTSSLCertificate()).publicKey || '';
         try {
@@ -136,7 +136,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
      * @remarks be carefull about 
      */
     async getRefreshToken(refreshToken: string): Promise<false | "" | 0 | OAuth2Server.RefreshToken | null | undefined> {
-        logger.info(`getRefreshToken ${refreshToken}`);
+        logger.info(`getRefreshToken ${refreshToken.substring(0, 6)}`);
         let decoded = undefined;
 
         const publicssl = (await this.config.getJWTSSLCertificate()).publicKey || '';
