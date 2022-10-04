@@ -2,8 +2,8 @@
 import { localInit } from "./local";
 import { apiKeyInit } from "./apikey";
 import { jwtInit } from "./jwt";
-import { googleInit } from "./google";
-import { linkedinInit } from "./linkedin";
+import { oauthGoogleInit } from "./google";
+import { oauthLinkedinInit } from "./linkedin";
 import { AppService } from "../../service/appService";
 import { tunnelKeyInit } from "./tunnelKey";
 
@@ -26,12 +26,14 @@ export async function passportInit(req: any, res: any, next: any) {
         // init sessionkey
         tunnelKeyInit();
         // init google
-        if (auth.google) {
-            googleInit(auth, url);
+        const oauthGoogle = auth.oauth?.providers.find(x => x.type == 'google');
+        if (oauthGoogle) {
+            oauthGoogleInit(oauthGoogle, url);
         }
         // init linkedin
-        if (auth.linkedin) {
-            linkedinInit(auth, url);
+        const oauthLinkedin = auth.oauth?.providers.find(x => x.type == 'linkedin');
+        if (oauthLinkedin) {
+            oauthLinkedinInit(oauthLinkedin, url);
         }
         lastConfigServiceUpdateTime = configService.lastUpdateTime;
 

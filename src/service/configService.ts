@@ -63,7 +63,15 @@ export class ConfigService {
             },
             logo: {},
             auth: {
-                local: { isForgotPassword: 0, isRegister: 0 }
+                local: {
+                    id: Util.randomNumberString(),
+                    type: 'local',
+                    baseType: 'local',
+                    name: 'Local',
+                    tags: [],
+                    isForgotPassword: 0,
+                    isRegister: 0
+                }
             },
             rbac: {
                 roles: [RBACDefault.roleAdmin, RBACDefault.roleReporter, RBACDefault.roleUser],
@@ -78,14 +86,29 @@ export class ConfigService {
         }
         //for testing
         if (process.env.NODE_ENV == 'development') {
-            this.config.auth.google = {
-                clientID: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
-                clientSecret: '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',
+            this.config.auth.oauth = {
+                providers: [
+                    {
+                        baseType: 'oauth',
+                        type: 'google',
+                        id: Util.randomNumberString(),
+                        name: 'Google',
+                        tags: [],
+                        clientID: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
+                        clientSecret: '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',
+                    },
+                    {
+                        baseType: 'oauth',
+                        type: 'linkedin',
+                        id: Util.randomNumberString(),
+                        name: 'Linkedin',
+                        tags: [],
+                        clientID: '866dr29tuc5uy5',
+                        clientSecret: '1E3DHw0FJFUsp1Um'
+                    }
+                ]
             }
-            this.config.auth.linkedin = {
-                clientID: '866dr29tuc5uy5',
-                clientSecret: '1E3DHw0FJFUsp1Um'
-            }
+
             this.config.email = { fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: 'nqquxankumksakon' };
             this.config.url = 'http://localhost:4200';
             this.config.captcha = {

@@ -8,8 +8,8 @@ import fs from 'fs';
 import passport from 'passport';
 
 import { localInit } from "./auth/local";
-import { googleInit } from "./auth/google";
-import { linkedinInit } from "./auth/linkedin";
+import { oauthGoogleInit } from "./auth/google";
+import { oauthLinkedinInit } from "./auth/linkedin";
 import { HelperService } from "../service/helperService";
 import { apiKeyInit } from "./auth/apikey";
 import { jwtInit } from "./auth/jwt";

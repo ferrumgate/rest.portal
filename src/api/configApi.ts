@@ -41,8 +41,8 @@ async function getPublicConfig(configService: ConfigService) {
                 isForgotPassword: authSettings.local.isForgotPassword,
                 isRegister: authSettings.local.isRegister
             },
-            google: authSettings.google ? {} : undefined,
-            linkedin: authSettings.linkedin ? {} : undefined
+            google: authSettings.oauth?.providers.find(x => x.type == 'google') ? {} : undefined,
+            linkedin: authSettings.oauth?.providers.find(x => x.type == 'linkedin') ? {} : undefined
         }
     };
 }

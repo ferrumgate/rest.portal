@@ -1,4 +1,4 @@
-import { AuthGoogle, AuthSettings } from "./authSettings";
+import { AuthSettings } from "./authSettings";
 import { Captcha } from "./captcha";
 import { EmailSettings } from "./emailSettings";
 import { LogoSettings } from "./logoSettings";

@@ -2,17 +2,19 @@
 import passport from 'passport';
 import passportlocal from 'passport-local';
 import passportgoogle from 'passport-google-oauth2';
-import { AuthSettings } from '../../model/authSettings';
+import { AuthOAuth, AuthSettings, BaseOAuth } from '../../model/authSettings';
 import { logger } from '../../common';
 import { AppService } from '../../service/appService';
 import { User } from '../../model/user';
 import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
 
-export function googleInit(auth: AuthSettings, url: string) {
+
+export function oauthGoogleInit(google: BaseOAuth, url: string) {
+    //const google = auth.oauth?.providers.find(x => x.type == 'google')
     passport.use(new passportgoogle.Strategy({
-        clientID: auth.google?.clientID || '',
-        clientSecret: auth.google?.clientSecret || '',
+        clientID: google?.clientID || '',
+        clientSecret: google?.clientSecret || '',
         callbackURL: `${url}/login/callback/google`,
         passReqToCallback: true,
         scope: ['email', 'profile', 'openid'],
@@ -28,7 +30,7 @@ export function googleInit(auth: AuthSettings, url: string) {
 
                 let user = await configService.getUserByUsername(email);
                 if (!user) {
-                    let userSave: User = HelperService.createUser('google', email, name, '');
+                    let userSave: User = HelperService.createUser(`${google.baseType}-${google.type}`, email, name, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
 
