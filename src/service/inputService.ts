@@ -43,9 +43,9 @@ export class InputService {
      * @returns throw exception or return 4 (ipv4) or 6 (ipv6)
      */
     checkCidr(net: string) {
-        if (!net) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'cidr is invalid');
+        if (!net) throw new RestfullException(400, ErrorCodes.ErrNetworkCidrNotValid, 'cidr is invalid');
         const result = isCidr.isValidCIDR(net);
-        if (!result) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'cidr is invalid');
+        if (!result) throw new RestfullException(400, ErrorCodes.ErrNetworkCidrNotValid, 'cidr is invalid');
 
     }
     /**
@@ -53,9 +53,9 @@ export class InputService {
      * @param domain 
      */
     checkDomain(domain: string) {
-        if (!domain) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'fqdn is invalid');
+        if (!domain) throw new RestfullException(400, ErrorCodes.ErrDomainNotValid, 'fqdn is invalid');
         const result = validator.isFQDN(domain);
-        if (!result) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'fqdn is invalid');
+        if (!result) throw new RestfullException(400, ErrorCodes.ErrDomainNotValid, 'fqdn is invalid');
     }
 
     /**
@@ -63,14 +63,20 @@ export class InputService {
      * @param url 
      */
     checkUrl(url: string) {
-        if (!url) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'url is invalid');
+        if (!url) throw new RestfullException(400, ErrorCodes.ErrUrlNotValid, 'url is invalid');
         const result = (url.startsWith('http://') || url.startsWith('https://')) && validator.isURL(url);
-        if (!result) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'url is invalid');
+        if (!result) throw new RestfullException(400, ErrorCodes.ErrUrlNotValid, 'url is invalid');
     }
 
     checkNotEmpty(value: string) {
-        if (!value) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'property is empty');
+        if (!value) throw new RestfullException(400, ErrorCodes.ErrEmptyNotValid, 'property is empty');
 
+    }
+
+    checkIfExists(value: any, errorMsg?: string) {
+        if (!value) {
+            throw new RestfullException(400, ErrorCodes.ErrNotExists, errorMsg || 'input is invalid');
+        }
     }
 
 }

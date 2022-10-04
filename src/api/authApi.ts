@@ -214,7 +214,7 @@ routerAuth.post('/refreshtoken',
         if (!request.refreshToken) {
             throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs parameters");
         }
-        logger.info(`getting refresh token with key ${request.refreshToken}`);
+        logger.info(`getting refresh token with key ${request.refreshToken.substring(0, 6)}`);
 
         const inputRefreshToken = await oauth2Service.getRefreshToken(request.refreshToken);
         if (!inputRefreshToken)
