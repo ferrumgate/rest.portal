@@ -66,7 +66,7 @@ describe('authApi ', async () => {
         name: 'aserver',
         labels: [],
         networkId: net.id,
-        isEnabled: 1
+        isEnabled: true
     }
     await configService.saveNetwork(net);
     await configService.saveGateway(gateway);
@@ -75,14 +75,15 @@ describe('authApi ', async () => {
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
         const auth: AuthSettings = {
+            common: {},
             local: {
                 id: Util.randomNumberString(),
                 type: 'local',
                 baseType: 'local',
                 name: 'Local',
                 tags: [],
-                isForgotPassword: 0,
-                isRegister: 0
+                isForgotPassword: false,
+                isRegister: false
             },
 
         }

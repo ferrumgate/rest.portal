@@ -10,7 +10,7 @@ import { Captcha } from "../model/captcha";
 import { SSLCertificate } from "../model/sslCertificate";
 import { SSHCertificate } from "../model/sshCertificate";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { AuthSettings } from "../model/authSettings";
+import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthSaml, AuthSettings, BaseLdap, BaseOAuth, BaseSaml } from "../model/authSettings";
 import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
 import { Gateway, Network } from "../model/network";
@@ -63,14 +63,15 @@ export class ConfigService {
             },
             logo: {},
             auth: {
+                common: {},
                 local: {
                     id: Util.randomNumberString(),
                     type: 'local',
                     baseType: 'local',
                     name: 'Local',
                     tags: [],
-                    isForgotPassword: 0,
-                    isRegister: 0
+                    isForgotPassword: false,
+                    isRegister: false
                 }
             },
             rbac: {
@@ -143,11 +144,11 @@ export class ConfigService {
             }
             this.config.networks.push(net);
             let gateways: Gateway[] = [
-                { id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: 1 },
-                { id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: 1 },
-                { id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: 0 },
-                { id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: 0 },
-                { id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: 0 }
+                { id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: true },
+                { id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: true },
+                { id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: false },
+                { id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: false },
+                { id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: false }
             ];
             gateways.forEach(x => this.config.gateways.push(x));
 
@@ -371,6 +372,101 @@ export class ConfigService {
             ...this.config.auth,
             ...cloned
         }
+        await this.saveConfigToFile();
+    }
+    async setAuthSettingsCommon(common: AuthCommon) {
+        let cloned = Util.clone(common);
+        this.config.auth.common = cloned;
+        await this.saveConfigToFile();
+    }
+    async getAuthSettingsCommon() {
+        const common = Util.clone(this.config.auth.common);
+        return common;
+    }
+
+
+    async setAuthSettingsLocal(local: AuthLocal) {
+        let cloned = Util.clone(local);
+        this.config.auth.local = cloned;
+        await this.saveConfigToFile();
+    }
+    async getAuthSettingsLocal() {
+        const common = Util.clone(this.config.auth.local);
+        return common;
+    }
+
+    async getAuthSettingOAuth() {
+        return Util.clone(this.config.auth.oauth || {}) as AuthOAuth
+    }
+
+    async addAuthSettingOAuth(provider: BaseOAuth) {
+        let cloned = Util.clone(provider);
+        if (!this.config.auth.oauth)
+            this.config.auth.oauth = { providers: [] };
+        const index = this.config.auth.oauth.providers.findIndex(x => x.id == cloned.id);
+        if (index < 0)
+            this.config.auth.oauth.providers.push(cloned);
+        else
+            this.config.auth.oauth.providers[index] = {
+                ...cloned
+            }
+        await this.saveConfigToFile();
+    }
+
+    async deleteAuthSettingOAuth(id: string) {
+        const index = this.config.auth?.oauth?.providers.findIndex(x => x.id == id);
+        if (Number(index) >= 0)
+            this.config.auth.oauth?.providers.splice(Number(index), 1);
+        await this.saveConfigToFile();
+    }
+
+    async getAuthSettingLdap() {
+        return Util.clone(this.config.auth.ldap || {}) as AuthLdap
+    }
+    async addAuthSettingLdap(provider: BaseLdap) {
+        let cloned = Util.clone(provider);
+        if (!this.config.auth.ldap)
+            this.config.auth.ldap = { providers: [] };
+        const index = this.config.auth.ldap.providers.findIndex(x => x.id == cloned.id);
+        if (index < 0)
+            this.config.auth.ldap.providers.push(cloned);
+        else
+            this.config.auth.ldap.providers[index] = {
+                ...cloned
+            }
+        await this.saveConfigToFile();
+    }
+    async deleteAuthSettingLdap(id: string) {
+        const index = this.config.auth?.ldap?.providers.findIndex(x => x.id == id);
+        if (Number(index) >= 0)
+            this.config.auth.ldap?.providers.splice(Number(index), 1);
+        await this.saveConfigToFile();
+    }
+
+    async getAuthSettingSaml() {
+        return Util.clone(this.config.auth.saml || {}) as AuthSaml
+    }
+
+
+    async addAuthSettingSaml(provider: BaseSaml) {
+        let cloned = Util.clone(provider);
+        if (!this.config.auth.saml)
+            this.config.auth.saml = { providers: [] };
+        const index = this.config.auth.saml.providers.findIndex(x => x.id == cloned.id);
+        if (index < 0)
+            this.config.auth.saml.providers.push(cloned);
+        else
+            this.config.auth.saml.providers[index] = {
+                ...cloned
+            }
+        await this.saveConfigToFile();
+    }
+
+
+    async deleteAuthSettingSaml(id: string) {
+        const index = this.config.auth?.saml?.providers.findIndex(x => x.id == id);
+        if (Number(index) >= 0)
+            this.config.auth.saml?.providers.splice(Number(index), 1);
         await this.saveConfigToFile();
     }
 

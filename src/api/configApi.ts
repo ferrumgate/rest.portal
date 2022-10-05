@@ -13,6 +13,9 @@ import { RedisService } from "../service/redisService";
 import { Captcha } from "../model/captcha";
 import * as diff from 'deep-object-diff';
 import { EmailSettings } from "../model/emailSettings";
+import { AuthCommon, AuthLocal, BaseLocal, BaseOAuth } from "../model/authSettings";
+import { util } from "chai";
+import { config } from "process";
 
 
 
@@ -317,7 +320,5 @@ routerConfigAuthenticated.post('/email/check',
         return res.status(200).json({ isError: isError, errorMessage: errorMessage });
 
     }));
-
-
 
 

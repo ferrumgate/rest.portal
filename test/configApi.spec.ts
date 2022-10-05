@@ -7,7 +7,7 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { config } from 'process';
-import { AuthSettings } from '../src/model/authSettings';
+import { AuthCommon, AuthSettings } from '../src/model/authSettings';
 import { RedisService } from '../src/service/redisService';
 import { EmailSettings } from '../src/model/emailSettings';
 
@@ -45,14 +45,15 @@ describe('configApi ', async () => {
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
         const auth: AuthSettings = {
+            common: {},
             local: {
                 id: Util.randomNumberString(),
                 type: 'local',
                 baseType: 'local',
                 name: 'Local',
                 tags: [],
-                isForgotPassword: 0,
-                isRegister: 0
+                isForgotPassword: false,
+                isRegister: false
             },
 
         }
@@ -420,14 +421,6 @@ describe('configApi ', async () => {
 
 
     }).timeout(50000);
-
-
-
-
-
-
-
-
 
 
 

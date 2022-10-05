@@ -67,7 +67,7 @@ describe('commonApi', async () => {
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: 0
+            isEnabled: false
         }
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
@@ -97,7 +97,7 @@ describe('commonApi', async () => {
             name: 'aserver',
             labels: [],
             networkId: net.id + '111',
-            isEnabled: 0
+            isEnabled: false
         }
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);

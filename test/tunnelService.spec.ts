@@ -43,7 +43,7 @@ describe('tunnelService', () => {
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: 1
+            isEnabled: true
         }
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
@@ -107,7 +107,7 @@ describe('tunnelService', () => {
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: 1
+            isEnabled: true
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
@@ -142,7 +142,7 @@ describe('tunnelService', () => {
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: 1
+            isEnabled: true
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
@@ -194,7 +194,7 @@ describe('tunnelService', () => {
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: 1
+            isEnabled: true
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
@@ -238,7 +238,7 @@ describe('tunnelService', () => {
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: 1
+            isEnabled: true
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
@@ -280,7 +280,7 @@ describe('tunnelService', () => {
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: 1
+            isEnabled: true
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);

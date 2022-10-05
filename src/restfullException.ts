@@ -55,7 +55,8 @@ export class ErrorCodes {
     static ErrDomainNotValid: string = 'ErrDomainNotValid';
     static ErrEmptyNotValid: string = 'ErrEmptyNotValid';
     static ErrNotExists: string = 'ErrNotExists';
-
+    static ErrAllreadyExits: string = 'ErrAllreadyExits';
+    static ErrDataVerifyFailed: string = 'ErrDataVerifyFailed';
 
 
 }

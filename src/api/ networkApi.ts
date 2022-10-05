@@ -93,6 +93,12 @@ routerNetworkAuthenticated.delete('/:id',
 
     }))
 
+function copyNetwork(net: Network): Network {
+    return {
+        id: net.id, clientNetwork: net.clientNetwork, labels: net.labels, name: net.name, serviceNetwork: net.serviceNetwork
+    }
+}
+
 routerNetworkAuthenticated.put('/',
     asyncHandler(passportInit),
     passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
@@ -112,9 +118,10 @@ routerNetworkAuthenticated.put('/',
         await inputService.checkCidr(input.serviceNetwork);
         input.name = input.name || 'network';
         input.labels = input.labels || [];
-        await configService.saveNetwork(input);
+        const safe = copyNetwork(input);
+        await configService.saveNetwork(safe);
         // TODO audit here
-        return res.status(200).json(input);
+        return res.status(200).json(safe);
 
     }))
 
@@ -135,9 +142,10 @@ routerNetworkAuthenticated.post('/',
         await inputService.checkCidr(input.serviceNetwork);
         input.name = input.name || 'network';
         input.labels = input.labels || [];
-        await configService.saveNetwork(input);
+        const safe = copyNetwork(input);
+        await configService.saveNetwork(safe);
         //TODO audit
-        return res.status(200).json(input);
+        return res.status(200).json(safe);
 
     }))
 

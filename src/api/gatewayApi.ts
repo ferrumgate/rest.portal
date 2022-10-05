@@ -96,6 +96,12 @@ routerGatewayAuthenticated.delete('/:id',
 
     }))
 
+function copyGateway(gate: Gateway): Gateway {
+    return {
+        id: gate.id, labels: gate.labels, name: gate.name, networkId: gate.networkId, isEnabled: gate.isEnabled
+    }
+}
+
 routerGatewayAuthenticated.put('/',
     asyncHandler(passportInit),
     passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
@@ -114,9 +120,10 @@ routerGatewayAuthenticated.put('/',
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
-        await configService.saveGateway(input);
+        const safe = copyGateway(input);
+        await configService.saveGateway(safe);
         // TODO audit here
-        return res.status(200).json(input);
+        return res.status(200).json(safe);
 
     }))
 
@@ -136,9 +143,10 @@ routerGatewayAuthenticated.post('/',
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
-        await configService.saveGateway(input);
+        const safe = copyGateway(input)
+        await configService.saveGateway(safe);
         //TODO audit
-        return res.status(200).json(input);
+        return res.status(200).json(safe);
 
     }))
 

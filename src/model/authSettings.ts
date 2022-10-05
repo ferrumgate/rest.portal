@@ -16,14 +16,14 @@ export interface BaseSaml extends BaseAuth {
 
 }
 export interface BaseLocal extends BaseAuth {
-
+    isForgotPassword?: boolean;
+    isRegister?: boolean;
 }
 
 
 
 export interface AuthLocal extends BaseLocal {
-    isForgotPassword?: number;
-    isRegister?: number;
+
 }
 
 
@@ -37,8 +37,12 @@ export interface AuthLdap {
 export interface AuthSaml {
     providers: BaseSaml[];
 }
+export interface AuthCommon {
+
+}
 
 export interface AuthSettings {
+    common: AuthCommon;
     local: AuthLocal;
     oauth?: AuthOAuth;
     ldap?: AuthLdap;

@@ -52,7 +52,7 @@ describe('clientApi ', async () => {
         name: 'aserver',
         labels: [],
         networkId: net.id,
-        isEnabled: 1
+        isEnabled: true
     }
 
     before(async () => {

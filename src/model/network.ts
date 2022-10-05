@@ -7,7 +7,7 @@ export interface Gateway {
     name: string;
     labels: string[];
     networkId?: string;
-    isEnabled?: number;
+    isEnabled?: boolean;
 }
 
 

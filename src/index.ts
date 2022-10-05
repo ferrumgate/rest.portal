@@ -15,6 +15,7 @@ import fs from "fs";
 import { routerConfigureAuthenticated } from "./api/configureApi";
 import { routerNetworkAuthenticated } from "./api/ networkApi";
 import { routerGatewayAuthenticated } from "./api/gatewayApi";
+import { routerConfigAuthAuthenticated } from "./api/configAuthApi";
 
 
 const bodyParser = require('body-parser');
@@ -182,6 +183,16 @@ app.use('(\/api)?/config/public',
     //asyncHandlerWithArgs(checkCaptcha, 'configPublic', 1000),//specialy disabled
     asyncHandler(noAuthentication),
     routerConfig);
+
+app.use('(\/api)?/config/auth',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'config', 100),
+    asyncHandlerWithArgs(rateLimit, 'configHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'configDaily', 10000),
+    asyncHandlerWithArgs(checkCaptcha, 'config', 50),
+    asyncHandler(noAuthentication),
+    routerConfigAuthAuthenticated);
 
 
 app.use('(\/api)?/config',
