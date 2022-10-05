@@ -13,7 +13,7 @@ import { HelperService } from '../../service/helperService';
 export function oauthGoogleInit(google: BaseOAuth, url: string) {
     //const google = auth.oauth?.providers.find(x => x.type == 'google')
     passport.use(new passportgoogle.Strategy({
-        clientID: google?.clientID || '',
+        clientID: google?.clientId || '',
         clientSecret: google?.clientSecret || '',
         callbackURL: `${url}/login/callback/google`,
         passReqToCallback: true,

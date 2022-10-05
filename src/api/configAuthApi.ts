@@ -113,7 +113,7 @@ function copyAuthOAuth(auth: BaseOAuth): BaseOAuth {
         return {
             id: auth.id,
             baseType: auth.baseType,
-            clientID: auth.clientID,
+            clientId: auth.clientId,
             clientSecret: auth.clientSecret,
             name: auth.name,
             type: auth.type,

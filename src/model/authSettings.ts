@@ -6,7 +6,7 @@ export interface BaseAuth {
     tags?: string[];
 }
 export interface BaseOAuth extends BaseAuth {
-    clientID: string,
+    clientId: string,
     clientSecret: string,
 }
 export interface BaseLdap extends BaseAuth {

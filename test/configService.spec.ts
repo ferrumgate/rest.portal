@@ -338,7 +338,7 @@ describe('configService', async () => {
             baseType: 'oauth',
             type: 'google',
             id: 'jkj;adfa',
-            clientID: 'akdfa',
+            clientId: 'akdfa',
             clientSecret: 'adfa',
             tags: []
         }

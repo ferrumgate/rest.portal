@@ -22,7 +22,7 @@ function createSampleOauth1(): BaseOAuth {
         id: Util.randomNumberString(),
         name: 'Google',
         tags: [],
-        clientID: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
+        clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
         clientSecret: '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',
     }
 }
@@ -33,7 +33,7 @@ function createSampleOAuth2(): BaseOAuth {
         id: Util.randomNumberString(),
         name: 'Linkedin',
         tags: [],
-        clientID: '866dr29tuc5uy5',
+        clientId: '866dr29tuc5uy5',
         clientSecret: '1E3DHw0FJFUsp1Um'
     }
 }

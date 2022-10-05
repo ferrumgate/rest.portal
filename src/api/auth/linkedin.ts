@@ -12,7 +12,7 @@ import { HelperService } from '../../service/helperService';
 export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
     //const linkedin = auth.oauth?.providers.find(x => x.type == 'linkedin')
     passport.use(new passportlinkedin.Strategy({
-        clientID: linkedin?.clientID || '',
+        clientID: linkedin?.clientId || '',
         clientSecret: linkedin?.clientSecret || '',
         callbackURL: `${url}/login/callback/linkedin`,
         passReqToCallback: true,
