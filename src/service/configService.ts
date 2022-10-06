@@ -109,6 +109,25 @@ export class ConfigService {
                     }
                 ]
             }
+            this.config.auth.ldap = {
+                providers: [
+                    {
+                        baseType: 'ldap',
+                        type: 'activedirectory',
+                        id: Util.randomNumberString(),
+                        name: 'Active Directory/Ldap',
+                        tags: [],
+                        host: 'ldap://192.168.88.254:389',
+                        bindDN: 'CN=myadmin,CN=users,DC=testad,DC=local',
+                        bindPass: 'Qa12345678',
+                        searchBase: 'CN=users,DC=testad,DC=local',
+                        groupnameField: 'memberOf',
+                        usernameField: 'sAMAccountName',
+
+
+                    },
+                ]
+            }
 
             this.config.email = { fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: 'nqquxankumksakon' };
             this.config.url = 'http://localhost:4200';
@@ -121,7 +140,7 @@ export class ConfigService {
             this.config.jwtSSLCertificate.publicKey = fs.readFileSync(`./ferrumgate.com.crt`).toString();
             if (fs.existsSync('/tmp/config.yaml') && !process.env.LOCAL_TEST)
                 fs.rmSync('/tmp/config.yaml');
-            const adminUser = HelperService.createUser('local', 'hamza@hamzakilic.com', 'hamzaadmin', 'Deneme123');
+            const adminUser = HelperService.createUser('local-local', 'hamza@hamzakilic.com', 'hamzaadmin', 'Deneme123');
             adminUser.isLocked = false;
             adminUser.isVerified = true;
             adminUser.roleIds = ['Admin'];
@@ -129,7 +148,7 @@ export class ConfigService {
             adminUser.twoFASecret = 'GZTM2CLFZFQA4W3QSCOGG53QKU23CAZW';
             this.config.users.push(adminUser);
 
-            const standartUser = HelperService.createUser('local', 'hamzauser@hamzakilic.com', 'hamzauser', 'Deneme123');
+            const standartUser = HelperService.createUser('local-local', 'hamzauser@hamzakilic.com', 'hamzauser', 'Deneme123');
             standartUser.isLocked = false;
             standartUser.isVerified = true;
             standartUser.roleIds = ['User'];
@@ -222,6 +241,12 @@ export class ConfigService {
     async getUserByUsername(username: string): Promise<User | undefined> {
         if (!username) return undefined;
         let user = Util.clone(this.config.users.find(x => x.username == username));
+        this.deleteUserSensitiveData(user);
+        return user;
+    }
+    async getUserByUsernameAndSource(username: string, source: string): Promise<User | undefined> {
+        if (!username) return undefined;
+        let user = Util.clone(this.config.users.find(x => x.username == username && x.source == source));
         this.deleteUserSensitiveData(user);
         return user;
     }

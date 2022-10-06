@@ -21,6 +21,7 @@
                 "LOCAL_TEST": "true"
             },
             "outputCapture": "console",
+            "console": "integratedTerminal",
             "preLaunchTask": "build"
         }
     ]

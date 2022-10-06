@@ -1,15 +1,27 @@
+import { SecurityProfile } from "./securityProfile";
+
 export interface BaseAuth {
     id: string;
     name: string;
     baseType: 'local' | 'oauth' | 'saml' | 'ldap';
-    type: 'local' | 'google' | 'linkedin';
+    type: 'local' | 'google' | 'linkedin' | 'activedirectory';
     tags?: string[];
+    securityProfile?: SecurityProfile;
 }
 export interface BaseOAuth extends BaseAuth {
     clientId: string,
     clientSecret: string,
 }
 export interface BaseLdap extends BaseAuth {
+    host: string,
+    bindDN?: string,
+    bindPass?: string;
+    searchBase: string;
+    searchFilter?: string;
+    usernameField: string;
+    groupnameField: string;
+
+
 
 }
 export interface BaseSaml extends BaseAuth {

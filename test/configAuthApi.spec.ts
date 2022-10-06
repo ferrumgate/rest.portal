@@ -7,13 +7,32 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { config } from 'process';
-import { AuthCommon, AuthLocal, AuthSettings, BaseOAuth } from '../src/model/authSettings';
+import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth } from '../src/model/authSettings';
 import { RedisService } from '../src/service/redisService';
 import { EmailSettings } from '../src/model/emailSettings';
 
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+
+
+function createSampleLdap1(): BaseLdap {
+    return {
+        baseType: 'ldap',
+        type: 'activedirectory',
+        id: Util.randomNumberString(),
+        name: 'ActiveDirectory',
+        tags: [],
+        host: 'ldap://',
+        bindDN: 'cn=myadmin',
+        bindPass: 'mypass',
+        searchBase: 'cn=myuser',
+        searchFilter: '',
+        usernameField: 'aSSAm',
+        groupnameField: 'memberOf',
+        securityProfile: {}
+    }
+}
 
 function createSampleOauth1(): BaseOAuth {
     return {
@@ -24,6 +43,7 @@ function createSampleOauth1(): BaseOAuth {
         tags: [],
         clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
         clientSecret: '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',
+        securityProfile: {}
     }
 }
 function createSampleOAuth2(): BaseOAuth {
@@ -34,7 +54,8 @@ function createSampleOAuth2(): BaseOAuth {
         name: 'Linkedin',
         tags: [],
         clientId: '866dr29tuc5uy5',
-        clientSecret: '1E3DHw0FJFUsp1Um'
+        clientSecret: '1E3DHw0FJFUsp1Um',
+        securityProfile: {}
     }
 }
 
@@ -46,7 +67,8 @@ function createSampleLocal(): AuthLocal {
         name: 'Local',
         tags: [],
         isForgotPassword: false,
-        isRegister: false
+        isRegister: false,
+        securityProfile: {}
     }
 }
 
@@ -111,7 +133,13 @@ describe('configAuthApi ', async () => {
             providers: [
 
             ]
-        }
+        },
+            auth.ldap = {
+                providers: []
+            },
+            auth.saml = {
+                providers: []
+            }
 
         await configService.setAuthSettings(auth);
 
@@ -239,7 +267,7 @@ describe('configAuthApi ', async () => {
 
     }).timeout(50000);
 
-
+    ////////////////// oauth2  tests ////////////////////////////////////////////////
 
     it('GET /config/auth/oauth/providers will return 200', async () => {
 
@@ -302,6 +330,35 @@ describe('configAuthApi ', async () => {
 
     }).timeout(50000);
 
+    it('POST /config/auth/oauth/providers will return 400', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const oauth = createSampleOauth1();
+        await configService.addAuthSettingOAuth(oauth);
+
+        const oauth2 = createSampleOAuth2();
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/config/auth/oauth/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(oauth2)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+
+
+    }).timeout(50000);
+
+
     it('PUT /config/auth/oauth/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
@@ -336,6 +393,55 @@ describe('configAuthApi ', async () => {
     }).timeout(50000);
 
 
+    it('PUT /config/auth/oauth/providers will return 400', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const oauth = createSampleOauth1();
+        await configService.addAuthSettingOAuth(oauth);
+        const oauthAny = oauth as any;
+        oauth.id = 'notabsentid';
+        oauth.name = 'xxxx';
+        //check this property will not be saved
+        oauthAny.fakeProperty = 'fakevalue';
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/config/auth/oauth/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(oauth)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+        delete oauthAny.id;
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/config/auth/oauth/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(oauthAny)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+
+
+    }).timeout(50000);
+
+
     it('DELETE /config/auth/oauth/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
@@ -363,6 +469,206 @@ describe('configAuthApi ', async () => {
     }).timeout(50000);
 
 
+
+
+    ////////////////// ldap  tests ////////////////////////////////////////////////
+
+    it('GET /config/auth/ldap/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const ldap = createSampleLdap1();
+        await configService.addAuthSettingLdap(ldap);
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/config/auth/ldap/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.items).exist;
+
+        expect(response.body.items[0]).to.deep.equal(ldap);
+
+
+    }).timeout(50000);
+
+    it('POST /config/auth/ldap/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+
+        const ldap = createSampleLdap1();
+        delete (ldap as any).id;
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/config/auth/ldap/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(ldap)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+
+        ldap.id = response.body.id;
+        expect(response.body).to.deep.equal(ldap);
+
+
+    }).timeout(50000);
+
+    it('POST /config/auth/ldap/providers will return 400', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+
+        const ldap1 = createSampleLdap1();
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/config/auth/ldap/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(ldap1)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+
+
+    }).timeout(50000);
+
+
+    it('PUT /config/auth/ldap/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const ldap = createSampleLdap1();
+        await configService.addAuthSettingLdap(ldap);
+        const ldapAny = ldap as any;
+        ldapAny.name = 'xxxx';
+        //check this property will not be saved
+        ldapAny.fakeProperty = 'fakevalue';
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/config/auth/ldap/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(ldap)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.fakeProperty).not.exist;
+        delete ldapAny.fakeProperty;
+        expect(response.body).to.deep.equal(ldap);
+
+
+    }).timeout(50000);
+
+
+    it('PUT /config/auth/ldap/providers will return 400', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const ldap = createSampleLdap1();
+        await configService.addAuthSettingLdap(ldap);
+        const ldapAny = ldap as any;
+        ldap.id = 'notabsentid';
+        ldap.name = 'xxxx';
+        //check this property will not be saved
+        ldapAny.fakeProperty = 'fakevalue';
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/config/auth/ldap/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(ldap)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+        delete ldapAny.id;
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/config/auth/oauth/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(ldapAny)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+
+
+    }).timeout(50000);
+
+
+    it('DELETE /config/auth/ldap/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const ldap = createSampleLdap1();
+        await configService.addAuthSettingLdap(ldap);
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .delete('/config/auth/ldap/providers/' + ldap.id)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        const ldapRet = await configService.getAuthSettingLdap();
+        expect(ldapRet.providers.length).to.equal(0);
+    }).timeout(50000);
 
 
 

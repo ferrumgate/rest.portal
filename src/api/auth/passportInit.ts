@@ -6,6 +6,7 @@ import { oauthGoogleInit } from "./google";
 import { oauthLinkedinInit } from "./linkedin";
 import { AppService } from "../../service/appService";
 import { tunnelKeyInit } from "./tunnelKey";
+import { activeDirectoryInit } from "./activeDirectory";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -34,6 +35,11 @@ export async function passportInit(req: any, res: any, next: any) {
         const oauthLinkedin = auth.oauth?.providers.find(x => x.type == 'linkedin');
         if (oauthLinkedin) {
             oauthLinkedinInit(oauthLinkedin, url);
+        }
+        // init active directory
+        const activeDirectory = auth.ldap?.providers.find(x => x.type == 'activedirectory');
+        if (activeDirectory) {
+            activeDirectoryInit(activeDirectory, url);
         }
         lastConfigServiceUpdateTime = configService.lastUpdateTime;
 

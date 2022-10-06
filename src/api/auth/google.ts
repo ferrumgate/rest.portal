@@ -27,10 +27,10 @@ export function oauthGoogleInit(google: BaseOAuth, url: string) {
                 const appService = req.appService as AppService;
                 const configService = appService.configService;
                 const redisService = appService.redisService;
-
+                const source = `${google.baseType}-${google.type}`;
                 let user = await configService.getUserByUsername(email);
                 if (!user) {
-                    let userSave: User = HelperService.createUser(`${google.baseType}-${google.type}`, email, name, '');
+                    let userSave: User = HelperService.createUser(source, email, name, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
 

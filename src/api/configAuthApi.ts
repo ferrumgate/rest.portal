@@ -13,7 +13,7 @@ import { RedisService } from "../service/redisService";
 import { Captcha } from "../model/captcha";
 import * as diff from 'deep-object-diff';
 import { EmailSettings } from "../model/emailSettings";
-import { AuthCommon, AuthLocal, BaseLocal, BaseOAuth } from "../model/authSettings";
+import { AuthCommon, AuthLocal, BaseLdap, BaseLocal, BaseOAuth } from "../model/authSettings";
 import { util } from "chai";
 import { config } from "process";
 
@@ -81,11 +81,16 @@ routerConfigAuthAuthenticated.get('/local',
 
     }))
 
-function copyAuthLocal(input: AuthLocal): AuthLocal {
+function copyAuthLocal(auth: AuthLocal): AuthLocal {
     return {
-        id: input.id, baseType: input.baseType, name: input.name,
-        type: input.type, isForgotPassword: input.isForgotPassword,
-        isRegister: input.isRegister, tags: input.tags
+        id: auth.id, baseType: auth.baseType, name: auth.name,
+        type: auth.type, isForgotPassword: auth.isForgotPassword,
+        isRegister: auth.isRegister, tags: auth.tags,
+        securityProfile: {
+            ips: auth.securityProfile?.ips,
+            clocks: auth.securityProfile?.clocks,
+            locations: auth.securityProfile?.locations
+        }
 
     }
 }
@@ -108,6 +113,20 @@ routerConfigAuthAuthenticated.put('/local',
 
     }))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////// oauth2 /////////////////////////////////////////
 function copyAuthOAuth(auth: BaseOAuth): BaseOAuth {
     if (auth.baseType == 'oauth' && (auth.type == 'google' || auth.type == 'linkedin'))
         return {
@@ -117,11 +136,16 @@ function copyAuthOAuth(auth: BaseOAuth): BaseOAuth {
             clientSecret: auth.clientSecret,
             name: auth.name,
             type: auth.type,
-            tags: auth.tags
+            tags: auth.tags,
+            securityProfile: {
+                ips: auth.securityProfile?.ips,
+                clocks: auth.securityProfile?.clocks,
+                locations: auth.securityProfile?.locations
+            }
         }
     throw new Error('not implemented copyAuthOAuth');
 }
-/////////////////////
+
 routerConfigAuthAuthenticated.get('/oauth/providers',
     asyncHandler(passportInit),
     passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
@@ -148,11 +172,12 @@ routerConfigAuthAuthenticated.post('/oauth/providers',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const provider = req.body as BaseOAuth;
-        logger.info(`getting config oauth providers`);
+        logger.info(`getting config auth oauth providers`);
 
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        // check input data
         await inputService.checkIfExists(provider);
         await inputService.checkIfNotExits(provider.id);
         await inputService.checkIfExists(provider.name);
@@ -163,7 +188,7 @@ routerConfigAuthAuthenticated.post('/oauth/providers',
         const indexA = oauth?.providers.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
 
         if (Number(indexA) >= 0) {
-            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is prolem");
+            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
         }
         provider.id = Util.randomNumberString();
         const safe = copyAuthOAuth(provider);
@@ -177,14 +202,16 @@ routerConfigAuthAuthenticated.put('/oauth/providers',
     passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
-        logger.info(`update config oauth provider`);
+        logger.info(`update config auth oauth provider`);
         const input = req.body as BaseOAuth;
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        //check input data
         await inputService.checkIfExists(input);
         await inputService.checkIfExists(input.id);
-        const item = (await configService.getAuthSettingOAuth()).providers.find(x => x.id);
+
+        const item = (await configService.getAuthSettingOAuth()).providers.find(x => x.id == input.id);
         await inputService.checkIfExists(item);
         if (item?.type != input.type && item?.baseType != input.baseType)
             throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
@@ -200,17 +227,155 @@ routerConfigAuthAuthenticated.delete('/oauth/providers/:id',
     passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
-        logger.info(`delete config oauth provider`);
+        logger.info(`delete config auth oauth provider`);
         const { id } = req.params;
         const appService = req.appService as AppService;
         const configService = appService.configService;
-        const item = await (await configService.getAuthSettingOAuth()).providers.find(x => x.id == id);
+        const item = (await configService.getAuthSettingOAuth()).providers.find(x => x.id == id);
         if (item)
             await configService.deleteAuthSettingOAuth(id);
         //TODO audit
         return res.status(200).json({});
 
     }))
+
+
+
+
+
+
+
+
+///////////////////// ldap /////////////////////////////////////////
+function copyAuthLdap(auth: BaseLdap): BaseLdap {
+    if (auth.baseType == 'ldap' && auth.type == 'activedirectory')
+        return {
+            id: auth.id,
+            baseType: auth.baseType,
+            name: auth.name,
+            type: auth.type,
+            tags: auth.tags,
+            host: auth.host,
+            bindDN: auth.bindDN,
+            bindPass: auth.bindPass,
+            searchBase: auth.searchBase,
+            searchFilter: auth.searchFilter,
+            usernameField: auth.usernameField,
+            groupnameField: auth.groupnameField,
+            securityProfile: {
+                ips: auth.securityProfile?.ips,
+                clocks: auth.securityProfile?.clocks,
+                locations: auth.securityProfile?.locations
+            }
+        }
+    throw new Error('not implemented copyAuthOAuth');
+}
+
+routerConfigAuthAuthenticated.get('/ldap/providers',
+    asyncHandler(passportInit),
+    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const ids = req.query.ids as string;
+        logger.info(`getting config auth ldap providers`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const ldap = await configService.getAuthSettingLdap();
+        let providers = ldap?.providers || [];
+        if (ids) {
+            let idList = ids.split(',');
+            providers = providers.filter(x => idList.includes(x.id));
+        }
+        return res.status(200).json({ items: providers });
+
+    }))
+
+routerConfigAuthAuthenticated.post('/ldap/providers',
+    asyncHandler(passportInit),
+    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const provider = req.body as BaseLdap;
+        logger.info(`getting config auth ldap providers`);
+
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        //check input data 
+        await inputService.checkIfExists(provider);
+        await inputService.checkIfNotExits(provider.id);
+        await inputService.checkIfExists(provider.name);
+        await inputService.checkIfExists(provider.type);
+        await inputService.checkIfExists(provider.baseType);
+        await inputService.checkIfExists(provider.host);
+        await inputService.checkIfExists(provider.bindDN);
+        await inputService.checkIfExists(provider.bindPass);
+        await inputService.checkIfExists(provider.searchBase);
+        await inputService.checkIfExists(provider.usernameField);
+        await inputService.checkIfExists(provider.groupnameField);
+
+        // check if same provider exists
+        const ldap = await configService.getAuthSettingLdap();
+        const indexA = ldap?.providers.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
+
+        if (Number(indexA) >= 0) {
+            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
+        }
+        provider.id = Util.randomNumberString();
+        const safe = copyAuthLdap(provider);
+        await configService.addAuthSettingLdap(safe);
+        return res.status(200).json(safe);
+
+    }))
+
+routerConfigAuthAuthenticated.put('/ldap/providers',
+    asyncHandler(passportInit),
+    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        logger.info(`update config auth ldap provider`);
+        const input = req.body as BaseLdap;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        //check input
+        await inputService.checkIfExists(input);
+        await inputService.checkIfExists(input.id);
+        await inputService.checkIfExists(input.host);
+        await inputService.checkIfExists(input.bindDN);
+        await inputService.checkIfExists(input.bindPass);
+        await inputService.checkIfExists(input.searchBase);
+        await inputService.checkIfExists(input.usernameField);
+        await inputService.checkIfExists(input.groupnameField);
+        const item = (await configService.getAuthSettingLdap()).providers.find(x => x.id == input.id);
+        await inputService.checkIfExists(item);
+        if (item?.type != input.type && item?.baseType != input.baseType)
+            throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
+        const safe = copyAuthLdap(input);
+        await configService.addAuthSettingLdap(safe)
+        //TODO audit
+        return res.status(200).json(safe);
+
+    }))
+
+routerConfigAuthAuthenticated.delete('/ldap/providers/:id',
+    asyncHandler(passportInit),
+    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        logger.info(`delete config auth ldap provider`);
+        const { id } = req.params;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const item = (await configService.getAuthSettingLdap()).providers.find(x => x.id == id);
+        if (item)
+            await configService.deleteAuthSettingLdap(id);
+        //TODO audit
+        return res.status(200).json({});
+
+    }))
+
 
 
 

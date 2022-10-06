@@ -1,4 +1,5 @@
 import { Role } from "./rbac";
+import { SecurityProfile } from "./securityProfile";
 
 export interface User {
     id: string;
@@ -17,11 +18,16 @@ export interface User {
     isOnlyApiKey?: boolean;
     apiKey?: string;
     roleIds?: string[];
-
+    email?: string;
     /**
      * if client has problem with it networks settings
      */
     networkSettings?: UserOverrideNetworkSettings[];
+
+    /**
+     * security profile for user
+     */
+    securityProfile?: SecurityProfile;
 
 }
 
