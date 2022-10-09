@@ -27,7 +27,8 @@ function findGroups(groups: string[]) {
 }
 export function activeDirectoryInit(ldap: BaseLdap, url: string) {
     //const google = auth.oauth?.providers.find(x => x.type == 'google')
-    passport.use(new ldapAuth.default({
+    passport.use('activedirectory', new ldapAuth.default({
+
         server: {
             url: ldap.host,
             bindDN: ldap.bindDN,
@@ -37,8 +38,8 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
 
         },
         passReqToCallback: true,
-        usernameField: 'ldapUsername',
-        passwordField: 'ldapPassword'
+        usernameField: 'username',
+        passwordField: 'password'
 
     },
         async (req: any, userAD: any, done: any) => {

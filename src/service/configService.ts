@@ -32,7 +32,7 @@ export class ConfigService {
         if (!encryptKey)
             throw new Error('needs and encyption key with lenght 32');
         //default user
-        const adminUser = HelperService.createUser('default', 'admin', 'default admin', 'ferrumgate');
+        const adminUser = HelperService.createUser('local-local', 'admin', 'default admin', 'ferrumgate');
         adminUser.isVerified = true;
         adminUser.roleIds = ['Admin'];
 

@@ -111,11 +111,11 @@ app.use("(\/api)?/test/activedirectory",
     asyncHandlerWithArgs(rateLimit, 'test', 200),
     asyncHandler(passportInit),
     asyncHandler(async (req: any, res: any, next: any) => {
-        req.body.ldapUsername = 'hamza';
-        req.body.ldapPassword = 'Qa1234567'
+        req.body.username = 'hamza';
+        req.body.password = 'Qa12345678'
         next();
     }),
-    passport.authenticate(['ldapauth', 'headerapikey'], { session: false, }),
+    passport.authenticate(['headerapikey', 'local', 'activedirectory'], { session: false, }),
     asyncHandler(async (req: any, res: any, next: any) => {
         assert(req.appService);
         res.status(200).json({ result: "ok", clientIp: req.clientIp });
