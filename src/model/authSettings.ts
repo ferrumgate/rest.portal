@@ -20,7 +20,7 @@ export interface BaseLdap extends BaseAuth {
     searchFilter?: string;
     usernameField: string;
     groupnameField: string;
-
+    allowedGroups?: [];
 
 
 }

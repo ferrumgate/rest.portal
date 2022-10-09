@@ -9,6 +9,8 @@ import { User } from '../../model/user';
 import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
 import { group } from 'console';
+import { ErrorCodes, RestfullException } from '../../restfullException';
+
 
 function findGroups(groups: string[]) {
     let items = [];
@@ -51,7 +53,19 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
                 await inputService.checkIfExists(username);
                 await inputService.checkIfExists(groups);
                 const groupList = findGroups(groups);
-                //TODO group list check
+
+                //check group filtering
+                if (ldap.allowedGroups?.length) {
+
+                    let foundedGroups = ldap.allowedGroups.filter(y => groupList.find(z => z == y));
+                    if (!foundedGroups.length) {
+                        {
+                            logger.error(`user group ${groupList.join(',')} not in ${ldap.allowedGroups.join(',')}`);
+                            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "user invalid");
+                        }
+                    }
+                }
+
                 const source = `${ldap.baseType}-${ldap.type}`;
                 let user = await configService.getUserByUsername(username);
                 if (!user) {

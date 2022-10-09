@@ -262,6 +262,7 @@ function copyAuthLdap(auth: BaseLdap): BaseLdap {
             searchFilter: auth.searchFilter,
             usernameField: auth.usernameField,
             groupnameField: auth.groupnameField,
+            allowedGroups: auth.allowedGroups,
             securityProfile: {
                 ips: auth.securityProfile?.ips,
                 clocks: auth.securityProfile?.clocks,
