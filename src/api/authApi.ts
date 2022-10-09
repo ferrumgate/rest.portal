@@ -136,7 +136,7 @@ routerAuth.post('/2fa',
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'key not found');
 
         const user = await configService.getUserById(userId);
-        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authorized');
+        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
         HelperService.isValidUser(user);
         const sensitiveData = await configService.getUserSensitiveData(userId);
         twoFAService.verifyToken(sensitiveData.twoFASecret || '', request.twoFAToken);
@@ -226,10 +226,10 @@ routerAuth.post('/refreshtoken',
         const user = await configService.getUserById(userId);
         await HelperService.isValidUser(user);
         if (!user)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, "not authenticated");
         //check also currentUser that comes from accessToken
         if (req.currentUser.id != user.id)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authenticated");
 
 
         //set user to request object

@@ -86,6 +86,7 @@ function copyAuthLocal(auth: AuthLocal): AuthLocal {
         id: auth.id, baseType: auth.baseType, name: auth.name,
         type: auth.type, isForgotPassword: auth.isForgotPassword,
         isRegister: auth.isRegister, tags: auth.tags,
+        isEnabled: auth.isEnabled,
         securityProfile: {
             ips: auth.securityProfile?.ips,
             clocks: auth.securityProfile?.clocks,
@@ -137,6 +138,7 @@ function copyAuthOAuth(auth: BaseOAuth): BaseOAuth {
             name: auth.name,
             type: auth.type,
             tags: auth.tags,
+            isEnabled: auth.isEnabled,
             securityProfile: {
                 ips: auth.securityProfile?.ips,
                 clocks: auth.securityProfile?.clocks,
@@ -263,6 +265,7 @@ function copyAuthLdap(auth: BaseLdap): BaseLdap {
             usernameField: auth.usernameField,
             groupnameField: auth.groupnameField,
             allowedGroups: auth.allowedGroups,
+            isEnabled: auth.isEnabled,
             securityProfile: {
                 ips: auth.securityProfile?.ips,
                 clocks: auth.securityProfile?.clocks,

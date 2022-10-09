@@ -24,6 +24,13 @@ routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: a
     const appService = req.appService as AppService;
     const configService = appService.configService;
     const redisService = appService.redisService;
+
+    const isSystemConfigured = await configService.getIsConfigured();
+    if (!isSystemConfigured) {
+        logger.warn(`system is not configured yet`);
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, "not configured yet");
+    }
+
     //check key from redis
     const rkey = `/user/confirm/${key}`;
     const userId = await redisService.get(rkey, false) as string;
@@ -130,6 +137,12 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
     const inputService = appService.inputService;
     const templateService = appService.templateService;
     const emailService = appService.emailService;
+
+    const isSystemConfigured = await configService.getIsConfigured();
+    if (!isSystemConfigured) {
+        logger.warn(`system is not configured yet`);
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, "not configured yet");
+    }
 
     inputService.checkPasswordPolicy(pass);
 

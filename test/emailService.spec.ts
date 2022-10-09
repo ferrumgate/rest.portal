@@ -10,6 +10,7 @@ import { ErrorCodes } from '../src/restfullException';
 import { ConfigService } from '../src/service/configService';
 import { Email, EmailService } from '../src/service/emailService';
 import { EmailSettings } from '../src/model/emailSettings';
+import { Util } from '../src/util';
 
 
 
@@ -25,7 +26,8 @@ describe.skip('emailService ', async () => {
 
     })
     it('send email through gmail', async () => {
-        let config = new ConfigService('wt99Z3MDQgdTSQKU1gfzZkBLkUN2PBMLFtR0vjCSjlYvSq9U')
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        let config = new ConfigService('wt99Z3MDQgdTSQKU1gfzZkBLkUN2PBMLFtR0vjCSjlYvSq9U', filename)
         config.setEmailSettings({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: 'nqquxankumksakon' });
         const emailService = new EmailService(config);
         const email: Email = {
@@ -39,7 +41,8 @@ describe.skip('emailService ', async () => {
     }).timeout(5000);
 
     it('send email with gmail', async () => {
-        let config = new ConfigService('wt99Z3MDQgdTSQKU1gfzZkBLkUN2PBMLFtR0vjCSjlYvSq9U')
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        let config = new ConfigService('wt99Z3MDQgdTSQKU1gfzZkBLkUN2PBMLFtR0vjCSjlYvSq9U', filename)
         const settings: EmailSettings = {
             fromname: 'ferrumgate',
             type: 'google', user: 'ferrumgates@gmail.com',

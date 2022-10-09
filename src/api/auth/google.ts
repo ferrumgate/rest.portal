@@ -8,6 +8,9 @@ import { AppService } from '../../service/appService';
 import { User } from '../../model/user';
 import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
+import { ErrorCodes, RestfullException } from '../../restfullException';
+import { checkUser } from './commonAuth';
+
 
 
 export function oauthGoogleInit(google: BaseOAuth, url: string) {
@@ -28,13 +31,18 @@ export function oauthGoogleInit(google: BaseOAuth, url: string) {
                 const configService = appService.configService;
                 const redisService = appService.redisService;
                 const source = `${google.baseType}-${google.type}`;
+                if (!google.isEnabled)
+                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, 'disabled source');
                 let user = await configService.getUserByUsername(email);
                 if (!user) {
                     let userSave: User = HelperService.createUser(source, email, name, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
 
+                } else {
+                    await checkUser(user, google);
                 }
+
                 //set user to request object
                 req.currentUser = user;
                 return done(null, user);

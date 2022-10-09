@@ -6,6 +6,7 @@ import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { TemplateService } from '../src/service/templateService';
 import { ConfigService } from '../src/service/configService';
+import { Util } from '../src/util';
 
 
 chai.use(chaiHttp);
@@ -15,7 +16,8 @@ const expect = chai.expect;
 
 
 describe.skip('templateService', async () => {
-    const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', '/tmp/bla.config');
+    const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+    const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', filename);
 
     before(async () => {
         await configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });

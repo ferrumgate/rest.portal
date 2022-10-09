@@ -14,6 +14,7 @@ import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthSaml, AuthSettings, Bas
 import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
 import { Gateway, Network } from "../model/network";
+import { isAbsolute } from "path";
 
 
 
@@ -21,7 +22,7 @@ export class ConfigService {
 
 
     config: Config;
-    protected configfile = '/etc/ferrumgate/config.yaml';
+    protected configfile = `/etc/ferrumgate/config.yaml`;
     private secretKey = '';
     lastUpdateTime = '';
     /**
@@ -71,7 +72,9 @@ export class ConfigService {
                     name: 'Local',
                     tags: [],
                     isForgotPassword: false,
-                    isRegister: false
+                    isRegister: false,
+                    isEnabled: true,
+
                 }
             },
             rbac: {
@@ -97,6 +100,7 @@ export class ConfigService {
                         tags: [],
                         clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
                         clientSecret: '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',
+                        isEnabled: true,
                     },
                     {
                         baseType: 'oauth',
@@ -105,7 +109,8 @@ export class ConfigService {
                         name: 'Linkedin/OAuth2',
                         tags: [],
                         clientId: '866dr29tuc5uy5',
-                        clientSecret: '1E3DHw0FJFUsp1Um'
+                        clientSecret: '1E3DHw0FJFUsp1Um',
+                        isEnabled: true,
                     }
                 ]
             }
@@ -123,6 +128,8 @@ export class ConfigService {
                         searchBase: 'CN=users,DC=testad,DC=local',
                         groupnameField: 'memberOf',
                         usernameField: 'sAMAccountName',
+                        isEnabled: true
+
 
 
                     },

@@ -29,12 +29,19 @@ export class HelperService {
 
     static isValidUser(user: User | undefined) {
         if (!user)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not found');
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not found');
         if (!user.isVerified)
             throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
         if (user.isLocked)
             throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
 
+    }
+    static isFromSource(user: User | undefined, source: string) {
+        if (!user)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not found');
+
+        if (user.source != source)
+            throw new RestfullException(401, ErrorCodes.ErrUserSourceNotVerified, "user source not verified");
     }
 
 
@@ -45,19 +52,22 @@ export class HelperService {
      */
     static isValidTunnel(tun: Tunnel | undefined) {
         if (!tun)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not found');
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not found');
         if (!tun.authenticatedTime)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authenticated');
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
         if (!tun.tun)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not tunned');
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not tunned');
         if (!tun.userId)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authenticated');
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
         if (!tun.assignedClientIp)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authenticated');
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
         if (!tun.hostId)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authenticated")
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, "not authenticated")
         if (!tun.serviceNetwork)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authenticated")
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, "not authenticated")
 
     }
+} {
+
+
 }

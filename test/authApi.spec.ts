@@ -18,7 +18,7 @@ const expect = chai.expect;
 
 
 
-describe('authApi ', async () => {
+describe('authApi', async () => {
     const appService = (app.appService) as AppService;
     const redisService = appService.redisService;
     const configService = appService.configService;
@@ -28,7 +28,7 @@ describe('authApi ', async () => {
         id: 'someid',
         name: 'hamza',
         password: Util.bcryptHash('somepass'),
-        source: 'local',
+        source: 'local-local',
         isVerified: true,
         isLocked: false,
         is2FA: true,
@@ -42,10 +42,10 @@ describe('authApi ', async () => {
     const user2: User = {
         username: 'hamza2@ferrumgate.com',
         groupIds: [],
-        id: 'someid',
+        id: 'someid2',
         name: 'hamza',
         password: Util.bcryptHash('somepass'),
-        source: 'local',
+        source: 'local-local',
         isVerified: true,
         isLocked: false,
         insertDate: new Date().toISOString(),
@@ -68,12 +68,10 @@ describe('authApi ', async () => {
         networkId: net.id,
         isEnabled: true
     }
-    await configService.saveNetwork(net);
-    await configService.saveGateway(gateway);
-    before(async () => {
-        if (fs.existsSync('/tmp/config.yaml'))
-            fs.rmSync('/tmp/config.yaml')
-        await configService.setConfigPath('/tmp/config.yaml');
+
+    beforeEach(async () => {
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        await configService.setConfigPath(filename);
         const auth: AuthSettings = {
             common: {},
             local: {
@@ -83,7 +81,8 @@ describe('authApi ', async () => {
                 name: 'Local',
                 tags: [],
                 isForgotPassword: false,
-                isRegister: false
+                isRegister: false,
+                isEnabled: true
             },
 
         }
@@ -97,6 +96,7 @@ describe('authApi ', async () => {
                     tags: [],
                     clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
                     clientSecret: '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',
+                    isEnabled: true
                 },
                 {
                     baseType: 'oauth',
@@ -105,27 +105,28 @@ describe('authApi ', async () => {
                     name: 'Linkedin',
                     tags: [],
                     clientId: '866dr29tuc5uy5',
-                    clientSecret: '1E3DHw0FJFUsp1Um'
+                    clientSecret: '1E3DHw0FJFUsp1Um',
+                    isEnabled: true
                 }
             ]
         }
 
 
-
+        await configService.saveNetwork(net);
+        await configService.saveGateway(gateway);
         await configService.setAuthSettings(auth);
         await configService.setUrl('http://local.ferrumgate.com:8080')
         await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
-    })
-
-    beforeEach(async () => {
         await redisService.flushAll();
         configService.config.users = [];
         await configService.saveUser(user);
         await configService.saveUser(user2);
 
     })
+
+
     it('POST /auth/local with 2FA result', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -175,7 +176,7 @@ describe('authApi ', async () => {
         const user5: User = {
             username: 'hamza4@ferrumgate.com',
             groupIds: [],
-            id: 'someid',
+            id: 'someid121231',
             name: 'hamza',
             password: Util.bcryptHash('somepass'),
             source: 'local',
@@ -211,7 +212,7 @@ describe('authApi ', async () => {
         const user5: User = {
             username: 'hamza4@ferrumgate.com',
             groupIds: [],
-            id: 'someid',
+            id: 'someid2312313213',
             name: 'hamza',
             password: Util.bcryptHash('somepass'),
             source: 'local',
@@ -248,10 +249,10 @@ describe('authApi ', async () => {
         const user5: User = {
             username: 'hx\\domain',
             groupIds: [],
-            id: 'someid',
+            id: 'someid13131231',
             name: 'hamza',
             password: Util.bcryptHash('somepass'),
-            source: 'local',
+            source: 'local-local',
             isVerified: true,
             isLocked: false,
             is2FA: true,
@@ -279,6 +280,132 @@ describe('authApi ', async () => {
 
 
     }).timeout(50000);
+
+    it('POST /auth/local with result 401 because source is wrong', async () => {
+
+        const user5: User = {
+            username: 'hx\\domain',
+            groupIds: [],
+            id: 'someid121313132',
+            name: 'hamza',
+            password: Util.bcryptHash('somepass'),
+            source: 'local',
+            isVerified: true,
+            isLocked: false,
+            is2FA: false,
+            apiKey: 'test',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            roleIds: []
+
+        }
+        await configService.saveUser(user5);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/local')
+                .send({ username: 'hx\\domain', password: 'somepass' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(401);
+
+
+    }).timeout(50000);
+
+    it('POST /auth/local with result 200  because source isEnabled false and user is admin', async () => {
+
+        const user6: User = {
+            username: 'auserdomain',
+            groupIds: [],
+            id: 'someid222',
+            name: 'hamza',
+            password: Util.bcryptHash('somepass'),
+            source: 'local-local',
+            isVerified: true,
+            isLocked: false,
+            is2FA: false,
+            apiKey: 'test',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            roleIds: ['Admin']
+
+        }
+        await configService.saveUser(user6);
+        const local = await configService.getAuthSettingsLocal();
+        const tmp = {
+            ...local
+        }
+        tmp.isEnabled = false;
+        await configService.setAuthSettingsLocal(tmp);
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/local')
+                .send({ username: 'auserdomain', password: 'somepass' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+
+
+
+    }).timeout(50000);
+
+
+    it('POST /auth/local with result 401 because source isEnabled false and user is not admin', async () => {
+        //
+        const user5: User = {
+            username: 'hx\\domain',
+            groupIds: [],
+            id: 'someid11afasdfa',
+            name: 'hamza',
+            password: Util.bcryptHash('somepass'),
+            source: 'local-local',
+            isVerified: true,
+            isLocked: false,
+            is2FA: false,
+            apiKey: 'test',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            roleIds: ['User']
+
+        }
+        await configService.saveUser(user5);
+        const local = await configService.getAuthSettingsLocal();
+        const tmp = {
+            ...local
+        }
+        tmp.isEnabled = false;
+        await configService.setAuthSettingsLocal(tmp);
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/local')
+                .send({ username: 'hx\\domain', password: 'somepass' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(401);
+
+
+    }).timeout(50000);
+
+
+
 
     it('POST /auth/local with result 401 with empty username', async () => {
 
@@ -322,7 +449,7 @@ describe('authApi ', async () => {
         const user6: User = {
             username: 'hamza6@ferrumgate.com',
             groupIds: [],
-            id: 'someid',
+            id: 'someid2323232',
             name: 'hamza',
             password: Util.bcryptHash('somepass'),
             source: 'local',

@@ -22,7 +22,8 @@ const expect = chai.expect;
 
 
 describe('oauth2Service ', async () => {
-    const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
+    const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+    const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
     let aUser: User = {
         id: 'someid',
         username: 'hamza.kilic@ferrumgate.com',

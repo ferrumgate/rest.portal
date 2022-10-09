@@ -53,7 +53,8 @@ describe('configApi ', async () => {
                 name: 'Local',
                 tags: [],
                 isForgotPassword: false,
-                isRegister: false
+                isRegister: false,
+                isEnabled: true
             },
 
         }
@@ -67,6 +68,7 @@ describe('configApi ', async () => {
                     tags: [],
                     clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
                     clientSecret: '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',
+                    isEnabled: true
                 },
                 {
                     baseType: 'oauth',
@@ -75,7 +77,8 @@ describe('configApi ', async () => {
                     name: 'Linkedin',
                     tags: [],
                     clientId: '866dr29tuc5uy5',
-                    clientSecret: '1E3DHw0FJFUsp1Um'
+                    clientSecret: '1E3DHw0FJFUsp1Um',
+                    isEnabled: true
                 }
             ]
         }

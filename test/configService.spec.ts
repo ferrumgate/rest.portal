@@ -16,8 +16,9 @@ const expect = chai.expect;
 
 describe('configService', async () => {
 
-    const filename = '/tmp/config.yaml';
+    const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     beforeEach((done) => {
+
         if (fs.existsSync(filename))
             fs.rmSync(filename);
         done();
@@ -340,7 +341,8 @@ describe('configService', async () => {
             id: 'jkj;adfa',
             clientId: 'akdfa',
             clientSecret: 'adfa',
-            tags: []
+            tags: [],
+            isEnabled: true
         }
         //add
         await configService.addAuthSettingOAuth(oauth);
@@ -375,7 +377,8 @@ describe('configService', async () => {
             id: 'jkj;adfa',
             tags: [],
             isForgotPassword: true,
-            isRegister: false
+            isRegister: false,
+            isEnabled: true
 
         }
         //add

@@ -16,10 +16,10 @@ const expect = chai.expect;
 
 
 
-const filename = "/tmp/x.config";
+
 describe('commonApi', async () => {
 
-
+    const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     beforeEach(async () => {
         if (fs.existsSync(filename))
             fs.rmSync(filename);

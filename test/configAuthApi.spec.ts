@@ -30,7 +30,8 @@ function createSampleLdap1(): BaseLdap {
         searchFilter: '',
         usernameField: 'aSSAm',
         groupnameField: 'memberOf',
-        securityProfile: {}
+        securityProfile: {},
+        isEnabled: true
     }
 }
 
@@ -43,7 +44,8 @@ function createSampleOauth1(): BaseOAuth {
         tags: [],
         clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
         clientSecret: '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',
-        securityProfile: {}
+        securityProfile: {},
+        isEnabled: true
     }
 }
 function createSampleOAuth2(): BaseOAuth {
@@ -55,7 +57,8 @@ function createSampleOAuth2(): BaseOAuth {
         tags: [],
         clientId: '866dr29tuc5uy5',
         clientSecret: '1E3DHw0FJFUsp1Um',
-        securityProfile: {}
+        securityProfile: {},
+        isEnabled: true
     }
 }
 
@@ -68,7 +71,8 @@ function createSampleLocal(): AuthLocal {
         tags: [],
         isForgotPassword: false,
         isRegister: false,
-        securityProfile: {}
+        securityProfile: {},
+        isEnabled: true
     }
 }
 

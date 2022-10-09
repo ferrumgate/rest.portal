@@ -10,6 +10,7 @@ import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
 import { group } from 'console';
 import { ErrorCodes, RestfullException } from '../../restfullException';
+import { checkUser } from './commonAuth';
 
 
 function findGroups(groups: string[]) {
@@ -50,6 +51,10 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
                 const configService = appService.configService;
                 const redisService = appService.redisService;
                 const inputService = appService.inputService;
+
+                if (!ldap.isEnabled)
+                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, 'disabled source');
+
                 await inputService.checkIfExists(username);
                 await inputService.checkIfExists(groups);
                 const groupList = findGroups(groups);
@@ -73,6 +78,8 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
 
+                } else {
+                    await checkUser(user, ldap);
                 }
                 //set user to request object
                 req.currentUser = user;

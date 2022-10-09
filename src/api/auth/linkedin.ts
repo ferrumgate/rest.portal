@@ -8,6 +8,8 @@ import { AppService } from '../../service/appService';
 import { User } from '../../model/user';
 import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
+import { ErrorCodes, RestfullException } from '../../restfullException';
+import { checkUser } from './commonAuth';
 
 export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
     //const linkedin = auth.oauth?.providers.find(x => x.type == 'linkedin')
@@ -26,6 +28,8 @@ export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
                 const appService = req.appService as AppService;
                 const configService = appService.configService;
                 const redisService = appService.redisService;
+                if (!linkedin.isEnabled)
+                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, 'disabled source');
                 const source = `${linkedin.baseType}-${linkedin.type}`;
                 let user = await configService.getUserByUsername(email);
                 if (!user) {
@@ -33,7 +37,11 @@ export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
 
+                } else {
+                    await checkUser(user, linkedin);
                 }
+
+
                 //set user to request object
                 req.currentUser = user;
                 return done(null, user);

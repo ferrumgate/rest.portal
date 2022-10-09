@@ -20,6 +20,7 @@ const expect = chai.expect;
 
 
 describe('tunnelService', () => {
+
     const simpleRedis = new RedisService('localhost:6379,localhost:6390');
 
     beforeEach(async () => {
@@ -29,8 +30,9 @@ describe('tunnelService', () => {
     })
 
     it('getEmptyIp will return an ip', async () => {
-        const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
-        await configService.setConfigPath('/tmp/rest.portal.config.yaml');
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
+
         const net: Network = {
             id: '1ksfasdfasf',
             name: 'somenetwork',
@@ -58,8 +60,9 @@ describe('tunnelService', () => {
     }).timeout(10000)
 
     it('getEmptyIp will throw because of finished ip pool', async () => {
-        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
-        await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
+
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -92,8 +95,9 @@ describe('tunnelService', () => {
     }).timeout(10000)
 
     it('create tunnel will throw exception because of not found session', async () => {
-        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
-        await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
+
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -127,8 +131,9 @@ describe('tunnelService', () => {
     }).timeout(10000)
 
     it('create tunnel will return with out error', async () => {
-        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
-        await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
+
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -179,8 +184,9 @@ describe('tunnelService', () => {
 
 
     it('renewIp', async () => {
-        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
-        await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
+
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -223,8 +229,9 @@ describe('tunnelService', () => {
 
 
     it('confirm', async () => {
-        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
-        await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
+
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -265,8 +272,9 @@ describe('tunnelService', () => {
 
 
     it('alive', async () => {
-        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm');
-        await configService2.setConfigPath('/tmp/rest.portal.config2.yaml');
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
+
 
         const net: Network = {
             id: '1ksfasdfasf',
