@@ -51,4 +51,5 @@ export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
             }
         }
     ));
+    return 'linkedin';
 }

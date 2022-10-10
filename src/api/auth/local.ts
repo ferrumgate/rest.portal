@@ -52,4 +52,5 @@ export function localInit() {
 
         }
     ));
+    return 'local';
 }

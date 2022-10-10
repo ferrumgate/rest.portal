@@ -53,7 +53,7 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
                 const redisService = appService.redisService;
                 const inputService = appService.inputService;
 
-                if (!ldap.isEnabled)
+                if (!ldap.isEnabled)// check extra
                     throw new RestfullException(401, ErrorCodes.ErrDisabledSource, 'disabled source');
 
                 await inputService.checkIfExists(username);
@@ -91,4 +91,5 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
             }
         }
     ));
+    return 'activedirectory'
 }

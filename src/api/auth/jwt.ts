@@ -45,5 +45,7 @@ export function jwtInit() {
             }
 
         }
+
     ));
+    return 'jwt';
 }

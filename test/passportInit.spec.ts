@@ -13,7 +13,7 @@ import { Gateway } from '../src/model/network';
 import { Network } from '../src/model/network';
 import passport from 'passport';
 import passportCustom from 'passport-custom';
-import { passportAuthenticate } from '../src/api/auth/passportInit';
+import { passportAuthenticate, passportConf } from '../src/api/auth/passportInit';
 import { asyncHandlerWithArgs } from '../src/common';
 
 chai.use(chaiHttp);
@@ -24,9 +24,14 @@ const expect = chai.expect;
 
 describe('passportInit', async () => {
 
-
+    let tmp: string[] = [];
     beforeEach(async () => {
+        tmp = passportConf.activeStrategies;
+        passportConf.activeStrategies = ['test', 'test2'];
 
+    })
+    afterEach(async () => {
+        passportConf.activeStrategies = tmp as any;
 
     })
 

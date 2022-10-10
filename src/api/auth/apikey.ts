@@ -33,4 +33,5 @@ export function apiKeyInit() {
 
         }
     ));
+    return 'headerapikey';
 }

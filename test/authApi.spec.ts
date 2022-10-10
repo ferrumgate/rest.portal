@@ -127,11 +127,11 @@ describe('authApi', async () => {
     })
 
 
-    it('POST /auth/local with 2FA result', async () => {
+    it('POST /auth with 2FA result', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: 'hamza@ferrumgate.com', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -149,11 +149,11 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-    it('POST /auth/local with result 2FA false', async () => {
+    it('POST /auth with result 2FA false', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: 'hamza2@ferrumgate.com', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -171,7 +171,7 @@ describe('authApi', async () => {
     }).timeout(50000);
 
 
-    it('POST /auth/local with result 401', async () => {
+    it('POST /auth with result 401', async () => {
 
         const user5: User = {
             username: 'hamza4@ferrumgate.com',
@@ -192,7 +192,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: 'hamza4@ferrumgate.com', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -207,7 +207,7 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-    it('POST /auth/local with result 200 and apikey', async () => {
+    it('POST /auth with result 200 and apikey', async () => {
 
         const user5: User = {
             username: 'hamza4@ferrumgate.com',
@@ -229,7 +229,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .set('ApiKey', 'test')
                 .end((err, res) => {
                     if (err)
@@ -244,7 +244,7 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-    it('POST /auth/local with result 200 and username', async () => {
+    it('POST /auth with result 200 and username', async () => {
 
         const user5: User = {
             username: 'hx\\domain',
@@ -266,7 +266,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: 'hx\\domain', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -281,7 +281,7 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-    it('POST /auth/local with result 401 because source is wrong', async () => {
+    it('POST /auth with result 401 because source is wrong', async () => {
 
         const user5: User = {
             username: 'hx\\domain',
@@ -303,7 +303,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: 'hx\\domain', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -318,7 +318,7 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-    it('POST /auth/local with result 200  because source isEnabled false and user is admin', async () => {
+    it('POST /auth with result 200  because source isEnabled false and user is admin', async () => {
 
         const user6: User = {
             username: 'auserdomain',
@@ -345,7 +345,7 @@ describe('authApi', async () => {
         await configService.setAuthSettingsLocal(tmp);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: 'auserdomain', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -362,7 +362,7 @@ describe('authApi', async () => {
     }).timeout(50000);
 
 
-    it('POST /auth/local with result 401 because source isEnabled false and user is not admin', async () => {
+    it('POST /auth with result 401 because source isEnabled false and user is not admin', async () => {
         //
         const user5: User = {
             username: 'hx\\domain',
@@ -389,7 +389,7 @@ describe('authApi', async () => {
         await configService.setAuthSettingsLocal(tmp);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: 'hx\\domain', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -407,13 +407,13 @@ describe('authApi', async () => {
 
 
 
-    it('POST /auth/local with result 401 with empty username', async () => {
+    it('POST /auth with result 401 with empty username', async () => {
 
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: '', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -423,11 +423,11 @@ describe('authApi', async () => {
                 });
         })
 
-        expect(response.status).to.equal(400);
+        expect(response.status).to.equal(401);
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: ' ', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -444,7 +444,7 @@ describe('authApi', async () => {
 
 
 
-    it('POST /auth/local with result 401', async () => {
+    it('POST /auth with result 401', async () => {
 
         const user6: User = {
             username: 'hamza6@ferrumgate.com',
@@ -465,7 +465,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: 'hamza6@ferrumgate.com', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -483,11 +483,11 @@ describe('authApi', async () => {
 
 
 
-    it('POST /auth/local with result 401', async () => {
+    it('POST /auth with result 401', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: 'hamza@ferrumgate.com', password: 'somepass222' })
                 .end((err, res) => {
                     if (err)
@@ -544,7 +544,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/local')
+                .post('/auth')
                 .send({ username: 'hamza@ferrumgate.com', password: 'somepass' })
                 .end((err, res) => {
                     if (err)

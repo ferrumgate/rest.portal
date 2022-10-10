@@ -44,12 +44,12 @@ async function execute2FA(req: any) {
 
 
 }
-/////////////////////////////////  /auth/local  //////////////////////////////////
+/////////////////////////////////  /auth/start  //////////////////////////////////
 
 
-routerAuth.post('/local',
+routerAuth.post('/',
     asyncHandler(passportInit),
-    passport.authenticate(['local', 'headerapikey', 'activedirectory'], { session: false }),
+    asyncHandlerWithArgs(passportAuthenticate, ['local', 'headerapikey', 'activedirectory']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;

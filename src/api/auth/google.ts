@@ -52,4 +52,5 @@ export function oauthGoogleInit(google: BaseOAuth, url: string) {
             }
         }
     ));
+    return 'google';
 }

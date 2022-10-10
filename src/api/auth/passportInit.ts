@@ -9,9 +9,14 @@ import { tunnelKeyInit } from "./tunnelKey";
 import { activeDirectoryInit } from "./activeDirectory";
 import passport from "passport";
 import { ErrorCodes, RestfullException } from "../../restfullException";
+import { logger } from "../../common";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
+export const passportConf: { activeStrategies: string[] } = {
+    activeStrategies: []
+}
+
 export async function passportInit(req: any, res: any, next: any) {
 
     const configService = (req.appService as AppService).configService;
@@ -20,33 +25,46 @@ export async function passportInit(req: any, res: any, next: any) {
         const domain = await configService.getDomain();
         const url = await configService.getUrl();
 
+        let activeStrategies = [];
         //init local 
-        localInit();
+        const local = localInit();
+        activeStrategies.push(local);
         //init apikey
-        apiKeyInit();
+        const apikey = apiKeyInit();
+        activeStrategies.push(apikey);
         //init jwt verification
-        jwtInit();
+        const jwt = jwtInit();
+        activeStrategies.push(jwt);
         // init sessionkey
-        tunnelKeyInit();
+        const tunnelkey = tunnelKeyInit();
+        activeStrategies.push(tunnelkey);
         // init google
         const oauthGoogle = auth.oauth?.providers.find(x => x.type == 'google');
-        if (oauthGoogle) {
-            oauthGoogleInit(oauthGoogle, url);
+        if (oauthGoogle && oauthGoogle.isEnabled) {
+            const google = oauthGoogleInit(oauthGoogle, url);
+            activeStrategies.push(google);
         }
         // init linkedin
         const oauthLinkedin = auth.oauth?.providers.find(x => x.type == 'linkedin');
-        if (oauthLinkedin) {
-            oauthLinkedinInit(oauthLinkedin, url);
+        if (oauthLinkedin && oauthLinkedin.isEnabled) {
+            const linkedin = oauthLinkedinInit(oauthLinkedin, url);
+            activeStrategies.push(linkedin);
         }
         // init active directory
         const activeDirectory = auth.ldap?.providers.find(x => x.type == 'activedirectory');
-        if (activeDirectory) {
-            activeDirectoryInit(activeDirectory, url);
+        if (activeDirectory && activeDirectory.isEnabled) {
+            const activedirectory = activeDirectoryInit(activeDirectory, url);
+            activeStrategies.push(activedirectory);
         }
+        passportConf.activeStrategies = activeStrategies;
         lastConfigServiceUpdateTime = configService.lastUpdateTime;
 
     }
     next();
+}
+export function passportFilterActiveStrategies(methods: string[]) {
+    //check according to initted methods;
+    return (methods as string[]).filter(x => passportConf.activeStrategies.includes(x));
 }
 
 
@@ -57,8 +75,7 @@ export async function passportAuthenticate(req: any, res: any, next: any, strate
         if (!Array.isArray(strategyList) && strategyList) {
             strategyNames.push(strategyList);
         }
-
-
+        strategyNames = passportFilterActiveStrategies(strategyNames);
         //becarefull about changing this function
         // this gives authentication to the system
         const auth = passport.authenticate(strategyNames, { session: false, passReqToCallback: true }, async (err, user, info, status) => {
@@ -81,7 +98,7 @@ export async function passportAuthenticate(req: any, res: any, next: any, strate
                             next();
                         else {
                             const error = errors.find(x => x instanceof RestfullException);
-                            next(error || errors[0]);
+                            next(error || new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'no success'));
                         }
 
 
@@ -95,3 +112,5 @@ export async function passportAuthenticate(req: any, res: any, next: any, strate
         next(err);
     }
 }
+
+
