@@ -7,6 +7,8 @@ import { oauthLinkedinInit } from "./linkedin";
 import { AppService } from "../../service/appService";
 import { tunnelKeyInit } from "./tunnelKey";
 import { activeDirectoryInit } from "./activeDirectory";
+import passport from "passport";
+import { ErrorCodes, RestfullException } from "../../restfullException";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -45,4 +47,51 @@ export async function passportInit(req: any, res: any, next: any) {
 
     }
     next();
+}
+
+
+export async function passportAuthenticate(req: any, res: any, next: any, strategyList: string[]) {
+    try {
+        //this part must be array, otherwise
+        let strategyNames = Array.isArray(strategyList) ? strategyList.flat() : []
+        if (!Array.isArray(strategyList) && strategyList) {
+            strategyNames.push(strategyList);
+        }
+
+
+        //becarefull about changing this function
+        // this gives authentication to the system
+        const auth = passport.authenticate(strategyNames, { session: false, passReqToCallback: true }, async (err, user, info, status) => {
+
+            if (err)
+                next(err);
+            else
+                if (user)
+                    next();
+                else {
+                    if (!Array.isArray(info))
+                        info = [info];
+                    let results = (info as any[]);
+                    if (!results.length)
+                        next(new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'no method'));
+                    else {
+                        const errors = results.filter(y => y);
+                        const success = results.filter(y => !y);
+                        if (success.length)
+                            next();
+                        else {
+                            const error = errors.find(x => x instanceof RestfullException);
+                            next(error || errors[0]);
+                        }
+
+
+                    }
+
+                }
+
+        })
+        auth(req, res, next);
+    } catch (err: any) {
+        next(err);
+    }
 }

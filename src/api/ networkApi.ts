@@ -1,11 +1,11 @@
 import express from "express";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { asyncHandler, logger } from "../common";
+import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
 import { Util } from "../util";
 import fs from 'fs';
-import { passportInit } from "./auth/passportInit";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
@@ -22,7 +22,7 @@ export const routerNetworkAuthenticated = express.Router();
 
 routerNetworkAuthenticated.get('/:id',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
@@ -43,7 +43,7 @@ routerNetworkAuthenticated.get('/:id',
 
 routerNetworkAuthenticated.get('/',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const search = req.query.search;
@@ -74,7 +74,7 @@ routerNetworkAuthenticated.get('/',
 
 routerNetworkAuthenticated.delete('/:id',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
@@ -101,7 +101,7 @@ function copyNetwork(net: Network): Network {
 
 routerNetworkAuthenticated.put('/',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as Network;
@@ -127,7 +127,7 @@ routerNetworkAuthenticated.put('/',
 
 routerNetworkAuthenticated.post('/',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`saving a new network`);

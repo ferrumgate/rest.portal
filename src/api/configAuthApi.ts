@@ -1,11 +1,11 @@
 import express from "express";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { asyncHandler, logger } from "../common";
+import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
 import { Util } from "../util";
 import fs from 'fs';
-import { passportInit } from "./auth/passportInit";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { authorizeAsAdmin } from "./commonApi";
@@ -28,7 +28,7 @@ export const routerConfigAuthAuthenticated = express.Router();
 
 routerConfigAuthAuthenticated.get('/common',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`getting config auth common`);
@@ -47,7 +47,7 @@ function copyAuthCommon(common: AuthCommon): AuthCommon {
 }
 routerConfigAuthAuthenticated.put('/common',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as AuthCommon;
@@ -68,7 +68,7 @@ routerConfigAuthAuthenticated.put('/common',
 /////////////////////////////   /auth/local
 routerConfigAuthAuthenticated.get('/local',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`getting config auth local`);
@@ -97,7 +97,7 @@ function copyAuthLocal(auth: AuthLocal): AuthLocal {
 }
 routerConfigAuthAuthenticated.put('/local',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as BaseLocal;
@@ -150,7 +150,7 @@ function copyAuthOAuth(auth: BaseOAuth): BaseOAuth {
 
 routerConfigAuthAuthenticated.get('/oauth/providers',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const ids = req.query.ids as string;
@@ -170,7 +170,7 @@ routerConfigAuthAuthenticated.get('/oauth/providers',
 
 routerConfigAuthAuthenticated.post('/oauth/providers',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const provider = req.body as BaseOAuth;
@@ -201,7 +201,7 @@ routerConfigAuthAuthenticated.post('/oauth/providers',
 
 routerConfigAuthAuthenticated.put('/oauth/providers',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`update config auth oauth provider`);
@@ -226,7 +226,7 @@ routerConfigAuthAuthenticated.put('/oauth/providers',
 
 routerConfigAuthAuthenticated.delete('/oauth/providers/:id',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`delete config auth oauth provider`);
@@ -272,12 +272,12 @@ function copyAuthLdap(auth: BaseLdap): BaseLdap {
                 locations: auth.securityProfile?.locations
             }
         }
-    throw new Error('not implemented copyAuthOAuth');
+    throw new Error('not implemented copyAuthLdap');
 }
 
 routerConfigAuthAuthenticated.get('/ldap/providers',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const ids = req.query.ids as string;
@@ -297,7 +297,7 @@ routerConfigAuthAuthenticated.get('/ldap/providers',
 
 routerConfigAuthAuthenticated.post('/ldap/providers',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const provider = req.body as BaseLdap;
@@ -335,7 +335,7 @@ routerConfigAuthAuthenticated.post('/ldap/providers',
 
 routerConfigAuthAuthenticated.put('/ldap/providers',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`update config auth ldap provider`);
@@ -365,7 +365,7 @@ routerConfigAuthAuthenticated.put('/ldap/providers',
 
 routerConfigAuthAuthenticated.delete('/ldap/providers/:id',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`delete config auth ldap provider`);

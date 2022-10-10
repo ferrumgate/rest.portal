@@ -16,7 +16,7 @@ import { routerConfigureAuthenticated } from "./api/configureApi";
 import { routerNetworkAuthenticated } from "./api/ networkApi";
 import { routerGatewayAuthenticated } from "./api/gatewayApi";
 import { routerConfigAuthAuthenticated } from "./api/configAuthApi";
-import { passportInit } from "./api/auth/passportInit";
+import { passportAuthenticate, passportInit } from "./api/auth/passportInit";
 import passport from "passport";
 import { networkInterfaces } from "os";
 
@@ -89,7 +89,7 @@ const findClientIp = async (req: any, res: any, next: any) => {
 }
 
 
-const noAuthentication = (req: any, res: any, next: any) => {
+const noAuthentication = async (req: any, res: any, next: any) => {
     next();
 };
 
@@ -98,7 +98,6 @@ const noAuthentication = (req: any, res: any, next: any) => {
 //middlewares
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-
 
 
 
@@ -115,7 +114,12 @@ app.use("(\/api)?/test/activedirectory",
         req.body.password = 'Qa12345678'
         next();
     }),
-    passport.authenticate(['headerapikey', 'local', 'activedirectory'], { session: false, }),
+    //asyncHandlerWithArgs(passportAuthenticate, []),//internal error gives
+
+    asyncHandlerWithArgs(passportAuthenticate, ['activedirectory']),
+    //asyncHandlerWithArgs(passportAuthenticate, ['headerapikey', 'local']),
+    //asyncHandlerWithArgs(passportAuthenticate, ['headerapikey', 'local', 'activedirectory']),
+
     asyncHandler(async (req: any, res: any, next: any) => {
         assert(req.appService);
         res.status(200).json({ result: "ok", clientIp: req.clientIp });

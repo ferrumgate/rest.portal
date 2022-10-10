@@ -13,7 +13,7 @@ import { oauthLinkedinInit } from "./auth/linkedin";
 import { HelperService } from "../service/helperService";
 import { apiKeyInit } from "./auth/apikey";
 import { jwtInit } from "./auth/jwt";
-import { passportInit } from "./auth/passportInit";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import cors from 'cors';
 import { corsOptionsDelegate } from "./cors";
 
@@ -66,7 +66,7 @@ routerAuth.post('/local',
 
 routerAuth.use('/google/callback',
     asyncHandler(passportInit),
-    passport.authenticate('google', { session: false }),
+    asyncHandlerWithArgs(passportAuthenticate, ['google']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
@@ -79,7 +79,7 @@ routerAuth.use('/google/callback',
 
 routerAuth.get('/google',
     asyncHandler(passportInit),
-    passport.authenticate('google', { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['google']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         return res.status(200).json({});
@@ -93,7 +93,7 @@ routerAuth.get('/google',
 
 routerAuth.use('/linkedin/callback',
     asyncHandler(passportInit),
-    passport.authenticate('linkedin', { session: false }),
+    asyncHandlerWithArgs(passportAuthenticate, ['linkedin']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
@@ -105,7 +105,7 @@ routerAuth.use('/linkedin/callback',
 
 routerAuth.get('/linkedin',
     asyncHandler(passportInit),
-    passport.authenticate('linkedin', { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['linkedin']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         return res.status(200).json({});
@@ -203,7 +203,7 @@ routerAuth.post('/accesstoken',
 
 routerAuth.post('/refreshtoken',
     asyncHandler(passportInit),
-    passport.authenticate('jwt', { session: false }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const appService = req.appService as AppService;
@@ -252,7 +252,7 @@ routerAuth.post('/refreshtoken',
 
 routerAuth.post('/token/test',
     asyncHandler(passportInit),
-    passport.authenticate(['headerapikey', 'jwt'], { session: false }),
+    asyncHandlerWithArgs(passportAuthenticate, ['headerapikey', 'jwt']),
     asyncHandler(async (req: any, res: any, next: any) => {
         return res.status(200).json({ works: true });
     })

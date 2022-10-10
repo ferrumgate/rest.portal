@@ -28,7 +28,7 @@ export function apiKeyInit() {
                 return done(null, user);
 
             } catch (err) {
-                return done(err);
+                return done(null, null, err);
             }
 
         }

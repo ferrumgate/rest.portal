@@ -1,11 +1,11 @@
 import express from "express";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { asyncHandler, logger } from "../common";
+import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
 import { Util } from "../util";
 import fs from 'fs';
-import { passportInit } from "./auth/passportInit";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { authorizeAsAdmin } from "./commonApi";
@@ -70,7 +70,7 @@ export const routerConfigAuthenticated = express.Router();
 
 routerConfigAuthenticated.get('/common',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
@@ -89,7 +89,7 @@ routerConfigAuthenticated.get('/common',
 const configChangedChannel = '/config/changed'
 routerConfigAuthenticated.put('/common',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
@@ -131,7 +131,7 @@ routerConfigAuthenticated.put('/common',
 
 routerConfigAuthenticated.get('/captcha',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
@@ -148,7 +148,7 @@ routerConfigAuthenticated.get('/captcha',
 
 routerConfigAuthenticated.put('/captcha',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
@@ -174,7 +174,7 @@ routerConfigAuthenticated.put('/captcha',
 
 routerConfigAuthenticated.get('/email',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
@@ -220,7 +220,7 @@ function getEmailSettingFrom(input: EmailSettings): EmailSettings {
 }
 routerConfigAuthenticated.put('/email',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
@@ -248,7 +248,7 @@ routerConfigAuthenticated.put('/email',
 
 routerConfigAuthenticated.delete('/email',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
@@ -274,7 +274,7 @@ routerConfigAuthenticated.delete('/email',
 
 routerConfigAuthenticated.post('/email/check',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
