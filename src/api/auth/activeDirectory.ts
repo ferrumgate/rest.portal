@@ -78,10 +78,13 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
                     let userSave: User = HelperService.createUser(source, username, name, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
+                    //get back
+                    user = await configService.getUserByUsername(username);
 
                 } else {
                     await checkUser(user, ldap);
                 }
+
                 //set user to request object
                 req.currentUser = user;
                 return done(null, user);

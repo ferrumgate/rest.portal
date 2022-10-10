@@ -16,8 +16,8 @@ import { checkUser } from './commonAuth';
 export function oauthGoogleInit(google: BaseOAuth, url: string) {
     //const google = auth.oauth?.providers.find(x => x.type == 'google')
     passport.use(new passportgoogle.Strategy({
-        clientID: google?.clientId || '',
-        clientSecret: google?.clientSecret || '',
+        clientID: google.clientId || '',
+        clientSecret: google.clientSecret || '',
         callbackURL: `${url}/login/callback/google`,
         passReqToCallback: true,
         scope: ['email', 'profile', 'openid'],
@@ -38,6 +38,8 @@ export function oauthGoogleInit(google: BaseOAuth, url: string) {
                     let userSave: User = HelperService.createUser(source, email, name, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
+                    //get back
+                    user = await configService.getUserByUsername(email);
 
                 } else {
                     await checkUser(user, google);

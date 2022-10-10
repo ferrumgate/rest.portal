@@ -22,7 +22,7 @@ export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
     },
         async (req: any, accessToken: any, refreshToken: any, profile: any, done: any) => {
             try {
-                const email = profile.emails[0];
+                const email = profile.emails[0].value;
                 const name = profile.displayName;
                 logger.info(`passport linkedin with email: ${email}`);
                 const appService = req.appService as AppService;
@@ -36,6 +36,8 @@ export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
                     let userSave: User = HelperService.createUser(source, email, name, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
+                    //get back
+                    user = await configService.getUserByUsername(email);
 
                 } else {
                     await checkUser(user, linkedin);
