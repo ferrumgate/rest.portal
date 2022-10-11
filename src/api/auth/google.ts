@@ -18,7 +18,7 @@ export function oauthGoogleInit(google: BaseOAuth, url: string) {
     passport.use(new passportgoogle.Strategy({
         clientID: google.clientId || '',
         clientSecret: google.clientSecret || '',
-        callbackURL: `${url}/login/callback/google`,
+        callbackURL: `${url}/login/callback/oauth/google`,
         passReqToCallback: true,
         scope: ['email', 'profile', 'openid'],
     },

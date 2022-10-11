@@ -64,7 +64,7 @@ routerAuth.post('/',
 /////////////////////////// /auth/google //////////////////////////
 
 
-routerAuth.use('/google/callback',
+routerAuth.use('/oauth/google/callback',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['google']),
     asyncHandler(async (req: any, res: any, next: any) => {
@@ -77,7 +77,7 @@ routerAuth.use('/google/callback',
 );
 
 
-routerAuth.get('/google',
+routerAuth.get('/oauth/google',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['google']),
     asyncHandler(async (req: any, res: any, next: any) => {
@@ -91,7 +91,7 @@ routerAuth.get('/google',
 /////////////////////////// /auth/linkedin //////////////////////////
 
 
-routerAuth.use('/linkedin/callback',
+routerAuth.use('/oauth/linkedin/callback',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['linkedin']),
     asyncHandler(async (req: any, res: any, next: any) => {
@@ -103,7 +103,7 @@ routerAuth.use('/linkedin/callback',
     })
 );
 
-routerAuth.get('/linkedin',
+routerAuth.get('/oauth/linkedin',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['linkedin']),
     asyncHandler(async (req: any, res: any, next: any) => {

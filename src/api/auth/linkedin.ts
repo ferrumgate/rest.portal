@@ -16,7 +16,7 @@ export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
     passport.use(new passportlinkedin.Strategy({
         clientID: linkedin?.clientId || '',
         clientSecret: linkedin?.clientSecret || '',
-        callbackURL: `${url}/login/callback/linkedin`,
+        callbackURL: `${url}/login/callback/oauth/linkedin`,
         passReqToCallback: true,
         scope: ['r_emailaddress', 'r_liteprofile'],
     },
