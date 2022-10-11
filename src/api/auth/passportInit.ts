@@ -10,6 +10,7 @@ import { activeDirectoryInit } from "./activeDirectory";
 import passport from "passport";
 import { ErrorCodes, RestfullException } from "../../restfullException";
 import { logger } from "../../common";
+import { samlAuth0Init } from "./auth0Saml";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -56,6 +57,12 @@ export async function passportInit(req: any, res: any, next: any) {
             const activedirectory = activeDirectoryInit(activeDirectory, url);
             activeStrategies.push(activedirectory);
         }
+        // init auth0 saml
+        const auth0 = auth.saml?.providers.find(x => x.type == 'auth0');
+        if (auth0 && auth0.isEnabled) {
+            const saml = samlAuth0Init(auth0, url);
+            activeStrategies.push(saml);
+        }
         passportConf.activeStrategies = activeStrategies;
         lastConfigServiceUpdateTime = configService.lastUpdateTime;
 
@@ -69,6 +76,7 @@ export function passportFilterActiveStrategies(methods: string[]) {
 
 
 export async function passportAuthenticate(req: any, res: any, next: any, strategyList: string[]) {
+
     try {
         //this part must be array, otherwise
         let strategyNames = Array.isArray(strategyList) ? strategyList.flat() : []
@@ -78,6 +86,9 @@ export async function passportAuthenticate(req: any, res: any, next: any, strate
         strategyNames = passportFilterActiveStrategies(strategyNames);
         //becarefull about changing this function
         // this gives authentication to the system
+        /* new Promise((resolve, reject) => {
+
+        }) */
         const auth = passport.authenticate(strategyNames, { session: false, passReqToCallback: true }, async (err, user, info, status) => {
 
             if (err)
@@ -100,12 +111,8 @@ export async function passportAuthenticate(req: any, res: any, next: any, strate
                             const error = errors.find(x => x instanceof RestfullException);
                             next(error || new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'no success'));
                         }
-
-
                     }
-
                 }
-
         })
         auth(req, res, next);
     } catch (err: any) {

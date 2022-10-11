@@ -19,6 +19,7 @@ export interface User {
     apiKey?: string;
     roleIds?: string[];
     email?: string;
+    //isEmailVerified: boolean;
     /**
      * if client has problem with it networks settings
      */

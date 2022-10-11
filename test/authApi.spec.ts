@@ -503,11 +503,11 @@ describe('authApi', async () => {
     }).timeout(50000);
 
 
-    it('GET /auth/google with result 200', async () => {
+    it('GET /auth/oauth/google with result 200', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/auth/google')
+                .get('/auth/oauth/google')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -521,11 +521,29 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-    it('GET /auth/linkedin with result 200', async () => {
+    it('GET /auth/oauth/linkedin with result 200', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/auth/linkedin')
+                .get('/auth/oauth/linkedin')
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+
+
+    }).timeout(50000);
+
+    it('GET /auth/saml/auth0 with result 200', async () => {
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/auth/saml/auth0')
                 .end((err, res) => {
                     if (err)
                         reject(err);

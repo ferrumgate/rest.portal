@@ -22,6 +22,7 @@ import { corsOptionsDelegate } from "./cors";
 
 
 
+
 export const routerAuth = express.Router();
 async function execute2FA(req: any) {
     const currentUser: User = req.currentUser as User;
@@ -111,6 +112,36 @@ routerAuth.get('/oauth/linkedin',
         return res.status(200).json({});
     })
 );
+
+
+/////////////////////////// /auth/auth0 //////////////////////////
+
+
+routerAuth.use('/saml/auth0/callback',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['auth0']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const currentUser: User = req.currentUser as User;
+        logger.info(`authenticated user: ${currentUser.username}`);
+        const two2FA = await execute2FA(req);
+        const obj = { key: two2FA.key, is2FA: currentUser.is2FA ? 'true' : 'false' };
+        const query = new URLSearchParams(obj);
+
+
+        return res.redirect(`/login/callback/saml/auth0?${query.toString()}`)
+    })
+);
+
+routerAuth.get('/saml/auth0',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['auth0']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        return res.status(200).json({});
+    })
+);
+
 
 
 

@@ -4,7 +4,7 @@ export interface BaseAuth {
     id: string;
     name: string;
     baseType: 'local' | 'oauth' | 'saml' | 'ldap';
-    type: 'local' | 'google' | 'linkedin' | 'activedirectory';
+    type: 'local' | 'google' | 'linkedin' | 'activedirectory' | 'auth0';
     tags?: string[];
     securityProfile?: SecurityProfile;
     isEnabled: boolean;
@@ -26,7 +26,12 @@ export interface BaseLdap extends BaseAuth {
 
 }
 export interface BaseSaml extends BaseAuth {
-
+    issuer: string;
+    cert: string;
+    fingerPrint?: string;
+    loginUrl: string;
+    nameField: string;
+    usernameField: string;
 }
 export interface BaseLocal extends BaseAuth {
     isForgotPassword?: boolean;
