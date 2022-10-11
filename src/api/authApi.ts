@@ -45,6 +45,7 @@ async function execute2FA(req: any) {
 
 
 }
+
 /////////////////////////////////  /auth/start  //////////////////////////////////
 
 
@@ -59,8 +60,6 @@ routerAuth.post('/',
         return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false });
     })
 );
-
-
 
 /////////////////////////// /auth/google //////////////////////////
 
@@ -141,6 +140,9 @@ routerAuth.get('/saml/auth0',
         return res.status(200).json({});
     })
 );
+
+
+
 
 
 

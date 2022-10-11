@@ -12,10 +12,10 @@ import { group } from 'console';
 import { ErrorCodes, RestfullException } from '../../restfullException';
 import { checkUser } from './commonAuth';
 
-
+const name = 'auth0'
 export function samlAuth0Init(saml: BaseSaml, url: string) {
     //const google = auth.oauth?.providers.find(x => x.type == 'google')
-    passport.use('auth0', new samlAuth.Strategy({
+    passport.use(name, new samlAuth.Strategy({
         path: `/api/auth/saml/auth0/callback`,
         entryPoint: saml.loginUrl,
         issuer: saml.issuer,
@@ -64,5 +64,9 @@ export function samlAuth0Init(saml: BaseSaml, url: string) {
             }
         }
     ));
-    return 'auth0'
+    return name;
+}
+
+export function samlAuth0Unuse() {
+    passport.unuse(name);
 }

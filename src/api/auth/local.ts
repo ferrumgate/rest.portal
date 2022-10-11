@@ -14,9 +14,10 @@ import { checkUser } from './commonAuth';
 
 
 
-
+const name = 'local';
 
 export function localInit() {
+
     passport.use(new passportlocal.Strategy(
         { session: false, passReqToCallback: true },
         async (req: any, username: any, password: any, done: any) => {
@@ -52,5 +53,9 @@ export function localInit() {
 
         }
     ));
-    return 'local';
+    return name;
+}
+
+export function localUnuse() {
+    passport.unuse(name);
 }

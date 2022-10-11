@@ -37,7 +37,7 @@ describe('redisService', () => {
                 expect(contains3).to.be.false;
 
             } catch (errr) {
-                console.log(errr);
+
             }
 
         }
@@ -96,7 +96,7 @@ describe('redisService', () => {
 
             expect(as).to.be.null
         }
-        console.log('finished')
+
 
 
 

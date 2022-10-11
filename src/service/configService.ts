@@ -203,6 +203,9 @@ export class ConfigService {
 
         this.lastUpdateTime = new Date().toISOString();
     }
+    resetUpdateTime() {
+        this.lastUpdateTime = new Date(1900, 1, 1).toISOString();
+    }
     setConfigPath(path: string) {
         this.configfile = path;
     }

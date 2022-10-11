@@ -1,16 +1,16 @@
 
-import { localInit } from "./local";
-import { apiKeyInit } from "./apikey";
-import { jwtInit } from "./jwt";
-import { oauthGoogleInit } from "./google";
-import { oauthLinkedinInit } from "./linkedin";
+import { localInit, localUnuse } from "./local";
+import { apiKeyInit, apiKeyUnuse } from "./apikey";
+import { jwtInit, jwtUnuse } from "./jwt";
+import { oauthGoogleInit, oauthGoogleUnuse } from "./google";
+import { oauthLinkedinInit, oauthLinkedinUnuse } from "./linkedin";
 import { AppService } from "../../service/appService";
-import { tunnelKeyInit } from "./tunnelKey";
-import { activeDirectoryInit } from "./activeDirectory";
+import { tunnelKeyInit, tunnelKeyUnuse } from "./tunnelKey";
+import { activeDirectoryInit, activeDirectoryUnuse } from "./activeDirectory";
 import passport from "passport";
 import { ErrorCodes, RestfullException } from "../../restfullException";
 import { logger } from "../../common";
-import { samlAuth0Init } from "./auth0Saml";
+import { samlAuth0Init, samlAuth0Unuse } from "./auth0Saml";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -28,36 +28,45 @@ export async function passportInit(req: any, res: any, next: any) {
 
         let activeStrategies = [];
         //init local 
+        localUnuse();
         const local = localInit();
         activeStrategies.push(local);
         //init apikey
+        apiKeyUnuse();
         const apikey = apiKeyInit();
         activeStrategies.push(apikey);
         //init jwt verification
+        jwtUnuse();
         const jwt = jwtInit();
         activeStrategies.push(jwt);
         // init sessionkey
+        tunnelKeyUnuse();
         const tunnelkey = tunnelKeyInit();
         activeStrategies.push(tunnelkey);
         // init google
+        oauthGoogleUnuse();
         const oauthGoogle = auth.oauth?.providers.find(x => x.type == 'google');
         if (oauthGoogle && oauthGoogle.isEnabled) {
             const google = oauthGoogleInit(oauthGoogle, url);
             activeStrategies.push(google);
         }
         // init linkedin
+        oauthLinkedinUnuse()
         const oauthLinkedin = auth.oauth?.providers.find(x => x.type == 'linkedin');
         if (oauthLinkedin && oauthLinkedin.isEnabled) {
             const linkedin = oauthLinkedinInit(oauthLinkedin, url);
             activeStrategies.push(linkedin);
         }
         // init active directory
+        activeDirectoryUnuse();
         const activeDirectory = auth.ldap?.providers.find(x => x.type == 'activedirectory');
         if (activeDirectory && activeDirectory.isEnabled) {
+
             const activedirectory = activeDirectoryInit(activeDirectory, url);
             activeStrategies.push(activedirectory);
         }
         // init auth0 saml
+        samlAuth0Unuse();
         const auth0 = auth.saml?.providers.find(x => x.type == 'auth0');
         if (auth0 && auth0.isEnabled) {
             const saml = samlAuth0Init(auth0, url);
@@ -77,7 +86,7 @@ export function passportFilterActiveStrategies(methods: string[]) {
 
 export async function passportAuthenticate(req: any, res: any, next: any, strategyList: string[]) {
 
-    try {
+    await new Promise((resolve, reject) => {
         //this part must be array, otherwise
         let strategyNames = Array.isArray(strategyList) ? strategyList.flat() : []
         if (!Array.isArray(strategyList) && strategyList) {
@@ -86,38 +95,35 @@ export async function passportAuthenticate(req: any, res: any, next: any, strate
         strategyNames = passportFilterActiveStrategies(strategyNames);
         //becarefull about changing this function
         // this gives authentication to the system
-        /* new Promise((resolve, reject) => {
-
-        }) */
         const auth = passport.authenticate(strategyNames, { session: false, passReqToCallback: true }, async (err, user, info, status) => {
 
             if (err)
-                next(err);
+                reject(err);
             else
                 if (user)
-                    next();
+                    resolve(user);
                 else {
                     if (!Array.isArray(info))
                         info = [info];
                     let results = (info as any[]);
                     if (!results.length)
-                        next(new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'no method'));
+                        reject(new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'no method'));
                     else {
                         const errors = results.filter(y => y);
                         const success = results.filter(y => !y);
                         if (success.length)
-                            next();
+                            resolve('');
                         else {
                             const error = errors.find(x => x instanceof RestfullException);
-                            next(error || new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'no success'));
+                            reject(error || new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'no success'));
                         }
                     }
                 }
         })
         auth(req, res, next);
-    } catch (err: any) {
-        next(err);
-    }
+    })
+    next();
+
 }
 
 

@@ -8,8 +8,9 @@ import { HelperService } from '../../service/helperService';
 import { Tunnel } from '../../model/tunnel';
 import passportCustom from 'passport-custom';
 
+const name = 'headertunnelkey';
 export function tunnelKeyInit() {
-    passport.use('headertunnelkey', new passportCustom.Strategy(
+    passport.use(name, new passportCustom.Strategy(
         async (req: any, done: any) => {
 
             try {
@@ -41,5 +42,8 @@ export function tunnelKeyInit() {
 
         }
     ));
-    return 'headertunnelkey';
+    return name;
+}
+export function tunnelKeyUnuse() {
+    passport.unuse(name)
 }

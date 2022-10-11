@@ -17,8 +17,8 @@ import { routerNetworkAuthenticated } from "./api/ networkApi";
 import { routerGatewayAuthenticated } from "./api/gatewayApi";
 import { routerConfigAuthAuthenticated } from "./api/configAuthApi";
 import { passportAuthenticate, passportInit } from "./api/auth/passportInit";
-import passport from "passport";
-import { networkInterfaces } from "os";
+
+
 
 
 const bodyParser = require('body-parser');

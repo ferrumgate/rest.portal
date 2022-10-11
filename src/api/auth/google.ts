@@ -12,7 +12,7 @@ import { ErrorCodes, RestfullException } from '../../restfullException';
 import { checkUser } from './commonAuth';
 
 
-
+const name = 'google';
 export function oauthGoogleInit(google: BaseOAuth, url: string) {
     //const google = auth.oauth?.providers.find(x => x.type == 'google')
     passport.use(new passportgoogle.Strategy({
@@ -54,5 +54,9 @@ export function oauthGoogleInit(google: BaseOAuth, url: string) {
             }
         }
     ));
-    return 'google';
+    return name;
+}
+
+export function oauthGoogleUnuse() {
+    passport.unuse(name);
 }

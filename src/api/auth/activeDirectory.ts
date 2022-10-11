@@ -25,9 +25,12 @@ function findGroups(groups: string[]) {
     }
     return items;
 }
+
+const name = 'activedirectory';
+
 export function activeDirectoryInit(ldap: BaseLdap, url: string) {
-    //const google = auth.oauth?.providers.find(x => x.type == 'google')
-    passport.use('activedirectory', new ldapAuth.default({
+
+    passport.use(name, new ldapAuth.default({
 
         server: {
             url: ldap.host,
@@ -94,5 +97,9 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
             }
         }
     ));
-    return 'activedirectory'
+    return name;
+}
+
+export function activeDirectoryUnuse() {
+    passport.unuse(name);
 }

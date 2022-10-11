@@ -11,6 +11,8 @@ import { HelperService } from '../../service/helperService';
 import { ErrorCodes, RestfullException } from '../../restfullException';
 import { checkUser } from './commonAuth';
 
+
+const name = 'linkedin';
 export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
     //const linkedin = auth.oauth?.providers.find(x => x.type == 'linkedin')
     passport.use(new passportlinkedin.Strategy({
@@ -53,5 +55,9 @@ export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
             }
         }
     ));
-    return 'linkedin';
+    return name;
+}
+
+export function oauthLinkedinUnuse() {
+    passport.unuse(name);
 }
