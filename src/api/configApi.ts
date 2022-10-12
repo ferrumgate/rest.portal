@@ -37,6 +37,7 @@ async function getPublicConfig(configService: ConfigService) {
 
     const googleOAuth = authSettings.oauth?.providers.find(x => x.type == 'google');
     const linkedOAuth = authSettings.oauth?.providers.find(x => x.type == 'linkedin');
+    const auth0 = authSettings.saml?.providers.find(x => x.type == 'auth0');
     return {
         captchaSiteKey: captcha.client,
         isConfigured: isConfigured,
@@ -45,8 +46,9 @@ async function getPublicConfig(configService: ConfigService) {
                 isForgotPassword: authSettings.local.isForgotPassword,
                 isRegister: authSettings.local.isRegister
             },
-            google: googleOAuth?.isEnabled ? {} : undefined,
-            linkedin: linkedOAuth?.isEnabled ? {} : undefined
+            oAuthGoogle: googleOAuth?.isEnabled ? {} : undefined,
+            oAuthLinkedin: linkedOAuth?.isEnabled ? {} : undefined,
+            samlAuth0: auth0?.isEnabled ? {} : undefined
         }
     };
 }

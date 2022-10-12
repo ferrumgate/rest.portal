@@ -7,13 +7,32 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { config } from 'process';
-import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth } from '../src/model/authSettings';
+import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth, BaseSaml } from '../src/model/authSettings';
 import { RedisService } from '../src/service/redisService';
 import { EmailSettings } from '../src/model/emailSettings';
 
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+
+
+function createSampleSaml1(): BaseSaml {
+    return {
+        baseType: 'saml',
+        type: 'auth0',
+        id: Util.randomNumberString(),
+        name: 'Auth0/Saml',
+        tags: [],
+        issuer: 'urn:dev-8m7g.us.auth0.com',
+        loginUrl: 'https://dev-8m7g.us.auth0.com/samlp/pryXTgkqDp0RRH26ylKV0zg4xV',
+        fingerPrint: '96:39:6C:F6:ED:DF:07:30:F0:2E:45:95:02:B6:F6:68:B7:2C:11:37',
+        cert: `MIIDDTCCAfWgAwIBAgIJDVrH9KeUS+k8MA0GCSqGSIb3DQVBAMTGWRldi0yNHdtOG03Zy51cy5hdXRoMC5jb20wHhcNMjIxMDEwMjIzOTA2WhcNMzYwNjE4MjIzOTA2WjAkMSIwIAYDVQQDExlkZXYtMjR3bThtN2cudXMuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA14riTBaUOB2+OZiEbpL5Cjy4MVl78Qi+Msi6IbmIs8nIGRav2hYsI3/mUex6+dCeqwoKCALByRySTEWhUCRWNsi86ae5CSsRikVBAPtEZqKBuoSthrjXUQT5/UBBOHc+EVUAiNrAEE1DBjpkFPkZfGk974ZukK8MyfliajjmFHGj23vwxJncxfx49kOEalz10M500MNldl+Kl628i//y3QiojTsNvPK4SiORFBR89DnWJoB/m6npsm9tkRKUFuYNedVEDru+8aac6LVrKkimDOUzXecAbCm7+td4rXCyV25cc3Pp0sHUYFYk4NoqzW6kJtddFcRQi+xo5JqcPjtunwIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBRZYMCT4GSETh+A4Ji9wWJxlcv53zAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBACNDPiTHjyeFUIOTWnnZbTZil0nf+yrA6QVesV5+KJ9Ek+YgMrnZ4KdXEZZozUgiGsER1RjetWVYnv3AmEvML0CY/+xJu2bCfwQssSXFLQGdv079V81Mk2+Hz8gQgruLpJpfENQCsbWm3lXQP4F3avFw68HB62rr6jfyEIPb9n8rw/pj57y5ZILl97sb3QikgRh1pTEKVz05WLeHdGPE30QWklGDYxqv2/TbRWOUsdXjjbpE6pIfTUX5OLqGRbrtdHL9fHbhVOfqczALtneEjv5o/TpB3Jo2w9RU9AgMYwWT2Hpqop/fe9fyDQ+u5Hz7ZnADi/oktGBzm8/Y03WpkuM=`,
+        usernameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+        nameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
+        isEnabled: true,
+        securityProfile: {}
+    }
+}
 
 
 function createSampleLdap1(): BaseLdap {
@@ -679,6 +698,209 @@ describe('configAuthApi ', async () => {
 
 
 
+
+
+
+
+
+    ////////////////// saml  tests ////////////////////////////////////////////////
+
+    it('GET /config/auth/saml/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const saml = createSampleSaml1();
+        await configService.addAuthSettingSaml(saml);
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/config/auth/saml/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.items).exist;
+
+        expect(response.body.items[0]).to.deep.equal(saml);
+
+
+    }).timeout(50000);
+
+    it('POST /config/auth/saml/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+
+        const saml = createSampleSaml1();
+        delete (saml as any).id;
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/config/auth/saml/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(saml)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+
+        saml.id = response.body.id;
+        expect(response.body).to.deep.equal(saml);
+
+
+    }).timeout(50000);
+
+    it('POST /config/auth/saml/providers will return 400', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+
+        const saml1 = createSampleSaml1();
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/config/auth/saml/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(saml1)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+
+
+    }).timeout(50000);
+
+
+    it('PUT /config/auth/saml/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const saml = createSampleSaml1();
+        await configService.addAuthSettingSaml(saml);
+        const samlAny = saml as any;
+        samlAny.name = 'xxxx';
+        //check this property will not be saved
+        samlAny.fakeProperty = 'fakevalue';
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/config/auth/saml/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(saml)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.fakeProperty).not.exist;
+        delete samlAny.fakeProperty;
+        expect(response.body).to.deep.equal(saml);
+
+
+    }).timeout(50000);
+
+
+    it('PUT /config/auth/saml/providers will return 400', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const saml = createSampleSaml1();
+        await configService.addAuthSettingSaml(saml);
+        const samlAny = saml as any;
+        saml.id = 'notabsentid';
+        saml.name = 'xxxx';
+        //check this property will not be saved
+        samlAny.fakeProperty = 'fakevalue';
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/config/auth/saml/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(saml)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+        delete samlAny.id;
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/config/auth/oauth/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(samlAny)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+
+
+    }).timeout(50000);
+
+
+    it('DELETE /config/auth/saml/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const saml = createSampleSaml1();
+        await configService.addAuthSettingSaml(saml);
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .delete('/config/auth/saml/providers/' + saml.id)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        const samlRet = await configService.getAuthSettingSaml();
+        expect(samlRet.providers.length).to.equal(0);
+    }).timeout(50000);
 
 
 
