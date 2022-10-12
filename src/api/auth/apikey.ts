@@ -6,6 +6,7 @@ import { AppService } from '../../service/appService';
 import { ErrorCodes, RestfullException } from '../../restfullException';
 import { HelperService } from '../../service/helperService';
 
+const name = 'headerapikey';
 export function apiKeyInit() {
     passport.use(new passportapikey.HeaderAPIKeyStrategy(
         {
@@ -28,9 +29,14 @@ export function apiKeyInit() {
                 return done(null, user);
 
             } catch (err) {
-                return done(err);
+                return done(null, null, err);
             }
 
         }
     ));
+    return name;
+}
+
+export function apiKeyUnuse() {
+    return passport.unuse(name);
 }

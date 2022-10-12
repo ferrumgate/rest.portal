@@ -1,11 +1,11 @@
 import express from "express";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { asyncHandler, logger } from "../common";
+import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
 import { Util } from "../util";
 import fs from 'fs';
-import { passportInit } from "./auth/passportInit";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
@@ -20,7 +20,7 @@ export const routerGatewayAuthenticated = express.Router();
 
 routerGatewayAuthenticated.get('/:id',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
@@ -40,7 +40,7 @@ routerGatewayAuthenticated.get('/:id',
 
 routerGatewayAuthenticated.get('/',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const search = req.query.search;
@@ -77,7 +77,7 @@ routerGatewayAuthenticated.get('/',
 
 routerGatewayAuthenticated.delete('/:id',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
@@ -96,9 +96,15 @@ routerGatewayAuthenticated.delete('/:id',
 
     }))
 
+function copyGateway(gate: Gateway): Gateway {
+    return {
+        id: gate.id, labels: gate.labels, name: gate.name, networkId: gate.networkId, isEnabled: gate.isEnabled
+    }
+}
+
 routerGatewayAuthenticated.put('/',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as Gateway;
@@ -114,15 +120,16 @@ routerGatewayAuthenticated.put('/',
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
-        await configService.saveGateway(input);
+        const safe = copyGateway(input);
+        await configService.saveGateway(safe);
         // TODO audit here
-        return res.status(200).json(input);
+        return res.status(200).json(safe);
 
     }))
 
 routerGatewayAuthenticated.post('/',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`saving a new gateway`);
@@ -136,9 +143,10 @@ routerGatewayAuthenticated.post('/',
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
-        await configService.saveGateway(input);
+        const safe = copyGateway(input)
+        await configService.saveGateway(safe);
         //TODO audit
-        return res.status(200).json(input);
+        return res.status(200).json(safe);
 
     }))
 

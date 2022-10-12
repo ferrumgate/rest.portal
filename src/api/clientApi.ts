@@ -1,11 +1,11 @@
 import express from "express";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { asyncHandler, logger } from "../common";
+import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
 import { Util } from "../util";
 import fs from 'fs';
-import { passportInit } from "./auth/passportInit";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { RBACDefault } from "../model/rbac";
 import { config } from "process";
@@ -27,7 +27,7 @@ export const routerClientTunnelAuthenticated = express.Router();
 
 routerClientTunnelAuthenticated.get('/ip',
     asyncHandler(passportInit),
-    passport.authenticate(['headertunnelkey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['headertunnelkey']),
     asyncHandler(async (req: any, res: any, next: any) => {
         const appService = req.appService as AppService;
         const configService = appService.configService;
@@ -46,7 +46,7 @@ routerClientTunnelAuthenticated.get('/ip',
  */
 routerClientTunnelAuthenticated.get('/renewip',
     asyncHandler(passportInit),
-    passport.authenticate(['headertunnelkey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['headertunnelkey']),
     asyncHandler(async (req: any, res: any, next: any) => {
         const appService = req.appService as AppService;
         const configService = appService.configService;
@@ -69,7 +69,7 @@ routerClientTunnelAuthenticated.get('/renewip',
  */
 routerClientTunnelAuthenticated.post('/confirm',
     asyncHandler(passportInit),
-    passport.authenticate(['headertunnelkey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['headertunnelkey']),
     asyncHandler(async (req: any, res: any, next: any) => {
         const appService = req.appService as AppService;
         const configService = appService.configService;
@@ -88,7 +88,7 @@ routerClientTunnelAuthenticated.post('/confirm',
  */
 routerClientTunnelAuthenticated.get('/alive',
     asyncHandler(passportInit),
-    passport.authenticate(['headertunnelkey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['headertunnelkey']),
     asyncHandler(async (req: any, res: any, next: any) => {
         const appService = req.appService as AppService;
         const configService = appService.configService;

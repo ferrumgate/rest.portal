@@ -7,7 +7,7 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { config } from 'process';
-import { AuthSettings } from '../src/model/authSettings';
+import { AuthCommon, AuthSettings } from '../src/model/authSettings';
 import { RedisService } from '../src/service/redisService';
 import { EmailSettings } from '../src/model/emailSettings';
 
@@ -45,18 +45,44 @@ describe('configApi ', async () => {
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
         const auth: AuthSettings = {
+            common: {},
             local: {
+                id: Util.randomNumberString(),
+                type: 'local',
+                baseType: 'local',
+                name: 'Local',
+                tags: [],
+                isForgotPassword: false,
+                isRegister: false,
+                isEnabled: true
+            },
 
-            },
-            google: {
-                clientID: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
-                clientSecret: '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',
-            },
-            linkedin: {
-                clientID: '866dr29tuc5uy5',
-                clientSecret: '1E3DHw0FJFUsp1Um',
-            }
         }
+        auth.oauth = {
+            providers: [
+                {
+                    baseType: 'oauth',
+                    type: 'google',
+                    id: Util.randomNumberString(),
+                    name: 'Google',
+                    tags: [],
+                    clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
+                    clientSecret: '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',
+                    isEnabled: true
+                },
+                {
+                    baseType: 'oauth',
+                    type: 'linkedin',
+                    id: Util.randomNumberString(),
+                    name: 'Linkedin',
+                    tags: [],
+                    clientId: '866dr29tuc5uy5',
+                    clientSecret: '1E3DHw0FJFUsp1Um',
+                    isEnabled: true
+                }
+            ]
+        }
+
         await configService.setAuthSettings(auth);
         await configService.setUrl('http://local.ferrumgate.com:8080');
         await configService.setDomain('ferrumgate.local');
@@ -398,14 +424,6 @@ describe('configApi ', async () => {
 
 
     }).timeout(50000);
-
-
-
-
-
-
-
-
 
 
 

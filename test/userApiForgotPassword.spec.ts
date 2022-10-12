@@ -38,7 +38,7 @@ describe.skip('userApiForgotPassword', async () => {
     beforeEach(async () => {
         appService.configService.config.users = [];
         await appService.configService.setIsConfigured(1);
-        await appService.configService.setAuthSettings({ local: { isForgotPassword: 1 } })
+        await appService.configService.setAuthSettings({ local: { isForgotPassword: true } })
         await redisService.flushAll();
     })
 
@@ -124,7 +124,7 @@ describe.skip('userApiForgotPassword', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         await appService.configService.setIsConfigured(1);
-        await appService.configService.setAuthSettings({ local: { isForgotPassword: 0 } });
+        await appService.configService.setAuthSettings({ local: { isForgotPassword: false } });
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)

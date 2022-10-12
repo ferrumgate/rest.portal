@@ -78,5 +78,10 @@ export class InputService {
             throw new RestfullException(400, ErrorCodes.ErrNotExists, errorMsg || 'input is invalid');
         }
     }
+    checkIfNotExits(value: any) {
+        if (value) {
+            throw new RestfullException(400, ErrorCodes.ErrNotExists, 'input is invalid');
+        }
+    }
 
 }

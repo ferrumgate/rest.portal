@@ -80,7 +80,7 @@ describe('util ', () => {
     it('random number string must be 6 or 7 length', (done) => {
         let save = process.env.NODE_ENV;
         process.env.NODE_ENV = '';
-        let random = Util.randomNumberString() as String;
+        let random = Util.randomNumberString(6) as String;
         expect(random.length).to.equal(6);
 
         let random2 = Util.randomNumberString(7);

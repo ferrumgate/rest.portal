@@ -4,13 +4,15 @@ import chaiHttp from 'chai-http';
 import { RedisService } from '../src/service/redisService';
 import { RateLimitService } from '../src/service/rateLimitService';
 import { ConfigService } from '../src/service/configService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
 
 describe('rateLimitService integration', () => {
     const redisService = new RedisService("localhost:6379");
-    const configService = new ConfigService('9p5jV0DqEpMeTXrrF0QmoRMNDaZQ6DziIPPlI0IlpwcqnfYk')
+    const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+    const configService = new ConfigService('9p5jV0DqEpMeTXrrF0QmoRMNDaZQ6DziIPPlI0IlpwcqnfYk', filename)
     beforeEach(async () => {
         await redisService.flushAll();
     })

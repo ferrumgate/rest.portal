@@ -7,6 +7,7 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Gateway, Network } from '../src/model/network';
+import { AuthOAuth, AuthCommon, AuthLdap, AuthSaml, AuthLocal, BaseOAuth, BaseLocal } from '../src/model/authSettings';
 
 
 chai.use(chaiHttp);
@@ -15,8 +16,9 @@ const expect = chai.expect;
 
 describe('configService', async () => {
 
-    const filename = '/tmp/config.yaml';
+    const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     beforeEach((done) => {
+
         if (fs.existsSync(filename))
             fs.rmSync(filename);
         done();
@@ -227,7 +229,7 @@ describe('configService', async () => {
             id: '231a0932',
             name: 'myserver',
             labels: [],
-            isEnabled: 1,
+            isEnabled: true,
             networkId: network.id
         }
 
@@ -255,7 +257,7 @@ describe('configService', async () => {
             id: '231a0932',
             name: 'myserver',
             labels: [],
-            isEnabled: 1,
+            isEnabled: true,
             networkId: network.id
         }
 
@@ -278,7 +280,7 @@ describe('configService', async () => {
             id: '231a0932',
             name: 'myserver',
             labels: [],
-            isEnabled: 1,
+            isEnabled: true,
 
             networkId: ''
         }
@@ -298,7 +300,7 @@ describe('configService', async () => {
             id: '231a0932',
             name: 'myserver',
             labels: [],
-            isEnabled: 1,
+            isEnabled: true,
 
             networkId: ''
         }
@@ -308,6 +310,82 @@ describe('configService', async () => {
         await configService.deleteGateway(gateway.id);
         const gatewayDb = await configService.getGateway(gateway.id);
         expect(gatewayDb).not.exist;
+    });
+
+    it('authSettingsCommon', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        let common: AuthCommon = {
+            bla: 'test'
+        }
+        await configService.setAuthSettingsCommon(common);
+        const returned = await configService.getAuthSettingsCommon() as any;
+        expect(returned).to.be.exist;
+        expect(returned.bla).exist;
+
+    });
+
+    it('authSettingsOAuth', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.auth = {
+            common: {}, local: {} as any
+        }
+        let oauth: BaseOAuth = {
+            name: 'google',
+            baseType: 'oauth',
+            type: 'google',
+            id: 'jkj;adfa',
+            clientId: 'akdfa',
+            clientSecret: 'adfa',
+            tags: [],
+            isEnabled: true
+        }
+        //add
+        await configService.addAuthSettingOAuth(oauth);
+
+        const returned = await configService.getAuthSettingOAuth();
+        expect(returned.providers[0]).to.deep.equal(oauth);
+        //delete
+        await configService.deleteAuthSettingOAuth(oauth.id);
+        const returned2 = await configService.getAuthSettingOAuth();
+        expect(returned2.providers.length).to.equal(0);
+        // adding same id
+        await configService.addAuthSettingOAuth(oauth);
+        const cloned = Util.clone(oauth);
+        await configService.addAuthSettingOAuth(oauth);
+        const returned3 = await configService.getAuthSettingOAuth();
+        expect(returned3.providers.length).to.equal(1);
+
+
+    });
+
+    it('authSettingsLocal', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.auth = {
+            common: {}, local: {} as any
+        }
+        let local: BaseLocal = {
+            name: 'google',
+            baseType: 'oauth',
+            type: 'google',
+            id: 'jkj;adfa',
+            tags: [],
+            isForgotPassword: true,
+            isRegister: false,
+            isEnabled: true
+
+        }
+        //add
+        await configService.setAuthSettingsLocal(local);
+
+        const returned = await configService.getAuthSettingsLocal();
+        expect(returned).to.deep.equal(local);
 
 
     });

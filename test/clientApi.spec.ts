@@ -52,22 +52,21 @@ describe('clientApi ', async () => {
         name: 'aserver',
         labels: [],
         networkId: net.id,
-        isEnabled: 1
+        isEnabled: true
     }
 
     before(async () => {
-        if (fs.existsSync('/tmp/config.yaml'))
-            fs.rmSync('/tmp/config.yaml')
-        await configService.setConfigPath('/tmp/config.yaml');
 
-
-        await configService.saveNetwork(net);
-        await configService.saveGateway(gateway);
 
 
     })
 
     beforeEach(async () => {
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        await configService.setConfigPath(filename);
+
+        await configService.saveNetwork(net);
+        await configService.saveGateway(gateway);
         await redisService.flushAll();
         configService.config.users = [];
         await configService.saveUser(user);
@@ -80,7 +79,7 @@ describe('clientApi ', async () => {
             authenticatedTime: new Date().toISOString(),
             clientIp: '192.168.8.8', tun: 'tun0',
             userId: user.id, hostId: gateway.id,
-            serviceNetwork: '192.168.0.0/24'
+            serviceNetwork: '172.18.0.0/24'
         };
         await redisService.hset('/tunnel/akey', tunnel)
         let response: any = await new Promise((resolve: any, reject: any) => {

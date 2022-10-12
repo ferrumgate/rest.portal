@@ -8,14 +8,15 @@ import fs from 'fs';
 import passport from 'passport';
 
 import { localInit } from "./auth/local";
-import { googleInit } from "./auth/google";
-import { linkedinInit } from "./auth/linkedin";
+import { oauthGoogleInit } from "./auth/google";
+import { oauthLinkedinInit } from "./auth/linkedin";
 import { HelperService } from "../service/helperService";
 import { apiKeyInit } from "./auth/apikey";
 import { jwtInit } from "./auth/jwt";
-import { passportInit } from "./auth/passportInit";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import cors from 'cors';
 import { corsOptionsDelegate } from "./cors";
+
 
 
 
@@ -44,12 +45,13 @@ async function execute2FA(req: any) {
 
 
 }
-/////////////////////////////////  /auth/local  //////////////////////////////////
+
+/////////////////////////////////  /auth/start  //////////////////////////////////
 
 
-routerAuth.post('/local',
+routerAuth.post('/',
     asyncHandler(passportInit),
-    passport.authenticate(['local', 'headerapikey'], { session: false }),
+    asyncHandlerWithArgs(passportAuthenticate, ['local', 'headerapikey', 'activedirectory']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
@@ -58,15 +60,13 @@ routerAuth.post('/local',
         return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false });
     })
 );
-
-
 
 /////////////////////////// /auth/google //////////////////////////
 
 
-routerAuth.use('/google/callback',
+routerAuth.use('/oauth/google/callback',
     asyncHandler(passportInit),
-    passport.authenticate('google', { session: false }),
+    asyncHandlerWithArgs(passportAuthenticate, ['google']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
@@ -77,9 +77,9 @@ routerAuth.use('/google/callback',
 );
 
 
-routerAuth.get('/google',
+routerAuth.get('/oauth/google',
     asyncHandler(passportInit),
-    passport.authenticate('google', { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['google']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         return res.status(200).json({});
@@ -91,9 +91,9 @@ routerAuth.get('/google',
 /////////////////////////// /auth/linkedin //////////////////////////
 
 
-routerAuth.use('/linkedin/callback',
+routerAuth.use('/oauth/linkedin/callback',
     asyncHandler(passportInit),
-    passport.authenticate('linkedin', { session: false }),
+    asyncHandlerWithArgs(passportAuthenticate, ['linkedin']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
@@ -103,14 +103,47 @@ routerAuth.use('/linkedin/callback',
     })
 );
 
-routerAuth.get('/linkedin',
+routerAuth.get('/oauth/linkedin',
     asyncHandler(passportInit),
-    passport.authenticate('linkedin', { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['linkedin']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         return res.status(200).json({});
     })
 );
+
+
+/////////////////////////// /auth/auth0 //////////////////////////
+
+
+routerAuth.use('/saml/auth0/callback',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['auth0']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const currentUser: User = req.currentUser as User;
+        logger.info(`authenticated user: ${currentUser.username}`);
+        const two2FA = await execute2FA(req);
+        const obj = { key: two2FA.key, is2FA: currentUser.is2FA ? 'true' : 'false' };
+        const query = new URLSearchParams(obj);
+
+
+        return res.redirect(`/login/callback/saml/auth0?${query.toString()}`)
+    })
+);
+
+routerAuth.get('/saml/auth0',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['auth0']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        return res.status(200).json({});
+    })
+);
+
+
+
+
 
 
 
@@ -136,7 +169,7 @@ routerAuth.post('/2fa',
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'key not found');
 
         const user = await configService.getUserById(userId);
-        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'not authorized');
+        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
         HelperService.isValidUser(user);
         const sensitiveData = await configService.getUserSensitiveData(userId);
         twoFAService.verifyToken(sensitiveData.twoFASecret || '', request.twoFAToken);
@@ -203,7 +236,7 @@ routerAuth.post('/accesstoken',
 
 routerAuth.post('/refreshtoken',
     asyncHandler(passportInit),
-    passport.authenticate('jwt', { session: false }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const appService = req.appService as AppService;
@@ -226,10 +259,10 @@ routerAuth.post('/refreshtoken',
         const user = await configService.getUserById(userId);
         await HelperService.isValidUser(user);
         if (!user)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, "not authenticated");
         //check also currentUser that comes from accessToken
         if (req.currentUser.id != user.id)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authenticated");
 
 
         //set user to request object
@@ -252,7 +285,7 @@ routerAuth.post('/refreshtoken',
 
 routerAuth.post('/token/test',
     asyncHandler(passportInit),
-    passport.authenticate(['headerapikey', 'jwt'], { session: false }),
+    asyncHandlerWithArgs(passportAuthenticate, ['headerapikey', 'jwt']),
     asyncHandler(async (req: any, res: any, next: any) => {
         return res.status(200).json({ works: true });
     })

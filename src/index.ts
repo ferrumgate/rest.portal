@@ -15,6 +15,10 @@ import fs from "fs";
 import { routerConfigureAuthenticated } from "./api/configureApi";
 import { routerNetworkAuthenticated } from "./api/ networkApi";
 import { routerGatewayAuthenticated } from "./api/gatewayApi";
+import { routerConfigAuthAuthenticated } from "./api/configAuthApi";
+import { passportAuthenticate, passportInit } from "./api/auth/passportInit";
+
+
 
 
 const bodyParser = require('body-parser');
@@ -85,7 +89,7 @@ const findClientIp = async (req: any, res: any, next: any) => {
 }
 
 
-const noAuthentication = (req: any, res: any, next: any) => {
+const noAuthentication = async (req: any, res: any, next: any) => {
     next();
 };
 
@@ -98,6 +102,28 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 
 
+
+app.use("(\/api)?/test/activedirectory",
+    asyncHandler(cors(corsOptionsDelegate)),
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'test', 200),
+    asyncHandler(passportInit),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        req.body.username = 'hamza';
+        req.body.password = 'Qa12345678'
+        next();
+    }),
+    //asyncHandlerWithArgs(passportAuthenticate, []),//internal error gives
+
+    asyncHandlerWithArgs(passportAuthenticate, ['activedirectory']),
+    //asyncHandlerWithArgs(passportAuthenticate, ['headerapikey', 'local']),
+    //asyncHandlerWithArgs(passportAuthenticate, ['headerapikey', 'local', 'activedirectory']),
+
+    asyncHandler(async (req: any, res: any, next: any) => {
+        assert(req.appService);
+        res.status(200).json({ result: "ok", clientIp: req.clientIp });
+    }));
 app.use("(\/api)?/test",
     asyncHandler(cors(corsOptionsDelegate)),
     asyncHandler(setAppService),
@@ -182,6 +208,16 @@ app.use('(\/api)?/config/public',
     //asyncHandlerWithArgs(checkCaptcha, 'configPublic', 1000),//specialy disabled
     asyncHandler(noAuthentication),
     routerConfig);
+
+app.use('(\/api)?/config/auth',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'config', 100),
+    asyncHandlerWithArgs(rateLimit, 'configHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'configDaily', 10000),
+    asyncHandlerWithArgs(checkCaptcha, 'config', 50),
+    asyncHandler(noAuthentication),
+    routerConfigAuthAuthenticated);
 
 
 app.use('(\/api)?/config',

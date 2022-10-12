@@ -1,11 +1,11 @@
 import express from "express";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { asyncHandler, logger } from "../common";
+import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
 import { Util } from "../util";
 import fs from 'fs';
-import { passportInit } from "./auth/passportInit";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { RBACDefault } from "../model/rbac";
 import { config } from "process";
@@ -24,6 +24,13 @@ routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: a
     const appService = req.appService as AppService;
     const configService = appService.configService;
     const redisService = appService.redisService;
+
+    const isSystemConfigured = await configService.getIsConfigured();
+    if (!isSystemConfigured) {
+        logger.warn(`system is not configured yet`);
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, "not configured yet");
+    }
+
     //check key from redis
     const rkey = `/user/confirm/${key}`;
     const userId = await redisService.get(rkey, false) as string;
@@ -131,6 +138,12 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
     const templateService = appService.templateService;
     const emailService = appService.emailService;
 
+    const isSystemConfigured = await configService.getIsConfigured();
+    if (!isSystemConfigured) {
+        logger.warn(`system is not configured yet`);
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, "not configured yet");
+    }
+
     inputService.checkPasswordPolicy(pass);
 
     const userId = await redisService.get(rkey, false) as string;
@@ -161,7 +174,7 @@ export const routerUserAuthenticated = express.Router();
 
 routerUserAuthenticated.get('/current',
     asyncHandler(passportInit),
-    passport.authenticate(['jwt', 'headerapikey'], { session: false, }),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(async (req: any, res: any, next: any) => {
         const appService = req.appService as AppService;
         const configService = appService.configService;

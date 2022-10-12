@@ -10,10 +10,11 @@ import { Captcha } from "../model/captcha";
 import { SSLCertificate } from "../model/sslCertificate";
 import { SSHCertificate } from "../model/sshCertificate";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { AuthSettings } from "../model/authSettings";
+import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthSaml, AuthSettings, BaseLdap, BaseOAuth, BaseSaml } from "../model/authSettings";
 import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
 import { Gateway, Network } from "../model/network";
+import { isAbsolute } from "path";
 
 
 
@@ -21,7 +22,7 @@ export class ConfigService {
 
 
     config: Config;
-    protected configfile = '/etc/ferrumgate/config.yaml';
+    protected configfile = `/etc/ferrumgate/config.yaml`;
     private secretKey = '';
     lastUpdateTime = '';
     /**
@@ -31,7 +32,7 @@ export class ConfigService {
         if (!encryptKey)
             throw new Error('needs and encyption key with lenght 32');
         //default user
-        const adminUser = HelperService.createUser('default', 'admin', 'default admin', 'ferrumgate');
+        const adminUser = HelperService.createUser('local-local', 'admin', 'default admin', 'ferrumgate');
         adminUser.isVerified = true;
         adminUser.roleIds = ['Admin'];
 
@@ -63,7 +64,18 @@ export class ConfigService {
             },
             logo: {},
             auth: {
-                local: { isForgotPassword: 0, isRegister: 0 }
+                common: {},
+                local: {
+                    id: Util.randomNumberString(),
+                    type: 'local',
+                    baseType: 'local',
+                    name: 'Local',
+                    tags: [],
+                    isForgotPassword: false,
+                    isRegister: false,
+                    isEnabled: true,
+
+                }
             },
             rbac: {
                 roles: [RBACDefault.roleAdmin, RBACDefault.roleReporter, RBACDefault.roleUser],
@@ -78,14 +90,72 @@ export class ConfigService {
         }
         //for testing
         if (process.env.NODE_ENV == 'development') {
-            this.config.auth.google = {
-                clientID: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
-                clientSecret: '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',
+            this.config.auth.oauth = {
+                providers: [
+                    {
+                        baseType: 'oauth',
+                        type: 'google',
+                        id: Util.randomNumberString(),
+                        name: 'Google/OAuth2',
+                        tags: [],
+                        clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
+                        clientSecret: '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',
+                        isEnabled: true,
+                    },
+                    {
+                        baseType: 'oauth',
+                        type: 'linkedin',
+                        id: Util.randomNumberString(),
+                        name: 'Linkedin/OAuth2',
+                        tags: [],
+                        clientId: '866dr29tuc5uy5',
+                        clientSecret: '1E3DHw0FJFUsp1Um',
+                        isEnabled: true,
+                    }
+                ]
             }
-            this.config.auth.linkedin = {
-                clientID: '866dr29tuc5uy5',
-                clientSecret: '1E3DHw0FJFUsp1Um'
+            this.config.auth.ldap = {
+                providers: [
+                    {
+                        baseType: 'ldap',
+                        type: 'activedirectory',
+                        id: Util.randomNumberString(),
+                        name: 'Active Directory/Ldap',
+                        tags: [],
+                        host: 'ldap://192.168.88.254:389',
+                        bindDN: 'CN=myadmin,CN=users,DC=testad,DC=local',
+                        bindPass: 'Qa12345678',
+                        searchBase: 'CN=users,DC=testad,DC=local',
+                        groupnameField: 'memberOf',
+                        usernameField: 'sAMAccountName',
+                        isEnabled: true
+
+
+
+                    },
+                ]
             }
+
+            this.config.auth.saml = {
+                providers: [
+                    {
+                        baseType: 'saml',
+                        type: 'auth0',
+                        id: Util.randomNumberString(),
+                        name: 'Auth0/Saml',
+                        tags: [],
+                        issuer: 'urn:dev-24wm8m7g.us.auth0.com',
+                        loginUrl: 'https://dev-24wm8m7g.us.auth0.com/samlp/pryXTgkqDprtoGOg0RRH26ylKV0zg4xV',
+                        fingerPrint: '96:39:6C:F6:ED:DF:07:30:F0:2E:45:95:02:B6:F6:68:B7:2C:11:37',
+                        cert: `MIIDDTCCAfWgAwIBAgIJDVrH9KeUS+k8MA0GCSqGSIb3DQEBCwUAMCQxIjAgBgNVBAMTGWRldi0yNHdtOG03Zy51cy5hdXRoMC5jb20wHhcNMjIxMDEwMjIzOTA2WhcNMzYwNjE4MjIzOTA2WjAkMSIwIAYDVQQDExlkZXYtMjR3bThtN2cudXMuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA14riTBaUOB2+OZiEbpL5Cjy4MVl78Qi+Msi6IbmIs8nIGRav2hYsI3/mUex6+dCeqwoKCALByRySTEWhUCRWNsi86ae5CSsRikVBAPtEZqKBuoSthrjXUQT5/UBBOHc+EVUAiNrAEE1DBjpkFPkZfGk974ZukK8MyfliajjmFHGj23vwxJncxfx49kOEalz10M500MNldl+Kl628i//y3QiojTsNvPK4SiORFBR89DnWJoB/m6npsm9tkRKUFuYNedVEDru+8aac6LVrKkimDOUzXecAbCm7+td4rXCyV25cc3Pp0sHUYFYk4NoqzW6kJtddFcRQi+xo5JqcPjtunwIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBRZYMCT4GSETh+A4Ji9wWJxlcv53zAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBACNDPiTHjyeFUIOTWnnZbTZil0nf+yrA6QVesV5+KJ9Ek+YgMrnZ4KdXEZZozUgiGsER1RjetWVYnv3AmEvML0CY/+xJu2bCfwQssSXFLQGdv079V81Mk2+Hz8gQgruLpJpfENQCsbWm3lXQP4F3avFw68HB62rr6jfyEIPb9n8rw/pj57y5ZILl97sb3QikgRh1pTEKVz05WLeHdGPE30QWklGDYxqv2/TbRWOUsdXjjbpE6pIfTUX5OLqGRbrtdHL9fHbhVOfqczALtneEjv5o/TpB3Jo2w9RU9AgMYwWT2Hpqop/fe9fyDQ+u5Hz7ZnADi/oktGBzm8/Y03WpkuM=`,
+                        usernameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+                        nameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
+                        isEnabled: true
+
+                    },
+                ]
+            }
+
             this.config.email = { fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: 'nqquxankumksakon' };
             this.config.url = 'http://localhost:4200';
             this.config.captcha = {
@@ -97,7 +167,7 @@ export class ConfigService {
             this.config.jwtSSLCertificate.publicKey = fs.readFileSync(`./ferrumgate.com.crt`).toString();
             if (fs.existsSync('/tmp/config.yaml') && !process.env.LOCAL_TEST)
                 fs.rmSync('/tmp/config.yaml');
-            const adminUser = HelperService.createUser('local', 'hamza@hamzakilic.com', 'hamzaadmin', 'Deneme123');
+            const adminUser = HelperService.createUser('local-local', 'hamza@hamzakilic.com', 'hamzaadmin', 'Deneme123');
             adminUser.isLocked = false;
             adminUser.isVerified = true;
             adminUser.roleIds = ['Admin'];
@@ -105,7 +175,7 @@ export class ConfigService {
             adminUser.twoFASecret = 'GZTM2CLFZFQA4W3QSCOGG53QKU23CAZW';
             this.config.users.push(adminUser);
 
-            const standartUser = HelperService.createUser('local', 'hamzauser@hamzakilic.com', 'hamzauser', 'Deneme123');
+            const standartUser = HelperService.createUser('local-local', 'hamzauser@hamzakilic.com', 'hamzauser', 'Deneme123');
             standartUser.isLocked = false;
             standartUser.isVerified = true;
             standartUser.roleIds = ['User'];
@@ -120,11 +190,11 @@ export class ConfigService {
             }
             this.config.networks.push(net);
             let gateways: Gateway[] = [
-                { id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: 1 },
-                { id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: 1 },
-                { id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: 0 },
-                { id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: 0 },
-                { id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: 0 }
+                { id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: true },
+                { id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: true },
+                { id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: false },
+                { id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: false },
+                { id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: false }
             ];
             gateways.forEach(x => this.config.gateways.push(x));
 
@@ -132,6 +202,9 @@ export class ConfigService {
         this.loadConfigFromFile();
 
         this.lastUpdateTime = new Date().toISOString();
+    }
+    resetUpdateTime() {
+        this.lastUpdateTime = new Date(1900, 1, 1).toISOString();
     }
     setConfigPath(path: string) {
         this.configfile = path;
@@ -198,6 +271,12 @@ export class ConfigService {
     async getUserByUsername(username: string): Promise<User | undefined> {
         if (!username) return undefined;
         let user = Util.clone(this.config.users.find(x => x.username == username));
+        this.deleteUserSensitiveData(user);
+        return user;
+    }
+    async getUserByUsernameAndSource(username: string, source: string): Promise<User | undefined> {
+        if (!username) return undefined;
+        let user = Util.clone(this.config.users.find(x => x.username == username && x.source == source));
         this.deleteUserSensitiveData(user);
         return user;
     }
@@ -348,6 +427,101 @@ export class ConfigService {
             ...this.config.auth,
             ...cloned
         }
+        await this.saveConfigToFile();
+    }
+    async setAuthSettingsCommon(common: AuthCommon) {
+        let cloned = Util.clone(common);
+        this.config.auth.common = cloned;
+        await this.saveConfigToFile();
+    }
+    async getAuthSettingsCommon() {
+        const common = Util.clone(this.config.auth.common);
+        return common;
+    }
+
+
+    async setAuthSettingsLocal(local: AuthLocal) {
+        let cloned = Util.clone(local);
+        this.config.auth.local = cloned;
+        await this.saveConfigToFile();
+    }
+    async getAuthSettingsLocal() {
+        const common = Util.clone(this.config.auth.local);
+        return common;
+    }
+
+    async getAuthSettingOAuth() {
+        return Util.clone(this.config.auth.oauth || {}) as AuthOAuth
+    }
+
+    async addAuthSettingOAuth(provider: BaseOAuth) {
+        let cloned = Util.clone(provider);
+        if (!this.config.auth.oauth)
+            this.config.auth.oauth = { providers: [] };
+        const index = this.config.auth.oauth.providers.findIndex(x => x.id == cloned.id);
+        if (index < 0)
+            this.config.auth.oauth.providers.push(cloned);
+        else
+            this.config.auth.oauth.providers[index] = {
+                ...cloned
+            }
+        await this.saveConfigToFile();
+    }
+
+    async deleteAuthSettingOAuth(id: string) {
+        const index = this.config.auth?.oauth?.providers.findIndex(x => x.id == id);
+        if (Number(index) >= 0)
+            this.config.auth.oauth?.providers.splice(Number(index), 1);
+        await this.saveConfigToFile();
+    }
+
+    async getAuthSettingLdap() {
+        return Util.clone(this.config.auth.ldap || {}) as AuthLdap
+    }
+    async addAuthSettingLdap(provider: BaseLdap) {
+        let cloned = Util.clone(provider);
+        if (!this.config.auth.ldap)
+            this.config.auth.ldap = { providers: [] };
+        const index = this.config.auth.ldap.providers.findIndex(x => x.id == cloned.id);
+        if (index < 0)
+            this.config.auth.ldap.providers.push(cloned);
+        else
+            this.config.auth.ldap.providers[index] = {
+                ...cloned
+            }
+        await this.saveConfigToFile();
+    }
+    async deleteAuthSettingLdap(id: string) {
+        const index = this.config.auth?.ldap?.providers.findIndex(x => x.id == id);
+        if (Number(index) >= 0)
+            this.config.auth.ldap?.providers.splice(Number(index), 1);
+        await this.saveConfigToFile();
+    }
+
+    async getAuthSettingSaml() {
+        return Util.clone(this.config.auth.saml || {}) as AuthSaml
+    }
+
+
+    async addAuthSettingSaml(provider: BaseSaml) {
+        let cloned = Util.clone(provider);
+        if (!this.config.auth.saml)
+            this.config.auth.saml = { providers: [] };
+        const index = this.config.auth.saml.providers.findIndex(x => x.id == cloned.id);
+        if (index < 0)
+            this.config.auth.saml.providers.push(cloned);
+        else
+            this.config.auth.saml.providers[index] = {
+                ...cloned
+            }
+        await this.saveConfigToFile();
+    }
+
+
+    async deleteAuthSettingSaml(id: string) {
+        const index = this.config.auth?.saml?.providers.findIndex(x => x.id == id);
+        if (Number(index) >= 0)
+            this.config.auth.saml?.providers.splice(Number(index), 1);
         await this.saveConfigToFile();
     }
 

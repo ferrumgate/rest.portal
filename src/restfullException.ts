@@ -30,6 +30,7 @@ export class RestfullException extends Error {
  */
 export class ErrorCodes {
 
+    static ErrNotAuthenticated: string = 'ErrNotAuthenticated';
     static ErrNotAuthorized: string = 'ErrNotAuthorized';
     static ErrApiKeyIsNotValid: string = 'ErrApiKeyIsNotValid';
     static ErrTunnelKeyIsNotValid: string = 'ErrTunnelKeyIsNotValid';
@@ -43,6 +44,7 @@ export class ErrorCodes {
     static ErrCaptchaRequired: string = 'ErrCaptchaRequired';
     static ErrJWTVerifyFailed: string = 'ErrJWTVerifyFailed';
     static ErrUserLockedOrNotVerified: string = 'ErrUserLockedOrNotVerified';
+    static ErrUserSourceNotVerified: string = 'ErrUserSourceNotVerified';
     static ErrCaptchaVerifyFailed: string = 'ErrCaptchaVerifyFailed';
     static Err2FAVerifyFailed: string = 'Err2FAVerifyFailed';
     static ErrSecureTunnelFailed: string = 'ErrSecureTunnelFailed';
@@ -55,7 +57,9 @@ export class ErrorCodes {
     static ErrDomainNotValid: string = 'ErrDomainNotValid';
     static ErrEmptyNotValid: string = 'ErrEmptyNotValid';
     static ErrNotExists: string = 'ErrNotExists';
-
+    static ErrAllreadyExits: string = 'ErrAllreadyExits';
+    static ErrDataVerifyFailed: string = 'ErrDataVerifyFailed';
+    static ErrDisabledSource: string = 'ErrDisabledSource';
 
 
 }

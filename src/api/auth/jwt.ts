@@ -10,9 +10,9 @@ import { Util } from '../../util';
 import { ErrorCodes, RestfullException } from '../../restfullException';
 import { HelperService } from '../../service/helperService';
 
-
+const name = 'jwt';
 export function jwtInit() {
-    passport.use('jwt', new passportCustom.Strategy(
+    passport.use(name, new passportCustom.Strategy(
         async (req: any, done: any) => {
             try {
 
@@ -41,9 +41,15 @@ export function jwtInit() {
                 return done(null, user);
 
             } catch (err) {
-                return done(err);
+                return done(null, null, err);
             }
 
         }
+
     ));
+    return name;
+}
+
+export function jwtUnuse() {
+    passport.unuse(name);
 }
