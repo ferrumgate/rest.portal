@@ -1,6 +1,7 @@
 import { AuthSettings } from "./authSettings";
 import { Captcha } from "./captcha";
 import { EmailSettings } from "./emailSettings";
+import { Group } from "./group";
 import { LogoSettings } from "./logoSettings";
 import { Gateway, Network } from "./network";
 import { RBAC, Right, Role } from "./rbac";
@@ -30,6 +31,7 @@ export interface Config {
     sshCertificate: SSHCertificate,
 
     users: User[];
+    groups: Group[];
     captcha: Captcha,
     email: EmailSettings,
     logo: LogoSettings,

@@ -10,7 +10,7 @@ import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
 import { authorize, authorizeAsAdmin } from "./commonApi";
-import { Gateway, Network } from "../model/network";
+import { cloneGateway, Gateway, Network } from "../model/network";
 
 
 /////////////////////////////////  gateway //////////////////////////////////
@@ -96,11 +96,7 @@ routerGatewayAuthenticated.delete('/:id',
 
     }))
 
-function copyGateway(gate: Gateway): Gateway {
-    return {
-        id: gate.id, labels: gate.labels, name: gate.name, networkId: gate.networkId, isEnabled: gate.isEnabled
-    }
-}
+
 
 routerGatewayAuthenticated.put('/',
     asyncHandler(passportInit),
@@ -120,7 +116,7 @@ routerGatewayAuthenticated.put('/',
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
-        const safe = copyGateway(input);
+        const safe = cloneGateway(input);
         await configService.saveGateway(safe);
         // TODO audit here
         return res.status(200).json(safe);
@@ -143,7 +139,7 @@ routerGatewayAuthenticated.post('/',
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
-        const safe = copyGateway(input)
+        const safe = cloneGateway(input)
         await configService.saveGateway(safe);
         //TODO audit
         return res.status(200).json(safe);

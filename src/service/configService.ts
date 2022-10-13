@@ -15,6 +15,7 @@ import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
 import { Gateway, Network } from "../model/network";
 import { isAbsolute } from "path";
+import { Group } from "../model/group";
 
 
 
@@ -53,6 +54,7 @@ export class ConfigService {
             users: [
                 adminUser
             ],
+            groups: [],
             captcha: {},
             sshCertificate: {},
             jwtSSLCertificate: {},
@@ -268,6 +270,7 @@ export class ConfigService {
         delete user?.roleIds;
     }
 
+
     async getUserByUsername(username: string): Promise<User | undefined> {
         if (!username) return undefined;
         let user = Util.clone(this.config.users.find(x => x.username == username));
@@ -290,6 +293,39 @@ export class ConfigService {
         let user = Util.clone(this.config.users.find(x => x.id == id));
         this.deleteUserSensitiveData(user);
         return user;
+    }
+    async getUsersBy(page: number = 0, pageSize: number = 0, search?: string) {
+
+        let users = [];
+        let filteredUsers = !search ? this.config.users :
+            this.config.users.filter(x => {
+                let caseInsensitivie = search.toLowerCase();
+                if (x.name.toLowerCase().includes(caseInsensitivie))
+                    return true;
+                if (x.username.toLowerCase().includes(caseInsensitivie))
+                    return true;
+                if (x.email?.toLowerCase().includes(caseInsensitivie))
+                    return true;
+                if (x.source.toLocaleLowerCase().includes(caseInsensitivie))
+                    return true;
+                if (x.labels?.find(x => x.toLowerCase().includes(caseInsensitivie)))
+                    return true;
+
+            })
+        filteredUsers = Array.from(filteredUsers);
+        filteredUsers.sort((a, b) => {
+            return a.username.localeCompare(b.username)
+        })
+        const totalSize = filteredUsers.length;
+        if (pageSize)
+            filteredUsers = filteredUsers.slice(page * pageSize, (page + 1) * pageSize);
+        for (const iterator of filteredUsers) {
+            let user = Util.clone(iterator);
+            this.deleteUserSensitiveData(user);
+            users.push(user);
+        }
+
+        return { items: users, total: totalSize };
     }
 
     async getUserRoles(user: User) {
@@ -682,36 +718,57 @@ export class ConfigService {
         await this.saveConfigToFile();
     }
 
+    //// group entity
+    async getGroup(id: string): Promise<Group | undefined> {
+        return Util.clone(this.config.groups.find(x => x.id == id));
 
-    /**
-     * @summary save or update role
-     * @param role 
-     * @remark this is implemented but not used, because we dont need it I think
-     * lets think more about this functionality
-     * I did not implement a test code for this
-     */
-    /*  async setRBAC(role: Role) {
-         const cloned = Util.clone(role) as Role;
-         //security check, one one can add default admin rights to any role
-         if (RBACDefault.systemRoleIds.includes(cloned.id)) {
-             logger.error(`no one can use default role id: ${cloned.id}`);
-             throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'role id problem')
-         }
-         if (RBACDefault.systemRightIds.find(x => cloned.rightIds?.includes(x))) {
-             logger.error(`no one can use default right id: ${cloned.id}`);
-             throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'right id problem')
-         }
-         if (cloned.rightIds) {
-             //only defined right ids
-             cloned.rightIds = cloned.rightIds.filter(x => RBACDefault.rightIds.includes(x));
-         }
-         const finded = this.config.rbac.roles.find(x => x.id == cloned.id);
-         if (finded) {
-             finded.name = cloned.name;
-             finded.rightIds = cloned.rightIds;
-         } else
-             this.config.rbac.roles.push(role);
-         await this.saveConfigToFile();
- 
-     } */
+    }
+
+    async getGroupsBySearch(query: string) {
+        const search = query.toLowerCase();
+        const groups = this.config.groups.filter(x => {
+            if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(search)))
+                return true;
+            if (x.name?.toLowerCase().includes(search))
+                return true;
+
+            return false;
+        });
+        return groups.map(x => Util.clone(x));
+    }
+    async getGroupsAll() {
+        return this.config.groups.map(x => Util.clone(x));
+    }
+
+    async deleteGroup(id: string) {
+        const indexId = this.config.groups.findIndex(x => x.id == id);
+        if (indexId >= 0) {
+            this.config.groups.splice(indexId, 1);
+
+        }
+        this.config.users.forEach(x => {
+            let userGroupIndex = x.groupIds.findIndex(y => y == id)
+            if (userGroupIndex >= 0)
+                x.groupIds.splice(userGroupIndex, 1);
+
+        })
+        await this.saveConfigToFile();
+    }
+
+    async saveGroup(group: Group) {
+        let findedIndex = this.config.groups.findIndex(x => x.id == group.id);
+        let finded = findedIndex >= 0 ? this.config.groups[findedIndex] : null;
+        const cloned = Util.clone(group);
+        if (!finded) {
+            this.config.groups.push(cloned);
+        } else {
+            this.config.groups[findedIndex] = {
+                ...finded,
+                ...cloned
+            }
+        }
+        await this.saveConfigToFile();
+    }
+
+
 }

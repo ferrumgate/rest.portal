@@ -19,7 +19,8 @@ export interface User {
     apiKey?: string;
     roleIds?: string[];
     email?: string;
-    //isEmailVerified: boolean;
+    isEmailVerified?: boolean;
+    labels?: string[];
     /**
      * if client has problem with it networks settings
      */
