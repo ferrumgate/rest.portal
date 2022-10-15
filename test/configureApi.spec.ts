@@ -178,7 +178,7 @@ describe('configureApi ', async () => {
                 .post('/configure')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({
-                    email: 'test@test.com', password: 'somePassword123',
+                    email: 'test5@test.com', password: 'somePassword123',
                     url: 'https://secure.ferrumgate.com',
                     domain: 'ferrumgate.local',
                     serviceNetwork: '10.0.0.0/16',
@@ -192,7 +192,7 @@ describe('configureApi ', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        const user = await configService.getUserByUsername('test@test.com')
+        const user = await configService.getUserByUsername('test5@test.com')
         expect(user).exist;
         const network = await configService.getNetworkByName('default');
         expect(network).exist;

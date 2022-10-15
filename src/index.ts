@@ -185,7 +185,7 @@ app.use('(\/api)?/user',
     asyncHandlerWithArgs(rateLimit, 'user', 1000),
     asyncHandlerWithArgs(rateLimit, 'userHourly', 10000),
     asyncHandlerWithArgs(rateLimit, 'userDaily', 50000),
-    asyncHandlerWithArgs(checkCaptcha, 'userCaptcha', 5),
+    asyncHandlerWithArgs(checkCaptcha, 'userCaptcha', 500),
     routerUserAuthenticated);
 
 
@@ -242,7 +242,7 @@ app.use('(\/api)?/client/tunnel',
     asyncHandlerWithArgs(rateLimit, 'clientTunnel', 100),
     asyncHandlerWithArgs(rateLimit, 'clientTunnelHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'clientTunnelDaily', 10000),
-    asyncHandlerWithArgs(checkCaptcha, 'clientTunnelCaptcha', 50),
+    asyncHandlerWithArgs(checkCaptcha, 'clientTunnelCaptcha', 100),
     routerClientTunnelAuthenticated);
 
 

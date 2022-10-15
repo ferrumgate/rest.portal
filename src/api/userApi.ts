@@ -300,7 +300,10 @@ routerUserAuthenticated.delete('/:id',
 
         const user = await configService.getUserById(id);
         if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no user');
-
+        //check if any other admin user exists
+        const adminUsers = await configService.getUserByRoleIds([RBACDefault.roleAdmin.id]);
+        if (adminUsers.length == 1)
+            throw new RestfullException(400, ErrorCodes.ErrNoAdminUserLeft, 'no admin user left');
         await configService.deleteUser(user.id);
         //TODO audit
         return res.status(200).json({});
@@ -326,10 +329,10 @@ routerUserAuthenticated.put('/',
         const userDb = await configService.getUser(input.id);
         if (!userDb) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no user');
 
-        await inputService.checkNotEmpty(input.name);
+        //await inputService.checkNotEmpty(input.name);
         //only set name. isLocked, is2FA, roleIds, groupIds
         let isChanged = false;
-        if (userDb.name != input.name) {
+        if (!Util.isUndefinedOrNull(input.name) && userDb.name != input.name) {
             isChanged = true;
             userDb.name = input.name;
         }
@@ -366,8 +369,13 @@ routerUserAuthenticated.put('/',
             userDb.groupIds = filteredGroups;
         }
 
+        //check if any other admin user exists
+        const adminUsers = await configService.getUserByRoleIds([RBACDefault.roleAdmin.id]);
+        if (adminUsers.length == 1 && adminUsers[0].id == userDb.id && !userDb.roleIds?.includes(RBACDefault.roleAdmin.id))
+            throw new RestfullException(400, ErrorCodes.ErrNoAdminUserLeft, 'no admin user left');
 
-        await configService.saveUser(userDb);
+        if (isChanged)
+            await configService.saveUser(userDb);
         // TODO audit here
         return res.status(200).json(userDb);
 

@@ -170,7 +170,7 @@ export class ConfigService {
             this.config.jwtSSLCertificate.publicKey = fs.readFileSync(`./ferrumgate.com.crt`).toString();
             if (fs.existsSync('/tmp/config.yaml') && !process.env.LOCAL_TEST)
                 fs.rmSync('/tmp/config.yaml');
-            const adminUser = HelperService.createUser('local-local', 'hamza@hamzakilic.com', 'hamzaadmin', 'Deneme123');
+            const adminUser = HelperService.createUser('local-local', 'hamza1@hamzakilic.com', 'hamzaadmin', 'Deneme123');
             adminUser.isLocked = false;
             adminUser.isVerified = true;
             adminUser.roleIds = ['Admin'];
@@ -353,6 +353,17 @@ export class ConfigService {
 
         return { items: users, total: totalSize };
     }
+    async getUserByRoleIds(roleIds: string[]): Promise<User[]> {
+        let users = [];
+        const filteredUsers = this.config.users.filter(x => Util.isArrayElementExist(roleIds, x.roleIds))
+        for (const iterator of filteredUsers) {
+            let user = Util.clone(iterator);
+            this.deleteUserSensitiveData(user);
+            users.push(user);
+        }
+
+        return users;
+    }
     async deleteUser(id: string) {
         const indexId = this.config.users.findIndex(x => x.id == id);
         if (indexId >= 0) {
@@ -419,6 +430,7 @@ export class ConfigService {
         let finded = this.config.users.find(x => x.username == 'admin');
         if (!finded)
             return;
+
         finded.username = email;
         finded.password = Util.bcryptHash(password);
         finded.updateDate = new Date().toISOString();

@@ -269,6 +269,33 @@ describe('configService', async () => {
 
     });
 
+
+    it('getUserByRoleIds', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        let aUser: User = {
+            id: 'someid',
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: Util.bcryptHash('passwordWithHash'),
+            groupIds: [], roleIds: ['Admin'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        const users = await configService.getUserByRoleIds(['Admin']);
+
+        expect(users.length).to.be.equal(1);
+
+        const users2 = await configService.getUserByRoleIds(['User']);
+
+        expect(users2.length).to.be.equal(0);
+
+    });
+
     it('saveUser', async () => {
 
         //first create a config and save to a file
