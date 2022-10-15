@@ -15,6 +15,8 @@ import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
 import { Gateway, Network } from "../model/network";
 import { isAbsolute } from "path";
+import { Group } from "../model/group";
+import { util } from "chai";
 
 
 
@@ -53,6 +55,7 @@ export class ConfigService {
             users: [
                 adminUser
             ],
+            groups: [],
             captcha: {},
             sshCertificate: {},
             jwtSSLCertificate: {},
@@ -167,7 +170,7 @@ export class ConfigService {
             this.config.jwtSSLCertificate.publicKey = fs.readFileSync(`./ferrumgate.com.crt`).toString();
             if (fs.existsSync('/tmp/config.yaml') && !process.env.LOCAL_TEST)
                 fs.rmSync('/tmp/config.yaml');
-            const adminUser = HelperService.createUser('local-local', 'hamza@hamzakilic.com', 'hamzaadmin', 'Deneme123');
+            const adminUser = HelperService.createUser('local-local', 'hamza1@hamzakilic.com', 'hamzaadmin', 'Deneme123');
             adminUser.isLocked = false;
             adminUser.isVerified = true;
             adminUser.roleIds = ['Admin'];
@@ -265,8 +268,9 @@ export class ConfigService {
         delete user?.apiKey;
         delete user?.twoFASecret;
         delete user?.password;
-        delete user?.roleIds;
+        //delete user?.roleIds;// is this necessary
     }
+
 
     async getUserByUsername(username: string): Promise<User | undefined> {
         if (!username) return undefined;
@@ -291,11 +295,89 @@ export class ConfigService {
         this.deleteUserSensitiveData(user);
         return user;
     }
+    async getUser(id: string) {
+        return await this.getUserById(id);
+    }
+
+    async getUsersBy(page: number = 0, pageSize: number = 0, search?: string,
+        ids?: string[], groupIds?: string[], roleIds?: string[],
+        is2FA?: boolean, isVerified?: boolean, isLocked?: boolean, isEmailVerified?: boolean, isOnlyApiKey?: boolean) {
+
+        let users = [];
+        let filteredUsers = !search ? this.config.users :
+            this.config.users.filter(x => {
+                let caseInsensitivie = search.toLowerCase();
+                if (x.name.toLowerCase().includes(caseInsensitivie))
+                    return true;
+                if (x.username.toLowerCase().includes(caseInsensitivie))
+                    return true;
+                if (x.email?.toLowerCase().includes(caseInsensitivie))
+                    return true;
+                if (x.source.toLocaleLowerCase().includes(caseInsensitivie))
+                    return true;
+                if (x.labels?.find(x => x.toLowerCase().includes(caseInsensitivie)))
+                    return true;
+
+            })
+        if (ids && ids.length)
+            filteredUsers = filteredUsers.filter(x => ids.includes(x.id));
+        if (groupIds && groupIds.length)
+            filteredUsers = filteredUsers.filter(x => Util.isArrayElementExist(x.groupIds, groupIds));
+        if (roleIds && roleIds.length)
+            filteredUsers = filteredUsers.filter(x => Util.isArrayElementExist(x.roleIds, roleIds));
+        if (!Util.isUndefinedOrNull(is2FA))
+            filteredUsers = filteredUsers.filter(x => Boolean(x.is2FA) == is2FA)
+        if (!Util.isUndefinedOrNull(isVerified))
+            filteredUsers = filteredUsers.filter(x => Boolean(x.isVerified) == isVerified)
+        if (!Util.isUndefinedOrNull(isLocked))
+            filteredUsers = filteredUsers.filter(x => Boolean(x.isLocked) == isLocked)
+
+        if (!Util.isUndefinedOrNull(isEmailVerified))
+            filteredUsers = filteredUsers.filter(x => Boolean(x.isEmailVerified) == isEmailVerified)
+
+        if (!Util.isUndefinedOrNull(isOnlyApiKey))
+            filteredUsers = filteredUsers.filter(x => Boolean(x.isOnlyApiKey) == isOnlyApiKey)
+
+        filteredUsers = Array.from(filteredUsers);
+        filteredUsers.sort((a, b) => {
+            return a.username.localeCompare(b.username)
+        })
+        const totalSize = filteredUsers.length;
+        if (pageSize)
+            filteredUsers = filteredUsers.slice(page * pageSize, (page + 1) * pageSize);
+        for (const iterator of filteredUsers) {
+            let user = Util.clone(iterator);
+            this.deleteUserSensitiveData(user);
+            users.push(user);
+        }
+
+        return { items: users, total: totalSize };
+    }
+    async getUserByRoleIds(roleIds: string[]): Promise<User[]> {
+        let users = [];
+        const filteredUsers = this.config.users.filter(x => Util.isArrayElementExist(roleIds, x.roleIds))
+        for (const iterator of filteredUsers) {
+            let user = Util.clone(iterator);
+            this.deleteUserSensitiveData(user);
+            users.push(user);
+        }
+
+        return users;
+    }
+    async deleteUser(id: string) {
+        const indexId = this.config.users.findIndex(x => x.id == id);
+        if (indexId >= 0) {
+            this.config.users.splice(indexId, 1);
+
+        }
+
+        await this.saveConfigToFile();
+    }
 
     async getUserRoles(user: User) {
         const rbac = await this.getRBAC();
-        const sensitiveData = await this.getUserSensitiveData(user.id);
-        return RBACDefault.convert2RoleList(rbac, sensitiveData.roleIds);
+        //const sensitiveData = await this.getUserSensitiveData(user.id);
+        return RBACDefault.convert2RoleList(rbac, user.roleIds);
     }
     async getUserByUsernameAndPass(username: string, pass: string): Promise<User | undefined> {
         if (!username) return undefined;
@@ -313,7 +395,7 @@ export class ConfigService {
     }
     async getUserSensitiveData(id: string) {
         let user = Util.clone(this.config.users.find(x => x.id == id)) as User;
-        return { twoFASecret: user?.twoFASecret, roleIds: user.roleIds };
+        return { twoFASecret: user?.twoFASecret };
     }
     async saveUser(user: User) {
         let cloned = Util.clone(user);
@@ -348,6 +430,7 @@ export class ConfigService {
         let finded = this.config.users.find(x => x.username == 'admin');
         if (!finded)
             return;
+
         finded.username = email;
         finded.password = Util.bcryptHash(password);
         finded.updateDate = new Date().toISOString();
@@ -682,36 +765,57 @@ export class ConfigService {
         await this.saveConfigToFile();
     }
 
+    //// group entity
+    async getGroup(id: string): Promise<Group | undefined> {
+        return Util.clone(this.config.groups.find(x => x.id == id));
 
-    /**
-     * @summary save or update role
-     * @param role 
-     * @remark this is implemented but not used, because we dont need it I think
-     * lets think more about this functionality
-     * I did not implement a test code for this
-     */
-    /*  async setRBAC(role: Role) {
-         const cloned = Util.clone(role) as Role;
-         //security check, one one can add default admin rights to any role
-         if (RBACDefault.systemRoleIds.includes(cloned.id)) {
-             logger.error(`no one can use default role id: ${cloned.id}`);
-             throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'role id problem')
-         }
-         if (RBACDefault.systemRightIds.find(x => cloned.rightIds?.includes(x))) {
-             logger.error(`no one can use default right id: ${cloned.id}`);
-             throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'right id problem')
-         }
-         if (cloned.rightIds) {
-             //only defined right ids
-             cloned.rightIds = cloned.rightIds.filter(x => RBACDefault.rightIds.includes(x));
-         }
-         const finded = this.config.rbac.roles.find(x => x.id == cloned.id);
-         if (finded) {
-             finded.name = cloned.name;
-             finded.rightIds = cloned.rightIds;
-         } else
-             this.config.rbac.roles.push(role);
-         await this.saveConfigToFile();
- 
-     } */
+    }
+
+    async getGroupsBySearch(query: string) {
+        const search = query.toLowerCase();
+        const groups = this.config.groups.filter(x => {
+            if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(search)))
+                return true;
+            if (x.name?.toLowerCase().includes(search))
+                return true;
+
+            return false;
+        });
+        return groups.map(x => Util.clone(x));
+    }
+    async getGroupsAll() {
+        return this.config.groups.map(x => Util.clone(x));
+    }
+
+    async deleteGroup(id: string) {
+        const indexId = this.config.groups.findIndex(x => x.id == id);
+        if (indexId >= 0) {
+            this.config.groups.splice(indexId, 1);
+
+        }
+        this.config.users.forEach(x => {
+            let userGroupIndex = x.groupIds.findIndex(y => y == id)
+            if (userGroupIndex >= 0)
+                x.groupIds.splice(userGroupIndex, 1);
+
+        })
+        await this.saveConfigToFile();
+    }
+
+    async saveGroup(group: Group) {
+        let findedIndex = this.config.groups.findIndex(x => x.id == group.id);
+        let finded = findedIndex >= 0 ? this.config.groups[findedIndex] : null;
+        const cloned = Util.clone(group);
+        if (!finded) {
+            this.config.groups.push(cloned);
+        } else {
+            this.config.groups[findedIndex] = {
+                ...finded,
+                ...cloned
+            }
+        }
+        await this.saveConfigToFile();
+    }
+
+
 }

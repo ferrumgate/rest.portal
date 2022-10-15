@@ -8,6 +8,7 @@ import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Gateway, Network } from '../src/model/network';
 import { AuthOAuth, AuthCommon, AuthLdap, AuthSaml, AuthLocal, BaseOAuth, BaseLocal } from '../src/model/authSettings';
+import { Group } from '../src/model/group';
 
 
 chai.use(chaiHttp);
@@ -27,6 +28,7 @@ describe('configService', async () => {
     it('saveConfigToFile', async () => {
 
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
         let aUser: User = {
             id: 'someid',
             username: 'hamza.kilic@ferrumgate.com',
@@ -46,6 +48,7 @@ describe('configService', async () => {
 
         //save it first
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
         let aUser: User = {
             id: 'someid2',
             username: 'hamza.kilic@ferrumgate.com',
@@ -69,6 +72,7 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
         let aUser: User = {
             id: 'someid',
             username: 'hamza.kilic@ferrumgate.com',
@@ -90,6 +94,7 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
         let aUser: User = {
             id: 'someid',
             username: 'hamza.kilic@ferrumgate.com',
@@ -110,6 +115,7 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
         let aUser: User = {
             id: 'someid',
             username: 'hamza.kilic@ferrumgate.com',
@@ -133,6 +139,7 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
         let aUser: User = {
             id: 'someid',
             username: 'hamza.kilic@ferrumgate.com',
@@ -148,10 +155,152 @@ describe('configService', async () => {
         expect(user).to.deep.include(aUser);
 
     });
+
+
+
+
+    it('getUsersBy', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        let aUser: User = {
+            id: 'id1',
+            username: 'hamza1@ferrumgate.com',
+            name: 'test1', source: 'local', labels: ['test1'],
+            password: Util.bcryptHash('passwordWithHash'), groupIds: ['g1', 'g2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        let aUser2: User = {
+            id: 'id2',
+            username: 'hamza2@ferrumgate.com',
+            name: 'test2', source: 'google', labels: ['test2'],
+            password: Util.bcryptHash('passwordWithHash'), groupIds: ['g2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+        configService.config.users.push(aUser2);
+
+        let aUser3: User = {
+            id: 'id3',
+            username: 'hamza3@ferrumgate.com',
+            roleIds: ['user'],
+            name: 'test3', source: 'linkedin', labels: ['test3'],
+            password: Util.bcryptHash('passwordWithHash'), groupIds: ['g3'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser3);
+
+        let aUser4: User = {
+            id: 'id4',
+            username: 'hamza4@ferrumgate.com',
+            name: 'test4', source: 'linkedin', labels: ['test4'],
+            password: Util.bcryptHash('passwordWithHash'), groupIds: ['g1', 'g2'],
+            roleIds: ['admin'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            isVerified: true,
+            isLocked: true,
+            is2FA: true,
+            isEmailVerified: true,
+
+
+        };
+
+        configService.config.users.push(aUser4);
+        //added 4 users
+        //get all
+        const list = await configService.getUsersBy();
+        expect(list.items.length).to.be.equal(4);
+        expect(list.total).to.be.equal(4);
+
+        //get 1 page
+        const list2 = await configService.getUsersBy(1, 2)
+        expect(list2.items.length).to.be.equal(2);
+        expect(list2.total).to.be.equal(4);
+
+        //get page 2
+        const list3 = await configService.getUsersBy(2, 2)
+        expect(list3.items.length).to.be.equal(0);
+        expect(list3.total).to.be.equal(4);
+
+        //search by name
+        const list4 = await configService.getUsersBy(0, 0, 'hamza3')
+        expect(list4.items.length).to.be.equal(1);
+        expect(list4.total).to.be.equal(1);
+        //search by source
+        const list5 = await configService.getUsersBy(0, 0, 'linked')
+        expect(list5.items.length).to.be.equal(2);
+        expect(list5.total).to.be.equal(2);
+
+        //search by id
+        const list6 = await configService.getUsersBy(0, 0, '', ['id4']);
+        expect(list6.items.length).to.be.equal(1);
+
+        //search by group id
+        const list7 = await configService.getUsersBy(0, 0, '', [], ['g3']);
+        expect(list7.items.length).to.be.equal(1);
+
+        //search by role id
+        const list8 = await configService.getUsersBy(0, 0, '', [], [], ['admin']);
+        expect(list8.items.length).to.be.equal(1);
+
+        //search by is2fa
+        const list9 = await configService.getUsersBy(0, 0, '', [], [], [], true);
+        expect(list9.items.length).to.be.equal(1);
+
+        //search by isVerified
+        const list10 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, true);
+        expect(list10.items.length).to.be.equal(1);
+
+        //search by isLocked
+        const list11 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, undefined, true);
+        expect(list11.items.length).to.be.equal(1);
+
+        //search by isEmailVerified
+        const list12 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, undefined, undefined, true);
+        expect(list12.items.length).to.be.equal(1);
+
+
+    });
+
+
+    it('getUserByRoleIds', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        let aUser: User = {
+            id: 'someid',
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: Util.bcryptHash('passwordWithHash'),
+            groupIds: [], roleIds: ['Admin'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        const users = await configService.getUserByRoleIds(['Admin']);
+
+        expect(users.length).to.be.equal(1);
+
+        const users2 = await configService.getUserByRoleIds(['User']);
+
+        expect(users2.length).to.be.equal(0);
+
+    });
+
     it('saveUser', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
         let aUser: User = {
             id: 'someid',
             username: 'hamza.kilic@ferrumgate.com',
@@ -176,6 +325,7 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
         let aUser: User = {
             id: '6hiryy8ujv3n',
             username: 'hamza.kilic@ferrumgate.com',
@@ -197,6 +347,7 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
         let network: Network = {
             id: '6hiryy8ujv3n',
             name: 'default2',
@@ -387,6 +538,159 @@ describe('configService', async () => {
         const returned = await configService.getAuthSettingsLocal();
         expect(returned).to.deep.equal(local);
 
+
+    });
+
+
+    it('getGroup', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.groups = [];
+        let group: Group = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: []
+
+        }
+        //add
+        await configService.saveGroup(group);
+
+        const returned = await configService.getGroup(group.id);
+        expect(returned).to.deep.equal(group);
+
+
+    });
+
+    it('getGroupBySearch', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.groups = [];
+        let group: Group = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2']
+
+        }
+        //add
+        await configService.saveGroup(group);
+
+        let group2: Group = {
+            id: Util.randomNumberString(),
+            name: 'south',
+            isEnabled: true,
+            labels: ['test']
+
+        }
+        //add
+        await configService.saveGroup(group2);
+
+        const returned = await configService.getGroupsBySearch('test');
+        expect(returned.length).to.equal(2);
+
+        const returned2 = await configService.getGroupsBySearch('abo');
+        expect(returned2.length).to.be.equal(0);
+
+
+    });
+
+
+    it('getGroupsAll', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.groups = [];
+        let group: Group = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2']
+
+        }
+        //add
+        await configService.saveGroup(group);
+
+        let group2: Group = {
+            id: Util.randomNumberString(),
+            name: 'south',
+            isEnabled: true,
+            labels: ['test']
+
+        }
+        //add
+        await configService.saveGroup(group2);
+
+        const returned = await configService.getGroupsAll();
+        expect(returned.length).to.be.equal(2);
+        expect(returned[0]).to.deep.equal(group);
+
+    });
+
+    it('saveGroup', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.groups = [];
+        let group: Group = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2']
+
+        }
+        //add
+        await configService.saveGroup(group);
+
+        group.name = 'north2';
+        //add
+        await configService.saveGroup(group);
+
+        const returned = await configService.getGroup(group.id)
+
+        expect(returned).to.deep.equal(group);
+
+    });
+
+    it('deleteGroup', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        configService.config.groups = [];
+        let group: Group = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2']
+
+        }
+        //add
+        await configService.saveGroup(group);
+
+        //save a user
+        let aUser: User = {
+            id: 'someid',
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: Util.bcryptHash('passwordWithHash'),
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            groupIds: [group.id]
+
+        };
+
+        configService.config.users.push(aUser);
+
+        await configService.deleteGroup(group.id);
+
+        const returned = await configService.getGroup(group.id)
+
+        expect(returned).not.exist;
+        const user = await configService.getUserById(aUser.id)
+        expect(user?.groupIds.length).to.equal(0);
 
     });
 

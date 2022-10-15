@@ -10,17 +10,37 @@ import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
 import { authorize, authorizeAsAdmin } from "./commonApi";
-import { cloneNetwork, Network } from "../model/network";
-
-
-/////////////////////////////////  network //////////////////////////////////
-export const routerNetworkAuthenticated = express.Router();
+import { cloneGroup, Group } from "../model/group";
+import { cloneSecurityProfile, SecurityProfile } from '../model/securityProfile';
 
 
 
+/////////////////////////////////  group //////////////////////////////////
+export const routerGroupAuthenticated = express.Router();
 
 
-routerNetworkAuthenticated.get('/:id',
+routerGroupAuthenticated.get('/users',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        logger.info(`getting group users`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const allUsers = await configService.getUsersBy();
+        const simpleUsers = allUsers.items.map(x => {
+            return { id: x.id, username: x.username, groupIds: x.groupIds }
+        })
+        return res.status(200).json({
+            items: simpleUsers
+        });
+
+    }))
+
+
+
+routerGroupAuthenticated.get('/:id',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
@@ -28,51 +48,51 @@ routerNetworkAuthenticated.get('/:id',
         const { id } = req.params;
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
 
-        logger.info(`getting network with id: ${id}`);
+        logger.info(`getting group with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
-        const network = await configService.getNetwork(id);
-        if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no network');
+        const group = await configService.getGroup(id);
+        if (!group) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no group');
 
-        //const gateways = await configService.getGatewaysByNetworkId(network.id);
+        //const gateways = await configService.getGatewaysByGroupId(group.id);
 
-        return res.status(200).json(network);
+        return res.status(200).json(group);
 
     }))
 
-routerNetworkAuthenticated.get('/',
+routerGroupAuthenticated.get('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const search = req.query.search;
         const ids = req.query.ids as string;
-        logger.info(`configuring system for startup`);
+        logger.info(`getting groups`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
-        let items: Network[] = [];
+        let items: Group[] = [];
         if (search) {
-            const networks = await configService.getNetworksBySearch(search.toLowerCase());
-            items = items.concat(networks);
+            const groups = await configService.getGroupsBySearch(search.toLowerCase());
+            items = items.concat(groups);
 
         } else
             if (ids) {
                 const parts = ids.split(',');
                 for (const id of parts) {
-                    const network = await configService.getNetwork(id);
-                    if (network)
-                        items.push(network);
+                    const group = await configService.getGroup(id);
+                    if (group)
+                        items.push(group);
                 }
 
             } else
-                items = await configService.getNetworksAll();
+                items = await configService.getGroupsAll();
 
         return res.status(200).json({ items: items });
 
     }))
 
-routerNetworkAuthenticated.delete('/:id',
+routerGroupAuthenticated.delete('/:id',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
@@ -80,14 +100,14 @@ routerNetworkAuthenticated.delete('/:id',
         const { id } = req.params;
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
 
-        logger.info(`delete network with id: ${id}`);
+        logger.info(`delete group with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
-        const network = await configService.getNetwork(id);
-        if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no network');
+        const group = await configService.getGroup(id);
+        if (!group) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no group');
 
-        await configService.deleteNetwork(network.id);
+        await configService.deleteGroup(group.id);
         //TODO audit
         return res.status(200).json({});
 
@@ -95,55 +115,58 @@ routerNetworkAuthenticated.delete('/:id',
 
 
 
-routerNetworkAuthenticated.put('/',
+
+
+routerGroupAuthenticated.put('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
-        const input = req.body as Network;
-        logger.info(`changing network settings for ${input.id}`);
+        const input = req.body as Group;
+        logger.info(`changing group settings for ${input.id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
 
         await inputService.checkNotEmpty(input.id);
-        const network = await configService.getNetwork(input.id);
-        if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no network');
+        const group = await configService.getGroup(input.id);
+        if (!group) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no group');
 
-        await inputService.checkCidr(input.clientNetwork);
-        await inputService.checkCidr(input.serviceNetwork);
-        input.name = input.name || 'network';
+        await inputService.checkNotEmpty(input.name);
+        input.name = input.name || 'group';
         input.labels = input.labels || [];
-        const safe = cloneNetwork(input);
-        await configService.saveNetwork(safe);
+        const safe = cloneGroup(input);
+        await configService.saveGroup(safe);
         // TODO audit here
         return res.status(200).json(safe);
 
     }))
 
-routerNetworkAuthenticated.post('/',
+routerGroupAuthenticated.post('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
-        logger.info(`saving a new network`);
+        logger.info(`saving a new group`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
 
-        const input = req.body as Network;
+        const input = req.body as Group;
         input.id = Util.randomNumberString(16);
 
-        await inputService.checkCidr(input.clientNetwork);
-        await inputService.checkCidr(input.serviceNetwork);
-        input.name = input.name || 'network';
+        await inputService.checkNotEmpty(input.name);
+
+        input.name = input.name || 'group';
         input.labels = input.labels || [];
-        const safe = cloneNetwork(input);
-        await configService.saveNetwork(safe);
+        const safe = cloneGroup(input);
+        await configService.saveGroup(safe);
         //TODO audit
         return res.status(200).json(safe);
 
     }))
+
+
 
 
 

@@ -73,6 +73,11 @@ routerConfigureAuthenticated.post('/',
             logger.fatal("no admin user for configure");
             throw new RestfullException(412, ErrorCodes.ErrInternalError, "no admin user");
         }
+        let aUserExistsWithThisEmail = await configService.getUserByUsername(data.email);
+        if (aUserExistsWithThisEmail) {
+            logger.fatal(`a user exists with ${data.email} allready exitsts at configure`);
+            throw new RestfullException(412, ErrorCodes.ErrAllreadyExits, "allready exists user");
+        }
         await configService.setIsConfigured(1);
         await configService.changeAdminUser(data.email, data.password);
         await configService.setDomain(data.domain);

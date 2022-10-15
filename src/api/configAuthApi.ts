@@ -13,7 +13,7 @@ import { RedisService } from "../service/redisService";
 import { Captcha } from "../model/captcha";
 import * as diff from 'deep-object-diff';
 import { EmailSettings } from "../model/emailSettings";
-import { AuthCommon, AuthLocal, BaseLdap, BaseLocal, BaseOAuth } from "../model/authSettings";
+import { AuthCommon, AuthLocal, BaseLdap, BaseLocal, BaseOAuth, BaseSaml } from "../model/authSettings";
 import { util } from "chai";
 import { config } from "process";
 
@@ -301,7 +301,7 @@ routerConfigAuthAuthenticated.post('/ldap/providers',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const provider = req.body as BaseLdap;
-        logger.info(`getting config auth ldap providers`);
+        logger.info(`saving config auth ldap providers`);
 
         const appService = req.appService as AppService;
         const configService = appService.configService;
@@ -375,6 +375,144 @@ routerConfigAuthAuthenticated.delete('/ldap/providers/:id',
         const item = (await configService.getAuthSettingLdap()).providers.find(x => x.id == id);
         if (item)
             await configService.deleteAuthSettingLdap(id);
+        //TODO audit
+        return res.status(200).json({});
+
+    }))
+
+
+
+
+
+
+
+
+
+///////////////////// ldap /////////////////////////////////////////
+function copyAuthSaml(auth: BaseSaml): BaseSaml {
+    if (auth.baseType == 'saml')
+        return {
+            id: auth.id,
+            baseType: auth.baseType,
+            name: auth.name,
+            type: auth.type,
+            tags: auth.tags,
+            isEnabled: auth.isEnabled,
+            securityProfile: {
+                ips: auth.securityProfile?.ips,
+                clocks: auth.securityProfile?.clocks,
+                locations: auth.securityProfile?.locations
+            },
+            cert: auth.cert,
+            issuer: auth.issuer,
+            loginUrl: auth.loginUrl,
+            nameField: auth.nameField,
+            usernameField: auth.usernameField,
+            fingerPrint: auth.fingerPrint
+        }
+    throw new Error('not implemented copyAuthLdap');
+}
+
+routerConfigAuthAuthenticated.get('/saml/providers',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const ids = req.query.ids as string;
+        logger.info(`getting config auth saml providers`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const saml = await configService.getAuthSettingSaml();
+        let providers = saml?.providers || [];
+        if (ids) {
+            let idList = ids.split(',');
+            providers = providers.filter(x => idList.includes(x.id));
+        }
+        return res.status(200).json({ items: providers });
+
+    }))
+
+routerConfigAuthAuthenticated.post('/saml/providers',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const provider = req.body as BaseSaml;
+        logger.info(`saving config auth saml providers`);
+
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        //check input data 
+        await inputService.checkIfExists(provider);
+        await inputService.checkIfNotExits(provider.id);
+        await inputService.checkIfExists(provider.name);
+        await inputService.checkIfExists(provider.type);
+        await inputService.checkIfExists(provider.baseType);
+        await inputService.checkIfExists(provider.cert);
+        await inputService.checkIfExists(provider.loginUrl);
+        await inputService.checkIfExists(provider.issuer);
+        await inputService.checkIfExists(provider.nameField);
+        await inputService.checkIfExists(provider.usernameField);
+
+
+        // check if same provider exists
+        const saml = await configService.getAuthSettingSaml();
+        const indexA = saml?.providers.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
+
+        if (Number(indexA) >= 0) {
+            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
+        }
+        provider.id = Util.randomNumberString();
+        const safe = copyAuthSaml(provider);
+        await configService.addAuthSettingSaml(safe);
+        return res.status(200).json(safe);
+
+    }))
+
+routerConfigAuthAuthenticated.put('/saml/providers',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        logger.info(`update config auth saml provider`);
+        const input = req.body as BaseSaml;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        //check input
+        await inputService.checkIfExists(input);
+        await inputService.checkIfExists(input.id);
+        await inputService.checkIfExists(input.loginUrl);
+        await inputService.checkIfExists(input.issuer);
+        await inputService.checkIfExists(input.cert);
+        await inputService.checkIfExists(input.nameField);
+        await inputService.checkIfExists(input.usernameField);
+
+        const item = (await configService.getAuthSettingSaml()).providers.find(x => x.id == input.id);
+        await inputService.checkIfExists(item);
+        if (item?.type != input.type && item?.baseType != input.baseType)
+            throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
+        const safe = copyAuthSaml(input);
+        await configService.addAuthSettingSaml(safe)
+        //TODO audit
+        return res.status(200).json(safe);
+
+    }))
+
+routerConfigAuthAuthenticated.delete('/saml/providers/:id',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        logger.info(`delete config auth saml provider`);
+        const { id } = req.params;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const item = (await configService.getAuthSettingSaml()).providers.find(x => x.id == id);
+        if (item)
+            await configService.deleteAuthSettingSaml(id);
         //TODO audit
         return res.status(200).json({});
 

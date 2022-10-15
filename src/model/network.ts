@@ -1,3 +1,4 @@
+import { cloneSecurityProfile, SecurityProfile } from "./securityProfile";
 
 /**
  * a machine that can connect to a internal network
@@ -20,4 +21,29 @@ export interface Network {
     labels: string[];
     clientNetwork: string;
     serviceNetwork: string;
+
+}
+
+/***
+ * @summary clone only needed parameters
+ */
+export function cloneNetwork(net: Network): Network {
+    return {
+        id: net.id, clientNetwork: net.clientNetwork, labels: net.labels,
+        name: net.name, serviceNetwork: net.serviceNetwork
+
+
+    }
+}
+
+/**
+ * @summary cppy only needed parameters
+ * @param gate 
+ * @returns 
+ */
+export function cloneGateway(gate: Gateway): Gateway {
+    return {
+        id: gate.id, labels: gate.labels, name: gate.name,
+        networkId: gate.networkId, isEnabled: gate.isEnabled
+    }
 }

@@ -12,6 +12,9 @@ import { group } from 'console';
 import { ErrorCodes, RestfullException } from '../../restfullException';
 import { checkUser } from './commonAuth';
 
+function prepareCert(cert: string) {
+    return cert.replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').replace('\r\n', '').replace('\n', '').replace(' ', '');
+}
 const name = 'auth0'
 export function samlAuth0Init(saml: BaseSaml, url: string) {
     //const google = auth.oauth?.providers.find(x => x.type == 'google')
@@ -19,7 +22,7 @@ export function samlAuth0Init(saml: BaseSaml, url: string) {
         path: `/api/auth/saml/auth0/callback`,
         entryPoint: saml.loginUrl,
         issuer: saml.issuer,
-        cert: saml.cert,// Buffer.from(saml.cert, 'base64').toString('utf-8'),
+        cert: prepareCert(saml.cert),
         passReqToCallback: true,
 
 

@@ -147,7 +147,8 @@ describe('commonApi', async () => {
         let isNextCalled = false;
         let req = {
             currentUser: {
-                id: 'admin'
+                id: 'admin',
+                roleIds: ['Admin']
             },
             appService: {
                 configService: configService
@@ -161,7 +162,8 @@ describe('commonApi', async () => {
         let isException = false;
         req = {
             currentUser: {
-                id: 'admin2'
+                id: 'admin2',
+                roleIds: ['User']
             },
             appService: {
                 configService: configService

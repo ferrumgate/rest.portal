@@ -60,6 +60,7 @@ export class ErrorCodes {
     static ErrAllreadyExits: string = 'ErrAllreadyExits';
     static ErrDataVerifyFailed: string = 'ErrDataVerifyFailed';
     static ErrDisabledSource: string = 'ErrDisabledSource';
+    static ErrNoAdminUserLeft: string = 'ErrNoAdminUserLeft'
 
 
 }
