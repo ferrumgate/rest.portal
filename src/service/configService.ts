@@ -16,6 +16,7 @@ import { HelperService } from "./helperService";
 import { Gateway, Network } from "../model/network";
 import { isAbsolute } from "path";
 import { Group } from "../model/group";
+import { util } from "chai";
 
 
 
@@ -267,7 +268,7 @@ export class ConfigService {
         delete user?.apiKey;
         delete user?.twoFASecret;
         delete user?.password;
-        delete user?.roleIds;
+        //delete user?.roleIds;// is this necessary
     }
 
 
@@ -294,7 +295,13 @@ export class ConfigService {
         this.deleteUserSensitiveData(user);
         return user;
     }
-    async getUsersBy(page: number = 0, pageSize: number = 0, search?: string) {
+    async getUser(id: string) {
+        return await this.getUserById(id);
+    }
+
+    async getUsersBy(page: number = 0, pageSize: number = 0, search?: string,
+        ids?: string[], groupIds?: string[], roleIds?: string[],
+        is2FA?: boolean, isVerified?: boolean, isLocked?: boolean, isEmailVerified?: boolean, isOnlyApiKey?: boolean) {
 
         let users = [];
         let filteredUsers = !search ? this.config.users :
@@ -312,6 +319,25 @@ export class ConfigService {
                     return true;
 
             })
+        if (ids && ids.length)
+            filteredUsers = filteredUsers.filter(x => ids.includes(x.id));
+        if (groupIds && groupIds.length)
+            filteredUsers = filteredUsers.filter(x => Util.isArrayElementExist(x.groupIds, groupIds));
+        if (roleIds && roleIds.length)
+            filteredUsers = filteredUsers.filter(x => Util.isArrayElementExist(x.roleIds, roleIds));
+        if (!Util.isUndefinedOrNull(is2FA))
+            filteredUsers = filteredUsers.filter(x => Boolean(x.is2FA) == is2FA)
+        if (!Util.isUndefinedOrNull(isVerified))
+            filteredUsers = filteredUsers.filter(x => Boolean(x.isVerified) == isVerified)
+        if (!Util.isUndefinedOrNull(isLocked))
+            filteredUsers = filteredUsers.filter(x => Boolean(x.isLocked) == isLocked)
+
+        if (!Util.isUndefinedOrNull(isEmailVerified))
+            filteredUsers = filteredUsers.filter(x => Boolean(x.isEmailVerified) == isEmailVerified)
+
+        if (!Util.isUndefinedOrNull(isOnlyApiKey))
+            filteredUsers = filteredUsers.filter(x => Boolean(x.isOnlyApiKey) == isOnlyApiKey)
+
         filteredUsers = Array.from(filteredUsers);
         filteredUsers.sort((a, b) => {
             return a.username.localeCompare(b.username)
@@ -327,11 +353,20 @@ export class ConfigService {
 
         return { items: users, total: totalSize };
     }
+    async deleteUser(id: string) {
+        const indexId = this.config.users.findIndex(x => x.id == id);
+        if (indexId >= 0) {
+            this.config.users.splice(indexId, 1);
+
+        }
+
+        await this.saveConfigToFile();
+    }
 
     async getUserRoles(user: User) {
         const rbac = await this.getRBAC();
-        const sensitiveData = await this.getUserSensitiveData(user.id);
-        return RBACDefault.convert2RoleList(rbac, sensitiveData.roleIds);
+        //const sensitiveData = await this.getUserSensitiveData(user.id);
+        return RBACDefault.convert2RoleList(rbac, user.roleIds);
     }
     async getUserByUsernameAndPass(username: string, pass: string): Promise<User | undefined> {
         if (!username) return undefined;
@@ -349,7 +384,7 @@ export class ConfigService {
     }
     async getUserSensitiveData(id: string) {
         let user = Util.clone(this.config.users.find(x => x.id == id)) as User;
-        return { twoFASecret: user?.twoFASecret, roleIds: user.roleIds };
+        return { twoFASecret: user?.twoFASecret };
     }
     async saveUser(user: User) {
         let cloned = Util.clone(user);

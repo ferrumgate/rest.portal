@@ -168,7 +168,7 @@ describe('configService', async () => {
             id: 'id1',
             username: 'hamza1@ferrumgate.com',
             name: 'test1', source: 'local', labels: ['test1'],
-            password: Util.bcryptHash('passwordWithHash'), groupIds: [],
+            password: Util.bcryptHash('passwordWithHash'), groupIds: ['g1', 'g2'],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
         };
@@ -178,7 +178,7 @@ describe('configService', async () => {
             id: 'id2',
             username: 'hamza2@ferrumgate.com',
             name: 'test2', source: 'google', labels: ['test2'],
-            password: Util.bcryptHash('passwordWithHash'), groupIds: [],
+            password: Util.bcryptHash('passwordWithHash'), groupIds: ['g2'],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
         };
@@ -187,8 +187,9 @@ describe('configService', async () => {
         let aUser3: User = {
             id: 'id3',
             username: 'hamza3@ferrumgate.com',
+            roleIds: ['user'],
             name: 'test3', source: 'linkedin', labels: ['test3'],
-            password: Util.bcryptHash('passwordWithHash'), groupIds: [],
+            password: Util.bcryptHash('passwordWithHash'), groupIds: ['g3'],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
         };
@@ -199,9 +200,16 @@ describe('configService', async () => {
             id: 'id4',
             username: 'hamza4@ferrumgate.com',
             name: 'test4', source: 'linkedin', labels: ['test4'],
-            password: Util.bcryptHash('passwordWithHash'), groupIds: [],
+            password: Util.bcryptHash('passwordWithHash'), groupIds: ['g1', 'g2'],
+            roleIds: ['admin'],
             insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
+            updateDate: new Date().toISOString(),
+            isVerified: true,
+            isLocked: true,
+            is2FA: true,
+            isEmailVerified: true,
+
+
         };
 
         configService.config.users.push(aUser4);
@@ -230,6 +238,33 @@ describe('configService', async () => {
         expect(list5.items.length).to.be.equal(2);
         expect(list5.total).to.be.equal(2);
 
+        //search by id
+        const list6 = await configService.getUsersBy(0, 0, '', ['id4']);
+        expect(list6.items.length).to.be.equal(1);
+
+        //search by group id
+        const list7 = await configService.getUsersBy(0, 0, '', [], ['g3']);
+        expect(list7.items.length).to.be.equal(1);
+
+        //search by role id
+        const list8 = await configService.getUsersBy(0, 0, '', [], [], ['admin']);
+        expect(list8.items.length).to.be.equal(1);
+
+        //search by is2fa
+        const list9 = await configService.getUsersBy(0, 0, '', [], [], [], true);
+        expect(list9.items.length).to.be.equal(1);
+
+        //search by isVerified
+        const list10 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, true);
+        expect(list10.items.length).to.be.equal(1);
+
+        //search by isLocked
+        const list11 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, undefined, true);
+        expect(list11.items.length).to.be.equal(1);
+
+        //search by isEmailVerified
+        const list12 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, undefined, undefined, true);
+        expect(list12.items.length).to.be.equal(1);
 
 
     });

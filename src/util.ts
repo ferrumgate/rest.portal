@@ -13,6 +13,7 @@ import bcrypt from 'bcrypt';
 import randtoken from 'rand-token';
 import ip6addr from 'ip6addr';
 import ChildProcess from 'child_process';
+import { transformAuthInfo } from 'passport';
 
 
 export interface IpRange {
@@ -301,6 +302,47 @@ export const Util = {
             await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${domain}.key -out ${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false)
         else
             await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${folder}/${domain}.key -out ${folder}/${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false)
+    },
+    /**
+     * @summary source array at least 1 element exits in target array
+     */
+    isArrayElementExist(source?: any[], target?: any[]) {
+        if (!Array.isArray(source)) return false;
+        if (!Array.isArray(target)) return false;
+        const item = source?.find(x => target?.includes(x))
+        return Boolean(item);
+    },
+    isArrayEqual(source?: any[], target?: any[]) {
+        if (this.isUndefinedOrNull(source) && this.isUndefinedOrNull(target)) return true;
+        if (!this.isUndefinedOrNull(source) && this.isUndefinedOrNull(target)) return false;
+        if (this.isUndefinedOrNull(source) && !this.isUndefinedOrNull(target)) return false;
+        const sFind = source?.find(x => !target?.includes(x))
+        if (sFind) return false;
+        const tFind = target?.find(x => !source?.includes(x));
+        if (tFind) return false;
+        return true;
+
+    },
+    isUndefinedOrNull(val?: any) {
+        if (val === undefined) return true;
+        if (val === null) return true;
+        return false;
+
+    },
+    convertToArray(val?: string, splitter = ','): string[] {
+        if (!val) return [];
+        return val.split(splitter).filter(x => x);
+    },
+    /**
+     * @summary always returns a number at least 0 returns
+     * @param val 
+     * @returns 
+     */
+    convertToNumber(val?: string): number {
+        if (!val) return 0;
+        const n = Number(val)
+        if (Number.isNaN(n)) return 0;
+        return n;
     }
 
 

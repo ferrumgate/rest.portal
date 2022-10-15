@@ -370,6 +370,39 @@ describe('util ', () => {
 
     });
 
+    it('isArrayElementExist ', async () => {
+        expect(Util.isArrayElementExist(undefined, undefined)).to.be.false;
+        expect(Util.isArrayElementExist(undefined, null as any)).to.be.false;
+        expect(Util.isArrayElementExist(undefined, null as any)).to.be.false;
+        expect(Util.isArrayElementExist('5' as any, '4' as any)).to.be.false;
+
+        expect(Util.isArrayElementExist([1, 3, 4], [2, 3, 5])).to.be.true;
+        expect(Util.isArrayElementExist([1, 3, 4], [5])).to.be.false;
+        expect(Util.isArrayElementExist([1, 3, 4], ['4'])).to.be.false;
+
+    });
+    it('isUndefinedOrNull ', async () => {
+        expect(Util.isUndefinedOrNull(undefined)).to.be.true;
+        expect(Util.isUndefinedOrNull(null)).to.be.true;
+        expect(Util.isUndefinedOrNull(0)).to.be.false;
+        expect(Util.isUndefinedOrNull('')).to.be.false;
+
+
+    });
+
+    it('isArrayEqual ', async () => {
+        expect(Util.isArrayEqual(undefined, undefined)).to.be.true;
+        expect(Util.isArrayEqual(undefined, null as any)).to.be.true;
+        expect(Util.isArrayEqual([0], [1])).to.be.false;
+        expect(Util.isArrayEqual([0, 1], [0])).to.be.false;
+        expect(Util.isArrayEqual([0], ['0'])).to.be.false;
+        expect(Util.isArrayEqual([0, 1], [0, 1])).to.be.true;
+
+
+    });
+
+
+
 
 
 

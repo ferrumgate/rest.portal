@@ -9,6 +9,8 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { RBACDefault } from "../model/rbac";
 import { config } from "process";
+import { authorizeAsAdmin } from "./commonApi";
+
 
 
 
@@ -192,5 +194,183 @@ routerUserAuthenticated.get('/current',
             });
     })
 );
+
+
+
+
+
+
+routerUserAuthenticated.get('/:id',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+
+        logger.info(`getting user with id: ${id}`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const user = await configService.getUserById(id);
+        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no user');
+
+        return res.status(200).json(user);
+
+    }))
+
+
+interface UserSearch {
+
+    search: string,
+    isVerified?: boolean,
+    isLocked?: boolean,
+    isEmailVerified?: boolean,
+    is2FA?: boolean,
+    groupIds: string[],
+    roleIds: string[],
+    ids: string[],
+    page: number;
+    pageSize: number;
+    isApiKey?: boolean;
+    format: string
+
+}
+
+function convertToUserOptionToBoolean(val?: string): boolean | undefined {
+    if (!val) return undefined;
+    if (val == 'none') return undefined;
+    if (val == 'yes' || val == 'true') return true;
+    return false;
+}
+
+
+
+routerUserAuthenticated.get('/',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const search: UserSearch = {
+            search: req.query.search || '',
+            isVerified: convertToUserOptionToBoolean(req.query.isVerified),
+            isLocked: convertToUserOptionToBoolean(req.query.isLocked),
+            isEmailVerified: convertToUserOptionToBoolean(req.query.isEmailVerified),
+            is2FA: convertToUserOptionToBoolean(req.query.is2FA),
+            groupIds: Util.convertToArray(req.query.groupIds),
+            roleIds: Util.convertToArray(req.query.roleIds),
+            ids: Util.convertToArray(req.query.ids),
+            page: Util.convertToNumber(req.query.page),
+            pageSize: Util.convertToNumber(req.query.pageSize),
+            format: req.query.simple
+        }
+
+        logger.info(`getting users`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+
+        const items = await configService.getUsersBy(search.page, search.pageSize, search.search,
+            search.ids, search.groupIds, search.roleIds,
+            search.is2FA, search.isVerified, search.isLocked,
+            search.isEmailVerified, false);
+
+        if (search.format == 'simple')
+            items.items = items.items.map(x => {
+                return {
+                    id: x.id, name: x.name, username: x.username, email: x.email
+                } as any
+            })
+
+        return res.status(200).json({ items: items.items, total: items.total });
+
+    }))
+
+routerUserAuthenticated.delete('/:id',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+
+        logger.info(`delete group with id: ${id}`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const user = await configService.getUserById(id);
+        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no user');
+
+        await configService.deleteUser(user.id);
+        //TODO audit
+        return res.status(200).json({});
+
+    }))
+
+
+
+
+
+routerUserAuthenticated.put('/',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const input = req.body as User;
+        logger.info(`changing user settings for ${input.id}`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+
+        await inputService.checkNotEmpty(input.id);
+        const userDb = await configService.getUser(input.id);
+        if (!userDb) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no user');
+
+        await inputService.checkNotEmpty(input.name);
+        //only set name. isLocked, is2FA, roleIds, groupIds
+        let isChanged = false;
+        if (userDb.name != input.name) {
+            isChanged = true;
+            userDb.name = input.name;
+        }
+        if (input.labels) {
+            if (!Util.isArrayEqual(input.labels, userDb.labels))
+                isChanged = true;
+            userDb.labels = input.labels;
+        }
+        if (!Util.isUndefinedOrNull(input.is2FA)) {
+
+            if (!input.is2FA) {//only user can set false
+                if (input.is2FA != userDb.is2FA)
+                    isChanged = true;
+                userDb.is2FA = input.is2FA;
+            }
+        }
+        if (!Util.isUndefinedOrNull(input.isLocked)) {
+            if (input.isLocked != userDb.isLocked)
+                isChanged = true;
+            userDb.isLocked = input.isLocked;
+        }
+        if (input.roleIds) {
+            //security, check input roles are system defined roles
+            const filterRoles = input.roleIds.filter(x => RBACDefault.systemRoleIds.includes(x))
+            if (!Util.isArrayEqual(userDb.roleIds, filterRoles))
+                isChanged = true;
+            userDb.roleIds = filterRoles;
+        }
+        const groups = await configService.getGroupsAll();
+        if (input.groupIds) {
+            const filteredGroups = input.groupIds.filter(x => groups.find(y => y.id == x));
+            if (!Util.isArrayEqual(filteredGroups, userDb.groupIds))
+                isChanged = true;
+            userDb.groupIds = filteredGroups;
+        }
+
+
+        await configService.saveUser(userDb);
+        // TODO audit here
+        return res.status(200).json(userDb);
+
+    }))
 
 

@@ -68,7 +68,7 @@ routerGroupAuthenticated.get('/',
     asyncHandler(async (req: any, res: any, next: any) => {
         const search = req.query.search;
         const ids = req.query.ids as string;
-        logger.info(`configuring system for startup`);
+        logger.info(`getting groups`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         let items: Group[] = [];
