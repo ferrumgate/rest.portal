@@ -83,7 +83,9 @@ describe('authApi', async () => {
                 tags: [],
                 isForgotPassword: false,
                 isRegister: false,
-                isEnabled: true
+                isEnabled: true,
+                insertDate: new Date().toISOString(),
+                updateDate: new Date().toISOString()
             },
 
         }
@@ -97,7 +99,9 @@ describe('authApi', async () => {
                     tags: [],
                     clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
                     clientSecret: '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',
-                    isEnabled: true
+                    isEnabled: true,
+                    insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
                 },
                 {
                     baseType: 'oauth',
@@ -107,7 +111,9 @@ describe('authApi', async () => {
                     tags: [],
                     clientId: '866dr29tuc5uy5',
                     clientSecret: '1E3DHw0FJFUsp1Um',
-                    isEnabled: true
+                    isEnabled: true,
+                    insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
                 }
             ]
         }
@@ -126,7 +132,9 @@ describe('authApi', async () => {
                     cert: `MIIDDTCCAfWgAwIBAgIJDVrH9KeUS+k8MA0GCSqGSIb3DQEBCwUAMCQxIjAgBgNVBAMTGWRldi0yNHdtOG03Zy51cy5hdXRoMC5jb20wHhcNMjIxMDEwMjIzOTA2WhcNMzYwNjE4MjIzOTA2WjAkMSIwIAYDVQQDExlkZXYtMjR3bThtN2cudXMuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA14riTBaUOB2+OZiEbpL5Cjy4MVl78Qi+Msi6IbmIs8nIGRav2hYsI3/mUex6+dCeqwoKCALByRySTEWhUCRWNsi86ae5CSsRikVBAPtEZqKBuoSthrjXUQT5/UBBOHc+EVUAiNrAEE1DBjpkFPkZfGk974ZukK8MyfliajjmFHGj23vwxJncxfx49kOEalz10M500MNldl+Kl628i//y3QiojTsNvPK4SiORFBR89DnWJoB/m6npsm9tkRKUFuYNedVEDru+8aac6LVrKkimDOUzXecAbCm7+td4rXCyV25cc3Pp0sHUYFYk4NoqzW6kJtddFcRQi+xo5JqcPjtunwIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBRZYMCT4GSETh+A4Ji9wWJxlcv53zAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBACNDPiTHjyeFUIOTWnnZbTZil0nf+yrA6QVesV5+KJ9Ek+YgMrnZ4KdXEZZozUgiGsER1RjetWVYnv3AmEvML0CY/+xJu2bCfwQssSXFLQGdv079V81Mk2+Hz8gQgruLpJpfENQCsbWm3lXQP4F3avFw68HB62rr6jfyEIPb9n8rw/pj57y5ZILl97sb3QikgRh1pTEKVz05WLeHdGPE30QWklGDYxqv2/TbRWOUsdXjjbpE6pIfTUX5OLqGRbrtdHL9fHbhVOfqczALtneEjv5o/TpB3Jo2w9RU9AgMYwWT2Hpqop/fe9fyDQ+u5Hz7ZnADi/oktGBzm8/Y03WpkuM=`,
                     usernameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
                     nameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
-                    isEnabled: true
+                    isEnabled: true,
+                    insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
 
                 },
             ]

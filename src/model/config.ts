@@ -5,6 +5,7 @@ import { Group } from "./group";
 import { LogoSettings } from "./logoSettings";
 import { Gateway, Network } from "./network";
 import { RBAC, Right, Role } from "./rbac";
+import { Service } from "./service";
 import { SSHCertificate } from "./sshCertificate";
 import { SSLCertificate } from "./sslCertificate";
 import { User } from "./user";
@@ -32,6 +33,7 @@ export interface Config {
 
     users: User[];
     groups: Group[];
+    services: Service[];
     captcha: Captcha,
     email: EmailSettings,
     logo: LogoSettings,

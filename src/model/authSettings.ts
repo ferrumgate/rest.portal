@@ -8,6 +8,9 @@ export interface BaseAuth {
     tags?: string[];
     securityProfile?: SecurityProfile;
     isEnabled: boolean;
+    insertDate: string;
+    updateDate: string;
+
 }
 export interface BaseOAuth extends BaseAuth {
     clientId: string,

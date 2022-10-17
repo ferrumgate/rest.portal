@@ -87,6 +87,8 @@ function copyAuthLocal(auth: AuthLocal): AuthLocal {
         type: auth.type, isForgotPassword: auth.isForgotPassword,
         isRegister: auth.isRegister, tags: auth.tags,
         isEnabled: auth.isEnabled,
+        updateDate: auth.updateDate,
+        insertDate: auth.insertDate,
         securityProfile: {
             ips: auth.securityProfile?.ips,
             clocks: auth.securityProfile?.clocks,
@@ -106,7 +108,10 @@ routerConfigAuthAuthenticated.put('/local',
         const configService = appService.configService;
         const inputService = appService.inputService;
         await inputService.checkIfExists(input);
-        const safe = copyAuthLocal(input)
+        const db = await configService.getAuthSettingsLocal();
+        const safe = copyAuthLocal(input);
+        safe.insertDate = db.insertDate;
+        safe.updateDate = new Date().toISOString();
         await configService.setAuthSettingsLocal(safe);
         //TODO audit
         const local = await configService.getAuthSettingsLocal();
@@ -139,6 +144,8 @@ function copyAuthOAuth(auth: BaseOAuth): BaseOAuth {
             type: auth.type,
             tags: auth.tags,
             isEnabled: auth.isEnabled,
+            insertDate: auth.insertDate,
+            updateDate: auth.updateDate,
             securityProfile: {
                 ips: auth.securityProfile?.ips,
                 clocks: auth.securityProfile?.clocks,
@@ -194,6 +201,8 @@ routerConfigAuthAuthenticated.post('/oauth/providers',
         }
         provider.id = Util.randomNumberString();
         const safe = copyAuthOAuth(provider);
+        safe.insertDate = new Date().toISOString();
+        safe.updateDate = new Date().toISOString();
         await configService.addAuthSettingOAuth(safe);
         return res.status(200).json(safe);
 
@@ -218,6 +227,8 @@ routerConfigAuthAuthenticated.put('/oauth/providers',
         if (item?.type != input.type && item?.baseType != input.baseType)
             throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
         const safe = copyAuthOAuth(input);
+        safe.insertDate = item.insertDate;
+        safe.updateDate = new Date().toISOString();
         await configService.addAuthSettingOAuth(safe)
         //TODO audit
         return res.status(200).json(safe);
@@ -266,6 +277,8 @@ function copyAuthLdap(auth: BaseLdap): BaseLdap {
             groupnameField: auth.groupnameField,
             allowedGroups: auth.allowedGroups,
             isEnabled: auth.isEnabled,
+            insertDate: auth.insertDate,
+            updateDate: auth.updateDate,
             securityProfile: {
                 ips: auth.securityProfile?.ips,
                 clocks: auth.securityProfile?.clocks,
@@ -328,6 +341,8 @@ routerConfigAuthAuthenticated.post('/ldap/providers',
         }
         provider.id = Util.randomNumberString();
         const safe = copyAuthLdap(provider);
+        safe.insertDate = new Date().toISOString();
+        safe.updateDate = new Date().toISOString();
         await configService.addAuthSettingLdap(safe);
         return res.status(200).json(safe);
 
@@ -357,6 +372,8 @@ routerConfigAuthAuthenticated.put('/ldap/providers',
         if (item?.type != input.type && item?.baseType != input.baseType)
             throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
         const safe = copyAuthLdap(input);
+        safe.insertDate = item.insertDate;
+        safe.updateDate = new Date().toISOString();
         await configService.addAuthSettingLdap(safe)
         //TODO audit
         return res.status(200).json(safe);
@@ -408,7 +425,9 @@ function copyAuthSaml(auth: BaseSaml): BaseSaml {
             loginUrl: auth.loginUrl,
             nameField: auth.nameField,
             usernameField: auth.usernameField,
-            fingerPrint: auth.fingerPrint
+            fingerPrint: auth.fingerPrint,
+            insertDate: auth.insertDate,// no problem about copy these client unsafe variables we will override in api calls
+            updateDate: auth.updateDate // no problem about copy these client unsafe variables, we will override in api calls
         }
     throw new Error('not implemented copyAuthLdap');
 }
@@ -466,6 +485,8 @@ routerConfigAuthAuthenticated.post('/saml/providers',
         }
         provider.id = Util.randomNumberString();
         const safe = copyAuthSaml(provider);
+        safe.insertDate = new Date().toISOString();
+        safe.updateDate = new Date().toISOString();
         await configService.addAuthSettingSaml(safe);
         return res.status(200).json(safe);
 
@@ -495,6 +516,8 @@ routerConfigAuthAuthenticated.put('/saml/providers',
         if (item?.type != input.type && item?.baseType != input.baseType)
             throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
         const safe = copyAuthSaml(input);
+        safe.insertDate = item.insertDate;
+        safe.updateDate = new Date().toISOString();
         await configService.addAuthSettingSaml(safe)
         //TODO audit
         return res.status(200).json(safe);

@@ -7,7 +7,9 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { config } from 'process';
-import { Group } from '../src/model/group';
+import { Service } from '../src/model/service';
+import { Network } from '../src/model/network';
+import { getEmptyServiceIp } from '../src/api/serviceApi';
 
 
 chai.use(chaiHttp);
@@ -15,31 +17,41 @@ const expect = chai.expect;
 
 
 function createSampleData() {
-    const group1: Group = {
-        id: 'group1',
-        name: "group1",
-        isEnabled: true,
+    let network: Network = {
+        id: 'network1',
+        clientNetwork: '10.0.0.1/24',
+        serviceNetwork: '10.0.0.0/24',
         labels: [],
-        insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        name: 'network'
 
     }
-    const group2: Group = {
-        id: 'group2',
-        name: "group2",
+    let service1: Service = {
+        id: Util.randomNumberString(),
+        name: 'mysql-dev',
         isEnabled: true,
         labels: [],
+        host: '1.2.3.4',
+        networkId: 'network1',
+        tcp: 3306,
+        protocol: 'raw',
+        assignedIp: '10.0.0.1',
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
+
 
     }
-    const group3: Group = {
-        id: 'group3',
-        name: "group3",
+    let service2: Service = {
+        id: Util.randomNumberString(),
+        name: 'remote-desktop-dev',
         isEnabled: true,
-        labels: [],
+        labels: ['test'],
+        host: '192.168.10.10',
+        networkId: 'network1',
+        tcp: 3306,
+        protocol: 'raw',
+        assignedIp: '10.0.0.1',
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
 
     }
     const user1: User = {
@@ -52,15 +64,16 @@ function createSampleData() {
         password: Util.bcryptHash('somepass'),
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
-        groupIds: [group1.id]
+        groupIds: []
 
     }
-    return { group1, group2, group3, user1 };
+
+    return { service1, service2, user1, network };
 }
 /**
- * authenticated user group api
+ * authenticated service api
  */
-describe('groupApi', async () => {
+describe('serviceApi', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
 
@@ -72,6 +85,7 @@ describe('groupApi', async () => {
     beforeEach(async () => {
         appService.configService.config.users = [];
         appService.configService.config.groups = [];
+        appService.configService.config.services = [];
         appService.configService.config.networks = [];
         appService.configService.config.gateways = [];
         await redisService.flushAll();
@@ -80,7 +94,8 @@ describe('groupApi', async () => {
 
     it('check authorazion as admin role', async () => {
         //prepare data
-        const { group1, group2, group3, user1 } = createSampleData();
+        const { service1, service2, user1, network } = createSampleData();
+        await appService.configService.saveNetwork(network);
         const clonedUser = Util.clone(user1);
         clonedUser.roleIds = ['User'];
         await appService.configService.saveUser(clonedUser);
@@ -89,7 +104,7 @@ describe('groupApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/group/${group1.id}`)
+                .get(`/service/${service1.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -103,20 +118,21 @@ describe('groupApi', async () => {
     }).timeout(50000);
 
 
-    it('GET /group/:id returns 200', async () => {
+    it('GET /service/:id returns 200', async () => {
         //prepare data
-        const { group1, group2, group3, user1 } = createSampleData();
+        const { service1, service2, user1, network } = createSampleData();
+        await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
 
-        await appService.configService.saveGroup(group1);
-        await appService.configService.saveGroup(group2);
-        await appService.configService.saveGroup(group3);
+        await appService.configService.saveService(service1);
+        await appService.configService.saveService(service2);
+
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/group/${group2.id}`)
+                .get(`/service/${service2.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -126,23 +142,24 @@ describe('groupApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(group2);
+        expect(response.body).to.deep.equal(service2);
 
     }).timeout(50000);
 
-    it('GET /group/:id returns 401', async () => {
+    it('GET /service/:id returns 401', async () => {
         //prepare data
-        const { group1, group2, group3, user1 } = createSampleData();
+        const { service1, service2, user1, network } = createSampleData();
+        await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-        await appService.configService.saveGroup(group1);
-        await appService.configService.saveGroup(group2);
-        await appService.configService.saveGroup(group3);
+        await appService.configService.saveService(service1);
+        await appService.configService.saveService(service2);
+
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/group/absentGroupId`)
+                .get(`/service/absentGroupId`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -158,22 +175,22 @@ describe('groupApi', async () => {
     }).timeout(50000);
 
 
-    it('GET /group?search=bla returns 200', async () => {
+    it('GET /service?search=bla returns 200', async () => {
         //prepare data
-        const { group1, group2, group3, user1 } = createSampleData();
+        const { service1, service2, user1, network } = createSampleData();
+        await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-        group1.labels = ['bla'];
-        await appService.configService.saveGroup(group1);
-        await appService.configService.saveGroup(group2);
-        await appService.configService.saveGroup(group3);
+        service1.labels = ['bla'];
+        await appService.configService.saveService(service1);
+        await appService.configService.saveService(service2);
 
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/group?search=bla`)
+                .get(`/service?search=bla`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -183,23 +200,24 @@ describe('groupApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.items[0]).to.deep.equal(group1);
+        expect(response.body.items[0]).to.deep.equal(service1);
 
     }).timeout(50000);
 
-    it('DELETE /group/:id returns 200', async () => {
+    it('DELETE /service/:id returns 200', async () => {
         //prepare data
-        const { group1, group2, group3, user1 } = createSampleData();
+        const { service1, service2, user1, network } = createSampleData();
+        await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-        await appService.configService.saveGroup(group1);
-        await appService.configService.saveGroup(group2);
-        await appService.configService.saveGroup(group3);
+        await appService.configService.saveService(service1);
+        await appService.configService.saveService(service2);
+
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/group/${group3.id}`)
+                .delete(`/service/${service2.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -209,27 +227,28 @@ describe('groupApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        const itemDb = await appService.configService.getGroup(group3.id);
+        const itemDb = await appService.configService.getService(service2.id);
         expect(itemDb).not.exist;
 
     }).timeout(50000);
 
 
-    it('PUT /group returns 200', async () => {
+    it('PUT /service returns 200', async () => {
         //prepare data
-        const { group1, group2, group3, user1 } = createSampleData();
+        const { service1, service2, user1, network } = createSampleData();
+        await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-        await appService.configService.saveGroup(group1);
-        await appService.configService.saveGroup(group2);
-        await appService.configService.saveGroup(group3);
-        group3.name = 'blabla'
+        await appService.configService.saveService(service1);
+        await appService.configService.saveService(service2);
+
+        service2.name = 'blabla'
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/group`)
+                .put(`/service`)
                 .set(`Authorization`, `Bearer ${token}`)
-                .send(group3)
+                .send(service2)
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -238,31 +257,33 @@ describe('groupApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        const itemDb = await appService.configService.getGroup(group3.id);
+        const itemDb = await appService.configService.getService(service2.id);
         if (itemDb) {
-            itemDb.insertDate = group3.insertDate;
-            itemDb.updateDate = group3.updateDate;
+            itemDb.insertDate = service2.insertDate;
+            itemDb.updateDate = service2.updateDate;
         }
-        expect(itemDb).to.deep.equal(group3);
+        expect(itemDb).to.deep.equal(service2);
 
     }).timeout(50000);
 
 
 
-    it('POST /group returns 200', async () => {
+    it('POST /service returns 200', async () => {
         //prepare data
-        const { group1, group2, group3, user1 } = createSampleData();
-
+        const { service1, service2, user1, network } = createSampleData();
+        await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-        group1.id = '';
+        await appService.configService.saveService(service1);
+
+        service2.id = '';
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/group`)
+                .post(`/service`)
                 .set(`Authorization`, `Bearer ${token}`)
-                .send(group1)
+                .send(service2)
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -272,55 +293,46 @@ describe('groupApi', async () => {
         })
         expect(response.status).to.equal(200);
 
-        group1.id = response.body.id;
-
-        group1.insertDate = response.body.insertDate;
-        group1.updateDate = response.body.updateDate;
-
-        expect(response.body).to.deep.equal(group1);
+        service2.id = response.body.id;
+        service2.assignedIp = response.body.assignedIp;
+        service2.insertDate = response.body.insertDate;
+        service2.updateDate = response.body.updateDate;
+        expect(response.body).to.deep.equal(service2);
 
     }).timeout(50000);
 
 
-    /* it('GET /group/users returns 200', async () => {
-        //prepare data
-        const { group1, group2, group3, user1 } = createSampleData();
-        await appService.configService.saveGroup(group1);
-        await appService.configService.saveGroup(group2);
-        await appService.configService.saveGroup(group3);
+    it('getEmptyServiceIp', async () => {
 
-        user1.groupIds = [group1.id];
-        await appService.configService.saveUser(user1);
-        let user2 = Util.clone(user1);
-        user2.id = 'userid2';
-        user2.groupIds = [group2.id];
-        await appService.configService.saveUser(user2);
-        let user3 = Util.clone(user1);
-        user3.id = 'userid3';
-        user3.groupIds = [group3.id]
-        await appService.configService.saveUser(user3);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        let network = {
+            serviceNetwork: '10.0.0.0/24'
+        } as Network;
 
-        group1.id = '';
+        const ip = getEmptyServiceIp(network, []);
+        expect(ip).to.be.equal('10.0.0.1');
+        let ips = ['10.0.0.1'];
+        for (let i = 2; i < 10; ++i) {
 
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .get(`/group/users`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
+            const ip2 = getEmptyServiceIp(network, ips);
+            expect(ip2).to.be.equal(`10.0.0.${i}`);
+            ips.push(ip2);
+        }
+        // test error
+        let errorOccured = false
+        try {
+            let ips = ['10.0.0.1'];
+            for (let i = 2; i < 500; ++i) {
+
+                const ip2 = getEmptyServiceIp(network, ips);
+                ips.push(ip2);
+            }
+        } catch (err) {
+            errorOccured = true;
+        }
+        expect(errorOccured).to.be.true;
 
 
-        expect(response.body.items).exist;
-        expect(response.body.items[0].id).to.equal(user1.id);
-
-    }).timeout(50000); */
+    }).timeout(50000);
 
 
 

@@ -53,7 +53,7 @@ routerNetworkAuthenticated.get('/',
         const configService = appService.configService;
         let items: Network[] = [];
         if (search) {
-            const networks = await configService.getNetworksBySearch(search.toLowerCase());
+            const networks = await configService.getNetworksBy(search.toLowerCase());
             items = items.concat(networks);
 
         } else

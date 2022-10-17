@@ -30,7 +30,9 @@ function createSampleSaml1(): BaseSaml {
         usernameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
         nameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
         isEnabled: true,
-        securityProfile: {}
+        securityProfile: {},
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
     }
 }
 
@@ -50,7 +52,9 @@ function createSampleLdap1(): BaseLdap {
         usernameField: 'aSSAm',
         groupnameField: 'memberOf',
         securityProfile: {},
-        isEnabled: true
+        isEnabled: true,
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
     }
 }
 
@@ -64,7 +68,9 @@ function createSampleOauth1(): BaseOAuth {
         clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
         clientSecret: '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',
         securityProfile: {},
-        isEnabled: true
+        isEnabled: true,
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
     }
 }
 function createSampleOAuth2(): BaseOAuth {
@@ -77,7 +83,9 @@ function createSampleOAuth2(): BaseOAuth {
         clientId: '866dr29tuc5uy5',
         clientSecret: '1E3DHw0FJFUsp1Um',
         securityProfile: {},
-        isEnabled: true
+        isEnabled: true,
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
     }
 }
 
@@ -91,7 +99,9 @@ function createSampleLocal(): AuthLocal {
         isForgotPassword: false,
         isRegister: false,
         securityProfile: {},
-        isEnabled: true
+        isEnabled: true,
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
     }
 }
 
@@ -285,6 +295,8 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.fakeProperty).not.exist;
         delete (local as any).fakeProperty;
+        response.body.insertDate = local.insertDate;
+        response.body.updateDate = local.updateDate;
         expect(response.body).to.deep.equal(local);
 
 
@@ -348,6 +360,8 @@ describe('configAuthApi ', async () => {
         expect(response.body).exist;
 
         oauth2.id = response.body.id;
+        response.body.insertDate = oauth2.insertDate;
+        response.body.updateDate = oauth2.updateDate;
         expect(response.body).to.deep.equal(oauth2);
 
 
@@ -410,6 +424,8 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.fakeProperty).not.exist;
         delete oauthAny.fakeProperty;
+        response.body.insertDate = oauth.insertDate;
+        response.body.updateDate = oauth.updateDate;
         expect(response.body).to.deep.equal(oauth);
 
 
@@ -551,6 +567,8 @@ describe('configAuthApi ', async () => {
         expect(response.body).exist;
 
         ldap.id = response.body.id;
+        response.body.insertDate = ldap.insertDate;
+        response.body.updateDate = ldap.updateDate;
         expect(response.body).to.deep.equal(ldap);
 
 
@@ -612,6 +630,8 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.fakeProperty).not.exist;
         delete ldapAny.fakeProperty;
+        response.body.insertDate = ldap.insertDate;
+        response.body.updateDate = ldap.updateDate;
         expect(response.body).to.deep.equal(ldap);
 
 
@@ -760,6 +780,8 @@ describe('configAuthApi ', async () => {
         expect(response.body).exist;
 
         saml.id = response.body.id;
+        response.body.insertDate = saml.insertDate;
+        response.body.updateDate = saml.updateDate;
         expect(response.body).to.deep.equal(saml);
 
 
@@ -821,6 +843,9 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.fakeProperty).not.exist;
         delete samlAny.fakeProperty;
+        response.body.insertDate = saml.insertDate;
+        response.body.updateDate = saml.updateDate;
+
         expect(response.body).to.deep.equal(saml);
 
 

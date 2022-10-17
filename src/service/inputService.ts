@@ -75,13 +75,19 @@ export class InputService {
 
     checkIfExists(value: any, errorMsg?: string) {
         if (!value) {
-            throw new RestfullException(400, ErrorCodes.ErrNotExists, errorMsg || 'input is invalid');
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, errorMsg || 'input is invalid');
         }
     }
     checkIfNotExits(value: any) {
         if (value) {
             throw new RestfullException(400, ErrorCodes.ErrNotExists, 'input is invalid');
         }
+    }
+    checkArrayNotEmpty(value: any[]) {
+        if (!Array.isArray(value))
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'input is invalid');
+        if (!value.length)
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'input is invalid');
     }
 
 }
