@@ -9,6 +9,7 @@ import { Util } from '../src/util';
 import { Gateway, Network } from '../src/model/network';
 import { AuthOAuth, AuthCommon, AuthLdap, AuthSaml, AuthLocal, BaseOAuth, BaseLocal } from '../src/model/authSettings';
 import { Group } from '../src/model/group';
+import { Service } from '../src/model/service';
 
 
 chai.use(chaiHttp);
@@ -353,7 +354,9 @@ describe('configService', async () => {
             name: 'default2',
             labels: [],
             clientNetwork: '10.10.0.0/16',
-            serviceNetwork: '172.16.0.0/24'
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         await configService.saveNetwork(network);
@@ -373,7 +376,9 @@ describe('configService', async () => {
             name: 'default',
             labels: [],
             clientNetwork: '10.10.0.0/16',
-            serviceNetwork: '172.16.0.0/24'
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         let gateway: Gateway = {
@@ -381,7 +386,9 @@ describe('configService', async () => {
             name: 'myserver',
             labels: [],
             isEnabled: true,
-            networkId: network.id
+            networkId: network.id,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
         await configService.saveNetwork(network);
@@ -401,7 +408,9 @@ describe('configService', async () => {
             name: 'default',
             labels: [],
             clientNetwork: '10.10.0.0/16',
-            serviceNetwork: '172.16.0.0/24'
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         let gateway: Gateway = {
@@ -409,7 +418,9 @@ describe('configService', async () => {
             name: 'myserver',
             labels: [],
             isEnabled: true,
-            networkId: network.id
+            networkId: network.id,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
         await configService.saveNetwork(network);
@@ -433,7 +444,9 @@ describe('configService', async () => {
             labels: [],
             isEnabled: true,
 
-            networkId: ''
+            networkId: '',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
 
@@ -453,7 +466,9 @@ describe('configService', async () => {
             labels: [],
             isEnabled: true,
 
-            networkId: ''
+            networkId: '',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
 
@@ -493,7 +508,9 @@ describe('configService', async () => {
             clientId: 'akdfa',
             clientSecret: 'adfa',
             tags: [],
-            isEnabled: true
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         //add
         await configService.addAuthSettingOAuth(oauth);
@@ -529,7 +546,9 @@ describe('configService', async () => {
             tags: [],
             isForgotPassword: true,
             isRegister: false,
-            isEnabled: true
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
 
         }
         //add
@@ -551,7 +570,9 @@ describe('configService', async () => {
             id: Util.randomNumberString(),
             name: 'north',
             isEnabled: true,
-            labels: []
+            labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
 
         }
         //add
@@ -572,7 +593,9 @@ describe('configService', async () => {
             id: Util.randomNumberString(),
             name: 'north',
             isEnabled: true,
-            labels: ['test2']
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
 
         }
         //add
@@ -582,7 +605,9 @@ describe('configService', async () => {
             id: Util.randomNumberString(),
             name: 'south',
             isEnabled: true,
-            labels: ['test']
+            labels: ['test'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
 
         }
         //add
@@ -607,7 +632,9 @@ describe('configService', async () => {
             id: Util.randomNumberString(),
             name: 'north',
             isEnabled: true,
-            labels: ['test2']
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
 
         }
         //add
@@ -617,7 +644,9 @@ describe('configService', async () => {
             id: Util.randomNumberString(),
             name: 'south',
             isEnabled: true,
-            labels: ['test']
+            labels: ['test'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
 
         }
         //add
@@ -638,7 +667,9 @@ describe('configService', async () => {
             id: Util.randomNumberString(),
             name: 'north',
             isEnabled: true,
-            labels: ['test2']
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
 
         }
         //add
@@ -664,7 +695,9 @@ describe('configService', async () => {
             id: Util.randomNumberString(),
             name: 'north',
             isEnabled: true,
-            labels: ['test2']
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
 
         }
         //add
@@ -693,6 +726,246 @@ describe('configService', async () => {
         expect(user?.groupIds.length).to.equal(0);
 
     });
+
+
+    ///// service 
+
+    it('getService', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.services = [];
+        let service: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306, assignedIp: '1.3',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveService(service);
+
+        const returned = await configService.getService(service.id);
+        expect(returned).to.deep.equal(service);
+
+
+    });
+
+    it('getServicesBy', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.services = [];
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveService(service1);
+
+        let service2: Service = {
+            id: Util.randomNumberString(),
+            name: 'remote-desktop-dev',
+            isEnabled: true,
+            labels: ['test'],
+            host: '192.168.10.10',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveService(service2);
+
+        const returned = await configService.getServicesBy('dev');
+        expect(returned.length).to.equal(2);
+
+        const returned2 = await configService.getServicesBy('remote222');
+        expect(returned2.length).to.be.equal(0);
+
+        const returned3 = await configService.getServicesBy('test');
+        expect(returned3.length).to.be.equal(1);
+
+        const returned4 = await configService.getServicesBy('192.168');
+        expect(returned4.length).to.be.equal(1);
+
+
+        const returned5 = await configService.getServicesBy('', ['abcd']);
+        expect(returned5.length).to.be.equal(2);
+
+        const returned6 = await configService.getServicesBy('', [], [service2.id]);
+        expect(returned6.length).to.be.equal(1);
+
+
+
+    });
+
+    it('getServicesByNetworkId', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.services = [];
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveService(service1);
+
+        let service2: Service = {
+            id: Util.randomNumberString(),
+            name: 'remote-desktop-dev',
+            isEnabled: true,
+            labels: ['test'],
+            host: '192.168.10.10',
+            networkId: 'dabc',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveService(service2);
+
+        const returned = await configService.getServicesByNetworkId('dabc');
+        expect(returned.length).to.equal(1);
+
+
+    });
+
+
+    it('getServicesAll', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.services = [];
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveService(service1);
+
+        let service2: Service = {
+            id: Util.randomNumberString(),
+            name: 'remote-desktop-dev',
+            isEnabled: true,
+            labels: ['test'],
+            host: '192.168.10.10',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveService(service2);
+
+        const returned = await configService.getServicesBy();
+        expect(returned.length).to.be.equal(2);
+        expect(returned[0]).to.deep.equal(service1);
+
+    });
+
+    it('saveService', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.services = [];
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveService(service1);
+
+        service1.name = 'north2';
+        //add
+        await configService.saveService(service1);
+
+        const returned = await configService.getService(service1.id)
+
+        expect(returned).to.deep.equal(service1);
+
+    });
+
+    it('deleteService', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        configService.config.groups = [];
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveService(service1);
+
+
+        await configService.deleteService(service1.id);
+
+        const returned = await configService.getService(service1.id)
+
+        expect(returned).not.exist;
+
+
+    });
+
 
 
 

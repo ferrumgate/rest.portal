@@ -53,7 +53,7 @@ routerNetworkAuthenticated.get('/',
         const configService = appService.configService;
         let items: Network[] = [];
         if (search) {
-            const networks = await configService.getNetworksBySearch(search.toLowerCase());
+            const networks = await configService.getNetworksBy(search.toLowerCase());
             items = items.concat(networks);
 
         } else
@@ -115,6 +115,8 @@ routerNetworkAuthenticated.put('/',
         input.name = input.name || 'network';
         input.labels = input.labels || [];
         const safe = cloneNetwork(input);
+        safe.insertDate = network.insertDate;
+        safe.updateDate = new Date().toISOString();
         await configService.saveNetwork(safe);
         // TODO audit here
         return res.status(200).json(safe);
@@ -139,6 +141,8 @@ routerNetworkAuthenticated.post('/',
         input.name = input.name || 'network';
         input.labels = input.labels || [];
         const safe = cloneNetwork(input);
+        safe.insertDate = new Date().toISOString();
+        safe.updateDate = new Date().toISOString();
         await configService.saveNetwork(safe);
         //TODO audit
         return res.status(200).json(safe);

@@ -271,7 +271,9 @@ describe('userApiAuthenticated', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const group: Group = {
-            id: 'group1', name: 'group1', isEnabled: true, labels: []
+            id: 'group1', name: 'group1', isEnabled: true, labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveGroup(group);
 

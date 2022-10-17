@@ -19,7 +19,7 @@ import { cloneSecurityProfile, SecurityProfile } from '../model/securityProfile'
 export const routerGroupAuthenticated = express.Router();
 
 
-routerGroupAuthenticated.get('/users',
+/* routerGroupAuthenticated.get('/users',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
@@ -36,7 +36,7 @@ routerGroupAuthenticated.get('/users',
             items: simpleUsers
         });
 
-    }))
+    })) */
 
 
 
@@ -136,6 +136,9 @@ routerGroupAuthenticated.put('/',
         input.name = input.name || 'group';
         input.labels = input.labels || [];
         const safe = cloneGroup(input);
+        //copy original one
+        safe.insertDate = group.insertDate;
+        safe.updateDate = new Date().toISOString();
         await configService.saveGroup(safe);
         // TODO audit here
         return res.status(200).json(safe);
@@ -160,6 +163,8 @@ routerGroupAuthenticated.post('/',
         input.name = input.name || 'group';
         input.labels = input.labels || [];
         const safe = cloneGroup(input);
+        safe.insertDate = new Date().toISOString();
+        safe.updateDate = new Date().toISOString();
         await configService.saveGroup(safe);
         //TODO audit
         return res.status(200).json(safe);

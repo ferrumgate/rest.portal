@@ -9,6 +9,8 @@ export interface Gateway {
     labels: string[];
     networkId?: string;
     isEnabled?: boolean;
+    insertDate: string;
+    updateDate: string;
 }
 
 
@@ -21,6 +23,8 @@ export interface Network {
     labels: string[];
     clientNetwork: string;
     serviceNetwork: string;
+    insertDate: string;
+    updateDate: string;
 
 }
 
@@ -30,7 +34,7 @@ export interface Network {
 export function cloneNetwork(net: Network): Network {
     return {
         id: net.id, clientNetwork: net.clientNetwork, labels: net.labels,
-        name: net.name, serviceNetwork: net.serviceNetwork
+        name: net.name, serviceNetwork: net.serviceNetwork, insertDate: net.insertDate, updateDate: net.updateDate
 
 
     }
@@ -44,6 +48,7 @@ export function cloneNetwork(net: Network): Network {
 export function cloneGateway(gate: Gateway): Gateway {
     return {
         id: gate.id, labels: gate.labels, name: gate.name,
-        networkId: gate.networkId, isEnabled: gate.isEnabled
+        networkId: gate.networkId, isEnabled: gate.isEnabled,
+        insertDate: gate.insertDate, updateDate: gate.updateDate
     }
 }

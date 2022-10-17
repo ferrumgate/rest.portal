@@ -46,12 +46,12 @@ routerGatewayAuthenticated.get('/',
         const search = req.query.search;
         const ids = req.query.ids as string;
         const notJoined = req.query.notJoined;
-        logger.info(`configuring system for startup`);
+        logger.info(`query gateway`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         let items: Gateway[] = [];
         if (search) {
-            const networks = await configService.getGatewaysBySearch(search.toLowerCase());
+            const networks = await configService.getGatewaysBy(search.toLowerCase());
             items = items.concat(networks);
 
         } else

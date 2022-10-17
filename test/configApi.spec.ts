@@ -54,7 +54,9 @@ describe('configApi ', async () => {
                 tags: [],
                 isForgotPassword: false,
                 isRegister: false,
-                isEnabled: true
+                isEnabled: true,
+                insertDate: new Date().toISOString(),
+                updateDate: new Date().toISOString()
             },
 
         }
@@ -68,7 +70,9 @@ describe('configApi ', async () => {
                     tags: [],
                     clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
                     clientSecret: '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',
-                    isEnabled: true
+                    isEnabled: true,
+                    insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
                 },
                 {
                     baseType: 'oauth',
@@ -78,7 +82,9 @@ describe('configApi ', async () => {
                     tags: [],
                     clientId: '866dr29tuc5uy5',
                     clientSecret: '1E3DHw0FJFUsp1Um',
-                    isEnabled: true
+                    isEnabled: true,
+                    insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
                 }
             ]
         }

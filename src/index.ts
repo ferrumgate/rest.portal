@@ -18,6 +18,7 @@ import { routerGatewayAuthenticated } from "./api/gatewayApi";
 import { routerConfigAuthAuthenticated } from "./api/configAuthApi";
 import { passportAuthenticate, passportInit } from "./api/auth/passportInit";
 import { routerGroupAuthenticated } from "./api/groupApi";
+import { routerServiceAuthenticated } from "./api/serviceApi";
 
 
 
@@ -283,6 +284,16 @@ app.use('(\/api)?/group',
     asyncHandlerWithArgs(rateLimit, 'groupDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'groupCaptcha', 50),
     routerGroupAuthenticated);
+
+
+app.use('(\/api)?/service',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'service', 1000),
+    asyncHandlerWithArgs(rateLimit, 'serviceHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'serviceDaily', 5000),
+    asyncHandlerWithArgs(checkCaptcha, 'serviceCaptcha', 50),
+    routerServiceAuthenticated);
 
 
 

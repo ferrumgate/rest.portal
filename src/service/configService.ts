@@ -17,6 +17,7 @@ import { Gateway, Network } from "../model/network";
 import { isAbsolute } from "path";
 import { Group } from "../model/group";
 import { util } from "chai";
+import { Service } from "../model/service";
 
 
 
@@ -44,7 +45,9 @@ export class ConfigService {
             name: 'default',
             labels: ['default'],
             clientNetwork: '100.64.0.0/16',
-            serviceNetwork: '172.28.28.0/24'
+            serviceNetwork: '172.28.28.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
         this.secretKey = encryptKey;
@@ -56,6 +59,7 @@ export class ConfigService {
                 adminUser
             ],
             groups: [],
+            services: [],
             captcha: {},
             sshCertificate: {},
             jwtSSLCertificate: {},
@@ -77,6 +81,8 @@ export class ConfigService {
                     isForgotPassword: false,
                     isRegister: false,
                     isEnabled: true,
+                    insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
 
                 }
             },
@@ -104,6 +110,8 @@ export class ConfigService {
                         clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
                         clientSecret: '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',
                         isEnabled: true,
+                        insertDate: new Date().toISOString(),
+                        updateDate: new Date().toISOString()
                     },
                     {
                         baseType: 'oauth',
@@ -114,6 +122,8 @@ export class ConfigService {
                         clientId: '866dr29tuc5uy5',
                         clientSecret: '1E3DHw0FJFUsp1Um',
                         isEnabled: true,
+                        insertDate: new Date().toISOString(),
+                        updateDate: new Date().toISOString()
                     }
                 ]
             }
@@ -131,7 +141,9 @@ export class ConfigService {
                         searchBase: 'CN=users,DC=testad,DC=local',
                         groupnameField: 'memberOf',
                         usernameField: 'sAMAccountName',
-                        isEnabled: true
+                        isEnabled: true,
+                        insertDate: new Date().toISOString(),
+                        updateDate: new Date().toISOString()
 
 
 
@@ -153,7 +165,9 @@ export class ConfigService {
                         cert: `MIIDDTCCAfWgAwIBAgIJDVrH9KeUS+k8MA0GCSqGSIb3DQEBCwUAMCQxIjAgBgNVBAMTGWRldi0yNHdtOG03Zy51cy5hdXRoMC5jb20wHhcNMjIxMDEwMjIzOTA2WhcNMzYwNjE4MjIzOTA2WjAkMSIwIAYDVQQDExlkZXYtMjR3bThtN2cudXMuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA14riTBaUOB2+OZiEbpL5Cjy4MVl78Qi+Msi6IbmIs8nIGRav2hYsI3/mUex6+dCeqwoKCALByRySTEWhUCRWNsi86ae5CSsRikVBAPtEZqKBuoSthrjXUQT5/UBBOHc+EVUAiNrAEE1DBjpkFPkZfGk974ZukK8MyfliajjmFHGj23vwxJncxfx49kOEalz10M500MNldl+Kl628i//y3QiojTsNvPK4SiORFBR89DnWJoB/m6npsm9tkRKUFuYNedVEDru+8aac6LVrKkimDOUzXecAbCm7+td4rXCyV25cc3Pp0sHUYFYk4NoqzW6kJtddFcRQi+xo5JqcPjtunwIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBRZYMCT4GSETh+A4Ji9wWJxlcv53zAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBACNDPiTHjyeFUIOTWnnZbTZil0nf+yrA6QVesV5+KJ9Ek+YgMrnZ4KdXEZZozUgiGsER1RjetWVYnv3AmEvML0CY/+xJu2bCfwQssSXFLQGdv079V81Mk2+Hz8gQgruLpJpfENQCsbWm3lXQP4F3avFw68HB62rr6jfyEIPb9n8rw/pj57y5ZILl97sb3QikgRh1pTEKVz05WLeHdGPE30QWklGDYxqv2/TbRWOUsdXjjbpE6pIfTUX5OLqGRbrtdHL9fHbhVOfqczALtneEjv5o/TpB3Jo2w9RU9AgMYwWT2Hpqop/fe9fyDQ+u5Hz7ZnADi/oktGBzm8/Y03WpkuM=`,
                         usernameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
                         nameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
-                        isEnabled: true
+                        isEnabled: true,
+                        insertDate: new Date().toISOString(),
+                        updateDate: new Date().toISOString()
 
                     },
                 ]
@@ -189,15 +203,32 @@ export class ConfigService {
 
                 id: '312', name: 'ops', labels: ['deneme2'],
                 serviceNetwork: '1.1.1.1/16',
-                clientNetwork: '1.2.3.4/24'
+                clientNetwork: '1.2.3.4/24',
+                insertDate: new Date().toISOString(),
+                updateDate: new Date().toISOString()
             }
             this.config.networks.push(net);
             let gateways: Gateway[] = [
-                { id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: true },
-                { id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: true },
-                { id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: false },
-                { id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: false },
-                { id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: false }
+                {
+                    id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: true, insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
+                },
+                {
+                    id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: true, insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
+                },
+                {
+                    id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: false, insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
+                },
+                {
+                    id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: false, insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
+                },
+                {
+                    id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: false, insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
+                }
             ];
             gateways.forEach(x => this.config.gateways.push(x));
 
@@ -301,7 +332,8 @@ export class ConfigService {
 
     async getUsersBy(page: number = 0, pageSize: number = 0, search?: string,
         ids?: string[], groupIds?: string[], roleIds?: string[],
-        is2FA?: boolean, isVerified?: boolean, isLocked?: boolean, isEmailVerified?: boolean, isOnlyApiKey?: boolean) {
+        is2FA?: boolean, isVerified?: boolean, isLocked?: boolean,
+        isEmailVerified?: boolean, isOnlyApiKey?: boolean) {
 
         let users = [];
         let filteredUsers = !search ? this.config.users :
@@ -646,7 +678,7 @@ export class ConfigService {
         return Util.clone(network);
     }
 
-    async getNetworksBySearch(query: string) {
+    async getNetworksBy(query: string) {
         const networks = this.config.networks.filter(x => {
             if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(query)))
                 return true;
@@ -708,7 +740,7 @@ export class ConfigService {
             return gateways.map(x => Util.clone(x));
         }
     }
-    async getGatewaysBySearch(query: string) {
+    async getGatewaysBy(query: string) {
         const gateways = this.config.gateways.filter(x => {
             if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(query)))
                 return true;
@@ -816,6 +848,83 @@ export class ConfigService {
         }
         await this.saveConfigToFile();
     }
+
+
+    //// service entity
+    async getService(id: string): Promise<Service | undefined> {
+
+        return Util.clone(this.config.services.find(x => x.id == id));
+
+    }
+
+    async getServicesBy(query?: string, networkIds?: string[], ids?: string[]) {
+        const search = query?.toLowerCase();
+        let services = !search ? this.config.services : this.config.services.filter(x => {
+            if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(search)))
+                return true;
+            if (x.name?.toLowerCase().includes(search))
+                return true;
+            if (x.host?.toLocaleLowerCase().includes(search))
+                return true;
+            if (x.tcp?.toString().includes(search))
+                return true;
+            if (x.udp?.toString().includes(search))
+                return true;
+            if (x.protocol?.toLocaleLowerCase().includes(search))
+                return true;
+
+            return false;
+        });
+        if (networkIds && networkIds.length)
+            services = services.filter(x => networkIds.includes(x.networkId));
+        if (ids && ids.length)
+            services = services.filter(x => ids.includes(x.id));
+
+        services.sort((a, b) => {
+            return a.name.localeCompare(b.name)
+        })
+        return services.map(x => Util.clone(x));
+    }
+
+    async getServicesByNetworkId(networkId: string) {
+        return this.config.services.filter(x => x.networkId == networkId).map(x => Util.clone(x));
+    }
+
+    //// service entity
+    async getServicesAll(): Promise<Service[]> {
+
+        return this.config.services.map(x => Util.clone(x));
+
+    }
+
+
+
+    async deleteService(id: string) {
+        const indexId = this.config.services.findIndex(x => x.id == id);
+        if (indexId >= 0) {
+            this.config.services.splice(indexId, 1);
+        }
+
+        await this.saveConfigToFile();
+    }
+
+    async saveService(service: Service) {
+        let findedIndex = this.config.services.findIndex(x => x.id == service.id);
+        let finded = findedIndex >= 0 ? this.config.services[findedIndex] : null;
+        const cloned = Util.clone(service);
+        if (!finded) {
+
+            this.config.services.push(cloned);
+        } else {
+            this.config.services[findedIndex] = {
+                ...finded,
+                ...cloned
+            }
+        }
+        await this.saveConfigToFile();
+    }
+
+
 
 
 }
