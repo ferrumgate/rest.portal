@@ -59,7 +59,9 @@ describe('networkApi', async () => {
             name: 'test',
             labels: [],
             clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            serviceNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveNetwork(network);
 
@@ -89,7 +91,9 @@ describe('networkApi', async () => {
             name: 'test',
             labels: [],
             clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            serviceNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveNetwork(network);
 
@@ -145,7 +149,9 @@ describe('networkApi', async () => {
             name: 'test',
             labels: ['mest'],
             clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            serviceNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveNetwork(network);
 
@@ -157,7 +163,9 @@ describe('networkApi', async () => {
             name: 'mest2',
             labels: [],
             clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            serviceNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveNetwork(network2);
 
@@ -168,7 +176,9 @@ describe('networkApi', async () => {
             name: 'est2',
             labels: [],
             clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            serviceNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveNetwork(network3);
 
@@ -220,7 +230,9 @@ describe('networkApi', async () => {
             name: 'test',
             labels: ['mest'],
             clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            serviceNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveNetwork(network);
 
@@ -254,7 +266,9 @@ describe('networkApi', async () => {
             name: 'test',
             labels: ['mest'],
             clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            serviceNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveNetwork(network);
 
@@ -275,6 +289,8 @@ describe('networkApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body).exist;
 
+        network.insertDate = response.body.insertDate;
+        network.updateDate = response.body.updateDate;
         expect(response.body).to.deep.equal(network);
 
 
@@ -294,7 +310,9 @@ describe('networkApi', async () => {
             name: 'test',
             labels: ['mest'],
             clientNetwork: '10.0.0.0/16',
-            serviceNetwork: '192.168.0.0/24'
+            serviceNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveNetwork(network);
 
@@ -316,6 +334,8 @@ describe('networkApi', async () => {
         expect(response.body).exist;
         //posting creates a new id
         network.id = response.body.id;
+        network.insertDate = response.body.insertDate;
+        network.updateDate = response.body.updateDate;
         expect(response.body).to.deep.equal(network);
         expect(response.body.id).exist;
 

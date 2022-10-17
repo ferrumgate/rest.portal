@@ -22,7 +22,9 @@ function createSampleData() {
         clientNetwork: '10.0.0.1/24',
         serviceNetwork: '10.0.0.0/24',
         labels: [],
-        name: 'network'
+        name: 'network',
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
 
     }
     let service1: Service = {

@@ -45,14 +45,18 @@ describe('clientApi ', async () => {
         name: 'somenetwork',
         labels: [],
         clientNetwork: '10.0.0.0/24',
-        serviceNetwork: '172.18.0.0/24'
+        serviceNetwork: '172.18.0.0/24',
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
     }
     const gateway: Gateway = {
         id: 'w20kaaoe',
         name: 'aserver',
         labels: [],
         networkId: net.id,
-        isEnabled: true
+        isEnabled: true,
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
     }
 
     before(async () => {

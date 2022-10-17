@@ -354,7 +354,9 @@ describe('configService', async () => {
             name: 'default2',
             labels: [],
             clientNetwork: '10.10.0.0/16',
-            serviceNetwork: '172.16.0.0/24'
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         await configService.saveNetwork(network);
@@ -374,7 +376,9 @@ describe('configService', async () => {
             name: 'default',
             labels: [],
             clientNetwork: '10.10.0.0/16',
-            serviceNetwork: '172.16.0.0/24'
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         let gateway: Gateway = {
@@ -382,7 +386,9 @@ describe('configService', async () => {
             name: 'myserver',
             labels: [],
             isEnabled: true,
-            networkId: network.id
+            networkId: network.id,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
         await configService.saveNetwork(network);
@@ -402,7 +408,9 @@ describe('configService', async () => {
             name: 'default',
             labels: [],
             clientNetwork: '10.10.0.0/16',
-            serviceNetwork: '172.16.0.0/24'
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         };
 
         let gateway: Gateway = {
@@ -410,7 +418,9 @@ describe('configService', async () => {
             name: 'myserver',
             labels: [],
             isEnabled: true,
-            networkId: network.id
+            networkId: network.id,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
         await configService.saveNetwork(network);
@@ -434,7 +444,9 @@ describe('configService', async () => {
             labels: [],
             isEnabled: true,
 
-            networkId: ''
+            networkId: '',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
 
@@ -454,7 +466,9 @@ describe('configService', async () => {
             labels: [],
             isEnabled: true,
 
-            networkId: ''
+            networkId: '',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
 

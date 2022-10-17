@@ -57,7 +57,9 @@ describe('gatewayApi', async () => {
         const gateway: Gateway = {
             id: Util.randomNumberString(),
             name: 'test',
-            labels: []
+            labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveGateway(gateway);
 
@@ -87,7 +89,9 @@ describe('gatewayApi', async () => {
             id: Util.randomNumberString(),
             name: 'test',
             labels: [],
-            networkId: '2aksa'
+            networkId: '2aksa',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveGateway(gateway);
 
@@ -142,7 +146,9 @@ describe('gatewayApi', async () => {
             id: Util.randomNumberString(),
             name: 'test',
             labels: [],
-            networkId: '2aksa'
+            networkId: '2aksa',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveGateway(gateway);
 
@@ -150,7 +156,9 @@ describe('gatewayApi', async () => {
             id: Util.randomNumberString(),
             name: 'test2',
             labels: ['mest'],
-            networkId: '2aksa'
+            networkId: '2aksa',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveGateway(gateway2);
 
@@ -180,7 +188,9 @@ describe('gatewayApi', async () => {
             id: Util.randomNumberString(),
             name: 'test',
             labels: [],
-            networkId: '2aksa'
+            networkId: '2aksa',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveGateway(gateway);
 
@@ -212,7 +222,9 @@ describe('gatewayApi', async () => {
             id: Util.randomNumberString(),
             name: 'test',
             labels: [],
-            networkId: '2aksa'
+            networkId: '2aksa',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await appService.configService.saveGateway(gateway);
         gateway.name = 'blabla'
@@ -246,7 +258,9 @@ describe('gatewayApi', async () => {
             id: '',
             name: 'test',
             labels: [],
-            networkId: '2aksa'
+            networkId: '2aksa',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
         let response: any = await new Promise((resolve: any, reject: any) => {

@@ -60,14 +60,18 @@ describe('commonApi', async () => {
             name: 'somenetwork',
             labels: [],
             clientNetwork: '10.0.0.0/24',
-            serviceNetwork: '172.18.0.0/24'
+            serviceNetwork: '172.18.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         const gateway: Gateway = {
             id: 'w20kaaoe',
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: false
+            isEnabled: false,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
@@ -90,14 +94,18 @@ describe('commonApi', async () => {
             name: 'somenetwork',
             labels: [],
             clientNetwork: '10.0.0.0/24',
-            serviceNetwork: '172.18.0.0/24'
+            serviceNetwork: '172.18.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         const gateway: Gateway = {
             id: 'w20kaaoe',
             name: 'aserver',
             labels: [],
             networkId: net.id + '111',
-            isEnabled: false
+            isEnabled: false,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);

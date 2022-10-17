@@ -38,14 +38,18 @@ describe('tunnelService', () => {
             name: 'somenetwork',
             labels: [],
             serviceNetwork: '100.64.0.0/16',
-            clientNetwork: '192.168.0.0/24'
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         const gateway: Gateway = {
             id: '123kasdfa',
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: true
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
@@ -69,13 +73,17 @@ describe('tunnelService', () => {
             name: 'somenetwork',
             labels: [],
             serviceNetwork: '100.64.0.0/16',
-            clientNetwork: '192.168.0.0/24'
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         const gateway: Gateway = {
             id: '123kasdfa',
             name: 'aserver',
             labels: [],
-            networkId: net.id
+            networkId: net.id,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
@@ -104,14 +112,18 @@ describe('tunnelService', () => {
             name: 'somenetwork',
             labels: [],
             serviceNetwork: '100.64.0.0/16',
-            clientNetwork: '192.168.0.0/24'
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         const gateway: Gateway = {
             id: '123kasdfa',
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: true
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
@@ -140,14 +152,18 @@ describe('tunnelService', () => {
             name: 'somenetwork',
             labels: [],
             serviceNetwork: '100.64.0.0/16',
-            clientNetwork: '192.168.0.0/24'
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         const gateway: Gateway = {
             id: 'w20kaaoe',
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: true
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
@@ -193,14 +209,18 @@ describe('tunnelService', () => {
             name: 'somenetwork',
             labels: [],
             serviceNetwork: '100.64.0.0/16',
-            clientNetwork: '192.168.0.0/24'
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         const gateway: Gateway = {
             id: '1234',
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: true
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
@@ -238,14 +258,18 @@ describe('tunnelService', () => {
             name: 'somenetwork',
             labels: [],
             serviceNetwork: '100.64.0.0/16',
-            clientNetwork: '192.168.0.0/24'
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         const gateway: Gateway = {
             id: '12345',
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: true
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
@@ -281,14 +305,18 @@ describe('tunnelService', () => {
             name: 'somenetwork',
             labels: [],
             serviceNetwork: '100.64.0.0/16',
-            clientNetwork: '192.168.0.0/24'
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         const gateway: Gateway = {
             id: '1234',
             name: 'aserver',
             labels: [],
             networkId: net.id,
-            isEnabled: true
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);

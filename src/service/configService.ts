@@ -45,7 +45,9 @@ export class ConfigService {
             name: 'default',
             labels: ['default'],
             clientNetwork: '100.64.0.0/16',
-            serviceNetwork: '172.28.28.0/24'
+            serviceNetwork: '172.28.28.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
         }
 
         this.secretKey = encryptKey;
@@ -201,15 +203,32 @@ export class ConfigService {
 
                 id: '312', name: 'ops', labels: ['deneme2'],
                 serviceNetwork: '1.1.1.1/16',
-                clientNetwork: '1.2.3.4/24'
+                clientNetwork: '1.2.3.4/24',
+                insertDate: new Date().toISOString(),
+                updateDate: new Date().toISOString()
             }
             this.config.networks.push(net);
             let gateways: Gateway[] = [
-                { id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: true },
-                { id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: true },
-                { id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: false },
-                { id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: false },
-                { id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: false }
+                {
+                    id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: true, insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
+                },
+                {
+                    id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: true, insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
+                },
+                {
+                    id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: false, insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
+                },
+                {
+                    id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: false, insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
+                },
+                {
+                    id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: false, insertDate: new Date().toISOString(),
+                    updateDate: new Date().toISOString()
+                }
             ];
             gateways.forEach(x => this.config.gateways.push(x));
 

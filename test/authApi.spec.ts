@@ -59,14 +59,18 @@ describe('authApi', async () => {
         name: 'somenetwork',
         labels: [],
         serviceNetwork: '100.64.0.0/16',
-        clientNetwork: '192.168.0.0/24'
+        clientNetwork: '192.168.0.0/24',
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
     }
     const gateway: Gateway = {
         id: '123kasdfa',
         name: 'aserver',
         labels: [],
         networkId: net.id,
-        isEnabled: true
+        isEnabled: true,
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString()
     }
 
     beforeEach(async () => {
