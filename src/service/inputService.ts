@@ -89,5 +89,11 @@ export class InputService {
         if (!value.length)
             throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'input is invalid');
     }
+    checkIsNumber(value: any) {
+        if (value == undefined || value == null) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'input is invalid');
+        let val = Number(value);
+        if (Number.isNaN(val)) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'input is invalid');
+
+    }
 
 }

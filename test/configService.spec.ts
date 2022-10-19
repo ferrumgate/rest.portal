@@ -981,12 +981,12 @@ describe('configService', async () => {
             name: "zero trust",
             action: 'allow',
             networkId: 'networkId',
-            userOrgroupId: ['somegroupid'],
+            userOrgroupIds: ['somegroupid'],
             profile: {},
 
         }
         //add
-        await configService.saveAuthenticationPolicyAddRule(rule);
+        await configService.saveAuthenticationPolicyRule(rule);
 
         const policy = await configService.getAuthenticationPolicyUnsafe();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
@@ -1003,7 +1003,7 @@ describe('configService', async () => {
             name: "zero trust",
             action: 'allow',
             networkId: 'networkId',
-            userOrgroupId: ['somegroupid'],
+            userOrgroupIds: ['somegroupid'],
             profile: {},
 
         }
@@ -1026,7 +1026,7 @@ describe('configService', async () => {
             name: "zero trust",
             action: 'allow',
             networkId: 'networkId',
-            userOrgroupId: ['somegroupid'],
+            userOrgroupIds: ['somegroupid'],
             profile: {},
 
         }
@@ -1049,7 +1049,7 @@ describe('configService', async () => {
             name: "zero trust",
             action: 'allow',
             networkId: 'networkId',
-            userOrgroupId: ['somegroupid'],
+            userOrgroupIds: ['somegroupid'],
             profile: {},
 
         }
@@ -1059,6 +1059,82 @@ describe('configService', async () => {
         await configService.deleteAuthenticationPolicyRule(rule.id);
         expect(configService.config.authenticationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
         expect(configService.config.authenticationPolicy.rules.length).to.equal(0);
+
+    });
+
+
+    it('updateAuthenticationRulePos', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        let rule1: AuthenticationRule = {
+            id: '1',
+            name: "zero trust1",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule1);
+
+        let rule2: AuthenticationRule = {
+            id: '2',
+            name: "zero trust2",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule2);
+
+
+        let rule3: AuthenticationRule = {
+            id: '3',
+            name: "zero trust3",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule3);
+        const policy = configService.config.authenticationPolicy;
+
+        await configService.updateAuthenticationRulePos(rule1.id, 0, 0);
+        expect(policy.rules[0].id).to.be.equal('1');
+        expect(policy.rules[1].id).to.be.equal('2');
+        expect(policy.rules[2].id).to.be.equal('3');
+
+
+        await configService.updateAuthenticationRulePos(rule1.id, 0, 5);
+        expect(policy.rules[0].id).to.be.equal('2');
+        expect(policy.rules[1].id).to.be.equal('3');
+        expect(policy.rules[2].id).to.be.equal('1');
+
+        await configService.updateAuthenticationRulePos(rule1.id, 2, 1);
+        expect(policy.rules[0].id).to.be.equal('2');
+        expect(policy.rules[1].id).to.be.equal('1');
+        expect(policy.rules[2].id).to.be.equal('3');
+
+        await configService.updateAuthenticationRulePos(rule1.id, 1, 0);
+        expect(policy.rules[0].id).to.be.equal('1');
+        expect(policy.rules[1].id).to.be.equal('2');
+        expect(policy.rules[2].id).to.be.equal('3');
+
+        let errrored = false;
+        try {
+            await configService.updateAuthenticationRulePos(rule1.id, 1, 5);
+        } catch (err) {
+            errrored = true;
+        }
+        expect(errrored).to.be.true;
+
+
+
+
 
     });
 
@@ -1077,7 +1153,7 @@ describe('configService', async () => {
             name: "zero trust",
             action: 'allow',
             networkId: 'networkId',
-            userOrgroupId: ['somegroupid'],
+            userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true, isPAM: true },
 
@@ -1101,7 +1177,7 @@ describe('configService', async () => {
             name: "zero trust",
             action: 'allow',
             networkId: 'networkId',
-            userOrgroupId: ['somegroupid'],
+            userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true, isPAM: true },
 
@@ -1125,7 +1201,7 @@ describe('configService', async () => {
             name: "zero trust",
             action: 'allow',
             networkId: 'networkId',
-            userOrgroupId: ['somegroupid'],
+            userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true, isPAM: true },
 
@@ -1150,7 +1226,7 @@ describe('configService', async () => {
             name: "zero trust",
             action: 'allow',
             networkId: 'networkId',
-            userOrgroupId: ['somegroupid'],
+            userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true, isPAM: true },
 

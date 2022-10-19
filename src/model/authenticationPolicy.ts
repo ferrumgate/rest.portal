@@ -1,4 +1,4 @@
-import { AuthenticationProfile } from "./authenticationProfile";
+import { AuthenticationProfile, cloneAuthenticatonProfile } from "./authenticationProfile";
 
 
 
@@ -6,10 +6,20 @@ export interface AuthenticationRule {
     id: string;
     name: string;
     networkId: string;
-    userOrgroupId: string[];
+    userOrgroupIds: string[];
     profile: AuthenticationProfile;
     action: 'allow' | 'drop';
 
+}
+export function cloneAuthenticationRule(val: AuthenticationRule): AuthenticationRule {
+    return {
+        id: val.id,
+        action: val.action,
+        name: val.name,
+        networkId: val.networkId,
+        userOrgroupIds: val.userOrgroupIds ? Array.from(val.userOrgroupIds) : [],
+        profile: cloneAuthenticatonProfile(val.profile)
+    }
 }
 
 

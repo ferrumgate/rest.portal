@@ -167,10 +167,10 @@ export interface AuthenticationProfile {
 
 }
 
-export function cloneAuthenticatonProfile(pr: AuthenticationProfile): AuthenticationProfile | undefined {
+export function cloneAuthenticatonProfile(pr: AuthenticationProfile): AuthenticationProfile {
 
     return {
-        app: { version: pr.app?.version },
+        app: pr.app ? { version: pr.app?.version } : undefined,
         ips: pr.ips ? Array.from(pr.ips.map(x => cloneIpProfile(x))) : undefined,
         days: pr.days ? Array.from(pr.days.map(x => cloneDayProfile(x))) : undefined,
         locations: pr.locations ? Array.from(pr.locations.map(x => cloneLocationProfile(x))) : undefined,

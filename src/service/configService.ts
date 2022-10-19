@@ -96,7 +96,12 @@ export class ConfigService {
                 defaultNetwork
             ],
             gateways: [],
-            authenticationPolicy: { id: Util.randomNumberString(), rules: [], insertDate: new Date().toISOString(), updateDate: new Date().toISOString() },
+
+            authenticationPolicy: {
+                id: Util.randomNumberString(), rules: [
+
+                ], insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
+            },
             authorizationPolicy: { id: Util.randomNumberString(), rules: [], insertDate: new Date().toISOString(), updateDate: new Date().toISOString() }
 
 
@@ -931,7 +936,7 @@ export class ConfigService {
 
     //authenticaton  policy
 
-    async saveAuthenticationPolicyAddRule(arule: AuthenticationRule) {
+    async saveAuthenticationPolicyRule(arule: AuthenticationRule) {
         const cloned = Util.clone(arule);
         const ruleIndex = this.config.authenticationPolicy.rules.findIndex(x => x.id == arule.id);
         if (ruleIndex > 0) {
@@ -957,6 +962,21 @@ export class ConfigService {
             this.config.authenticationPolicy.rules.splice(ruleIndex, 1);
             await this.saveConfigToFile();
         }
+    }
+    async updateAuthenticationPolicyUpdateTime() {
+        this.config.authenticationPolicy.updateDate = new Date().toISOString();
+        await this.saveConfigToFile();
+    }
+    async updateAuthenticationRulePos(id: string, previous: number, index: number) {
+        const currentRule = this.config.authenticationPolicy.rules[previous];
+        if (currentRule.id != id)
+            throw new Error('no rule found at this position');
+        if (previous < 0)
+            throw new Error('array index can be negative');
+        this.config.authenticationPolicy.rules.splice(previous, 1);
+
+        this.config.authenticationPolicy.rules.splice(index, 0, currentRule);
+
     }
     //authorization policy
 
@@ -987,6 +1007,25 @@ export class ConfigService {
             await this.saveConfigToFile();
         }
     }
+    async updateAuthorizationPolicyUpdateTime() {
+        this.config.authorizationPolicy.updateDate = new Date().toISOString();
+        await this.saveConfigToFile();
+    }
+
+
+    async updateAuthorizationRulePos(id: string, previous: number, index: number) {
+        const currentRule = this.config.authorizationPolicy.rules[previous];
+        if (currentRule.id != id)
+            throw new Error('no rule found at this position');
+        if (previous < 0)
+            throw new Error('array index can be negative');
+        this.config.authorizationPolicy.rules.splice(previous, 1);
+
+        this.config.authorizationPolicy.rules.splice(index, 0, currentRule);
+
+    }
+
+
 
 
 
