@@ -30,7 +30,7 @@ function createSampleSaml1(): BaseSaml {
         usernameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
         nameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
         isEnabled: true,
-        securityProfile: {},
+
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString()
     }
@@ -51,7 +51,7 @@ function createSampleLdap1(): BaseLdap {
         searchFilter: '',
         usernameField: 'aSSAm',
         groupnameField: 'memberOf',
-        securityProfile: {},
+
         isEnabled: true,
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString()
@@ -67,7 +67,7 @@ function createSampleOauth1(): BaseOAuth {
         tags: [],
         clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
         clientSecret: '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',
-        securityProfile: {},
+
         isEnabled: true,
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString()
@@ -82,7 +82,7 @@ function createSampleOAuth2(): BaseOAuth {
         tags: [],
         clientId: '866dr29tuc5uy5',
         clientSecret: '1E3DHw0FJFUsp1Um',
-        securityProfile: {},
+
         isEnabled: true,
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString()
@@ -98,7 +98,7 @@ function createSampleLocal(): AuthLocal {
         tags: [],
         isForgotPassword: false,
         isRegister: false,
-        securityProfile: {},
+
         isEnabled: true,
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString()

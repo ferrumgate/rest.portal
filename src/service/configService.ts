@@ -18,6 +18,8 @@ import { isAbsolute } from "path";
 import { Group } from "../model/group";
 import { util } from "chai";
 import { Service } from "../model/service";
+import { AuthenticationRule } from "../model/authenticationPolicy";
+import { AuthorizationRule } from "../model/authorizationPolicy";
 
 
 
@@ -93,7 +95,9 @@ export class ConfigService {
             networks: [
                 defaultNetwork
             ],
-            gateways: []
+            gateways: [],
+            authenticationPolicy: { id: Util.randomNumberString(), rules: [], insertDate: new Date().toISOString(), updateDate: new Date().toISOString() },
+            authorizationPolicy: { id: Util.randomNumberString(), rules: [], insertDate: new Date().toISOString(), updateDate: new Date().toISOString() }
 
 
         }
@@ -923,6 +927,69 @@ export class ConfigService {
         }
         await this.saveConfigToFile();
     }
+
+
+    //authenticaton  policy
+
+    async saveAuthenticationPolicyAddRule(arule: AuthenticationRule) {
+        const cloned = Util.clone(arule);
+        const ruleIndex = this.config.authenticationPolicy.rules.findIndex(x => x.id == arule.id);
+        if (ruleIndex > 0) {
+            this.config.authenticationPolicy.rules[ruleIndex] = cloned;
+        } else {
+            this.config.authenticationPolicy.rules.push(cloned);
+        }
+        await this.saveConfigToFile();
+    }
+    async getAuthenticationPolicy() {
+        return Util.clone(this.config.authenticationPolicy);
+    }
+    async getAuthenticationPolicyUnsafe() {
+        return this.config.authenticationPolicy;
+    }
+    async getAuthenticationPolicyRule(id: string) {
+        const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
+        return Util.clone(rule);
+    }
+    async deleteAuthenticationPolicyRule(id: string) {
+        const ruleIndex = this.config.authenticationPolicy.rules.findIndex(x => x.id == id);
+        if (ruleIndex >= 0) {
+            this.config.authenticationPolicy.rules.splice(ruleIndex, 1);
+            await this.saveConfigToFile();
+        }
+    }
+    //authorization policy
+
+    async saveAuthorizationPolicyRule(arule: AuthorizationRule) {
+        const cloned = Util.clone(arule);
+        const ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == arule.id);
+        if (ruleIndex > 0) {
+            this.config.authorizationPolicy.rules[ruleIndex] = cloned;
+        } else {
+            this.config.authorizationPolicy.rules.push(cloned);
+        }
+        await this.saveConfigToFile();
+    }
+    async getAuthorizationPolicy() {
+        return Util.clone(this.config.authorizationPolicy);
+    }
+    async getAuthorizationPolicyUnsafe() {
+        return this.config.authorizationPolicy;
+    }
+    async getAuthorizationPolicyRule(id: string) {
+        const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
+        return Util.clone(rule);
+    }
+    async deleteAuthorizationPolicyRule(id: string) {
+        const ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == id);
+        if (ruleIndex >= 0) {
+            this.config.authorizationPolicy.rules.splice(ruleIndex, 1);
+            await this.saveConfigToFile();
+        }
+    }
+
+
+
 
 
 

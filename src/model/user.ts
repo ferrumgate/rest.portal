@@ -1,5 +1,5 @@
 import { Role } from "./rbac";
-import { SecurityProfile } from "./securityProfile";
+
 
 export interface User {
     id: string;
@@ -26,10 +26,6 @@ export interface User {
      */
     networkSettings?: UserOverrideNetworkSettings[];
 
-    /**
-     * security profile for user
-     */
-    securityProfile?: SecurityProfile;
 
 }
 

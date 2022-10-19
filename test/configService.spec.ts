@@ -10,6 +10,9 @@ import { Gateway, Network } from '../src/model/network';
 import { AuthOAuth, AuthCommon, AuthLdap, AuthSaml, AuthLocal, BaseOAuth, BaseLocal } from '../src/model/authSettings';
 import { Group } from '../src/model/group';
 import { Service } from '../src/model/service';
+import { AuthenticationRule } from '../src/model/authenticationPolicy';
+import { config } from 'process';
+import { AuthorizationRule } from '../src/model/authorizationPolicy';
 
 
 chai.use(chaiHttp);
@@ -965,6 +968,204 @@ describe('configService', async () => {
 
 
     });
+
+    //authenticationPolicy
+
+    it('saveAthenticationPolicyAddRule', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupId: ['somegroupid'],
+            profile: {},
+
+        }
+        //add
+        await configService.saveAuthenticationPolicyAddRule(rule);
+
+        const policy = await configService.getAuthenticationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+
+
+    });
+    it('getAuthenticationPolicy', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupId: ['somegroupid'],
+            profile: {},
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule);
+
+
+        const policy = await configService.getAuthenticationPolicy();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('getAuthenticationPolicyUnsafe', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupId: ['somegroupid'],
+            profile: {},
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule);
+
+
+        const policy = await configService.getAuthenticationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('deleteAuthenticationPolicyRule', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupId: ['somegroupid'],
+            profile: {},
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule);
+
+
+        await configService.deleteAuthenticationPolicyRule(rule.id);
+        expect(configService.config.authenticationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
+        expect(configService.config.authenticationPolicy.rules.length).to.equal(0);
+
+    });
+
+
+
+
+    //authorizationPolicy
+
+    it('saveAuthorizationPolicyAddRule', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupId: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true, isPAM: true },
+
+        }
+        //add
+        await configService.saveAuthorizationPolicyRule(rule);
+
+        const policy = await configService.getAuthorizationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+
+
+    });
+    it('getAuthorizationPolicy', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupId: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true, isPAM: true },
+
+        }
+        //add
+        await configService.saveAuthorizationPolicyRule(rule);
+
+        const policy = await configService.getAuthorizationPolicy();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('getAuthorizationPolicyUnsafe', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupId: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true, isPAM: true },
+
+        }
+        //add
+        await configService.saveAuthorizationPolicyRule(rule);
+
+
+        const policy = await configService.getAuthorizationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('deleteAuthorizationPolicyRule', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupId: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true, isPAM: true },
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+
+
+        await configService.deleteAuthorizationPolicyRule(rule.id);
+        expect(configService.config.authorizationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
+        expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
+
+    });
+
 
 
 

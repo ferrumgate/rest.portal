@@ -89,11 +89,7 @@ function copyAuthLocal(auth: AuthLocal): AuthLocal {
         isEnabled: auth.isEnabled,
         updateDate: auth.updateDate,
         insertDate: auth.insertDate,
-        securityProfile: {
-            ips: auth.securityProfile?.ips,
-            clocks: auth.securityProfile?.clocks,
-            locations: auth.securityProfile?.locations
-        }
+
 
     }
 }
@@ -146,11 +142,7 @@ function copyAuthOAuth(auth: BaseOAuth): BaseOAuth {
             isEnabled: auth.isEnabled,
             insertDate: auth.insertDate,
             updateDate: auth.updateDate,
-            securityProfile: {
-                ips: auth.securityProfile?.ips,
-                clocks: auth.securityProfile?.clocks,
-                locations: auth.securityProfile?.locations
-            }
+
         }
     throw new Error('not implemented copyAuthOAuth');
 }
@@ -279,11 +271,7 @@ function copyAuthLdap(auth: BaseLdap): BaseLdap {
             isEnabled: auth.isEnabled,
             insertDate: auth.insertDate,
             updateDate: auth.updateDate,
-            securityProfile: {
-                ips: auth.securityProfile?.ips,
-                clocks: auth.securityProfile?.clocks,
-                locations: auth.securityProfile?.locations
-            }
+
         }
     throw new Error('not implemented copyAuthLdap');
 }
@@ -415,11 +403,7 @@ function copyAuthSaml(auth: BaseSaml): BaseSaml {
             type: auth.type,
             tags: auth.tags,
             isEnabled: auth.isEnabled,
-            securityProfile: {
-                ips: auth.securityProfile?.ips,
-                clocks: auth.securityProfile?.clocks,
-                locations: auth.securityProfile?.locations
-            },
+
             cert: auth.cert,
             issuer: auth.issuer,
             loginUrl: auth.loginUrl,
