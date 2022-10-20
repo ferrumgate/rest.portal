@@ -7,7 +7,8 @@ export interface AuthorizationRule {
     userOrgroupIds: string[];
     serviceId: string;
     profile: AuthorizationProfile;
-    action: 'allow' | 'drop';
+    isEnabled: boolean;
+
 }
 
 export function cloneAuthorizationRule(val: AuthorizationRule): AuthorizationRule {
@@ -17,7 +18,7 @@ export function cloneAuthorizationRule(val: AuthorizationRule): AuthorizationRul
         networkId: val.networkId,
         userOrgroupIds: val.userOrgroupIds ? Array.from(val.userOrgroupIds) : [],
         serviceId: val.serviceId,
-        action: val.action,
+        isEnabled: val.isEnabled,
         profile: cloneAuthorizationProfile(val.profile)
     }
 }

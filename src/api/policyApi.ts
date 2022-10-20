@@ -163,7 +163,7 @@ routerAuthenticationPolicyAuthenticated.post('/rule',
         await inputService.checkNotEmpty(input.action);
         await inputService.checkNotEmpty(input.networkId);
         await inputService.checkIfExists(input.profile);
-        input.id = Util.randomNumberString();
+        input.id = Util.randomNumberString(16);
         const safe = cloneAuthenticationRule(input);
         //copy original one
         await configService.saveAuthenticationPolicyRule(safe);
@@ -241,33 +241,6 @@ routerAuthorizationPolicyAuthenticated.delete('/rule/:id',
 
     }))
 
-routerAuthorizationPolicyAuthenticated.put('/rule/pos/:id',
-    asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
-    asyncHandler(async (req: any, res: any, next: any) => {
-        const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
-        const input = req.body as { previous: string, current: string };
-        logger.info(`changing authorization policy rule pos with id:${id} to ${input}`);
-        const appService = req.appService as AppService;
-        const configService = appService.configService;
-        const inputService = appService.inputService;
-
-        await inputService.checkIsNumber(input.previous);
-        await inputService.checkIsNumber(input.current);
-        const rule = await configService.getAuthorizationPolicyRule(id);
-        if (!rule) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no rule');
-
-
-        const previous = Number(input.previous);
-        const current = Number(input.current);
-        await configService.updateAuthorizationRulePos(rule.id, previous, current);
-        await configService.updateAuthorizationPolicyUpdateTime();
-        // TODO audit here
-        return res.status(200).json(rule);
-
-    }))
 
 
 
@@ -287,7 +260,7 @@ routerAuthorizationPolicyAuthenticated.put('/rule',
         if (!rule) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no rule');
 
         await inputService.checkNotEmpty(input.name);
-        await inputService.checkNotEmpty(input.action);
+        await inputService.checkNotEmpty(input.serviceId);
         await inputService.checkNotEmpty(input.networkId);
         await inputService.checkIfExists(input.profile);
 
@@ -315,10 +288,10 @@ routerAuthorizationPolicyAuthenticated.post('/rule',
 
 
         await inputService.checkNotEmpty(input.name);
-        await inputService.checkNotEmpty(input.action);
+        await inputService.checkNotEmpty(input.serviceId);
         await inputService.checkNotEmpty(input.networkId);
         await inputService.checkIfExists(input.profile);
-        input.id = Util.randomNumberString();
+        input.id = Util.randomNumberString(16);
         const safe = cloneAuthorizationRule(input);
         //copy original one
         await configService.saveAuthorizationPolicyRule(safe);

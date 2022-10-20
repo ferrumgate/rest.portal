@@ -191,7 +191,7 @@ routerConfigAuthAuthenticated.post('/oauth/providers',
         if (Number(indexA) >= 0) {
             throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
         }
-        provider.id = Util.randomNumberString();
+        provider.id = Util.randomNumberString(16);
         const safe = copyAuthOAuth(provider);
         safe.insertDate = new Date().toISOString();
         safe.updateDate = new Date().toISOString();
@@ -327,7 +327,7 @@ routerConfigAuthAuthenticated.post('/ldap/providers',
         if (Number(indexA) >= 0) {
             throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
         }
-        provider.id = Util.randomNumberString();
+        provider.id = Util.randomNumberString(16);
         const safe = copyAuthLdap(provider);
         safe.insertDate = new Date().toISOString();
         safe.updateDate = new Date().toISOString();
@@ -467,7 +467,7 @@ routerConfigAuthAuthenticated.post('/saml/providers',
         if (Number(indexA) >= 0) {
             throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
         }
-        provider.id = Util.randomNumberString();
+        provider.id = Util.randomNumberString(16);
         const safe = copyAuthSaml(provider);
         safe.insertDate = new Date().toISOString();
         safe.updateDate = new Date().toISOString();

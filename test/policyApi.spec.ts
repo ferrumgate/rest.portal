@@ -346,13 +346,14 @@ describe('policy', async () => {
         let rule1: AuthorizationRule = {
             id: '1',
             name: "zero trust1",
-            action: 'allow',
+
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {
                 is2FA: false, isPAM: false
             },
-            serviceId: 's1'
+            serviceId: 's1',
+            isEnabled: true
 
 
         }
@@ -360,26 +361,27 @@ describe('policy', async () => {
         let rule2: AuthorizationRule = {
             id: '2',
             name: "zero trust2",
-            action: 'allow',
+
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {
                 is2FA: false, isPAM: false
             },
-            serviceId: 's1'
+            serviceId: 's1',
+            isEnabled: true
 
         }
 
         let rule3: AuthorizationRule = {
             id: '3',
             name: "zero trust3",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {
                 is2FA: false, isPAM: false
             },
-            serviceId: 's1'
+            serviceId: 's1',
+            isEnabled: true
 
         }
 
@@ -614,39 +616,7 @@ describe('policy', async () => {
 
 
 
-    it('PUT /policy/authz/rule/pos/:id returns 200', async () => {
-        //prepare data
-        const { rule1, rule2, rule3, user1 } = createSampleDataAuthorization();
-        await appService.configService.saveUser(user1);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
 
-
-        await appService.configService.saveAuthorizationPolicyRule(rule1);
-        await appService.configService.saveAuthorizationPolicyRule(rule2);
-        await appService.configService.saveAuthorizationPolicyRule(rule3);
-
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .put(`/policy/authz/rule/pos/${rule1.id}`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .send({ previous: 0, current: 2 })
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-
-
-        //
-        const policy = await appService.configService.getAuthorizationPolicy();
-        expect(policy.rules[0]).to.deep.equal(rule2);
-        expect(policy.rules[1]).to.deep.equal(rule3);
-        expect(policy.rules[2]).to.deep.equal(rule1);
-
-    }).timeout(50000);
 
 })
 

@@ -1151,11 +1151,11 @@ describe('configService', async () => {
         let rule: AuthorizationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true, isPAM: true },
+            isEnabled: true
 
         }
         //add
@@ -1175,11 +1175,11 @@ describe('configService', async () => {
         let rule: AuthorizationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true, isPAM: true },
+            isEnabled: true
 
         }
         //add
@@ -1199,11 +1199,11 @@ describe('configService', async () => {
         let rule: AuthorizationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true, isPAM: true },
+            isEnabled: true
 
         }
         //add
@@ -1224,11 +1224,12 @@ describe('configService', async () => {
         let rule: AuthorizationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
+
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true, isPAM: true },
+            isEnabled: true
 
         }
         //add
