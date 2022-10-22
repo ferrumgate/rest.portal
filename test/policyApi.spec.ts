@@ -26,6 +26,7 @@ function createSampleDataAuthenticaton() {
         networkId: 'networkId',
         userOrgroupIds: ['somegroupid'],
         profile: {},
+        isEnabled: true
 
 
     }
@@ -37,6 +38,7 @@ function createSampleDataAuthenticaton() {
         networkId: 'networkId',
         userOrgroupIds: ['somegroupid'],
         profile: {},
+        isEnabled: true
 
     }
 
@@ -47,6 +49,7 @@ function createSampleDataAuthenticaton() {
         networkId: 'networkId',
         userOrgroupIds: ['somegroupid'],
         profile: {},
+        isEnabled: true
 
     }
 

@@ -8,7 +8,8 @@ export interface AuthenticationRule {
     networkId: string;
     userOrgroupIds: string[];
     profile: AuthenticationProfile;
-    action: 'allow' | 'drop';
+    isEnabled: boolean;
+    action: 'allow' | 'block';
 
 }
 export function cloneAuthenticationRule(val: AuthenticationRule): AuthenticationRule {
@@ -18,7 +19,8 @@ export function cloneAuthenticationRule(val: AuthenticationRule): Authentication
         name: val.name,
         networkId: val.networkId,
         userOrgroupIds: val.userOrgroupIds ? Array.from(val.userOrgroupIds) : [],
-        profile: cloneAuthenticatonProfile(val.profile)
+        profile: cloneAuthenticatonProfile(val.profile),
+        isEnabled: val.isEnabled
     }
 }
 

@@ -983,6 +983,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
+            isEnabled: true
 
         }
         //add
@@ -1005,6 +1006,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
+            isEnabled: true
 
         }
         configService.config.authenticationPolicy.rules.push(rule);
@@ -1028,6 +1030,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
+            isEnabled: true
 
         }
         configService.config.authenticationPolicy.rules.push(rule);
@@ -1051,6 +1054,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
+            isEnabled: true
 
         }
         configService.config.authenticationPolicy.rules.push(rule);
@@ -1075,6 +1079,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
+            isEnabled: true
 
         }
         configService.config.authenticationPolicy.rules.push(rule1);
@@ -1086,6 +1091,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
+            isEnabled: true
 
         }
         configService.config.authenticationPolicy.rules.push(rule2);
@@ -1098,6 +1104,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
+            isEnabled: true
 
         }
         configService.config.authenticationPolicy.rules.push(rule3);
