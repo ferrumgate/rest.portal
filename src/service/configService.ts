@@ -252,25 +252,77 @@ export class ConfigService {
                 }
             ];
             gateways.forEach(x => this.config.gateways.push(x));
-
-            this.config.services.push({
+            const service1 = {
                 id: Util.randomNumberString(16),
                 name: 'mysql-dev', host: '10.0.0.12', protocol: 'raw', tcp: 3306,
                 assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
                 insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
-            })
-            this.config.services.push({
+            }
+            this.config.services.push(service1);
+
+            const service2 = {
                 id: Util.randomNumberString(16),
                 name: 'ssh-dev', host: '10.0.0.12', protocol: 'raw', tcp: 22,
                 assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
                 insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
-            })
+            }
 
-            this.config.services.push({
+            this.config.services.push(service2);
+
+            const service3 = {
                 id: Util.randomNumberString(16),
                 name: 'mysql-prod', host: '10.0.0.12', protocol: 'raw', tcp: 22,
                 assignedIp: '10.3.4.4', isEnabled: true, networkId: defaultNetwork.id, labels: [],
                 insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
+            }
+            this.config.services.push(service3);
+
+
+            //authiraziton policy
+            this.config.authorizationPolicy.rules.push({
+                id: Util.randomNumberString(),
+                name: 'tst1',
+                isEnabled: true,
+                networkId: net.id,
+                serviceId: service1.id,
+                userOrgroupIds: [standartUser.id],
+                profile: { is2FA: false, isPAM: false }
+            })
+
+            //
+            this.config.authenticationPolicy.rules.push({
+
+                id: Util.randomNumberString(),
+                name: 'abc rule',
+                networkId: net.id,
+                userOrgroupIds: [standartUser.id],
+                action: 'allow',
+                profile: { is2FA: true },
+                isEnabled: true,
+
+            })
+
+            this.config.authenticationPolicy.rules.push({
+
+                id: Util.randomNumberString(),
+                name: 'abc2',
+                networkId: net.id,
+                userOrgroupIds: [adminUser.id],
+                action: 'deny',
+                profile: { is2FA: true },
+                isEnabled: true
+
+            })
+            this.config.authenticationPolicy.rules.push({
+
+                id: Util.randomNumberString(),
+                name: 'def2',
+                networkId: net.id,
+                userOrgroupIds: [adminUser.id],
+                action: 'deny',
+                profile: { is2FA: true },
+                isEnabled: true
+
             })
 
         }
@@ -495,7 +547,7 @@ export class ConfigService {
                if (finded.source != 'local') {
                   this.deleteUserSensitiveData(user);
               }
-
+    
             }*/
         await this.saveConfigToFile();
     }

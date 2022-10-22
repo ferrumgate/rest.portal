@@ -85,7 +85,7 @@ routerAuthenticationPolicyAuthenticated.delete('/rule/:id',
         return res.status(200).json({});
 
     }))
-
+let counter = 0;
 routerAuthenticationPolicyAuthenticated.put('/rule/pos/:id',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
