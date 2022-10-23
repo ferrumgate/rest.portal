@@ -11,7 +11,7 @@ import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
 import { authorize, authorizeAsAdmin } from "./commonApi";
 import { cloneGroup, Group } from "../model/group";
-import { cloneSecurityProfile, SecurityProfile } from '../model/securityProfile';
+
 
 
 

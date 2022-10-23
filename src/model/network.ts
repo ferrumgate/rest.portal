@@ -1,4 +1,4 @@
-import { cloneSecurityProfile, SecurityProfile } from "./securityProfile";
+
 
 /**
  * a machine that can connect to a internal network

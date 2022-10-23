@@ -19,6 +19,7 @@ import { routerConfigAuthAuthenticated } from "./api/configAuthApi";
 import { passportAuthenticate, passportInit } from "./api/auth/passportInit";
 import { routerGroupAuthenticated } from "./api/groupApi";
 import { routerServiceAuthenticated } from "./api/serviceApi";
+import { routerAuthenticationPolicyAuthenticated, routerAuthorizationPolicyAuthenticated } from "./api/policyApi";
 
 
 
@@ -296,7 +297,24 @@ app.use('(\/api)?/service',
     routerServiceAuthenticated);
 
 
+app.use('(\/api)?/policy/authn',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'policyAuthn', 1000),
+    asyncHandlerWithArgs(rateLimit, 'policyAuthnHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'policyAuthnDaily', 5000),
+    asyncHandlerWithArgs(checkCaptcha, 'policyAuthnCaptcha', 50),
+    routerAuthenticationPolicyAuthenticated);
 
+
+app.use('(\/api)?/policy/authz',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'policyAuthz', 1000),
+    asyncHandlerWithArgs(rateLimit, 'policyAuthzHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'policyAuthzDaily', 5000),
+    asyncHandlerWithArgs(checkCaptcha, 'policyAuthzCaptcha', 50),
+    routerAuthorizationPolicyAuthenticated);
 
 
 

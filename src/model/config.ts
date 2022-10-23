@@ -1,3 +1,5 @@
+import { AuthenticationPolicy } from "./authenticationPolicy";
+import { AuthorizationPolicy } from "./authorizationPolicy";
 import { AuthSettings } from "./authSettings";
 import { Captcha } from "./captcha";
 import { EmailSettings } from "./emailSettings";
@@ -43,4 +45,8 @@ export interface Config {
     rbac: RBAC;
     networks: Network[];
     gateways: Gateway[];
+    authenticationPolicy: AuthenticationPolicy;
+    authorizationPolicy: AuthorizationPolicy;
+
+
 }

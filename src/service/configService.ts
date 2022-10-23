@@ -18,6 +18,9 @@ import { isAbsolute } from "path";
 import { Group } from "../model/group";
 import { util } from "chai";
 import { Service } from "../model/service";
+import { AuthenticationRule } from "../model/authenticationPolicy";
+import { AuthorizationRule } from "../model/authorizationPolicy";
+import { urlToHttpOptions } from "url";
 
 
 
@@ -73,7 +76,7 @@ export class ConfigService {
             auth: {
                 common: {},
                 local: {
-                    id: Util.randomNumberString(),
+                    id: Util.randomNumberString(16),
                     type: 'local',
                     baseType: 'local',
                     name: 'Local',
@@ -93,7 +96,14 @@ export class ConfigService {
             networks: [
                 defaultNetwork
             ],
-            gateways: []
+            gateways: [],
+
+            authenticationPolicy: {
+                id: Util.randomNumberString(16), rules: [
+
+                ], insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
+            },
+            authorizationPolicy: { id: Util.randomNumberString(16), rules: [], insertDate: new Date().toISOString(), updateDate: new Date().toISOString() }
 
 
         }
@@ -104,7 +114,7 @@ export class ConfigService {
                     {
                         baseType: 'oauth',
                         type: 'google',
-                        id: Util.randomNumberString(),
+                        id: Util.randomNumberString(16),
                         name: 'Google/OAuth2',
                         tags: [],
                         clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
@@ -116,7 +126,7 @@ export class ConfigService {
                     {
                         baseType: 'oauth',
                         type: 'linkedin',
-                        id: Util.randomNumberString(),
+                        id: Util.randomNumberString(16),
                         name: 'Linkedin/OAuth2',
                         tags: [],
                         clientId: '866dr29tuc5uy5',
@@ -132,7 +142,7 @@ export class ConfigService {
                     {
                         baseType: 'ldap',
                         type: 'activedirectory',
-                        id: Util.randomNumberString(),
+                        id: Util.randomNumberString(16),
                         name: 'Active Directory/Ldap',
                         tags: [],
                         host: 'ldap://192.168.88.254:389',
@@ -156,7 +166,7 @@ export class ConfigService {
                     {
                         baseType: 'saml',
                         type: 'auth0',
-                        id: Util.randomNumberString(),
+                        id: Util.randomNumberString(16),
                         name: 'Auth0/Saml',
                         tags: [],
                         issuer: 'urn:dev-24wm8m7g.us.auth0.com',
@@ -197,17 +207,28 @@ export class ConfigService {
             standartUser.isVerified = true;
             standartUser.roleIds = ['User'];
             this.config.users.push(standartUser);
-
+            this.config.groups.push({
+                id: Util.randomNumberString(16),
+                name: 'north',
+                isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
+            })
+            this.config.groups.push({
+                id: Util.randomNumberString(16),
+                name: 'south',
+                isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
+            })
             // some networks
             let net: Network = {
 
-                id: '312', name: 'ops', labels: ['deneme2'],
+                id: Util.randomNumberString(16), name: 'ops', labels: ['deneme2'],
                 serviceNetwork: '1.1.1.1/16',
                 clientNetwork: '1.2.3.4/24',
                 insertDate: new Date().toISOString(),
                 updateDate: new Date().toISOString()
             }
             this.config.networks.push(net);
+
+
             let gateways: Gateway[] = [
                 {
                     id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: true, insertDate: new Date().toISOString(),
@@ -231,6 +252,78 @@ export class ConfigService {
                 }
             ];
             gateways.forEach(x => this.config.gateways.push(x));
+            const service1 = {
+                id: Util.randomNumberString(16),
+                name: 'mysql-dev', host: '10.0.0.12', protocol: 'raw', tcp: 3306,
+                assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
+                insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
+            }
+            this.config.services.push(service1);
+
+            const service2 = {
+                id: Util.randomNumberString(16),
+                name: 'ssh-dev', host: '10.0.0.12', protocol: 'raw', tcp: 22,
+                assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
+                insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
+            }
+
+            this.config.services.push(service2);
+
+            const service3 = {
+                id: Util.randomNumberString(16),
+                name: 'mysql-prod', host: '10.0.0.12', protocol: 'raw', tcp: 22,
+                assignedIp: '10.3.4.4', isEnabled: true, networkId: defaultNetwork.id, labels: [],
+                insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
+            }
+            this.config.services.push(service3);
+
+
+            //authiraziton policy
+            this.config.authorizationPolicy.rules.push({
+                id: Util.randomNumberString(),
+                name: 'tst1',
+                isEnabled: true,
+                networkId: net.id,
+                serviceId: service1.id,
+                userOrgroupIds: [standartUser.id],
+                profile: { is2FA: false, isPAM: false }
+            })
+
+            //
+            this.config.authenticationPolicy.rules.push({
+
+                id: Util.randomNumberString(),
+                name: 'abc rule',
+                networkId: net.id,
+                userOrgroupIds: [standartUser.id],
+                action: 'allow',
+                profile: { is2FA: true },
+                isEnabled: true,
+
+            })
+
+            this.config.authenticationPolicy.rules.push({
+
+                id: Util.randomNumberString(),
+                name: 'abc2',
+                networkId: net.id,
+                userOrgroupIds: [adminUser.id],
+                action: 'deny',
+                profile: { is2FA: true },
+                isEnabled: true
+
+            })
+            this.config.authenticationPolicy.rules.push({
+
+                id: Util.randomNumberString(),
+                name: 'def2',
+                networkId: net.id,
+                userOrgroupIds: [adminUser.id],
+                action: 'deny',
+                profile: { is2FA: true },
+                isEnabled: true
+
+            })
 
         }
         this.loadConfigFromFile();
@@ -454,7 +547,7 @@ export class ConfigService {
                if (finded.source != 'local') {
                   this.deleteUserSensitiveData(user);
               }
-
+    
             }*/
         await this.saveConfigToFile();
     }
@@ -923,6 +1016,92 @@ export class ConfigService {
         }
         await this.saveConfigToFile();
     }
+
+
+    //authenticaton  policy
+
+    async saveAuthenticationPolicyRule(arule: AuthenticationRule) {
+        const cloned = Util.clone(arule);
+        const ruleIndex = this.config.authenticationPolicy.rules.findIndex(x => x.id == arule.id);
+        if (ruleIndex >= 0) {
+            this.config.authenticationPolicy.rules[ruleIndex] = cloned;
+        } else {
+            this.config.authenticationPolicy.rules.push(cloned);
+        }
+        await this.saveConfigToFile();
+    }
+    async getAuthenticationPolicy() {
+        return Util.clone(this.config.authenticationPolicy);
+    }
+    async getAuthenticationPolicyUnsafe() {
+        return this.config.authenticationPolicy;
+    }
+    async getAuthenticationPolicyRule(id: string) {
+        const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
+        return Util.clone(rule);
+    }
+    async deleteAuthenticationPolicyRule(id: string) {
+        const ruleIndex = this.config.authenticationPolicy.rules.findIndex(x => x.id == id);
+        if (ruleIndex >= 0) {
+            this.config.authenticationPolicy.rules.splice(ruleIndex, 1);
+            await this.saveConfigToFile();
+        }
+    }
+    async updateAuthenticationPolicyUpdateTime() {
+        this.config.authenticationPolicy.updateDate = new Date().toISOString();
+        await this.saveConfigToFile();
+    }
+    async updateAuthenticationRulePos(id: string, previous: number, index: number) {
+        const currentRule = this.config.authenticationPolicy.rules[previous];
+        if (currentRule.id != id)
+            throw new Error('no rule found at this position');
+        if (previous < 0)
+            throw new Error('array index can be negative');
+        this.config.authenticationPolicy.rules.splice(previous, 1);
+
+        this.config.authenticationPolicy.rules.splice(index, 0, currentRule);
+
+    }
+    //authorization policy
+
+    async saveAuthorizationPolicyRule(arule: AuthorizationRule) {
+        const cloned = Util.clone(arule);
+        const ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == arule.id);
+        if (ruleIndex >= 0) {
+            this.config.authorizationPolicy.rules[ruleIndex] = cloned;
+        } else {
+            this.config.authorizationPolicy.rules.push(cloned);
+        }
+        await this.saveConfigToFile();
+    }
+    async getAuthorizationPolicy() {
+        return Util.clone(this.config.authorizationPolicy);
+    }
+    async getAuthorizationPolicyUnsafe() {
+        return this.config.authorizationPolicy;
+    }
+    async getAuthorizationPolicyRule(id: string) {
+        const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
+        return Util.clone(rule);
+    }
+    async deleteAuthorizationPolicyRule(id: string) {
+        const ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == id);
+        if (ruleIndex >= 0) {
+            this.config.authorizationPolicy.rules.splice(ruleIndex, 1);
+            await this.saveConfigToFile();
+        }
+    }
+    async updateAuthorizationPolicyUpdateTime() {
+        this.config.authorizationPolicy.updateDate = new Date().toISOString();
+        await this.saveConfigToFile();
+    }
+
+
+
+
+
+
+
 
 
 

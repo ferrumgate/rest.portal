@@ -1,4 +1,4 @@
-import { SecurityProfile } from "./securityProfile";
+
 
 export interface BaseAuth {
     id: string;
@@ -6,7 +6,7 @@ export interface BaseAuth {
     baseType: 'local' | 'oauth' | 'saml' | 'ldap';
     type: 'local' | 'google' | 'linkedin' | 'activedirectory' | 'auth0';
     tags?: string[];
-    securityProfile?: SecurityProfile;
+
     isEnabled: boolean;
     insertDate: string;
     updateDate: string;

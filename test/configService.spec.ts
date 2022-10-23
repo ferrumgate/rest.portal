@@ -10,6 +10,9 @@ import { Gateway, Network } from '../src/model/network';
 import { AuthOAuth, AuthCommon, AuthLdap, AuthSaml, AuthLocal, BaseOAuth, BaseLocal } from '../src/model/authSettings';
 import { Group } from '../src/model/group';
 import { Service } from '../src/model/service';
+import { AuthenticationRule } from '../src/model/authenticationPolicy';
+import { config } from 'process';
+import { AuthorizationRule } from '../src/model/authorizationPolicy';
 
 
 chai.use(chaiHttp);
@@ -965,6 +968,288 @@ describe('configService', async () => {
 
 
     });
+
+    //authenticationPolicy
+
+    it('saveAthenticationPolicyAddRule', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true
+
+        }
+        //add
+        await configService.saveAuthenticationPolicyRule(rule);
+
+        const policy = await configService.getAuthenticationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+
+
+    });
+    it('getAuthenticationPolicy', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule);
+
+
+        const policy = await configService.getAuthenticationPolicy();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('getAuthenticationPolicyUnsafe', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule);
+
+
+        const policy = await configService.getAuthenticationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('deleteAuthenticationPolicyRule', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule);
+
+
+        await configService.deleteAuthenticationPolicyRule(rule.id);
+        expect(configService.config.authenticationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
+        expect(configService.config.authenticationPolicy.rules.length).to.equal(0);
+
+    });
+
+
+    it('updateAuthenticationRulePos', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        let rule1: AuthenticationRule = {
+            id: '1',
+            name: "zero trust1",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule1);
+
+        let rule2: AuthenticationRule = {
+            id: '2',
+            name: "zero trust2",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule2);
+
+
+        let rule3: AuthenticationRule = {
+            id: '3',
+            name: "zero trust3",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule3);
+        const policy = configService.config.authenticationPolicy;
+
+        await configService.updateAuthenticationRulePos(rule1.id, 0, 0);
+        expect(policy.rules[0].id).to.be.equal('1');
+        expect(policy.rules[1].id).to.be.equal('2');
+        expect(policy.rules[2].id).to.be.equal('3');
+
+
+        await configService.updateAuthenticationRulePos(rule1.id, 0, 5);
+        expect(policy.rules[0].id).to.be.equal('2');
+        expect(policy.rules[1].id).to.be.equal('3');
+        expect(policy.rules[2].id).to.be.equal('1');
+
+        await configService.updateAuthenticationRulePos(rule1.id, 2, 1);
+        expect(policy.rules[0].id).to.be.equal('2');
+        expect(policy.rules[1].id).to.be.equal('1');
+        expect(policy.rules[2].id).to.be.equal('3');
+
+        await configService.updateAuthenticationRulePos(rule1.id, 1, 0);
+        expect(policy.rules[0].id).to.be.equal('1');
+        expect(policy.rules[1].id).to.be.equal('2');
+        expect(policy.rules[2].id).to.be.equal('3');
+
+        let errrored = false;
+        try {
+            await configService.updateAuthenticationRulePos(rule1.id, 1, 5);
+        } catch (err) {
+            errrored = true;
+        }
+        expect(errrored).to.be.true;
+
+
+
+
+
+    });
+
+
+
+
+    //authorizationPolicy
+
+    it('saveAuthorizationPolicyAddRule', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true, isPAM: true },
+            isEnabled: true
+
+        }
+        //add
+        await configService.saveAuthorizationPolicyRule(rule);
+
+        const policy = await configService.getAuthorizationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+
+
+    });
+    it('getAuthorizationPolicy', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true, isPAM: true },
+            isEnabled: true
+
+        }
+        //add
+        await configService.saveAuthorizationPolicyRule(rule);
+
+        const policy = await configService.getAuthorizationPolicy();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('getAuthorizationPolicyUnsafe', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true, isPAM: true },
+            isEnabled: true
+
+        }
+        //add
+        await configService.saveAuthorizationPolicyRule(rule);
+
+
+        const policy = await configService.getAuthorizationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('deleteAuthorizationPolicyRule', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true, isPAM: true },
+            isEnabled: true
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+
+
+        await configService.deleteAuthorizationPolicyRule(rule.id);
+        expect(configService.config.authorizationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
+        expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
+
+    });
+
 
 
 
