@@ -3,6 +3,7 @@ import { Util } from "../util";
 import { CaptchaService } from "./captchaService";
 import { ConfigService } from "./configService";
 import { EmailService } from "./emailService";
+import { EventService } from "./eventService";
 import { InputService } from "./inputService";
 import { LicenceService } from "./licenceService";
 import { OAuth2Service } from "./oauth2Service";
@@ -27,6 +28,7 @@ export class AppService {
     public twoFAService: TwoFAService;
     public oauth2Service: OAuth2Service;
     public tunnelService: TunnelService;
+    public eventService: EventService;
 
     /**
      *
@@ -37,7 +39,7 @@ export class AppService {
         captcha?: CaptchaService, licence?: LicenceService,
         template?: TemplateService, email?: EmailService,
         twoFA?: TwoFAService, oauth2?: OAuth2Service,
-        tunnel?: TunnelService) {
+        tunnel?: TunnelService, event?: EventService) {
         //create self signed certificates for JWT
 
         this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? `/tmp/${Util.randomNumberString()}_config.yaml` : '/etc/ferrumgate/config.yaml');
@@ -51,6 +53,7 @@ export class AppService {
         this.twoFAService = twoFA || new TwoFAService();
         this.oauth2Service = oauth2 || new OAuth2Service(this.configService);
         this.tunnelService = tunnel || new TunnelService(this.configService);
+        this.eventService = event || new EventService(this.configService, this.redisService);
 
     }
 

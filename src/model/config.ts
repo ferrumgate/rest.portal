@@ -12,7 +12,20 @@ import { SSHCertificate } from "./sshCertificate";
 import { SSLCertificate } from "./sslCertificate";
 import { User } from "./user";
 
+/**
+ * @summary when config changed, which field changed, what happened
+ */
+export interface ConfigEvent {
+    type: 'saved' | 'updated' | 'deleted';
+    path: string;
+    data?: any;
+}
 
+export interface ConfigAuditEvent {
+    type: 'saved' | 'updated' | 'deleted';
+    path: string;
+    data?: any;
+}
 
 export interface Config {
     /**
