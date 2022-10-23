@@ -13,6 +13,7 @@ import { Service } from '../src/model/service';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { config } from 'process';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
+import { ConfigEvent } from '../src/model/config';
 
 
 chai.use(chaiHttp);
@@ -322,6 +323,32 @@ describe('configService', async () => {
         await configService.saveUser(fakeUser);
         const userDb = await configService.getUserByUsername('hamza.kilic@ferrumgate.com');
         expect(userDb?.id).to.equal('someid');
+
+    });
+
+    it('deleteUser', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        let aUser: User = {
+            id: 'someid',
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        let fakeUser = {
+            ...aUser
+        }
+        fakeUser.id = 'test';
+        await configService.saveUser(fakeUser);
+        await configService.deleteUser(fakeUser.id);
+        const userDb = await configService.getUser(fakeUser.id)
+        expect(userDb).not.exist;
 
     });
 
@@ -1249,6 +1276,506 @@ describe('configService', async () => {
         expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
 
     });
+
+
+    it('triggerUserDeleted', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        let eventDatas: ConfigEvent[] = [];
+        configService.events.on('changed', (data: ConfigEvent) => {
+            eventDatas.push(data)
+        })
+
+        let aUser: User = {
+            id: Util.randomNumberString(),
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+
+            networkId: 'networkId',
+            userOrgroupIds: [aUser.id],
+            serviceId: 'some service',
+            profile: { is2FA: true, isPAM: true },
+            isEnabled: true
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+
+
+        let rule2: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: [aUser.id],
+            profile: {},
+            isEnabled: true
+
+        }
+
+        //add
+        configService.config.authenticationPolicy.rules.push(rule2);
+
+        await configService.deleteUser(aUser.id);
+        expect(configService.config.authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
+        expect(configService.config.authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
+
+        expect(eventDatas.length).to.equal(5);
+
+        expect(eventDatas[0].type).to.equal('updated')
+        expect(eventDatas[0].path).to.equal('/authenticationPolicy/rules');
+        expect(eventDatas[0].data.id).exist;
+
+        expect(eventDatas[1].type).to.equal('updated')
+        expect(eventDatas[1].path).to.equal('/authenticationPolicy');
+        expect(eventDatas[1].data).not.exist;
+
+        expect(eventDatas[2].type).to.equal('updated')
+        expect(eventDatas[2].path).to.equal('/authorizationPolicy/rules');
+        expect(eventDatas[2].data.id).exist;
+
+        expect(eventDatas[3].type).to.equal('updated')
+        expect(eventDatas[3].path).to.equal('/authorizationPolicy');
+        expect(eventDatas[3].data).not.exist;
+
+        expect(eventDatas[4].type).to.equal('deleted');
+        expect(eventDatas[4].path).to.equal('/users');
+        expect(eventDatas[4].data.id).exist;
+
+
+
+
+    });
+
+
+    it('triggerUserSavedOrUpdated', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        let eventDatas: ConfigEvent[] = [];
+        configService.events.on('changed', (data: ConfigEvent) => {
+            eventDatas.push(data)
+        })
+
+        let aUser: User = {
+            id: Util.randomNumberString(),
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        await configService.saveUser(aUser);
+
+
+        aUser.name = 'changed';
+
+        await configService.saveUser(aUser);
+
+
+        expect(eventDatas.length).to.equal(2);
+        expect(eventDatas[0].type).to.equal('saved')
+        expect(eventDatas[0].path).to.equal('/users')
+        expect(eventDatas[0].data.id).to.equal(aUser.id);
+
+
+        expect(eventDatas[1].type).to.equal('updated')
+        expect(eventDatas[1].path).to.equal('/users')
+        expect(eventDatas[1].data.id).to.equal(aUser.id);
+
+    });
+
+
+    it('triggerNetworkDeleted', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+
+
+
+        let eventDatas: ConfigEvent[] = [];
+        configService.events.on('changed', (data: ConfigEvent) => {
+            eventDatas.push(data)
+        })
+
+        let network: Network = {
+            id: Util.randomNumberString(),
+            name: 'default',
+            labels: [],
+            clientNetwork: '10.10.0.0/16',
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        let gateway: Gateway = {
+            id: Util.randomNumberString(),
+            name: 'myserver',
+            labels: [],
+            isEnabled: true,
+            networkId: network.id,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: network.id,
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+
+        await configService.config.services.push(service1);
+        await configService.config.gateways.push(gateway);
+        await configService.config.networks.push(network);
+
+        let aUser: User = {
+            id: Util.randomNumberString(),
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+
+
+
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+
+            networkId: network.id,
+            userOrgroupIds: [aUser.id],
+            serviceId: service1.id,
+            profile: { is2FA: true, isPAM: true },
+            isEnabled: true
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+
+
+        let rule2: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: network.id,
+            userOrgroupIds: [aUser.id],
+            profile: {},
+            isEnabled: true
+
+        }
+
+        //add
+        configService.config.authenticationPolicy.rules.push(rule2);
+
+        await configService.deleteNetwork(network.id);
+
+        expect(configService.config.authorizationPolicy.rules.find(x => x.networkId == network.id)).to.not.exist;
+        expect(configService.config.authenticationPolicy.rules.find(x => x.networkId == network.id)).to.not.exist;
+        expect(configService.config.services.find(x => x.networkId == network.id)).not.exist;
+        expect(configService.config.gateways.find(x => x.networkId == network.id)).not.exist;
+        expect(configService.config.gateways[0].networkId).to.be.equal('');
+
+        expect(eventDatas.length).to.equal(7);
+        expect(eventDatas[0].type).to.equal('updated')
+        expect(eventDatas[0].path).to.equal('/gateways')
+        expect(eventDatas[0].data.id).exist;
+
+        expect(eventDatas[1].type).to.equal('deleted')
+        expect(eventDatas[1].path).to.equal('/services');
+        expect(eventDatas[1].data.id).exist;
+
+        expect(eventDatas[2].type).to.equal('deleted')
+        expect(eventDatas[2].path).to.equal('/authorizationPolicy/rules');
+        expect(eventDatas[2].data.id).exist;
+
+        expect(eventDatas[3].type).to.equal('updated')
+        expect(eventDatas[3].path).to.equal('/authorizationPolicy');
+        expect(eventDatas[3].data).not.exist;
+
+
+        expect(eventDatas[4].type).to.equal('deleted')
+        expect(eventDatas[4].path).to.equal('/authenticationPolicy/rules');
+        expect(eventDatas[4].data.id).exist;
+
+        expect(eventDatas[5].type).to.equal('updated')
+        expect(eventDatas[5].path).to.equal('/authenticationPolicy');
+        expect(eventDatas[5].data).not.exist;
+
+        expect(eventDatas[6].type).to.equal('deleted')
+        expect(eventDatas[6].path).to.equal('/networks');
+        expect(eventDatas[6].data.id).exist;
+
+
+
+
+
+    });
+
+    it('triggerGatewayDeleted', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+
+
+
+        let eventDatas: ConfigEvent[] = [];
+        configService.events.on('changed', (data: ConfigEvent) => {
+            eventDatas.push(data)
+        })
+
+
+        let gateway: Gateway = {
+            id: Util.randomNumberString(),
+            name: 'myserver',
+            labels: [],
+            isEnabled: true,
+            networkId: 'adaf',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        await configService.saveGateway(gateway);
+
+        await configService.deleteGateway(gateway.id);
+
+
+
+        expect(eventDatas.length).to.equal(1);
+        expect(eventDatas[0].type).to.equal('deleted')
+        expect(eventDatas[0].path).to.equal('/gateways')
+        expect(eventDatas[0].data.id).exist;
+
+
+    });
+
+
+
+    it('triggerGroupDeleted', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        let eventDatas: ConfigEvent[] = [];
+        configService.events.on('changed', (data: ConfigEvent) => {
+            eventDatas.push(data)
+        })
+
+        let aGroup: Group = {
+            id: Util.randomNumberString(),
+            name: 'notrh',
+            isEnabled: true,
+            labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        let aUser: User = {
+            id: Util.randomNumberString(),
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [aGroup.id],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+        configService.config.groups.push(aGroup);
+        configService.config.users.push(aUser);
+
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+
+            networkId: 'networkId',
+            userOrgroupIds: [aGroup.id],
+            serviceId: 'some service',
+            profile: { is2FA: true, isPAM: true },
+            isEnabled: true
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+
+
+        let rule2: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: [aGroup.id],
+            profile: {},
+            isEnabled: true
+
+        }
+
+        //add
+        configService.config.authenticationPolicy.rules.push(rule2);
+
+        await configService.deleteGroup(aGroup.id);
+        expect(configService.config.authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aGroup.id))).to.not.exist;
+        expect(configService.config.authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
+
+        expect(eventDatas.length).to.equal(5);
+
+        expect(eventDatas[0].type).to.equal('updated')
+        expect(eventDatas[0].path).to.equal('/authenticationPolicy/rules');
+        expect(eventDatas[0].data.id).exist;
+
+        expect(eventDatas[1].type).to.equal('updated')
+        expect(eventDatas[1].path).to.equal('/authenticationPolicy');
+        expect(eventDatas[1].data).not.exist;
+
+        expect(eventDatas[2].type).to.equal('updated')
+        expect(eventDatas[2].path).to.equal('/authorizationPolicy/rules');
+        expect(eventDatas[2].data.id).exist;
+
+        expect(eventDatas[3].type).to.equal('updated')
+        expect(eventDatas[3].path).to.equal('/authorizationPolicy');
+        expect(eventDatas[3].data).not.exist;
+
+        expect(eventDatas[4].type).to.equal('deleted');
+        expect(eventDatas[4].path).to.equal('/groups');
+        expect(eventDatas[4].data.id).exist;
+
+
+
+
+    });
+
+
+    it('triggerServiceDeleted', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+
+
+
+        let eventDatas: ConfigEvent[] = [];
+        configService.events.on('changed', (data: ConfigEvent) => {
+            eventDatas.push(data)
+        })
+
+
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'sadid',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+
+        await configService.config.services.push(service1);
+
+
+        let aUser: User = {
+            id: Util.randomNumberString(),
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+
+
+
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+
+            networkId: 'ssid',
+            userOrgroupIds: [aUser.id],
+            serviceId: service1.id,
+            profile: { is2FA: true, isPAM: true },
+            isEnabled: true
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+
+
+
+        await configService.deleteService(service1.id);
+
+        expect(configService.config.authorizationPolicy.rules.find(x => x.serviceId == service1.id)).to.not.exist;
+
+
+        expect(eventDatas.length).to.equal(3);
+
+        expect(eventDatas[0].type).to.equal('deleted')
+        expect(eventDatas[0].path).to.equal('/authorizationPolicy/rules');
+        expect(eventDatas[0].data.id).exist;
+
+        expect(eventDatas[1].type).to.equal('updated')
+        expect(eventDatas[1].path).to.equal('/authorizationPolicy');
+        expect(eventDatas[1].data).not.exist;
+
+
+        expect(eventDatas[2].type).to.equal('deleted')
+        expect(eventDatas[2].path).to.equal('/services');
+        expect(eventDatas[2].data.id).exist;
+
+
+
+
+
+    });
+
+
+
 
 
 

@@ -271,6 +271,18 @@ export class RedisService {
     async sismember(key: string, value: string | number) {
         return await this.redis.sismember(key, value);
     }
+
+    async subsribe(channel: string) {
+        return this.redis.subscribe(channel);
+    }
+
+    async onMessage(callback: (channel: string, message: string) => void) {
+        await this.redis.on('message', async (channel, message) => {
+            await callback(channel, message);
+        })
+    }
+
+
 }
 
 

@@ -4,6 +4,7 @@
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
+import { Util } from '../src/util';
 import { RedisService } from '../src/service/redisService';
 
 
@@ -191,6 +192,23 @@ describe('redisService', () => {
         await simpleRedis.sremove('iplist', '1.2.3.4');
         result = await simpleRedis.sismember('iplist', '1.2.3.4')
         expect(result == 1).to.be.false;
+
+    }).timeout(10000)
+
+
+    it('redis publish/subscribe', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+        const simpleRedis2 = new RedisService('localhost:6379');
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        await simpleRedis.subsribe('test.channel');
+        await simpleRedis.onMessage((channel: string, message: string) => {
+            isDataReceived = true;
+        })
+        await simpleRedis2.publish('test.channel', obj);
+        await Util.sleep(2000);
+        expect(isDataReceived).to.be.true;
 
     }).timeout(10000)
 
