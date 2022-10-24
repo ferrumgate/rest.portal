@@ -51,7 +51,8 @@ export class ConfigService {
             clientNetwork: '100.64.0.0/16',
             serviceNetwork: '172.28.28.0/24',
             insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
+            updateDate: new Date().toISOString(),
+            isEnabled: true
         }
 
         this.secretKey = encryptKey;
