@@ -25,6 +25,7 @@ export interface Network {
     serviceNetwork: string;
     insertDate: string;
     updateDate: string;
+    isEnabled?: boolean;
 
 }
 
@@ -34,7 +35,8 @@ export interface Network {
 export function cloneNetwork(net: Network): Network {
     return {
         id: net.id, clientNetwork: net.clientNetwork, labels: net.labels,
-        name: net.name, serviceNetwork: net.serviceNetwork, insertDate: net.insertDate, updateDate: net.updateDate
+        name: net.name, serviceNetwork: net.serviceNetwork, insertDate: net.insertDate, updateDate: net.updateDate,
+        isEnabled: net.isEnabled
 
 
     }

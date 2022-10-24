@@ -56,7 +56,7 @@ routerClientTunnelAuthenticated.get('/renewip',
         const tunnel = req.currentTunnel as Tunnel;
         HelperService.isValidTunnel(tunnel);
         const network = await getNetworkByHostId(configService, tunnel.hostId);
-        const newtunnel = await tunnelService.renewIp(tunnel.id || '', redisService);
+        const newtunnel = await tunnelService.renewIp(tunnel.id || '');
 
         return res.status(200).json({
             assignedIp: newtunnel.assignedClientIp, serviceNetwork: network.serviceNetwork
@@ -77,7 +77,7 @@ routerClientTunnelAuthenticated.post('/confirm',
         const tunnelService = appService.tunnelService;
         const user = req.currentUser as User;
         const tunnel = req.currentTunnel as Tunnel;
-        await tunnelService.confirm(tunnel.id || '', redisService);
+        await tunnelService.confirm(tunnel.id || '');
 
         return res.status(200).json({});
     })
@@ -96,7 +96,7 @@ routerClientTunnelAuthenticated.get('/alive',
         const tunnel = req.currentTunnel as Tunnel;
         const redisService = appService.redisService;
         const tunnelService = appService.tunnelService;
-        await tunnelService.alive(tunnel.id || '', redisService);
+        await tunnelService.alive(tunnel.id || '');
 
         return res.status(200).json({});
     })

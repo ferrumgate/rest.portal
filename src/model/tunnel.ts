@@ -19,4 +19,8 @@ export interface Tunnel {
     hostId?: string
     // service network
     serviceNetwork?: string;
+    // is2FA used
+    is2FA?: boolean;
+    // is PAM used
+    isPAM?: boolean
 }
