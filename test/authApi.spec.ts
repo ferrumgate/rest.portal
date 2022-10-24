@@ -61,7 +61,8 @@ describe('authApi', async () => {
         serviceNetwork: '100.64.0.0/16',
         clientNetwork: '192.168.0.0/24',
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
+        isEnabled: true,
     }
     const gateway: Gateway = {
         id: '123kasdfa',
@@ -70,7 +71,8 @@ describe('authApi', async () => {
         networkId: net.id,
         isEnabled: true,
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
+
     }
 
     beforeEach(async () => {
@@ -160,6 +162,7 @@ describe('authApi', async () => {
         configService.config.users = [];
         await configService.saveUser(user);
         await configService.saveUser(user2);
+        configService.config.authenticationPolicy.rules = [];
 
     })
 
@@ -632,9 +635,9 @@ describe('authApi', async () => {
     }).timeout(50000);
 
 
-    it('POST /authaccesstoken with result 200', async () => {
+    it('POST /auth/accesstoken with result 200', async () => {
 
-        await redisService.set(`/auth/access/test`, 'someid');
+        await redisService.set(`/auth/access/test`, { userId: 'someid' });
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/accesstoken')
@@ -655,10 +658,16 @@ describe('authApi', async () => {
     }).timeout(50000);
 
 
-    it('POST /authaccesstoken with tunnel parameter with result 200', async () => {
+    it('POST /auth/accesstoken with tunnel parameter with result 200', async () => {
 
-        await redisService.set(`/auth/access/test`, 'someid');
+        await redisService.set(`/auth/access/test`, { userId: 'someid' });
         await redisService.hset(`/tunnel/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: gateway.id });
+
+        configService.config.authenticationPolicy.rules.push({
+            action: 'allow', id: Util.randomNumberString(), isEnabled: true,
+            name: 'we need',
+            networkId: gateway.networkId || '', profile: {}, userOrgroupIds: []
+        })
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/accesstoken')
@@ -684,7 +693,7 @@ describe('authApi', async () => {
 
     it('POST /auth/refreshtoken with result 200', async () => {
 
-        await redisService.set(`/auth/access/test`, 'someid');
+        await redisService.set(`/auth/access/test`, { userId: 'someid' });
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/accesstoken')
@@ -725,7 +734,7 @@ describe('authApi', async () => {
 
     it('POST /auth/token/test with result 200', async () => {
 
-        await redisService.set(`/auth/access/test`, 'someid');
+        await redisService.set(`/auth/access/test`, { userId: 'someid' });
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/accesstoken')

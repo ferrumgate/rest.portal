@@ -16,6 +16,7 @@ import { jwtInit } from "./auth/jwt";
 import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import cors from 'cors';
 import { corsOptionsDelegate } from "./cors";
+import { stringify } from "querystring";
 
 
 
@@ -39,7 +40,7 @@ async function execute2FA(req: any) {
     }
     else {
         const rKey = `/auth/access/${randomKey}`;
-        await redisService.set(rKey, currentUser.id, { ttl: 60 * 1000 });
+        await redisService.set(rKey, { userId: currentUser.id, is2FA: false }, { ttl: 60 * 1000 });
         return { key: randomKey };
     }
 
@@ -176,13 +177,13 @@ routerAuth.post('/2fa',
 
         const randomKey = Util.randomNumberString(48);
         const key = `/auth/access/${randomKey}`;
-        await redisService.set(key, user.id, { ttl: 60 * 1000 });
+        await redisService.set(key, { userId: user.id, is2FA: true }, { ttl: 60 * 1000 });
         return res.status(200).json({ key: randomKey });
 
     })
 );
 
-/////////////////////////////// /authaccesstoken ///////////////////////////////
+/////////////////////////////// /auth/accesstoken ///////////////////////////////
 
 
 
@@ -196,6 +197,7 @@ routerAuth.post('/accesstoken',
         const redisService = appService.redisService;
         const oauth2Service = appService.oauth2Service;
         const tunnelService = appService.tunnelService;
+        const policyService = appService.policyService;
         //tunnel field is the tunnel tunnel key
         const request = req.body as { key: string, tunnelKey?: string };
         if (!request.key) {
@@ -203,12 +205,12 @@ routerAuth.post('/accesstoken',
         }
         logger.info(`getting access token with key ${request.key}`);
         const key = `/auth/access/${request.key}`;
-        const userId = await redisService.get(key, false) as string;
-        if (!userId) {
+        const access = await redisService.get<{ userId: string, is2FA: boolean }>(key, true);
+        if (!access || !access.userId) {
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
         }
 
-        const user = await configService.getUserById(userId);
+        const user = await configService.getUserById(access.userId);
         await HelperService.isValidUser(user);
         //set user to request object
         req.currentUser = user;
@@ -216,9 +218,14 @@ routerAuth.post('/accesstoken',
             throw new RestfullException(500, ErrorCodes.ErrInternalError, "something went wrong");
         }
 
+
         //check tunnel session
         if (request.tunnelKey) {
-            await tunnelService.createTunnel(user, redisService, request.tunnelKey);
+            //check if user can authenticate to this network
+
+            //check policy authentication
+            await policyService.authenticate(user, access.is2FA, request.tunnelKey);
+            await tunnelService.createTunnel(user, request.tunnelKey);
         }
 
         const accessTokenStr = await oauth2Service.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id }, 'ferrum')

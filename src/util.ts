@@ -329,6 +329,15 @@ export const Util = {
         return false;
 
     },
+    convertToBoolean(val?: any) {
+        if (this.isUndefinedOrNull(val)) return false;
+        if (typeof (val) == 'string') return val == 'true';
+        if (typeof (val) == 'number') return Boolean(val).valueOf();
+        if (Array.isArray(val)) return true;
+        if (typeof (val) == 'object') return true;
+        return false;
+
+    },
     convertToArray(val?: string, splitter = ','): string[] {
         if (!val) return [];
         return val.split(splitter).filter(x => x);

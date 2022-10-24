@@ -54,8 +54,8 @@ describe('tunnelService', () => {
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
 
-        const tunnel = new TunnelService(configService);
-        const { network, ip } = await tunnel.getEmptyIp(simpleRedis, gateway.id);
+        const tunnel = new TunnelService(configService, simpleRedis);
+        const { network, ip } = await tunnel.getEmptyIp(gateway.id);
         expect(network).exist;
         expect(ip).exist;
         const ipstr = Util.bigIntegerToIp(ip);
@@ -93,8 +93,8 @@ describe('tunnelService', () => {
             await simpleRedis.set(`/client/192.168.0.${i}`, i);
         let isError = false;
         try {
-            const tunnel = new TunnelService(configService2);
-            const ip = await tunnel.getEmptyIp(simpleRedis, gateway.id);
+            const tunnel = new TunnelService(configService2, simpleRedis);
+            const ip = await tunnel.getEmptyIp(gateway.id);
         } catch (err) {
             isError = true;
         }
@@ -129,13 +129,13 @@ describe('tunnelService', () => {
         await configService2.saveGateway(gateway);
 
 
-        const tunnel = new TunnelService(configService2);
+        const tunnel = new TunnelService(configService2, simpleRedis);
         const user: User = { id: 'adfaf' } as User;
 
         //
         let isError = false;
         try {
-            await tunnel.createTunnel(user, simpleRedis, 'randomtunnelid');
+            await tunnel.createTunnel(user, 'randomtunnelid');
         } catch (err) { isError = true; };
         expect(isError).to.be.true;
 
@@ -168,7 +168,7 @@ describe('tunnelService', () => {
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
 
-        const tunnel = new TunnelService(configService2);
+        const tunnel = new TunnelService(configService2, simpleRedis);
         const user: User = { id: 'adfaf' } as User;
         await simpleRedis.hset(`/tunnel/randomtunnelid`, {
             id: 'randomtunnelid',
@@ -177,7 +177,7 @@ describe('tunnelService', () => {
         //
 
 
-        await tunnel.createTunnel(user, simpleRedis, 'randomtunnelid');
+        await tunnel.createTunnel(user, 'randomtunnelid');
         //check every redis data 
         const ipExits = await simpleRedis.containsKey(`/client/192.168.0.1`);
         expect(ipExits).to.be.true;
@@ -226,14 +226,14 @@ describe('tunnelService', () => {
         await configService2.saveGateway(gateway);
 
 
-        const tunnel = new TunnelService(configService2);
+        const tunnel = new TunnelService(configService2, simpleRedis);
         const user: User = { id: 'adfaf' } as User;
         await simpleRedis.hset(`/tunnel/randomtunnelid`, { id: 'randomtunnelid', clientIp: '192.168.1.100', tun: 'tun0', hostId: '1234' })
         //
 
 
-        await tunnel.createTunnel(user, simpleRedis, 'randomtunnelid');
-        await tunnel.renewIp('randomtunnelid', simpleRedis);
+        await tunnel.createTunnel(user, 'randomtunnelid');
+        await tunnel.renewIp('randomtunnelid');
 
         let exists = await simpleRedis.containsKey('/client/192.168.0.1');
         expect(exists).to.be.false;
@@ -275,15 +275,15 @@ describe('tunnelService', () => {
         await configService2.saveGateway(gateway);
 
 
-        const tunnel = new TunnelService(configService2);
+        const tunnel = new TunnelService(configService2, simpleRedis);
         const user: User = { id: 'adfaf' } as User;
         await simpleRedis.hset(`/tunnel/randomtunnelid`,
             { id: 'randomtunnelid', clientIp: '192.168.1.100', tun: 'tun0', hostId: '12345' })
         //
 
 
-        await tunnel.createTunnel(user, simpleRedis, 'randomtunnelid');
-        await tunnel.confirm('randomtunnelid', simpleRedis);
+        await tunnel.createTunnel(user, 'randomtunnelid');
+        await tunnel.confirm('randomtunnelid');
         //check every redis data 
         const hostExits = await simpleRedis.containsKey(`/host/12345/tun/tun0`);
         expect(hostExits).to.be.true
@@ -321,7 +321,7 @@ describe('tunnelService', () => {
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
 
-        const tunnel = new TunnelService(configService2);
+        const tunnel = new TunnelService(configService2, simpleRedis);
         const user: User = { id: 'adfaf' } as User;
         await simpleRedis.hset(`/tunnel/randomtunnelid`,
             {
@@ -332,7 +332,7 @@ describe('tunnelService', () => {
         await simpleRedis.set(`/client/10.0.0.3`, 'randomtunnelid');
         await simpleRedis.set(`/host/1234/tun/tun0`, 'randomtunnelid');
 
-        await tunnel.alive('randomtunnelid', simpleRedis);
+        await tunnel.alive('randomtunnelid');
 
         let ttl1 = await simpleRedis.ttl('/tunnel/randomtunnelid');
         expect(ttl1).to.be.greaterThan(2 * 60 * 1000);
