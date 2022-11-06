@@ -202,7 +202,7 @@ describe('redisService', () => {
         const simpleRedis2 = new RedisService('localhost:6379');
         let obj = { ttl: 10 };
         let isDataReceived = false;
-        await simpleRedis.subsribe('test.channel');
+        await simpleRedis.subscribe('test.channel');
         await simpleRedis.onMessage((channel: string, message: string) => {
             isDataReceived = true;
         })
@@ -211,6 +211,98 @@ describe('redisService', () => {
         expect(isDataReceived).to.be.true;
 
     }).timeout(10000)
+
+
+    it('redis scan', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        const channel = Util.randomNumberString();
+        await simpleRedis.set('/test/deneme', 'obs');
+        await simpleRedis.set('/test/deneme2', 'obs');
+        let pos = '';
+        const [cursor, results] = await simpleRedis.scan('/test/*', pos);
+        expect(cursor).exist;
+        expect(cursor).to.equal('0');
+        expect(results.length).to.equal(2);
+
+
+    }).timeout(10000)
+
+    it('redis xadd/xread', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        const channel = Util.randomNumberString();
+        await simpleRedis.xadd(channel, { id: 2 }, '1-1');
+        const result = await simpleRedis.xread(channel, 1, '', 100);
+        expect(result.length).to.equal(1);
+        expect(result[0].xreadPos).to.equal('1-1');
+        expect(result[0].id).to.equal('2');
+
+
+
+    }).timeout(10000)
+
+
+
+    it('redis xadd/xread', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        const channel = Util.randomNumberString();
+        await simpleRedis.xadd(channel, { id: 2 }, '1-1');
+        const result = await simpleRedis.xinfo(channel);
+        expect(result).exist;
+        expect(result['last-generated-id']).exist;
+
+
+
+    }).timeout(10000)
+
+
+    it('test pipeline', async () => {
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let pipe = await simpleRedis.multi()
+        for (let i = 0; i < 100; ++i) {
+            await pipe.hset(`deneme${i}`, { id: i, name: `test${i}` });
+        }
+        let results = await pipe.exec();
+
+        pipe = await simpleRedis.multi()
+        for (let i = 0; i < 105; ++i) {
+            await pipe.hgetAll(`deneme${i}`);
+        }
+        results = await pipe.exec();
+
+        expect(results).exist;
+
+
+        pipe = await simpleRedis.multi()
+        for (let i = 0; i < 100; ++i) {
+            await pipe.set(`deneme${i}`, { id: i, name: `test${i}` });
+        }
+        results = await pipe.exec();
+
+        pipe = await simpleRedis.multi()
+        for (let i = 0; i < 105; ++i) {
+            await pipe.get(`deneme${i}`);
+        }
+        results = await pipe.exec();
+
+        expect(results).exist;
+
+
+
+    }).timeout(10000)
+
 
 
 

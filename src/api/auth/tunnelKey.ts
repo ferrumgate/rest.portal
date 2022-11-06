@@ -24,10 +24,11 @@ export function tunnelKeyInit() {
                 const appService = req.appService as AppService;
                 const configService = appService.configService;
                 const redisService = appService.redisService;
+                const tunnelService = appService.tunnelService;
 
                 if (!tunnelkey)
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
-                const tunnel = (await redisService.hgetAll(`/tunnel/${tunnelkey}`)) as unknown as Tunnel;
+                const tunnel = await tunnelService.getTunnel(tunnelkey);
                 await HelperService.isValidTunnel(tunnel);
                 //set user to request object
                 const user = await configService.getUserById(tunnel.userId || '0');

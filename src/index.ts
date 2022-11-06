@@ -28,7 +28,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 
 
-const port = Number(process.env.PORT) | 8080;
+const port = Number(process.env.PORT) | 8181;
 
 
 //express app
@@ -342,6 +342,10 @@ app.start = async function () {
 }
 
 app.start();
+
+
+
+
 
 
 

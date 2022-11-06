@@ -1,6 +1,7 @@
 import { Util } from "../util";
 import { AuditService } from "./auditService";
 import { CaptchaService } from "./captchaService";
+import { PolicyAuthzListener } from "./system/policyAuthzListener";
 import { ConfigService } from "./configService";
 import { EmailService } from "./emailService";
 import { EventService } from "./eventService";
@@ -32,6 +33,7 @@ export class AppService {
     public eventService: EventService;
     public policyService: PolicyService;
     public auditService: AuditService;
+    public policyAuthzChannel: PolicyAuthzListener;
 
     /**
      *
@@ -44,7 +46,8 @@ export class AppService {
         twoFA?: TwoFAService, oauth2?: OAuth2Service,
         tunnel?: TunnelService, audit?: AuditService,
         event?: EventService,
-        policy?: PolicyService) {
+        policy?: PolicyService,
+        policyAuthzChannel?: PolicyAuthzListener) {
         //create self signed certificates for JWT
 
         this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? `/tmp/${Util.randomNumberString()}_config.yaml` : '/etc/ferrumgate/config.yaml');
@@ -61,6 +64,7 @@ export class AppService {
         this.eventService = event || new EventService(this.configService, this.redisService);
         this.auditService = audit || new AuditService();
         this.policyService = policy || new PolicyService(this.configService, this.tunnelService, this.auditService);
+        this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(this.configService, this.tunnelService)
 
     }
 

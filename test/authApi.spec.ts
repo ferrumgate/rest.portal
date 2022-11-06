@@ -661,7 +661,7 @@ describe('authApi', async () => {
     it('POST /auth/accesstoken with tunnel parameter with result 200', async () => {
 
         await redisService.set(`/auth/access/test`, { userId: 'someid' });
-        await redisService.hset(`/tunnel/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: gateway.id });
+        await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: gateway.id });
 
         configService.config.authenticationPolicy.rules.push({
             action: 'allow', id: Util.randomNumberString(), isEnabled: true,
@@ -684,7 +684,7 @@ describe('authApi', async () => {
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
 
-        const retVAl = await redisService.hgetAll('/tunnel/testsession');
+        const retVAl = await redisService.hgetAll('/tunnel/id/testsession');
         expect(retVAl.assignedClientIp).exist;
 
 
