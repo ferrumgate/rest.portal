@@ -7,7 +7,7 @@ import * as IORedis from 'ioredis';
 import { EventEmitter, pipeline } from "stream";
 import { HelperService } from "../helperService";
 import { Util } from "../../util";
-import { setIntervalAsync, clearIntervalAsync } from 'set-interval-async';
+const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
 
@@ -20,7 +20,8 @@ export class SystemWatcherService extends EventEmitter {
     waitListTimer: any | null = null;
     startTimer: any | null = null;
     isExecutingWaitList = false;
-
+    isWorking = false;
+    isStoping = false;
     constructor() {
         super();
         this.setMaxListeners(16);
@@ -36,12 +37,24 @@ export class SystemWatcherService extends EventEmitter {
         this.redisSlave = this.createRedis();
         this.redisSlaveFiller = this.createRedis();
     }
+    async start() {
+        this.isStoping = false;
+        this.startTimer = setIntervalAsync(async () => {
+            if (!this.isWorking) {
+                await this.startAgain();
+            }
+        }, 3000)
+    }
+    async stop() {
+        this.isStoping = true;
+        await clearIntervalAsync(this.startTimer);
+
+    }
     async startAgain() {
 
         try {
-            if (this.startTimer)
-                clearTimeout(this.startTimer);
-            this.startTimer = null;
+
+            this.isWorking = true;
             this.isFilling = true;
             logger.info("starting watching");
             this.redisSlave = this.createRedis();
@@ -54,11 +67,27 @@ export class SystemWatcherService extends EventEmitter {
 
             });
             await this.redisSlave.subscribe('__redis__:invalidate');
-            await this.startFilling();
+            await this.startFirstFilling();
+            //start checking
+            this.waitListTimer = setIntervalAsync(async () => {
+                try {
+                    if (this.isStoping)
+                        throw new Error('stoping watching')
+                    await this.executeWaitList();
+                } catch (err) {
+                    logger.error(err);
+                    clearIntervalAsync(this.waitListTimer);
+                    this.isWorking = false;
+                    await this.reset();
+                }
+            }, 1000);
 
         } catch (err) {
             logger.error(err);
+            this.isWorking = false;
+            await this.reset();
         }
+
     }
     parseTunnel(tunnel: Tunnel) {
         tunnel.trackId = Util.convertToNumber(tunnel.trackId)
@@ -66,11 +95,11 @@ export class SystemWatcherService extends EventEmitter {
         tunnel.isPAM = Util.convertToBoolean(tunnel.isPAM);
 
     }
-    async startFilling() {
+    async startFirstFilling() {
         if (!this.redisSlaveFiller) return;
         let page = 0;
         let pos = '0';
-        while (true) {
+        while (true && !this.isStoping) {
             logger.info(`getting tunnel page ${page}`);
 
 
@@ -99,78 +128,63 @@ export class SystemWatcherService extends EventEmitter {
             page++;
         }
         this.isFilling = false;
-        this.waitListTimer = setIntervalAsync(async () => {
-            await this.executeWaitList();
-        }, 1000);
 
     }
     async executeWaitList() {
         if (!this.redisSlaveFiller) return;
-        try {
-            if (this.isFilling)
-                return;
-            if (this.isExecutingWaitList) return;
-            this.isExecutingWaitList = true;
-            while (this.waitList.size) {
-                logger.info(`executing wait list size ${this.waitList.size}`);
-                let finalList = [];
-                for (const item of this.waitList) {
-                    finalList.push(item);
-                    if (finalList.length >= 10000)
-                        break;
-                }
 
-                logger.info(`found wait list item ${finalList.length}`);
-                const pipeline = await this.redisSlaveFiller.multi();
-                finalList.forEach(async (x) => {
-                    await pipeline.hgetAll(x);
-                });
-                let results = await pipeline.exec() as Tunnel[];
-                results = results.map(x => {
-                    //important all data comes from redis as string
+        while (this.waitList.size && !this.isStoping) {
+            logger.info(`executing wait list size ${this.waitList.size}`);
+            let finalList = [];
+            for (const item of this.waitList) {
+                finalList.push(item);
+                if (finalList.length >= 10000)
+                    break;
+            }
 
-                    this.parseTunnel(x);
-                    return x;
-                });
+            logger.info(`found wait list item ${finalList.length}`);
+            const pipeline = await this.redisSlaveFiller.multi();
+            finalList.forEach(async (x) => {
+                await pipeline.hgetAll(x);
+            });
+            let results = await pipeline.exec() as Tunnel[];
+            results = results.map(x => {
+                //important all data comes from redis as string
 
-                for (let i = 0; i < finalList.length; ++i) {
-                    const keys = finalList[i].split('/').filter(y => y);
-                    if (keys.length >= 2) {
-                        const tunnelKey = keys[2];
-                        const tunnel = results[i];
+                this.parseTunnel(x);
+                return x;
+            });
+
+            for (let i = 0; i < finalList.length; ++i) {
+                const keys = finalList[i].split('/').filter(y => y);
+                if (keys.length >= 2) {
+                    const tunnelKey = keys[2];
+                    const tunnel = results[i];
 
 
-                        const exception = HelperService.isValidTunnelNoException(tunnel);
-                        if (exception) {
-                            const ourTunnel = this.tunnels.get(tunnelKey);
-                            if (ourTunnel) {//only tracked tunnels
-                                this.emit('tunnelDeleted', ourTunnel);
-                                this.emit('tunnel', { tunnel: ourTunnel, action: 'delete' })
-                                this.tunnels.delete(tunnelKey);
-                            }
-
-                        } else {
-
-                            this.tunnels.set(tunnelKey, tunnel);
-                            this.emit('tunnelUpdated', tunnel);
-                            this.emit('tunnel', { tunnel: tunnel, action: 'update' })
-
+                    const exception = HelperService.isValidTunnelNoException(tunnel);
+                    if (exception) {
+                        const ourTunnel = this.tunnels.get(tunnelKey);
+                        if (ourTunnel) {//only tracked tunnels
+                            this.emit('tunnelDeleted', ourTunnel);
+                            this.emit('tunnel', { tunnel: ourTunnel, action: 'delete' })
+                            this.tunnels.delete(tunnelKey);
                         }
+
+                    } else {
+
+                        this.tunnels.set(tunnelKey, tunnel);
+                        this.emit('tunnelUpdated', tunnel);
+                        this.emit('tunnel', { tunnel: tunnel, action: 'update' })
 
                     }
 
-                    this.waitList.delete(finalList[i]);
                 }
 
+                this.waitList.delete(finalList[i]);
             }
-        } catch (err) {
-            logger.error(err);
-            //fatal error 
-            await this.reset();
 
         }
-        this.isExecutingWaitList = false;
-
 
 
     }
@@ -179,23 +193,15 @@ export class SystemWatcherService extends EventEmitter {
 
             this.tunnels.clear();
             this.waitList.clear();
-            if (this.waitListTimer)
-                await clearIntervalAsync(this.waitListTimer);
-            this.waitListTimer = null;
             this.emit('reset');
             this.emit('tunnel', { action: 'reset' })
-            if (this.startTimer)
-                clearTimeout(this.startTimer);
-            this.startTimer = null;
             if (this.redisSlave)
                 await this.redisSlave.disconnect();
             this.redisSlave = null;
             if (this.redisSlaveFiller)
                 await this.redisSlaveFiller.disconnect();
             this.redisSlaveFiller = null;
-            this.startTimer = setTimeout(async () => {
-                await this.startAgain();
-            }, 5000);
+
 
         } catch (err) {
             logger.fatal(err);

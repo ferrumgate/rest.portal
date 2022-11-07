@@ -55,7 +55,7 @@ describe('systemWatcherService', () => {
         (watcher as any).hostId = '1234';
         watcher.createConnections();
         hrstart = process.hrtime();
-        await watcher.startFilling();
+        await watcher.startFirstFilling();
         hrend = process.hrtime(hrstart)
         console.info('fill time records:%d (hr): %ds %dms', total, hrend[0], hrend[1] / 1000000);
 
@@ -94,7 +94,7 @@ describe('systemWatcherService', () => {
         })
         watcher.createConnections();
         hrstart = process.hrtime();
-        await watcher.startFilling();
+        await watcher.startFirstFilling();
         hrend = process.hrtime(hrstart)
         console.info('fill time records:%d (hr): %ds %dms', total, hrend[0], hrend[1] / 1000000);
 
@@ -205,15 +205,14 @@ describe('systemWatcherService', () => {
             await pipeline.exec();
 
         }
-        watcher.startAgain();
+        await watcher.startAgain();
 
         await Util.sleep(10000);
         expect(watcher.tunnels.size).to.equal(100);
         await watcher.reset();
         expect(watcher.tunnels.size).to.equal(0);
 
-        await Util.sleep(10000);
-        expect(watcher.tunnels.size).to.equal(100);
+
 
 
     }).timeout(1000000);

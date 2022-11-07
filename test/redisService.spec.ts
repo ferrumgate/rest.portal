@@ -376,7 +376,7 @@ describe('redisService', () => {
         expect(calledCount).to.equal(0);
         expect(exception).to.be.false;
 
-    }).timeout(20000)
+    }).timeout(20000);
 
 
 

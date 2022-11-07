@@ -5,9 +5,9 @@ import { ConfigService } from "../configService";
 import { RedisPipelineService, RedisService } from "../redisService";
 import { TunnelService } from "../tunnelService";
 import { SystemWatcherService } from "./systemWatcherService";
-import { PolicyService } from "../policyService";
+import { PolicyAuthzResult, PolicyService } from "../policyService";
 import { rootCertificates } from "tls";
-import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
+const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
 
@@ -16,7 +16,13 @@ import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
 // commandId/reset  
 // commandId/update/clientId/isDrop/policyNumber/why/policyId
 // commandId/delete/clientId
-
+interface PolicyRoomCommand {
+    isOK?: boolean;
+    isReset?: boolean;
+    isDelete?: boolean;
+    trackId?: number;
+    policyResult?: PolicyAuthzResult;
+}
 
 export class PolicyRoomService {
     serviceId: string = '';
@@ -27,41 +33,19 @@ export class PolicyRoomService {
 
     private redisStreamKey: string;
     private commandId: number = 0;
-    private redisGlobal: RedisService;
     private redisLocal: RedisService;
-    private redisSlave: RedisService;
     //pipeline
-    private redisLocalPipeline: RedisService;
-    private pipelineInterval: any;
-    private pipelineCommandCount = 0;
 
+    private waitList: PolicyRoomCommand[] = [];
+    private waitListInterval: any;
+    public lastProcessSuccessfull: number = new Date().getTime();;
     constructor(private configService: ConfigService, private tunnelService: TunnelService, _hostId: string, _serviceId: string, _instanceId: string) {
         this.hostId = _hostId;
         this.serviceId = _serviceId;
         this.instanceId = _instanceId;
-        this.redisGlobal = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
-        this.redisSlave = new RedisService(process.env.REDIS_SLAVE_HOST || "localhost:6379", process.env.REDIS_SLAVE_PASS);
+
         this.redisLocal = new RedisService(process.env.REDIS_LOCAL_HOST || "localhost:6379", process.env.REDIS_LOCAL_PASS);
-        this.redisLocalPipeline = new RedisService(process.env.REDIS_LOCAL_HOST || "localhost:6379", process.env.REDIS_LOCAL_PASS);
-
-
-
         this.redisStreamKey = `/policy/service/${this.hostId}/${this.serviceId}/${this.instanceId}`;
-        this.interval = setIntervalAsync(async () => {
-            try {
-                //we need to make things, continues ok
-                this.commandId++;
-                await this.redisLocal.xadd(this.redisStreamKey, { cmd: `${this.commandId}/ok` }), this.xaddId(this.commandId);
-
-            } catch (err) { logger.error(err); }
-        }, 5000);
-        this.pipelineInterval = setIntervalAsync(async () => {
-            if (this.pipelineCommandCount) {
-                this.redisLocalPipeline.expire
-                this.pipelineCommandCount = 0;
-            }
-        }, 1000);
-
 
     }
     xaddId(commandId: number) {
@@ -69,26 +53,70 @@ export class PolicyRoomService {
     }
 
     async start() {
-
+        this.interval = setIntervalAsync(async () => {
+            await this.pushOk();
+        }, 5000);
+        this.waitListInterval = setIntervalAsync(async () => {
+            await this.processWaitList();
+        }, 1000);
     }
     async stop() {
+        this.waitList.splice(0);
         await clearIntervalAsync(this.interval);
+        await clearIntervalAsync(this.waitListInterval);
     }
-    async sendReset() {
-        this.commandId = 0;
-        this.commandId++;
-        await this.redisLocal.delete(this.redisStreamKey);
-        await this.redisLocal.xadd(this.redisStreamKey, { cmd: `${this.commandId}/reset` }, this.xaddId(this.commandId));
+    async pushOk() {
+        this.waitList.push({ isOK: true })
     }
-    async sendUpdate(trackId: number, isDrop: number, policyNumber: number,
-        policyId: string, why: number) {
-        this.commandId++;
-        await this.redisLocal.xadd(this.redisStreamKey, { cmd: `${this.commandId}/update/${trackId}/${isDrop}/${policyNumber}/${why}/${policyId}` }, this.xaddId(this.commandId));
+    async pushReset() {
+        this.waitList.splice(0);
+        this.waitList.push({ isReset: true })
+    }
+    async pushDelete(trackId: number) {
+        this.waitList.push({ trackId: trackId, isDelete: true });
+    }
+    async push(trackId: number, result: PolicyAuthzResult) {
+        this.waitList.push({ trackId: trackId, policyResult: result });
+    }
+    async processWaitList() {
+        try {
+            let page = 0;
+            while (this.waitList.length) {
+                logger.info(`executing wait list service on /${this.hostId}/${this.serviceId}/${this.instanceId} page:${page}`)
+                let snapshot = this.waitList.slice(0, 10000);
+                let pipeline = await this.redisLocal.multi();
+                for (const cmd of snapshot) {
+                    if (cmd.isReset) {
+                        await pipeline.delete(this.redisStreamKey);
+                        this.commandId++;
+                        await this.redisLocal.xadd(this.redisStreamKey, { cmd: `${this.commandId}/reset` }, this.xaddId(this.commandId));
+                        this.commandId = 0;
+                    } else
+                        if (cmd.isOK) {
+                            this.commandId++;
+                            await this.redisLocal.xadd(this.redisStreamKey, { cmd: `${this.commandId}/ok` }, this.xaddId(this.commandId));
+                        }
+                        else if (cmd.isDelete && cmd.trackId) {
+                            this.commandId++;
+                            await this.redisLocal.xadd(this.redisStreamKey, { cmd: `${this.commandId}/delete/${cmd.trackId}` }, this.xaddId(this.commandId));
+                        }
+                        else if (cmd.trackId && cmd.policyResult) {
+                            this.commandId++;
+                            let isDrop = cmd.policyResult.error ? 1 : 0;
+                            await this.redisLocal.xadd(this.redisStreamKey, { cmd: `${this.commandId}/update/${cmd.trackId}/${isDrop}/${cmd.policyResult.index || 0}/${cmd.policyResult.error + 10000}/${cmd.policyResult.rule?.id || 0}` }, this.xaddId(this.commandId));
+                        }
 
+
+                }
+                await pipeline.exec();
+                this.waitList.splice(0, 10000);
+            }
+            this.lastProcessSuccessfull = new Date().getTime();
+        } catch (err) {
+            logger.error(err);
+        }
     }
-    async sendDelete(trackId: number) {
-        await this.redisLocal.xadd(this.redisStreamKey, { cmd: `${this.commandId}/delete/${trackId}` }, this.xaddId(this.commandId));
-    }
+
 }
 
 export class PolicyAuthzListener {
@@ -98,22 +126,22 @@ export class PolicyAuthzListener {
     private cache: NodeCache;
     private waitList: { tunnel?: Tunnel, action: string }[] = [];
     private waitListTimer: any | null = null;
-    private waitListIsWorking = false;
+
     private roomList = new Map<string, PolicyRoomService>();
     private hostId = '';
+    private isStarted = false;
     constructor(private configService: ConfigService, private policyService: PolicyService,
         private tunnelService: TunnelService, private systemWatcher: SystemWatcherService) {
         this.hostId = process.env.HOST_ID || '';
         this.cache = new NodeCache({ checkperiod: 60, deleteOnExpire: true, useClones: false, stdTTL: 60 });
         this.redisGlobal = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
         this.redisLocalServiceListener = new RedisService(process.env.REDIS_LOCAL_HOST || "localhost:6379", process.env.REDIS_LOCAL_PASS);
-        this.start().catch(err => logger.error(err));
+
         this.cache.on("expired", async (key, value: PolicyRoomService) => {
             await value.stop();
             this.roomList.delete(key);
         });
         this.startTunnelWatcher().catch(err => logger.error(err));
-
 
     }
     async startTunnelWatcher() {
@@ -124,13 +152,14 @@ export class PolicyAuthzListener {
         if (this.waitListTimer)
             clearIntervalAsync(this.waitListTimer);
         this.waitListTimer = setIntervalAsync(async () => {
+            await this.start();
             await this.processWaitList();
-        }, 2000);
+        }, 1000);
     }
     async policyCalculate(item: { tunnel?: Tunnel, action: string }) {
         if (item.action == 'reset') {
             for (const room of this.roomList.values()) {
-                await room.sendReset();
+                await room.pushReset();
             }
         }
         else {
@@ -142,63 +171,73 @@ export class PolicyAuthzListener {
 
             for (const room of this.roomList.values()) {
 
-                const presult = await this.policyService.authorize(item.tunnel.trackId, room.serviceId, false, item.tunnel);
-                if (typeof presult == 'number') {//this means error, drop trackId
-
-                } else {
-
+                if (item.action == 'delete')
+                    await room.pushDelete(item.tunnel.trackId);
+                else {
+                    const presult = await this.policyService.authorize(item.tunnel.trackId, room.serviceId, false, item.tunnel);
+                    await room.push(item.tunnel.trackId, presult);
                 }
-
             }
 
         }
 
     }
     async processWaitList() {
-        if (this.waitListIsWorking) return;
-        this.waitListIsWorking = true;
+
         try {
-            if (this.processWaitList.length) {
+            if (this.waitList.length) {
                 logger.info(`process waiting list count ${this.processWaitList.length}`);
             }
-            let page = 0;
-            while (this.processWaitList.length) {
-                logger.info(`process waiting list page ${page++}`);
+
+            while (this.waitList.length) {
                 const items = this.waitList.slice(0, 10000);
                 //process
                 for (const item of items) {
-                    if (item.action != 'reset') {
-
-                    }
                     await this.policyCalculate(item);
                 }
 
                 this.waitList.splice(0, 10000);
             }
 
-        } catch (err) {
-            logger.fatal(err);
+        } catch (err) {//we are not waiting an error here, so important otherwise memory problem occurs
+            logger.fatal(err);//
         }
-        this.waitListIsWorking = false;
+
     }
 
     async replicate(hostId?: string, serviceId?: string, instanceId?: string) {
-        if (!hostId || !serviceId || !instanceId) return;
-        let key = `/${hostId}/${serviceId}/${instanceId}`;
-        logger.info(`replicate to me ${key}`);
+        try {
+            if (!hostId || !serviceId || !instanceId) return;
+            let key = `/${hostId}/${serviceId}/${instanceId}`;
+            logger.info(`replicate to me ${key}`);
 
-        let item = this.cache.get(key) as PolicyRoomService;
-        if (item) {
-            await item.sendReset();
-        } else {
-            const room = new PolicyRoomService(this.configService, this.tunnelService, hostId, serviceId, instanceId);
-            this.cache.set(key, room);
-            this.roomList.set(key, room);
-            await room.sendReset();
+            let item = this.cache.get(key) as PolicyRoomService;
+            if (item) {
+                await item.pushReset();
+
+            } else {
+                const room = new PolicyRoomService(this.configService, this.tunnelService, hostId, serviceId, instanceId);
+                this.cache.set(key, room);
+                this.roomList.set(key, room);
+                await room.pushReset();
+                item = room;
+            }
+            await this.fillRoomService(item);
+        } catch (err) {
+            logger.error(err);
         }
-
-
-
+    }
+    async fillRoomService(room: PolicyRoomService) {
+        //snapshot of tunnels
+        logger.info(`filling service /${room.hostId}/${room.serviceId}/${room.instanceId}`)
+        let allTunnels = [...this.systemWatcher.tunnels.values()];
+        let filteredTunnels = allTunnels.filter(x => x.hostId == room.hostId);//only this service
+        for (const tunnel of filteredTunnels) {
+            if (!tunnel.trackId)
+                continue;
+            const pResult = await this.policyService.authorize(tunnel.trackId, room.serviceId, false, tunnel);
+            await room.push(tunnel.trackId, pResult);
+        }
     }
 
     async iAmAliveMessage(hostId?: string, serviceId?: string, instanceId?: string) {
@@ -236,10 +275,14 @@ export class PolicyAuthzListener {
     }
 
     async start() {
-        await this.redisLocalServiceListener.onMessage(this.onServiceMessage);
-        await this.redisLocalServiceListener.subscribe(`/policy/service`);
+        try {
+            if (!this.isStarted) return;
+            await this.redisLocalServiceListener.onMessage(this.onServiceMessage);
+            await this.redisLocalServiceListener.subscribe(`/policy/service`);
+            this.isStarted = true;
+        } catch (err) {
 
-
+        }
     }
 
 

@@ -73,6 +73,7 @@
     "@types/passport-google-oauth2": "^0.1.5",
     "@types/passport-linkedin-oauth2": "^1.5.3",
     "@types/passport-local": "^1.0.34",
+    "@types/set-interval-async": "^1.0.0",
     "@types/validator": "^13.7.6",
     "chai": "^4.3.6",
     "chai-http": "^4.3.0",

@@ -11,7 +11,10 @@ import ip from 'ip-cidr';
 import { HelperService } from "./helperService";
 
 
+export interface PolicyAuthzResult {
 
+    error: number, index?: number, rule?: AuthorizationRule
+}
 
 export class PolicyService {
     /**
@@ -121,36 +124,36 @@ export class PolicyService {
     }
 
     authorizeErrorNumber = 0;
-    async authorize(trackId: number, serviceId: string, throwError: boolean = true, tun?: Tunnel) {
+    async authorize(trackId: number, serviceId: string, throwError: boolean = true, tun?: Tunnel): Promise<PolicyAuthzResult> {
         //TODO make this so fast
         this.authorizeErrorNumber = 0;
         const tunnelKey = tun ? `/tunnel/id/${tun.id}` : await this.tunnelService.getTunnelKeyFromTrackId(trackId);
         if (!tunnelKey) {
             //todo activity
             this.authorizeErrorNumber = 1;
-            if (!throwError) return this.authorizeErrorNumber;
+            if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'key not found');
         }
         const tunnel = tun || await this.tunnelService.getTunnel(tunnelKey);
         if (!tunnel) {
             //todo activity
             this.authorizeErrorNumber = 2;
-            if (!throwError) return this.authorizeErrorNumber;
+            if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'tunnel found');
         }
 
 
-        if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.hostId || !tunnel.trackId) {
+        if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.hostId || !tunnel.trackId || tunnel.trackId != trackId) {
             this.authorizeErrorNumber = 3;
             //todo activity
-            if (!throwError) return this.authorizeErrorNumber;
+            if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
         }
         const user = await this.configService.getUserById(tunnel.userId || '')
         if (!user) {
             //todo activitiy  
             this.authorizeErrorNumber = 4;
-            if (!throwError) return this.authorizeErrorNumber;
+            if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not found');
         }
         try {
@@ -158,7 +161,7 @@ export class PolicyService {
         } catch (err) {
             this.authorizeErrorNumber = 4;
             //todo activitity
-            if (!throwError) return this.authorizeErrorNumber;
+            if (!throwError) return { error: this.authorizeErrorNumber };
             throw err;
         }
 
@@ -167,13 +170,13 @@ export class PolicyService {
         if (!service) {
             this.authorizeErrorNumber = 5;
             //todo activity
-            if (!throwError) return this.authorizeErrorNumber;
+            if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no service');
         }
         if (!service.isEnabled) {
             this.authorizeErrorNumber = 6;
             //todo activity
-            if (!throwError) return this.authorizeErrorNumber;
+            if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'service is not enabled');
         }
 
@@ -182,14 +185,14 @@ export class PolicyService {
         if (!network) {
             this.authorizeErrorNumber = 7;
             //todo activity
-            if (!throwError) return this.authorizeErrorNumber;
+            if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
         }
 
         if (!network.isEnabled) {
             this.authorizeErrorNumber = 8;
             //todo activity
-            if (!throwError) return this.authorizeErrorNumber;
+            if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
         }
         const policy = await this.configService.getAuthorizationPolicy();
@@ -205,7 +208,7 @@ export class PolicyService {
             if (f1 && f2) {
 
                 //todo activity that this rule matched
-                return { index: i, rule: rule };
+                return { error: 0, index: i, rule: rule };
             }
 
         }
@@ -213,7 +216,7 @@ export class PolicyService {
         this.authorizeErrorNumber = 100;
 
         //todo activity
-        if (!throwError) return this.authorizeErrorNumber;
+        if (!throwError) return { error: this.authorizeErrorNumber };
         throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
 
 
