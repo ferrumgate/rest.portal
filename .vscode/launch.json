@@ -22,7 +22,8 @@
                 "PORT": "9090",
                 "REDIS_HOST": "localhost:6379",
                 "REDIS_SLAVE_HOST": "localhost:6379",
-                "REDIS_LOCAL_HOST": "localhost:6380"
+                "REDIS_LOCAL_HOST": "localhost:6380",
+                "HOST_ID": "sasdfw",
             },
             "outputCapture": "console",
             "console": "integratedTerminal",

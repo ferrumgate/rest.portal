@@ -302,23 +302,25 @@ describe('policyService ', async () => {
         configService.config.networks = [net];
         configService.config.gateways = [gateway];
 
-        let redisValue = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: gateway.id, is2FA: true };
+        let redisValue = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', trackId: 3, hostId: gateway.id, is2FA: true };
         await redisService.hset(`/tunnel/id/testsession`, redisValue);
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
+        await redisService.set(`/tunnel/trackId/3`, 'testsession');
 
         const policyService = new PolicyService(configService, new TunnelService(configService, redisService), new AuditService())
 
         //no client with this key
         try {
-            let result = await policyService.authorize('10.0.0.3', service.id)
+            let result = await policyService.authorize(9, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(1);
 
         //no tunnel with this key
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession2');
+        await redisService.set(`/tunnel/trackId/3`, 'testsession2');
         try {
-            let result = await policyService.authorize('10.0.0.2', service.id)
+            let result = await policyService.authorize(3, service.id)
 
         } catch (err) {
             console.log(err);
@@ -328,8 +330,9 @@ describe('policyService ', async () => {
 
         //no user
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
+        await redisService.set(`/tunnel/trackId/3`, 'testsession');
         try {
-            let result = await policyService.authorize('10.0.0.2', service.id)
+            let result = await policyService.authorize(3, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(4);
@@ -351,12 +354,13 @@ describe('policyService ', async () => {
         configService.config.users = [user1];
 
         //no service
-        let redisValue2 = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: gateway.id, is2FA: true, userId: user1.id };
+        let redisValue2 = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', trackId: 3, hostId: gateway.id, is2FA: true, userId: user1.id };
         await redisService.hset(`/tunnel/id/testsession`, redisValue2);
         configService.config.services = [];
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
+        await redisService.set(`/tunnel/trackId/3`, 'testsession');
         try {
-            let result = await policyService.authorize('10.0.0.2', service.id)
+            let result = await policyService.authorize(3, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(5);
@@ -368,8 +372,9 @@ describe('policyService ', async () => {
         service.isEnabled = false;
         configService.config.services = [service];
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
+        await redisService.set(`/tunnel/trackId/3`, 'testsession');
         try {
-            let result = await policyService.authorize('10.0.0.2', service.id)
+            let result = await policyService.authorize(3, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(6);
@@ -378,8 +383,9 @@ describe('policyService ', async () => {
         //no network
         configService.config.networks = [];
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
+        await redisService.set(`/tunnel/trackId/3`, 'testsession');
         try {
-            let result = await policyService.authorize('10.0.0.2', service.id)
+            let result = await policyService.authorize(3, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(7);
@@ -403,7 +409,7 @@ describe('policyService ', async () => {
         configService.config.authorizationPolicy.rules = [rule];
 
         try {
-            let result = await policyService.authorize('10.0.0.2', service.id)
+            let result = await policyService.authorize(3, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(100);
@@ -412,7 +418,7 @@ describe('policyService ', async () => {
 
 
         try {
-            let result = await policyService.authorize('10.0.0.2', service.id)
+            let result = await policyService.authorize(3, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(0); //success

@@ -5,7 +5,7 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
-import { RedisService } from '../src/service/redisService';
+import { RedisService, RedisServiceManuel } from '../src/service/redisService';
 
 
 
@@ -248,6 +248,28 @@ describe('redisService', () => {
 
     }).timeout(10000)
 
+    it('redis xadd/xreadmulti', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        const channel1 = Util.randomNumberString();
+        const channel2 = Util.randomNumberString();
+        await simpleRedis.xadd(channel1, { id: 2 }, '1-1');
+        await simpleRedis.xadd(channel2, { id: 3 }, '1-3');
+        const result = await simpleRedis.xreadmulti([{ pos: '0', key: channel1 }, { pos: '0', key: channel2 }], 2, 100);
+        expect(result.length).to.equal(2);
+        expect(result[0].channel).to.equal(channel1);
+        expect(result[1].channel).to.equal(channel2);
+        expect(result[0].items.length).to.equal(1);
+        expect(result[0].items[0].xreadPos).to.equal('1-1');
+        expect(result[0].items[0].id).to.equal('2');
+
+
+
+    }).timeout(10000)
+
 
 
     it('redis xadd/xread', async () => {
@@ -301,7 +323,60 @@ describe('redisService', () => {
 
 
 
-    }).timeout(10000)
+    }).timeout(10000);
+
+
+    it('redis onClose manuel stop', async () => {
+        let called = false;
+        let calledCount = 0;
+        const onClose = async () => {
+            called = true;
+            calledCount++;
+        }
+        const simpleRedis = new RedisServiceManuel('localhost:6700', undefined, 'single', onClose);
+        try {
+
+            await simpleRedis.set('abc', 'defs');
+            await Util.sleep(1000);
+
+
+        } catch (err) {
+            console.log(err);
+            try {
+                await simpleRedis.disconnect();
+            } catch (err) {
+                console.log(err);
+            }
+        }
+        expect(called).to.be.true;
+        expect(calledCount).to.equal(1);
+
+    }).timeout(20000)
+
+    it('redis onClose manuel stop', async () => {
+        let called = false;
+        let calledCount = 0;
+        const onClose = async () => {
+            called = true;
+            calledCount++;
+        }
+        let exception = false;
+        const simpleRedis = new RedisServiceManuel('localhost:6379', undefined, 'single', onClose);
+        try {
+
+            await simpleRedis.set('abc', 'defs');
+            await Util.sleep(1000);
+            await simpleRedis.disconnect();
+
+        } catch (err) {
+            exception = true;
+            console.log(err);
+        }
+        expect(called).to.be.false;
+        expect(calledCount).to.equal(0);
+        expect(exception).to.be.false;
+
+    }).timeout(20000)
 
 
 

@@ -332,6 +332,7 @@ export class RedisService {
         arr.unshift(id ? id : '*');
         return await this.redis.xadd(key, ...arr);
     }
+    //TODO write multiple version of this
     async xread(key: string, count: number, pos: string, readtimeout: number) {
         const result = await this.redis.xread("COUNT", count, 'BLOCK', readtimeout, 'STREAMS', key, pos ? pos : '0');
         if (!result?.length || !result[0][1]) return [];
@@ -350,6 +351,34 @@ export class RedisService {
 
     }
 
+    async xreadmulti(search: { key: string, pos: string }[], count: number, readtimeout: number) {
+        let streams: any = [];
+        search.forEach(x => streams.push(x.key));
+        search.forEach(x => streams.push(x.pos));
+        const result = await this.redis.xread("COUNT", count, 'BLOCK', readtimeout, 'STREAMS', ...streams);
+        if (!result?.length) return [];
+        let finalList = [];
+        for (let x = 0; x < result.length; ++x) {
+            const channel = result[x][0];
+            const items = result[x][1];
+            let retItems = items.map(x => {
+                let obj = {
+                    xreadPos: x[0],
+                } as any;
+                for (let i = 0; i < x[1].length; i += 2) {
+                    if (i + 1 < x[1].length) {
+                        obj[x[1][i]] = x[1][i + 1];
+                    }
+                }
+                return obj;
+            })
+            finalList.push({ channel: channel, items: retItems });
+
+        }
+        return finalList;
+
+    }
+
     async xinfo(key: string) {
         let arr = await this.redis.xinfo('STREAM', key) as [];
         let info = {} as { [key: string]: any; };
@@ -363,13 +392,81 @@ export class RedisService {
     async cliendId() {
         return await this.redis.client('ID');
     }
-    async trackBroadCast(cliendId: number, prefix?: string) {
-        if (!prefix)
+    async trackBroadCast(cliendId: number, prefix?: string[]) {
+        if (!prefix?.length)
             return await this.redis.client('TRACKING', 'ON', 'REDIRECT', cliendId, 'BCAST');
-        else return await this.redis.client('TRACKING', 'ON', 'REDIRECT', cliendId, 'BCAST', 'PREFIX', prefix);
+        else {
+            let prefixList = prefix.map(x => ['PREFIX', x]).flat();
+            return await this.redis.client('TRACKING', 'ON', 'REDIRECT', cliendId, 'BCAST', ...prefixList);
+        }
     }
 
 
+}
+
+
+
+export class RedisServiceManuel extends RedisService {
+    /**
+     *
+     */
+
+
+    isClosedManuel = false;
+    constructor(protected host?: string, protected password: string | undefined = undefined, protected type: 'single' | 'cluster' | 'sentinel' = 'single', private onClose?: () => Promise<void>) {
+        super(host, password, type);
+
+        const onCloseFunc = async () => {
+            if (this.onClose && !this.isClosedManuel)
+                await this.onClose();
+            this.redis.removeListener('close', onCloseFunc);
+        }
+        this.redis.on('close', onCloseFunc);
+    }
+    override disconnect(): Promise<void> {
+        this.isClosedManuel = true;
+        return super.disconnect();
+    }
+
+    protected override createRedisClient(host?: string | undefined, password?: string | undefined, type?: "single" | "cluster" | "sentinel"): IORedis.Redis | IORedis.Cluster {
+
+        let hosts: { host: string, port: number }[] = [];
+
+        let parts = host?.split(',') || [];
+        for (let i = 0; i < parts.length; ++i) {
+            let splitted = parts[i].split(':');
+            let redishost = splitted.length > 0 ? splitted[0] : 'localhost';
+            let redisport = splitted.length > 1 ? Number(splitted[1]) : 6379
+            hosts.push({ host: redishost, port: redisport });
+        }
+        if (!hosts.length) {
+            hosts.push({ host: 'localhost', port: 6379 });
+        }
+
+        switch (type) {
+            case 'single':
+                let redis = new IORedis.default({
+                    host: hosts[0].host,
+                    port: hosts[0].port,
+                    connectTimeout: 5000,
+                    password: password,
+                    lazyConnect: true,
+                    maxRetriesPerRequest: null,
+                    retryStrategy: (times) => {
+                        return null;
+                    },
+                    autoResubscribe: false,
+                    autoResendUnfulfilledCommands: false
+
+                });
+                return redis;
+
+
+            default:
+                throw new Error(`unknown redis type ${type}`);
+        }
+
+    }
 }
 
 

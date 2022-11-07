@@ -1,85 +1,29 @@
 
 import { Tunnel } from "../../model/tunnel";
 import { logger } from "../../common";
-import { RedisService } from "../redisService";
+import { RedisService, RedisServiceManuel } from "../redisService";
 import Redis, { Cluster } from "ioredis";
 import * as IORedis from 'ioredis';
 import { EventEmitter, pipeline } from "stream";
 import { HelperService } from "../helperService";
 import { Util } from "../../util";
-
-export class RedisServiceManuel extends RedisService {
-    /**
-     *
-     */
-    isClosedManuel = false;
-    constructor(protected host?: string, protected password: string | undefined = undefined, protected type: 'single' | 'cluster' | 'sentinel' = 'single', private onClose?: () => Promise<void>) {
-        super(host, password, type);
-
-        this.redis.on('close', async () => {
-            if (this.onClose && !this.isClosedManuel)
-                await this.onClose();
-        })
-    }
-    override disconnect(): Promise<void> {
-        this.isClosedManuel = true;
-        return super.disconnect();
-    }
-
-    protected override createRedisClient(host?: string | undefined, password?: string | undefined, type?: "single" | "cluster" | "sentinel"): Redis | Cluster {
-
-        let hosts: { host: string, port: number }[] = [];
-
-        let parts = host?.split(',') || [];
-        for (let i = 0; i < parts.length; ++i) {
-            let splitted = parts[i].split(':');
-            let redishost = splitted.length > 0 ? splitted[0] : 'localhost';
-            let redisport = splitted.length > 1 ? Number(splitted[1]) : 6379
-            hosts.push({ host: redishost, port: redisport });
-        }
-        if (!hosts.length) {
-            hosts.push({ host: 'localhost', port: 6379 });
-        }
-
-        switch (type) {
-            case 'single':
-                let redis = new IORedis.default({
-                    host: hosts[0].host,
-                    port: hosts[0].port,
-                    connectTimeout: 5000,
-                    password: password,
-                    lazyConnect: true,
-                    maxRetriesPerRequest: null,
-                    retryStrategy: (times) => {
-                        return null;
-                    },
-                    autoResubscribe: false,
-                    autoResendUnfulfilledCommands: false
-
-                });
-                return redis;
+import { setIntervalAsync, clearIntervalAsync } from 'set-interval-async';
 
 
-            default:
-                throw new Error(`unknown redis type ${type}`);
-        }
 
-    }
-}
-
-
-export class TunnelWatcherService extends EventEmitter {
+export class SystemWatcherService extends EventEmitter {
     redisSlave: RedisServiceManuel | null = null;
     redisSlaveFiller: RedisServiceManuel | null = null;
     tunnels: Map<string, Tunnel> = new Map();
     isFilling = false;
     waitList: Set<string> = new Set();
-    waitListTimer: NodeJS.Timer | null = null;
-    startTimer: NodeJS.Timer | null = null;
+    waitListTimer: any | null = null;
+    startTimer: any | null = null;
     isExecutingWaitList = false;
+
     constructor() {
         super();
-
+        this.setMaxListeners(16);
 
     }
     createRedis() {
@@ -95,12 +39,15 @@ export class TunnelWatcherService extends EventEmitter {
     async startAgain() {
 
         try {
+            if (this.startTimer)
+                clearTimeout(this.startTimer);
+            this.startTimer = null;
             this.isFilling = true;
             logger.info("starting watching");
             this.redisSlave = this.createRedis();
             this.redisSlaveFiller = this.createRedis();
             const cliendId = await this.redisSlave.cliendId();
-            await this.redisSlave.trackBroadCast(cliendId, '/tunnel/id/');
+            await this.redisSlave.trackBroadCast(cliendId, ['/tunnel/id/']);
             await this.redisSlave.onMessage((channel: string, msg: string) => {
 
                 this.onMessage(channel, msg);
@@ -108,7 +55,7 @@ export class TunnelWatcherService extends EventEmitter {
             });
             await this.redisSlave.subscribe('__redis__:invalidate');
             await this.startFilling();
-            this.isFilling = false;
+
         } catch (err) {
             logger.error(err);
         }
@@ -137,11 +84,13 @@ export class TunnelWatcherService extends EventEmitter {
             const validTunnels = tunnels.filter(x => {
                 this.parseTunnel(x);//important
                 return HelperService.isValidTunnelNoException(x) ? false : true;
-            });
+            })
             validTunnels.forEach(x => {
                 if (x.id) {
                     this.tunnels.set(x.id, x);
                     this.emit('tunnelUpdated', x);
+                    this.emit('tunnel', { tunnel: x, action: 'updated' })
+
                 }
             });
 
@@ -149,8 +98,9 @@ export class TunnelWatcherService extends EventEmitter {
                 break;
             page++;
         }
-        this.waitListTimer = setInterval(async () => {
-            this.executeWaitList();
+        this.isFilling = false;
+        this.waitListTimer = setIntervalAsync(async () => {
+            await this.executeWaitList();
         }, 1000);
 
     }
@@ -188,18 +138,25 @@ export class TunnelWatcherService extends EventEmitter {
                     if (keys.length >= 2) {
                         const tunnelKey = keys[2];
                         const tunnel = results[i];
+
+
                         const exception = HelperService.isValidTunnelNoException(tunnel);
                         if (exception) {
                             const ourTunnel = this.tunnels.get(tunnelKey);
                             if (ourTunnel) {//only tracked tunnels
                                 this.emit('tunnelDeleted', ourTunnel);
+                                this.emit('tunnel', { tunnel: ourTunnel, action: 'delete' })
                                 this.tunnels.delete(tunnelKey);
                             }
 
                         } else {
+
                             this.tunnels.set(tunnelKey, tunnel);
                             this.emit('tunnelUpdated', tunnel);
+                            this.emit('tunnel', { tunnel: tunnel, action: 'update' })
+
                         }
+
                     }
 
                     this.waitList.delete(finalList[i]);
@@ -223,11 +180,13 @@ export class TunnelWatcherService extends EventEmitter {
             this.tunnels.clear();
             this.waitList.clear();
             if (this.waitListTimer)
-                clearInterval(this.waitListTimer);
+                await clearIntervalAsync(this.waitListTimer);
             this.waitListTimer = null;
             this.emit('reset');
+            this.emit('tunnel', { action: 'reset' })
             if (this.startTimer)
                 clearTimeout(this.startTimer);
+            this.startTimer = null;
             if (this.redisSlave)
                 await this.redisSlave.disconnect();
             this.redisSlave = null;
@@ -235,7 +194,7 @@ export class TunnelWatcherService extends EventEmitter {
                 await this.redisSlaveFiller.disconnect();
             this.redisSlaveFiller = null;
             this.startTimer = setTimeout(async () => {
-                this.startAgain();
+                await this.startAgain();
             }, 5000);
 
         } catch (err) {

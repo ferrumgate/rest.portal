@@ -14,6 +14,8 @@ import { RedisService } from "./redisService";
 import { TemplateService } from "./templateService";
 import { TunnelService } from "./tunnelService";
 import { TwoFAService } from "./twofaService";
+import { SystemWatcherService } from "./system/systemWatcherService";
+import { logger } from "../common";
 
 /**
  * this is a reference class container for expressjs
@@ -33,6 +35,7 @@ export class AppService {
     public eventService: EventService;
     public policyService: PolicyService;
     public auditService: AuditService;
+    public systemWatcherService: SystemWatcherService;
     public policyAuthzChannel: PolicyAuthzListener;
 
     /**
@@ -47,6 +50,7 @@ export class AppService {
         tunnel?: TunnelService, audit?: AuditService,
         event?: EventService,
         policy?: PolicyService,
+        systemWatcher?: SystemWatcherService,
         policyAuthzChannel?: PolicyAuthzListener) {
         //create self signed certificates for JWT
 
@@ -64,7 +68,8 @@ export class AppService {
         this.eventService = event || new EventService(this.configService, this.redisService);
         this.auditService = audit || new AuditService();
         this.policyService = policy || new PolicyService(this.configService, this.tunnelService, this.auditService);
-        this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(this.configService, this.tunnelService)
+        this.systemWatcherService = systemWatcher || new SystemWatcherService();
+        this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(this.configService, this.policyService, this.tunnelService, this.systemWatcherService);
 
     }
 

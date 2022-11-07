@@ -6,9 +6,10 @@ import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
 
-import { RedisServiceManuel, TunnelWatcherService } from '../src/service/system/tunnelWatcherService';
+import { SystemWatcherService } from '../src/service/system/systemWatcherService';
 import { Tunnel } from '../src/model/tunnel';
 import { watch } from 'fs';
+import { RedisServiceManuel } from '../src/service/redisService';
 
 
 
@@ -17,76 +18,18 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 
 
-describe('tunnelWatcherService', () => {
+describe('systemWatcherService', () => {
     beforeEach(async () => {
         try {
             const simpleRedis = new RedisServiceManuel('localhost:6379');
             await simpleRedis.flushAll();
+
         } catch (err) {
 
         }
     })
 
 
-    it.skip('redis onClose manuel stop', async () => {
-        let called = false;
-        let calledCount = 0;
-        const onClose = async () => {
-            called = true;
-            calledCount++;
-        }
-        const simpleRedis = new RedisServiceManuel('localhost:6700', undefined, 'single', onClose);
-        try {
-
-            await simpleRedis.set('abc', 'defs');
-            await Util.sleep(1000);
-
-
-        } catch (err) {
-            console.log(err);
-            try {
-                await simpleRedis.disconnect();
-            } catch (err) {
-                console.log(err);
-            }
-        }
-        expect(called).to.be.true;
-        expect(calledCount).to.equal(1);
-
-    }).timeout(20000)
-
-    it.skip('redis onClose manuel stop', async () => {
-        let called = false;
-        let calledCount = 0;
-        const onClose = async () => {
-            called = true;
-            calledCount++;
-        }
-        let exception = false;
-        const simpleRedis = new RedisServiceManuel('localhost:6379', undefined, 'single', onClose);
-        try {
-
-            await simpleRedis.set('abc', 'defs');
-            await Util.sleep(1000);
-            await simpleRedis.disconnect();
-
-        } catch (err) {
-            exception = true;
-            console.log(err);
-        }
-        expect(called).to.be.false;
-        expect(calledCount).to.equal(0);
-        expect(exception).to.be.false;
-
-    }).timeout(20000)
-
-    function createTunnel(): Tunnel {
-        return {
-            id: Util.randomNumberString(64), userId: Util.randomNumberString(), authenticatedTime: new Date().toString(),
-            assignedClientIp: '10.0.0.3', trackId: Math.floor(Math.random() * 4000000000),
-            clientIp: '192.168.1.100', tun: 'tun0', hostId: '1234', serviceNetwork: '192.168.0.0/24'
-        }
-    }
 
     it('startFilling', async () => {
 
@@ -108,7 +51,8 @@ describe('tunnelWatcherService', () => {
         let hrend = process.hrtime(hrstart)
         console.info('insert time records:%d (hr): %ds %dms', total, hrend[0], hrend[1] / 1000000);
 
-        const watcher = new TunnelWatcherService();
+        const watcher = new SystemWatcherService();
+        (watcher as any).hostId = '1234';
         watcher.createConnections();
         hrstart = process.hrtime();
         await watcher.startFilling();
@@ -143,7 +87,8 @@ describe('tunnelWatcherService', () => {
         console.info('insert time records:%d (hr): %ds %dms', total, hrend[0], hrend[1] / 1000000);
 
         let updatedTunnelCount = 0;
-        const watcher = new TunnelWatcherService();
+        const watcher = new SystemWatcherService();
+        (watcher as any).hostId = '1234';//for test manipulate
         watcher.on('tunnelUpdated', (tun: Tunnel) => {
             updatedTunnelCount++;
         })
@@ -160,9 +105,18 @@ describe('tunnelWatcherService', () => {
 
     }).timeout(200000)
 
+    function createTunnel(): Tunnel {
+        return {
+            id: Util.randomNumberString(64), userId: Util.randomNumberString(), authenticatedTime: new Date().toString(),
+            assignedClientIp: '10.0.0.3', trackId: Math.floor(Math.random() * 4000000000),
+            clientIp: '192.168.1.100', tun: 'tun0', hostId: '1234', serviceNetwork: '192.168.0.0/24'
+        }
+    }
 
     it('startAgain', async () => {
-        const watcher = new TunnelWatcherService();
+
+        const watcher = new SystemWatcherService();
+        (watcher as any).hostId = '1234';
         let updatedTunnelCount = 0;
         const simpleRedis = new RedisServiceManuel('localhost:6379', undefined, 'single');
         let firstlist = [];
@@ -204,7 +158,7 @@ describe('tunnelWatcherService', () => {
             }
             await pipeline.exec();
         }
-        await Util.sleep(5000);
+        await Util.sleep(10000);
         expect(watcher.tunnels.size).to.equal(200);
         expect(deletedTunnelcount).to.equal(0);
         let index = 0;
@@ -216,22 +170,23 @@ describe('tunnelWatcherService', () => {
             else
                 await simpleRedis.delete(`/tunnel/id/${item.id}`);
         }
-        await Util.sleep(5000);
+        await Util.sleep(10000);
         expect(watcher.tunnels.size).to.equal(100);
         expect(deletedTunnelcount).to.equal(100);
 
 
     }).timeout(200000)
 
+
     it('startAgain', async () => {
-        const watcher = new TunnelWatcherService();
+        const watcher = new SystemWatcherService();
         watcher.onMessage('', '/eleme,/test');
         expect(watcher.waitList.size).to.equal(2);
     })
 
     it('reset', async () => {
-        const watcher = new TunnelWatcherService();
-
+        const watcher = new SystemWatcherService();
+        (watcher as any).hostId = '1234';
         const simpleRedis = new RedisServiceManuel('localhost:6379', undefined, 'single');
         let firstlist = [];
         let total = 0;
@@ -264,7 +219,8 @@ describe('tunnelWatcherService', () => {
     }).timeout(1000000);
 
     it('executeWaitlist', async () => {
-        const watcher = new TunnelWatcherService();
+        const watcher = new SystemWatcherService();
+        (watcher as any).hostId = '1234';
         await watcher.createConnections();
         const simpleRedis = new RedisServiceManuel('localhost:6379', undefined, 'single');
         let firstlist = [];
@@ -320,9 +276,6 @@ describe('tunnelWatcherService', () => {
 
 
     }).timeout(1000000);
-
-
-
 
 
 

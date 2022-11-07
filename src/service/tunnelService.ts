@@ -84,8 +84,12 @@ export class TunnelService {
         tunnel.isPAM = Util.convertToBoolean(tunnel.isPAM);
         return tunnel;
     }
-    async getTunnelKey(clientIp: string) {
+    async getTunnelKeyFromClientIp(clientIp: string) {
         return await this.redisService.get(`/tunnel/ip/${clientIp}`, false) as string | undefined;
+    }
+
+    async getTunnelKeyFromTrackId(trackId: string | number) {
+        return await this.redisService.get(`/tunnel/trackId/${trackId.toString()}`, false) as string | undefined;
     }
     async createTunnel(user: User, tunnelKey: string) {
         const key = `/tunnel/id/${tunnelKey}`;

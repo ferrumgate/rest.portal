@@ -333,7 +333,9 @@ app.start = async function () {
     (app.appService as AppService).configService.setJWTSSLCertificate({
         privateKey: fs.readFileSync('./ferrumgate.com.key').toString('utf-8'),
         publicKey: fs.readFileSync('./ferrumgate.com.crt').toString('utf-8'),
-    })
+    });
+
+    (app.appService as AppService).systemWatcherService.startAgain().catch(err => logger.error(err));
 
 
     app.listen(port, () => {
