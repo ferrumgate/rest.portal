@@ -336,7 +336,7 @@ app.start = async function () {
         publicKey: fs.readFileSync('./ferrumgate.com.crt').toString('utf-8'),
     });
 
-    //await (app.appSystemService as AppSystemService).start();
+    await (app.appSystemService as AppSystemService).start();
 
 
     app.listen(port, () => {
