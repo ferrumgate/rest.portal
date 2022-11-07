@@ -78,8 +78,8 @@ export class RedisPipelineService {
         this.pipeline = await this.pipeline.decrby(key, val);
         return this;
     }
-    async expire(key: string, seconds: number): Promise<RedisPipelineService> {
-        this.pipeline = await this.pipeline.pexpire(key, seconds);
+    async expire(key: string, milisecond: number): Promise<RedisPipelineService> {
+        this.pipeline = await this.pipeline.pexpire(key, milisecond);
         return this;
 
     }
@@ -113,9 +113,24 @@ export class RedisPipelineService {
 
     }
 
+    async xadd(key: string, arg: any, id?: string) {
+        let arr = Object.entries(arg).filter((key, value) => {
+            if (typeof value == 'string') return true
+            if (typeof value == "number") return true
+            return false;
+        }).map((x: any[]) => {
+
+            return [x[0] as IORedis.RedisValue, x[1].toString() as IORedis.RedisValue]
+        }).flat();
+        arr.unshift(id ? id : '*');
+        this.pipeline = await this.pipeline.xadd(key, ...arr);
+        return this;
+    }
+
 
 }
 export class RedisService {
+
 
     protected redis: IORedis.Redis | IORedis.Cluster;
 
@@ -235,8 +250,8 @@ export class RedisService {
     async decrby(key: string, val: number): Promise<number> {
         return await this.redis.decrby(key, val);
     }
-    async expire(key: string, seconds: number): Promise<void> {
-        await this.redis.pexpire(key, seconds);
+    async expire(key: string, milisecond: number): Promise<void> {
+        await this.redis.pexpire(key, milisecond);
 
     }
 
@@ -313,6 +328,7 @@ export class RedisService {
     async subscribe(channel: string) {
         return this.redis.subscribe(channel);
     }
+
 
     async onMessage(callback: (channel: string, message: string) => void) {
         await this.redis.on('message', async (channel, message) => {

@@ -35,8 +35,6 @@ export class AppService {
     public eventService: EventService;
     public policyService: PolicyService;
     public auditService: AuditService;
-    public systemWatcherService: SystemWatcherService;
-    public policyAuthzChannel: PolicyAuthzListener;
 
     /**
      *
@@ -68,9 +66,31 @@ export class AppService {
         this.eventService = event || new EventService(this.configService, this.redisService);
         this.auditService = audit || new AuditService();
         this.policyService = policy || new PolicyService(this.configService, this.tunnelService, this.auditService);
-        this.systemWatcherService = systemWatcher || new SystemWatcherService();
-        this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(this.configService, this.policyService, this.tunnelService, this.systemWatcherService);
+
 
     }
 
+}
+
+export class AppSystemService {
+
+    public systemWatcherService: SystemWatcherService;
+    public policyAuthzChannel: PolicyAuthzListener;
+    /**
+     *
+     */
+    constructor(app: AppService, systemWatcher?: SystemWatcherService,
+        policyAuthzChannel?: PolicyAuthzListener) {
+        this.systemWatcherService = systemWatcher || new SystemWatcherService();
+        this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(app.policyService, this.systemWatcherService);
+
+    }
+    async start() {
+        await this.systemWatcherService.start();
+        await this.policyAuthzChannel.start();
+    }
+    async stop() {
+        await this.systemWatcherService.stop();
+        await this.policyAuthzChannel.stop();
+    }
 }

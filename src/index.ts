@@ -5,7 +5,7 @@ import { routerRegister } from "./api/registerApi";
 import { routerUserAuthenticated, routerUserEmailConfirm, routerUserForgotPassword, routerUserResetPassword } from "./api/userApi";
 import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "./common";
 import { ErrorCodes, RestfullException } from "./restfullException";
-import { AppService } from "./service/appService";
+import { AppService, AppSystemService } from "./service/appService";
 import { Util } from "./util";
 import * as helmet from 'helmet';
 import cors from 'cors';
@@ -35,6 +35,7 @@ const port = Number(process.env.PORT) | 8181;
 export const app = express();
 app.use(express.static('dassets'));
 app.appService = new AppService();
+app.appSystemService = new AppSystemService(app.appService);
 
 //disable powerer by
 //app.disable('x-powered-by');
@@ -335,7 +336,7 @@ app.start = async function () {
         publicKey: fs.readFileSync('./ferrumgate.com.crt').toString('utf-8'),
     });
 
-    (app.appService as AppService).systemWatcherService.start().catch(err => logger.error(err));
+    //await (app.appSystemService as AppSystemService).start();
 
 
     app.listen(port, () => {
