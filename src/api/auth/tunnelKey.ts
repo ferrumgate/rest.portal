@@ -20,7 +20,7 @@ export function tunnelKeyInit() {
                 if (!tunnelkey)
                     throw new RestfullException(401, ErrorCodes.ErrTunnelKeyIsNotValid, 'tunnel key header not found');
 
-                logger.info(`passport with tunnelkey: ${tunnelkey})}`);
+                logger.info(`passport with tunnelkey: ${tunnelkey}`);
                 const appService = req.appService as AppService;
                 const configService = appService.configService;
                 const redisService = appService.redisService;

@@ -6,6 +6,7 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
 import { RedisService, RedisServiceManuel } from '../src/service/redisService';
+import { execPath } from 'process';
 
 
 
@@ -325,6 +326,31 @@ describe('redisService', () => {
 
     }).timeout(10000);
 
+    it('redis info', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379', undefined, 'single',);
+        const info = await simpleRedis.info();
+        expect(info.includes(`role:master`)).to.be.true;
+
+    }).timeout(20000);
+
+    it('redis xtrim', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+        let key = '/test/stream';
+        await simpleRedis.xadd(key, 'test', `${new Date().getTime()}-1`)
+        await simpleRedis.xadd(key, 'test', `${new Date().getTime()}-2`)
+        await simpleRedis.xadd(key, 'test', `${new Date().getTime()}-3`)
+        await simpleRedis.xadd(key, 'test', `${new Date().getTime()}-4`)
+        await simpleRedis.xadd(key, 'test', `${new Date().getTime()}-5`)
+        await simpleRedis.xtrim(key, `${new Date().getTime() + 10}`);
+        const result = await simpleRedis.xread(key, 10, '0', 1000);
+        expect(result.length).to.be.equal(0);
+
+
+    }).timeout(20000);
+
+
 
     it('redis onClose manuel stop', async () => {
         let called = false;
@@ -377,6 +403,7 @@ describe('redisService', () => {
         expect(exception).to.be.false;
 
     }).timeout(20000);
+
 
 
 

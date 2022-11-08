@@ -417,6 +417,13 @@ export class RedisService {
         }
     }
 
+    async info() {
+        return await this.redis.info();
+    }
+    async xtrim(key: string, pos: string) {
+        return await this.redis.xtrim(key, 'MINID', pos);
+    }
+
 
 }
 

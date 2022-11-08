@@ -40,6 +40,7 @@ export class PolicyRoomService {
     private waitList: PolicyRoomCommand[] = [];
     private waitListInterval: any;
     public lastProcessSuccessfull: number = new Date().getTime();
+    private trimStreamInterval: any;
     constructor(_hostId: string, _serviceId: string, _instanceId: string) {
         this.hostId = _hostId;
         this.serviceId = _serviceId;
@@ -64,11 +65,25 @@ export class PolicyRoomService {
         this.waitListInterval = setIntervalAsync(async () => {
             await this.processWaitList();
         }, 1000);
+        //every day delete old records
+        this.trimStreamInterval = setIntervalAsync(async () => {
+            await this.trimStream();
+        }, 24 * 60 * 60 * 1000);
     }
     async stop() {
         this.waitList.splice(0);
         await clearIntervalAsync(this.interval);
         await clearIntervalAsync(this.waitListInterval);
+        await clearIntervalAsync(this.trimStreamInterval);
+    }
+    async trimStream() {
+        try {
+            logger.info(`trimming stream ${this.redisStreamKey}`);
+            let lastDay = new Date().getTime() - (24 * 60 * 60 * 1000);
+            await this.redisLocal.xtrim(this.redisStreamKey, lastDay.toString());
+        } catch (err) {
+            logger.error(err);
+        }
     }
     async pushOk() {
         this.waitList.push({ isOK: true })
@@ -83,6 +98,7 @@ export class PolicyRoomService {
     async push(trackId: number, result: PolicyAuthzResult) {
         this.waitList.push({ trackId: trackId, policyResult: result });
     }
+
     private async processWaitList() {
         let tmp = this.commandId;//store it
         try {
