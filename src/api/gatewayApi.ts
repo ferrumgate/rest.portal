@@ -10,7 +10,7 @@ import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
 import { authorize, authorizeAsAdmin } from "./commonApi";
-import { cloneGateway, Gateway, Network } from "../model/network";
+import { cloneGateway, Gateway, GatewayDetail, Network } from "../model/network";
 
 
 /////////////////////////////////  gateway //////////////////////////////////
@@ -38,6 +38,18 @@ routerGatewayAuthenticated.get('/:id',
 
     }))
 
+function gatewayDetailToGateway(x: GatewayDetail) {
+    let gateway: Gateway = {
+        id: x.id,
+        name: x.hostname || 'unknown',
+        insertDate: new Date().toISOString(),
+        labels: [], updateDate: new Date().toISOString(),
+        isEnabled: true
+
+    }
+    return gateway;
+}
+
 routerGatewayAuthenticated.get('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -49,26 +61,52 @@ routerGatewayAuthenticated.get('/',
         logger.info(`query gateway`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
+        const gatewayService = appService.gatewayService;
         let items: Gateway[] = [];
+
+        //find alive items and add them as real         
+        const aliveGateways = await gatewayService.getAllAlive();
+
+
+
         if (search) {
-            const networks = await configService.getGatewaysBy(search.toLowerCase());
-            items = items.concat(networks);
+            const gateways = await configService.getGatewaysBy(search.toLowerCase());
+            items = items.concat(gateways);
 
         } else
             if (ids) {
                 const parts = ids.split(',');
                 for (const id of parts) {
-                    const network = await configService.getGateway(id);
-                    if (network)
-                        items.push(network);
+                    const gateway = await configService.getGateway(id);
+                    if (gateway)
+                        items.push(gateway);
                 }
 
             } else
                 if (notJoined) {
-                    const networks = await configService.getGatewaysByNetworkId('');
-                    items = items.concat(networks);
-                } else
+                    const gateways = await configService.getGatewaysByNetworkId('');
+                    items = items.concat(gateways);
+                    //create a map for fast search
+                    let fastMap = new Map();
+                    items.forEach(x => fastMap.set(x.id, x.id));
+                    // alive items newly seen
+                    const notInList = aliveGateways.filter(x => !fastMap.get(x.id));
+                    notInList.forEach(x => {
+                        items.push(gatewayDetailToGateway(x));
+                    })
+
+
+                } else {
                     items = await configService.getGatewaysAll();
+                    //create a map for fast search
+                    let fastMap = new Map();
+                    items.forEach(x => fastMap.set(x.id, x.id));
+                    // alive items newly seen
+                    const notInList = aliveGateways.filter(x => !fastMap.get(x.id));
+                    notInList.forEach(x => {
+                        items.push(gatewayDetailToGateway(x));
+                    })
+                }
         return res.status(200).json({
             items: items
         });
@@ -108,10 +146,12 @@ routerGatewayAuthenticated.put('/',
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const gatewayService = appService.gatewayService;
 
         await inputService.checkNotEmpty(input.id);
         const gateway = await configService.getGateway(input.id);
-        if (!gateway) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no gateway');
+        const notRegistered = await gatewayService.getAliveById(input.id);
+        if (!gateway && !notRegistered) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no gateway');
 
 
         input.name = input.name || 'gateway';

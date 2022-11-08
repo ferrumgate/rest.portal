@@ -16,6 +16,8 @@ import { TunnelService } from "./tunnelService";
 import { TwoFAService } from "./twofaService";
 import { SystemWatcherService } from "./system/systemWatcherService";
 import { logger } from "../common";
+import { GatewayService } from "./gatewayService";
+
 
 /**
  * this is a reference class container for expressjs
@@ -35,7 +37,7 @@ export class AppService {
     public eventService: EventService;
     public policyService: PolicyService;
     public auditService: AuditService;
-
+    public gatewayService: GatewayService;
     /**
      *
      */
@@ -48,8 +50,8 @@ export class AppService {
         tunnel?: TunnelService, audit?: AuditService,
         event?: EventService,
         policy?: PolicyService,
-        systemWatcher?: SystemWatcherService,
-        policyAuthzChannel?: PolicyAuthzListener) {
+        gateway?: GatewayService,
+    ) {
         //create self signed certificates for JWT
 
         this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development2' ? `/tmp/${Util.randomNumberString()}_config.yaml` : '/etc/ferrumgate/config.yaml');
@@ -66,6 +68,7 @@ export class AppService {
         this.eventService = event || new EventService(this.configService, this.redisService);
         this.auditService = audit || new AuditService();
         this.policyService = policy || new PolicyService(this.configService, this.tunnelService, this.auditService);
+        this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
 
 
     }
