@@ -9,7 +9,7 @@ import { PolicyAuthzResult, PolicyService } from "../policyService";
 import { rootCertificates } from "tls";
 import { channel } from "diagnostics_channel";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
-
+import fsp from 'fs/promises';
 
 
 //below are how commands work
@@ -39,7 +39,7 @@ export class PolicyRoomService {
 
     private waitList: PolicyRoomCommand[] = [];
     private waitListInterval: any;
-    public lastProcessSuccessfull: number = new Date().getTime();;
+    public lastProcessSuccessfull: number = new Date().getTime();
     constructor(_hostId: string, _serviceId: string, _instanceId: string) {
         this.hostId = _hostId;
         this.serviceId = _serviceId;
@@ -125,6 +125,23 @@ export class PolicyRoomService {
 
 }
 
+class HostId {
+
+
+    static async read(configFilePath: string) {
+
+        const file = (await fsp.readFile(configFilePath)).toString();
+        const hostline = file.split('\n').find(x => x.startsWith('host='));
+        if (!hostline) throw new Error(`no host id found in config ${configFilePath}`);
+        const parts = hostline.split('=');
+        if (parts.length != 2) throw new Error(`no host id found in config ${configFilePath}`);
+        let hostId = parts[1];
+        if (!hostId)
+            throw new Error(`no host id found in config ${configFilePath}`);
+        return hostId;
+    }
+}
+
 export class PolicyAuthzListener {
 
     private redisLocalServiceListener: RedisService;
@@ -158,6 +175,7 @@ export class PolicyAuthzListener {
         clearIntervalAsync(this.waitListTimer);
     }
     async start() {
+
         this.systemWatcher.on('tunnel', async (arg: { tunnel?: Tunnel, action: string }) => {
             this.waitList.push(arg);
         })
@@ -165,11 +183,22 @@ export class PolicyAuthzListener {
         if (this.waitListTimer)
             clearIntervalAsync(this.waitListTimer);
         this.waitListTimer = setIntervalAsync(async () => {
+            await this.checkHostId();
             await this.startListening();
             await this.processWaitList();
         }, 1000);
     }
+    async checkHostId() {
+        if (!this.hostId) {
+            try {
+                this.hostId = await HostId.read('/etc/ferrumgate/config')
+            } catch (err) {
+                logger.error(err);
+            }
+        }
+    }
     async policyCalculate(item: { tunnel?: Tunnel, action: string }) {
+
         if (item.action == 'reset') {
             for (const room of this.roomList.values()) {
                 await room.pushReset();
@@ -202,6 +231,8 @@ export class PolicyAuthzListener {
         try {
             if (this.waitList.length) {
                 logger.info(`process waiting list count ${this.processWaitList.length}`);
+                if (!this.hostId)
+                    logger.fatal('there is not hostId');
             }
 
             while (this.waitList.length) {
