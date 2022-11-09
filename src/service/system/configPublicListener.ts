@@ -88,6 +88,7 @@ export class ConfigPublicRoom {
                 logger.info(`trim stream ${this.redisStreamKey}`);
                 await this.redis.expire(this.redisStreamKey, 60 * 60 * 1000);
                 await this.redis.xtrim(this.redisStreamKey, (new Date().getTime() - this.trimTimeMS).toString());
+                this.lastTrimTime = new Date().getTime();
             }
             while (this.waitList.length) {
                 const items = this.waitList.slice(0, 10000);
