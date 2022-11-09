@@ -150,7 +150,7 @@ describe('configPublicListener ', async () => {
         const msg: ConfigRequest = {
             id: 'adfaf', func: 'getServiceId', hostId: 'somehost', params: []
         }
-        await listener.executeMessage(Buffer.from(JSON.stringify(msg)).toString('base64'));
+        await listener.executeMessage('channe;', Buffer.from(JSON.stringify(msg)).toString('base64'));
         expect(listener.roomList.size).to.equal(1);
         expect(listener.cache.get('somehost')).exist;
 

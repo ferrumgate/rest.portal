@@ -6,6 +6,7 @@ import { RedisService } from "../redisService";
 import { GatewayService } from "../gatewayService";
 import NodeCache from "node-cache";
 import { pipeline } from "stream";
+import { timeStamp } from "console";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 export interface ConfigRequest {
@@ -56,7 +57,7 @@ export class ConfigPublicRoom {
         const network = await this.configService.getNetwork(gateway.networkId || '');
         if (!network)
             throw new Error('getServiceNetworkByGatewayId no network found');
-
+        logger.info(`executiong command for ${gatewayId}: getServiceNetworkByGatewayId`)
         return {
             id: queryId,
             result: network.serviceNetwork
@@ -81,7 +82,7 @@ export class ConfigPublicRoom {
     async processWaitList() {
         try {
             if (this.waitList.length) {
-                logger.info(`process waiting list count ${this.waitList.length}`);
+                logger.info(`process public listening waiting list count ${this.waitList.length}`);
             }
             if (this.lastTrimTime + this.trimTimeMS < new Date().getTime()) {
                 logger.info(`trim stream ${this.redisStreamKey}`);
@@ -140,12 +141,13 @@ export class ConfigPublicListener {
      */
     intervalCheckRedis: any = null;
     intervalPublish: any = null;
-    redisSlave: RedisService;
+    redisSlave: RedisService | null = null;
+    redisSlaveSub: RedisService | null = null;
     isRedisMaster = false;
     roomList: Map<string, ConfigPublicRoom> = new Map();
     cache: NodeCache;
     constructor(private configService: ConfigService) {
-        this.redisSlave = this.createRedis();
+
         this.cache = new NodeCache({ checkperiod: 600, deleteOnExpire: true, useClones: false, stdTTL: 600 });
 
         this.cache.on("expired", async (key, value: ConfigPublicRoom) => {
@@ -159,11 +161,12 @@ export class ConfigPublicListener {
     }
 
     async start() {
-        try {
-            await this.checkRedisRole();
-        } catch (err) { logger.error(err) };
+        await this.checkRedisRole();
+
         this.intervalCheckRedis = setIntervalAsync(async () => {
+
             await this.checkRedisRole();
+
         }, 15 * 1000);
     }
     async stop() {
@@ -173,32 +176,60 @@ export class ConfigPublicListener {
         if (this.intervalPublish)
             await clearIntervalAsync(this.intervalCheckRedis);
         this.intervalCheckRedis = null;
+
     }
     async checkRedisRole() {
         let previous = this.isRedisMaster;
-        const info = await this.redisSlave.info();
-        if (info.includes("role:master"))
-            this.isRedisMaster = true;
-        if (previous != this.isRedisMaster) {
-            if (this.isRedisMaster) {
-                await this.startListening();
-            } else
-                await this.stopListening();
+        try {
+
+            if (!this.redisSlave)
+                this.redisSlave = this.createRedis();
+            if (!this.redisSlaveSub)
+                this.redisSlaveSub = this.createRedis();
+            const info = await this.redisSlave.info();
+            if (info.includes("role:master")) {
+                this.isRedisMaster = true;
+                logger.info("redis is master");
+            } else {
+                logger.info(`redis is slave`);
+            }
+            if (previous != this.isRedisMaster) {
+                if (this.isRedisMaster) {
+                    await this.startListening();
+                } else
+                    await this.stopListening();
+            }
+        } catch (err) {
+            logger.error(err);
+            this.isRedisMaster = previous;
+            if (this.redisSlave)
+                await this.redisSlave?.disconnect();
+            this.redisSlave = null;
+            if (this.redisSlaveSub)
+                await this.redisSlaveSub?.disconnect();
+            this.redisSlaveSub = null;
         }
     }
     async startListening() {
-        this.redisSlave = this.createRedis();
-        this.redisSlave.onMessage(async (msg: string) => {
-            await this.executeMessage(msg);
-        })
+        logger.info('starting config public listener');
+        if (this.redisSlaveSub) {
+            this.redisSlaveSub.onMessage(async (channel: string, msg: string) => {
+                await this.executeMessage(channel, msg);
+            })
+            await this.redisSlaveSub.subscribe(`/query/config`);
+        }
     }
     async stopListening() {
+        logger.info('stoping config public listener');
         this.isRedisMaster = false;
-        await this.redisSlave.disconnect();
+        if (this.redisSlaveSub)
+            await this.redisSlaveSub.disconnect();
+        this.redisSlaveSub = null;
     }
 
-    async executeMessage(msg: string) {
+    async executeMessage(channel: string, msg: string) {
         try {
+
             const query = JSON.parse(Buffer.from(msg, 'base64').toString()) as ConfigRequest;
             logger.info(`config query received from host:${query.hostId} func:${query.func}`)
             if (query.hostId) {
@@ -208,6 +239,7 @@ export class ConfigPublicListener {
                     await this.roomList.set(query.hostId, roomNew);
                     await this.cache.set(query.hostId, roomNew);
                     room = roomNew;
+                    await room.start();
                 } else {
                     this.cache.ttl(query.hostId, 600);
                 }
