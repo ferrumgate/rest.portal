@@ -188,7 +188,7 @@ export class PolicyAuthzListener {
     }
     async stop() {
         await this.redisLocalServiceListener.disconnect();
-        clearIntervalAsync(this.waitListTimer);
+        await clearIntervalAsync(this.waitListTimer);
     }
     async start() {
 
@@ -197,7 +197,7 @@ export class PolicyAuthzListener {
         })
 
         if (this.waitListTimer)
-            clearIntervalAsync(this.waitListTimer);
+            await clearIntervalAsync(this.waitListTimer);
         this.waitListTimer = setIntervalAsync(async () => {
             await this.checkHostId();
             await this.startListening();
@@ -246,7 +246,7 @@ export class PolicyAuthzListener {
 
         try {
             if (this.waitList.length) {
-                logger.info(`process waiting list count ${this.processWaitList.length}`);
+                logger.info(`process waiting list count ${this.waitList.length}`);
                 if (!this.hostId)
                     logger.fatal('there is not hostId');
             }

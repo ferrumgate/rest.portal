@@ -17,6 +17,7 @@ import { TwoFAService } from "./twofaService";
 import { SystemWatcherService } from "./system/systemWatcherService";
 import { logger } from "../common";
 import { GatewayService } from "./gatewayService";
+import { ConfigPublicListener } from "./system/configPublicListener";
 
 
 /**
@@ -79,21 +80,25 @@ export class AppSystemService {
 
     public systemWatcherService: SystemWatcherService;
     public policyAuthzChannel: PolicyAuthzListener;
+    public configPublicListener: ConfigPublicListener;
     /**
      *
      */
     constructor(app: AppService, systemWatcher?: SystemWatcherService,
-        policyAuthzChannel?: PolicyAuthzListener) {
+        policyAuthzChannel?: PolicyAuthzListener, configPublic?: ConfigPublicListener) {
         this.systemWatcherService = systemWatcher || new SystemWatcherService();
         this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(app.policyService, this.systemWatcherService);
+        this.configPublicListener = configPublic || new ConfigPublicListener(app.configService);
 
     }
     async start() {
         await this.systemWatcherService.start();
         await this.policyAuthzChannel.start();
+        await this.configPublicListener.start();
     }
     async stop() {
         await this.systemWatcherService.stop();
         await this.policyAuthzChannel.stop();
+        await this.configPublicListener.stop();
     }
 }

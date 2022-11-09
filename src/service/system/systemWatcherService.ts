@@ -76,7 +76,7 @@ export class SystemWatcherService extends EventEmitter {
                     await this.executeWaitList();
                 } catch (err) {
                     logger.error(err);
-                    clearIntervalAsync(this.waitListTimer);
+                    await clearIntervalAsync(this.waitListTimer);
                     this.isWorking = false;
                     await this.reset();
                 }

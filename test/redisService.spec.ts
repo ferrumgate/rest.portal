@@ -6,7 +6,7 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
 import { RedisService, RedisServiceManuel } from '../src/service/redisService';
-import { execPath } from 'process';
+
 
 
 
@@ -210,6 +210,32 @@ describe('redisService', () => {
         await simpleRedis2.publish('test.channel', obj);
         await Util.sleep(2000);
         expect(isDataReceived).to.be.true;
+
+    }).timeout(10000)
+
+
+    it('redis publish/subscribe on close disabled', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+        const simpleRedis2 = new RedisService('localhost:6379');
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        await simpleRedis.subscribe('test.channel');
+        await simpleRedis.onMessage((channel: string, message: string) => {
+            isDataReceived = true;
+        })
+        await simpleRedis2.publish('test.channel', obj);
+        await Util.sleep(2000);
+        expect(isDataReceived).to.be.true;
+
+        isDataReceived = false;
+        await simpleRedis.disconnect();
+        await Util.sleep(2000);
+        //message will not be received 
+        await simpleRedis2.publish('test.channel', obj);
+        await Util.sleep(2000);
+        expect(isDataReceived).to.be.false;
+
 
     }).timeout(10000)
 

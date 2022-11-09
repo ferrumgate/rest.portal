@@ -348,7 +348,7 @@ export class RedisService {
         arr.unshift(id ? id : '*');
         return await this.redis.xadd(key, ...arr);
     }
-    //TODO write multiple version of this
+
     async xread(key: string, count: number, pos: string, readtimeout: number) {
         const result = await this.redis.xread("COUNT", count, 'BLOCK', readtimeout, 'STREAMS', key, pos ? pos : '0');
         if (!result?.length || !result[0][1]) return [];
@@ -422,6 +422,13 @@ export class RedisService {
     }
     async xtrim(key: string, pos: string) {
         return await this.redis.xtrim(key, 'MINID', pos);
+    }
+
+    async lpush(key: string, values: string[]) {
+        return await this.redis.lpush(key, ...values);
+    }
+    async smembers(key: string) {
+        return await this.redis.smembers(key);
     }
 
 
