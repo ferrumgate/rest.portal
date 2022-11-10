@@ -13,6 +13,8 @@ import { Util } from '../src/util';
 import { Network } from '../src/model/network';
 import { Gateway } from '../src/model/network';
 import { ConfigPublicRoom, ConfigPublicListener, ConfigRequest, ConfigResponse } from '../src/service/system/configPublicListener';
+import { Service } from '../src/model/service';
+import { config } from 'process';
 
 
 
@@ -20,7 +22,7 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 
 
-async function createSampleData(): Promise<ConfigService> {
+async function createSampleData(): Promise<any> {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     //first create a config and save to a file
     let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
@@ -57,7 +59,22 @@ async function createSampleData(): Promise<ConfigService> {
         updateDate: new Date().toISOString()
     }
     await configService.saveGateway(gateway2);
-    return configService;
+
+    let service: Service = {
+        id: Util.randomNumberString(),
+        name: 'mysql-dev',
+        isEnabled: true,
+        labels: [],
+        host: '1.2.3.4',
+        networkId: network.id,
+        tcp: 3306, assignedIp: '1.3',
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString(),
+
+    }
+    //add
+    await configService.saveService(service);
+    return { gateway, gateway2, network, service, configService };
 }
 
 describe('configPublicRoom ', async () => {
@@ -67,49 +84,123 @@ describe('configPublicRoom ', async () => {
         await simpleRedis.flushAll();
     })
 
-    it('getServiceNetworkByGatewayId', async () => {
-        const config = await createSampleData();
-        const room = new ConfigPublicRoom('231a0932', config);
-        let isError = false;
-        try { await room.getServiceNetworkByGatewayId('someid'); } catch (err) { isError = true; }
 
-        isError = false
-        try { await room.getServiceNetworkByGatewayId('someid', 'theotherid') } catch (err) { isError = true };
+    it('getGatewayById', async () => {
+        const { gateway, gateway2, network, service, configService } = await createSampleData();
+        const room = new ConfigPublicRoom('231a0932', configService);
 
-        isError = false
-        try { await room.getServiceNetworkByGatewayId('someid', 'aaa231a0932') } catch (err) { isError = true };
+        let resp = await room.getGatewayById('someid');
+        expect(resp.error).to.be.undefined;
+        expect(resp.result).to.be.undefined;
 
-        const result = await room.getServiceNetworkByGatewayId('someid', '231a0932')
+
+        resp = await room.getGatewayById('someid', 'theotherid');
+        expect(resp.result).to.be.undefined;
+        expect(resp.isError).to.be.undefined;
+
+
+        resp = await room.getGatewayById('someid', 'baaa231a0932')
+        expect(resp.result).to.be.undefined;
+        expect(resp.isError).to.be.undefined;
+
+        const result = await room.getGatewayById('someid', '231a0932')
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.equal('172.16.0.0/24');
+        expect(result.result).to.deep.equal(gateway);
 
     }).timeout(5000);
 
+    it('getNetworkByGatewayId', async () => {
+        const { gateway, gateway2, network, service, configService } = await createSampleData();
+        const room = new ConfigPublicRoom('231a0932', configService);
+
+        let resp = await room.getNetworkByGatewayId('someid');
+        expect(resp.error).to.be.undefined;
+        expect(resp.result).to.be.undefined;
+
+
+        resp = await room.getNetworkByGatewayId('someid', 'theotherid');
+        expect(resp.result).to.be.undefined;
+        expect(resp.isError).to.be.undefined;
+
+
+        const result = await room.getNetworkByGatewayId('someid', '231a0932')
+        expect(result.id).to.equal('someid');
+        expect(result.isError).to.be.undefined;
+        expect(result.result).to.deep.equal(network);
+
+    }).timeout(5000);
+
+
+    it('getService', async () => {
+        const { gateway, gateway2, network, service, configService } = await createSampleData();
+        const room = new ConfigPublicRoom('231a0932', configService);
+
+        let resp = await room.getService('someid');
+        expect(resp.error).to.be.undefined;
+        expect(resp.result).to.be.undefined;
+
+
+        resp = await room.getService('someid', 'theotherid');
+        expect(resp.result).to.be.undefined;
+        expect(resp.isError).to.be.undefined;
+
+
+        const result = await room.getService('someid', service.id)
+        expect(result.id).to.equal('someid');
+        expect(result.isError).to.be.undefined;
+        expect(result.result).to.deep.equal(service);
+
+    }).timeout(5000);
+
+    it('getServicesByGatewayId', async () => {
+        const { gateway, gateway2, network, service, configService } = await createSampleData();
+        const room = new ConfigPublicRoom('231a0932', configService);
+
+        let resp = await room.getServicesByGatewayId('someid');
+        expect(resp.error).to.be.undefined;
+        expect(resp.result.length).to.equal(0);
+
+
+        resp = await room.getServicesByGatewayId('someid', 'theotherid');
+        expect(resp.error).to.be.undefined;
+        expect(resp.result.length).to.equal(0);
+
+
+        const result = await room.getServicesByGatewayId('someid', gateway.id);
+        expect(result.id).to.equal('someid');
+        expect(result.isError).to.be.undefined;
+        expect(result.result[0]).to.deep.equal(service);
+
+    }).timeout(5000);
+
+
+
+
     it('executeRequest', async () => {
-        const config = await createSampleData();
-        const room = new ConfigPublicRoom('231a0932', config);
+        const { gateway, gateway2, network, service, configService } = await createSampleData();
+        const room = new ConfigPublicRoom('231a0932', configService);
         let isError = false;
         try { await room.executeRequest({ hostId: 'someid' } as any); } catch (err) { isError = true; }
 
         isError = false
         try { await room.executeRequest({ id: '221', hostId: '231a0932', func: 'notfound' } as any) } catch (err) { isError = true };
 
-        const result = await room.executeRequest({ id: '23232', hostId: '231a0932', func: 'getServiceNetworkByGatewayId', params: ['231a0932'] });
+        const result = await room.executeRequest({ id: '23232', hostId: '231a0932', func: 'getNetworkByGatewayId', params: ['231a0932'] });
 
         expect(result.id).to.equal('23232');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.equal('172.16.0.0/24');
+        expect(result.result.serviceNetwork).to.equal('172.16.0.0/24');
 
     }).timeout(5000);
 
 
     it('processWaitList', async () => {
         const simpleRedis = new RedisService('localhost:6379');
-        const config = await createSampleData();
-        const room = new ConfigPublicRoom('231a0932', config);
+        const { gateway, gateway2, network, service, configService } = await createSampleData();
+        const room = new ConfigPublicRoom('231a0932', configService);
 
-        await room.waitList.push({ id: '10', hostId: '231a0932', func: 'getServiceNetworkByGatewayId', params: ['231a0932'] });
+        await room.waitList.push({ id: '10', hostId: '231a0932', func: 'getNetworkByGatewayId', params: ['231a0932'] });
         await room.processWaitList();
         expect(room.waitList.length).to.equal(0);
         let pos = '0';
@@ -119,7 +210,7 @@ describe('configPublicRoom ', async () => {
         const response = JSON.parse(Buffer.from(result[0].data, 'base64').toString()) as ConfigResponse;
         expect(response.id).to.equal('10');
         expect(response.isError).to.undefined;
-        expect(response.result).to.equal('172.16.0.0/24');
+        expect(response.result.serviceNetwork).to.equal('172.16.0.0/24');
 
 
     }).timeout(5000);
@@ -136,8 +227,8 @@ describe('configPublicListener ', async () => {
 
     it('checkRedisRole', async () => {
         //const simpleRedis = new RedisService('localhost:6379');
-        const config = await createSampleData();
-        const listener = new ConfigPublicListener(config);
+        const { gateway, gateway2, network, service, configService } = await createSampleData();
+        const listener = new ConfigPublicListener(configService);
 
         expect(listener.isRedisMaster).to.be.false;
         await listener.checkRedisRole();
@@ -145,8 +236,8 @@ describe('configPublicListener ', async () => {
     })
     it('executeMessage', async () => {
 
-        const config = await createSampleData();
-        const listener = new ConfigPublicListener(config);
+        const { gateway, gateway2, network, service, configService } = await createSampleData();
+        const listener = new ConfigPublicListener(configService);
         const msg: ConfigRequest = {
             id: 'adfaf', func: 'getServiceId', hostId: 'somehost', params: []
         }

@@ -47,30 +47,95 @@ export class ConfigPublicRoom {
             await clearIntervalAsync(this.intervalWaitList);
         this.intervalWaitList = null;
     }
-    async getServiceNetworkByGatewayId(queryId: string, gatewayId?: string) {
+    async getGatewayById(queryId: string, gatewayId?: string) {
+        logger.info(`executing command for ${gatewayId}: getGatewayById`)
+        let result = {
+            id: queryId
+        } as ConfigResponse;
+
         if (!gatewayId) {
-            throw new Error(`getServiceNetworkByGatewayId gatewayId param is absent`);
+            return result;
         }
         const gateway = await this.configService.getGateway(gatewayId);
         if (!gateway)
-            throw new Error('getServiceNetworkByGatewayId no gateway found');
-        const network = await this.configService.getNetwork(gateway.networkId || '');
-        if (!network)
-            throw new Error('getServiceNetworkByGatewayId no network found');
-        logger.info(`executiong command for ${gatewayId}: getServiceNetworkByGatewayId`)
-        return {
-            id: queryId,
-            result: network.serviceNetwork
-        } as ConfigResponse;
+            return result;
+
+        result.result = gateway;
+        return result;
 
     }
+    async getNetworkByGatewayId(queryId: string, gatewayId?: string) {
+        logger.info(`executing command for ${gatewayId}: getNetworkByGatewayId`)
+        let result = {
+            id: queryId
+        } as ConfigResponse;
+
+        if (!gatewayId) {
+            return result;
+        }
+        const gateway = await this.configService.getGateway(gatewayId);
+        if (!gateway)
+            return result;
+        const network = await this.configService.getNetwork(gateway.networkId || '');
+        if (!network)
+            return result;
+
+        result.result = network;
+        return result;
+
+    }
+
+    async getServicesByGatewayId(queryId: string, gatewayId?: string) {
+        logger.info(`executing command for ${gatewayId}: getServices`)
+        let result = {
+            id: queryId,
+            result: []
+        } as ConfigResponse;
+
+        if (!gatewayId) {
+            return result;
+        }
+        const gateway = await this.configService.getGateway(gatewayId);
+        if (!gateway)
+            return result;
+        const network = await this.configService.getNetwork(gateway.networkId || '');
+        if (!network)
+            return result;
+        const services = await this.configService.getServicesByNetworkId(network.id);
+
+        result.result = services;
+        return result;
+
+    }
+
+    async getService(queryId: string, id?: string) {
+        logger.info(`executing command for ${id}: getService`)
+        let result = {
+            id: queryId,
+        } as ConfigResponse;
+
+        const service = await this.configService.getService(id || '');
+        if (!service)
+            return result;
+        result.result = service;
+        return result;
+
+    }
+
+
     async executeRequest(item: ConfigRequest): Promise<ConfigResponse> {
 
         if (item.hostId != this.gatewayId) throw new Error(`execute query host id not equal`);
         logger.info(`execution query ${item.id}:${item.func}`);
         switch (item.func) {
-            case 'getServiceNetworkByGatewayId':
-                return await this.getServiceNetworkByGatewayId(item.id, ...item.params);
+            case 'getGatewayById':
+                return await this.getGatewayById(item.id, ...item.params);
+            case 'getNetworkByGatewayId':
+                return await this.getNetworkByGatewayId(item.id, ...item.params);
+            case 'getServicesByGatewayId':
+                return await this.getServicesByGatewayId(item.id, ...item.params);
+            case 'getService':
+                return await this.getService(item.id, ...item.params);
 
             default:
                 throw new Error(`unknown execute command ${item.func}`);

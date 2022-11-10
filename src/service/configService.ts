@@ -109,7 +109,9 @@ export class ConfigService {
 
 
         }
-        //for testing
+        // start point for delete
+        //for testing start
+        //dont delete aboveline
         if (process.env.NODE_ENV == 'development') {
             this.config.auth.oauth = {
                 providers: [
@@ -328,6 +330,9 @@ export class ConfigService {
             })
 
         }
+        //dont delete below line
+        //for testing end
+        // end point for delete
         this.loadConfigFromFile();
 
         this.lastUpdateTime = new Date().toISOString();
