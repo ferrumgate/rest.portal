@@ -72,13 +72,19 @@ export class PolicyRoomService {
     }
     async stop() {
         this.waitList.splice(0);
-        await clearIntervalAsync(this.interval);
-        await clearIntervalAsync(this.waitListInterval);
-        await clearIntervalAsync(this.trimStreamInterval);
+        if (this.interval)
+            await clearIntervalAsync(this.interval);
+        this.interval = null;
+        if (this.waitListInterval)
+            await clearIntervalAsync(this.waitListInterval);
+        this.waitListInterval = null;
+        if (this.trimStreamInterval)
+            await clearIntervalAsync(this.trimStreamInterval);
+        this.trimStreamInterval = null;
     }
     async trimStream() {
         try {
-            logger.info(`trimming stream ${this.redisStreamKey}`);
+            logger.info(`policy room trimming stream ${this.redisStreamKey}`);
             let lastDay = new Date().getTime() - (24 * 60 * 60 * 1000);
             await this.redisLocal.xtrim(this.redisStreamKey, lastDay.toString());
         } catch (err) {
@@ -86,16 +92,20 @@ export class PolicyRoomService {
         }
     }
     async pushOk() {
+        logger.debug(`policy room: ${this.hostId}/${this.serviceId}/${this.instanceId} push ok`)
         this.waitList.push({ isOK: true })
     }
     async pushReset() {
+        logger.debug(`policy room: ${this.hostId}/${this.serviceId}/${this.instanceId} push reset`)
         this.waitList.splice(0);
         this.waitList.push({ isReset: true })
     }
     async pushDelete(trackId: number) {
+        logger.debug(`policy room: ${this.hostId}/${this.serviceId}/${this.instanceId} push delete`)
         this.waitList.push({ trackId: trackId, isDelete: true });
     }
     async push(trackId: number, result: PolicyAuthzResult) {
+        logger.debug(`policy room: ${this.hostId}/${this.serviceId}/${this.instanceId} push`)
         this.waitList.push({ trackId: trackId, policyResult: result });
     }
 
@@ -103,8 +113,9 @@ export class PolicyRoomService {
         let tmp = this.commandId;//store it
         try {
             let page = 0;
+            logger.debug(`policy room: ${this.hostId}/${this.serviceId}/${this.instanceId} wait list: ${this.waitList.length}`)
             while (this.waitList.length) {
-                logger.info(`executing wait list service on /${this.hostId}/${this.serviceId}/${this.instanceId} page:${page}`)
+                logger.info(`policy room: executing wait list service on /${this.hostId}/${this.serviceId}/${this.instanceId} page:${page}`)
                 let snapshot = this.waitList.slice(0, 10000);
                 let pipeline = await this.redisLocal.multi();
                 for (const cmd of snapshot) {
@@ -113,20 +124,23 @@ export class PolicyRoomService {
                         this.commandId = 0;
                         this.commandId++;
                         await pipeline.xadd(this.redisStreamKey, { cmd: `${this.commandId}/reset` }, this.xaddId(this.commandId));
-
+                        logger.debug(`policy room: write push reset to service: /${this.hostId}/${this.serviceId}/${this.instanceId}`)
                     } else
                         if (cmd.isOK) {
                             this.commandId++;
                             await pipeline.xadd(this.redisStreamKey, { cmd: `${this.commandId}/ok` }, this.xaddId(this.commandId));
+                            logger.debug(`policy room: write push ok to service: /${this.hostId}/${this.serviceId}/${this.instanceId}`)
                         }
                         else if (cmd.isDelete && cmd.trackId) {
                             this.commandId++;
                             await pipeline.xadd(this.redisStreamKey, { cmd: `${this.commandId}/delete/${cmd.trackId}` }, this.xaddId(this.commandId));
+                            logger.debug(`policy room: write push delete to service: /${this.hostId}/${this.serviceId}/${this.instanceId}`)
                         }
                         else if (cmd.trackId && cmd.policyResult) {
                             this.commandId++;
                             let isDrop = cmd.policyResult.error ? 1 : 0;
-                            await pipeline.xadd(this.redisStreamKey, { cmd: `${this.commandId}/update/${cmd.trackId}/${isDrop}/${cmd.policyResult.index || 0}/${cmd.policyResult.error + 10000}/${cmd.policyResult.rule?.id || ''}` }, this.xaddId(this.commandId));
+                            await pipeline.xadd(this.redisStreamKey, { cmd: `${this.commandId}/update/${cmd.trackId}/${isDrop}/${cmd.policyResult.index || 0}/${cmd.policyResult.error + 10000}/${cmd.policyResult.rule?.id || 0}` }, this.xaddId(this.commandId));
+                            logger.debug(`policy room: write push update to service: /${this.hostId}/${this.serviceId}/${this.instanceId}`)
                         }
                 }
                 await pipeline.exec();
@@ -188,7 +202,9 @@ export class PolicyAuthzListener {
     }
     async stop() {
         await this.redisLocalServiceListener.disconnect();
-        await clearIntervalAsync(this.waitListTimer);
+        if (this.waitListTimer)
+            await clearIntervalAsync(this.waitListTimer);
+        this.waitListTimer = null;
     }
     async start() {
 
@@ -198,6 +214,7 @@ export class PolicyAuthzListener {
 
         if (this.waitListTimer)
             await clearIntervalAsync(this.waitListTimer);
+        this.waitListTimer = null;
         this.waitListTimer = setIntervalAsync(async () => {
             await this.checkHostId();
             await this.startListening();
@@ -216,6 +233,7 @@ export class PolicyAuthzListener {
     async policyCalculate(item: { tunnel?: Tunnel, action: string }) {
 
         if (item.action == 'reset') {
+
             for (const room of this.roomList.values()) {
                 await room.pushReset();
             }
@@ -246,9 +264,9 @@ export class PolicyAuthzListener {
 
         try {
             if (this.waitList.length) {
-                logger.info(`process waiting list count ${this.waitList.length}`);
+                logger.info(`policy authz waiting list count ${this.waitList.length}`);
                 if (!this.hostId)
-                    logger.fatal('there is not hostId');
+                    logger.fatal('policy authz there is not hostId');
             }
 
             while (this.waitList.length) {
@@ -271,7 +289,7 @@ export class PolicyAuthzListener {
         try {
             if (!hostId || !serviceId || !instanceId) return;
             let key = `/${hostId}/${serviceId}/${instanceId}`;
-            logger.info(`replicate to me ${key}`);
+            logger.info(`policy authz replicate to service ${key}`);
 
             let item = this.cache.get(key) as PolicyRoomService;
             if (item) {
@@ -281,7 +299,9 @@ export class PolicyAuthzListener {
                 const room = new PolicyRoomService(hostId, serviceId, instanceId);
                 this.cache.set(key, room);
                 this.roomList.set(key, room);
+
                 await room.pushReset();
+                await room.start();
                 item = room;
             }
             await this.fillRoomService(item);
@@ -300,13 +320,15 @@ export class PolicyAuthzListener {
     }
     async fillRoomService(room: PolicyRoomService) {
         //snapshot of tunnels
-        logger.info(`filling service /${room.hostId}/${room.serviceId}/${room.instanceId}`)
+        logger.info(`policy authz filling service /${room.hostId}/${room.serviceId}/${room.instanceId}`)
         let allTunnels = [...this.systemWatcher.tunnels.values()];
         let filteredTunnels = allTunnels.filter(x => x.hostId == room.hostId);//only this service
         for (const tunnel of filteredTunnels) {
             if (!tunnel.trackId)
                 continue;
             const pResult = await this.policyService.authorize(tunnel.trackId, room.serviceId, false, tunnel);
+
+            logger.debug(`policy authz trackId:${tunnel.trackId} serviceId:${room.serviceId} result:${JSON.stringify(pResult)}`);
             await room.push(tunnel.trackId, pResult);
         }
     }
@@ -314,7 +336,7 @@ export class PolicyAuthzListener {
     async iAmAliveMessage(hostId?: string, serviceId?: string, instanceId?: string) {
         if (!hostId || !serviceId || !instanceId) return;
         let key = `/${hostId}/${serviceId}/${instanceId}`;
-        logger.info(`i am alive message from ${key}`);
+        logger.info(`i am alive service: ${key}`);
         const item = this.cache.get(key) as PolicyRoomService;
         if (item) {//cache has this item, then set ttl again
             this.cache.ttl(key, 60);

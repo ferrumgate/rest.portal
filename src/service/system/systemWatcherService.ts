@@ -62,7 +62,7 @@ export class SystemWatcherService extends EventEmitter {
             const cliendId = await this.redisSlave.cliendId();
             await this.redisSlave.trackBroadCast(cliendId, ['/tunnel/id/']);
             await this.redisSlave.onMessage((channel: string, msg: string) => {
-
+                logger.debug("redis broadcast msg received");
                 this.onMessage(channel, msg);
 
             });
@@ -134,7 +134,7 @@ export class SystemWatcherService extends EventEmitter {
         if (!this.redisSlaveFiller) return;
 
         while (this.waitList.size && !this.isStoping) {
-            logger.info(`executing wait list size ${this.waitList.size}`);
+            logger.info(`system watcher executing wait list size ${this.waitList.size}`);
             let finalList = [];
             for (const item of this.waitList) {
                 finalList.push(item);
@@ -142,7 +142,7 @@ export class SystemWatcherService extends EventEmitter {
                     break;
             }
 
-            logger.info(`found wait list item ${finalList.length}`);
+            logger.debug(`system watcher found wait list item ${finalList.length}`);
             const pipeline = await this.redisSlaveFiller.multi();
             finalList.forEach(async (x) => {
                 await pipeline.hgetAll(x);
@@ -216,6 +216,7 @@ export class SystemWatcherService extends EventEmitter {
     async onMessage(channel: string, msg: string) {
         if (typeof msg == 'string' && msg && msg != 'null') {
             try {
+                logger.debug(`system watcher message received ${msg}`);
                 const filtered = msg.split(',').map(x => x.trim()).filter(y => y);
                 filtered.forEach(x => this.waitList.add(x));
 

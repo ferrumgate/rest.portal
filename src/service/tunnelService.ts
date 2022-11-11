@@ -72,7 +72,7 @@ export class TunnelService {
         logger.fatal("tunnel ip pool is over");
         throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, 'ip pool is over');
     }
-    async getServiceNetwork(tunnel: Tunnel) {
+    async getNetwork(tunnel: Tunnel) {
         const network = getNetworkByHostId(this.config, tunnel.hostId);
         return network;
     }
@@ -119,7 +119,9 @@ export class TunnelService {
 
 
             await this.redisService.hset(key, { authenticatedTime: new Date().toISOString() });
-            await this.redisService.hset(key, { serviceNetwork: await this.getServiceNetwork(tunnel) });
+            const gateNetwork = await this.getNetwork(tunnel);
+
+            await this.redisService.hset(key, { serviceNetwork: gateNetwork.serviceNetwork });
             await this.redisService.expire(key, 5 * 60 * 1000);
             // at the end
             //send every thing ok message to waiting client to finish tunneling

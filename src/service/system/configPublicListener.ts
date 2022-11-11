@@ -48,7 +48,7 @@ export class ConfigPublicRoom {
         this.intervalWaitList = null;
     }
     async getGatewayById(queryId: string, gatewayId?: string) {
-        logger.info(`executing command for ${gatewayId}: getGatewayById`)
+        logger.info(`config public executing command for ${gatewayId}: getGatewayById`)
         let result = {
             id: queryId
         } as ConfigResponse;
@@ -65,7 +65,7 @@ export class ConfigPublicRoom {
 
     }
     async getNetworkByGatewayId(queryId: string, gatewayId?: string) {
-        logger.info(`executing command for ${gatewayId}: getNetworkByGatewayId`)
+        logger.info(`config public executing command for ${gatewayId}: getNetworkByGatewayId`)
         let result = {
             id: queryId
         } as ConfigResponse;
@@ -86,7 +86,7 @@ export class ConfigPublicRoom {
     }
 
     async getServicesByGatewayId(queryId: string, gatewayId?: string) {
-        logger.info(`executing command for ${gatewayId}: getServices`)
+        logger.info(`config public executing command for ${gatewayId}: getServices`)
         let result = {
             id: queryId,
             result: []
@@ -109,7 +109,7 @@ export class ConfigPublicRoom {
     }
 
     async getService(queryId: string, id?: string) {
-        logger.info(`executing command for ${id}: getService`)
+        logger.info(`config public executing command for ${id}: getService`)
         let result = {
             id: queryId,
         } as ConfigResponse;
@@ -126,7 +126,7 @@ export class ConfigPublicRoom {
     async executeRequest(item: ConfigRequest): Promise<ConfigResponse> {
 
         if (item.hostId != this.gatewayId) throw new Error(`execute query host id not equal`);
-        logger.info(`execution query ${item.id}:${item.func}`);
+        logger.info(`config public execution query ${item.id}:${item.func}`);
         switch (item.func) {
             case 'getGatewayById':
                 return await this.getGatewayById(item.id, ...item.params);
@@ -147,10 +147,10 @@ export class ConfigPublicRoom {
     async processWaitList() {
         try {
             if (this.waitList.length) {
-                logger.info(`process public listening waiting list count ${this.waitList.length}`);
+                logger.info(`config public process public listening waiting list count ${this.waitList.length}`);
             }
             if (this.lastTrimTime + this.trimTimeMS < new Date().getTime()) {
-                logger.info(`trim stream ${this.redisStreamKey}`);
+                logger.info(`config public trim stream ${this.redisStreamKey}`);
                 await this.redis.expire(this.redisStreamKey, 60 * 60 * 1000);
                 await this.redis.xtrim(this.redisStreamKey, (new Date().getTime() - this.trimTimeMS).toString());
                 this.lastTrimTime = new Date().getTime();
@@ -240,7 +240,7 @@ export class ConfigPublicListener {
             await clearIntervalAsync(this.intervalCheckRedis);
         this.intervalCheckRedis = null;
         if (this.intervalPublish)
-            await clearIntervalAsync(this.intervalCheckRedis);
+            await clearIntervalAsync(this.intervalPublish);
         this.intervalCheckRedis = null;
 
     }
@@ -255,9 +255,9 @@ export class ConfigPublicListener {
             const info = await this.redisSlave.info();
             if (info.includes("role:master")) {
                 this.isRedisMaster = true;
-                logger.info("redis is master");
+                logger.info("config public redis is master");
             } else {
-                logger.info(`redis is slave`);
+                logger.info(`config public redis is slave`);
             }
             if (previous != this.isRedisMaster) {
                 if (this.isRedisMaster) {
@@ -277,7 +277,7 @@ export class ConfigPublicListener {
         }
     }
     async startListening() {
-        logger.info('starting config public listener');
+        logger.info('config public starting listener');
         if (this.redisSlaveSub) {
             this.redisSlaveSub.onMessage(async (channel: string, msg: string) => {
                 await this.executeMessage(channel, msg);
@@ -286,7 +286,7 @@ export class ConfigPublicListener {
         }
     }
     async stopListening() {
-        logger.info('stoping config public listener');
+        logger.info('config public stoping listener');
         this.isRedisMaster = false;
         if (this.redisSlaveSub)
             await this.redisSlaveSub.disconnect();
@@ -297,7 +297,7 @@ export class ConfigPublicListener {
         try {
 
             const query = JSON.parse(Buffer.from(msg, 'base64').toString()) as ConfigRequest;
-            logger.info(`config query received from host:${query.hostId} func:${query.func}`)
+            logger.info(`config public config query received from host:${query.hostId} func:${query.func}`)
             if (query.hostId) {
                 let room = this.cache.get(query.hostId) as ConfigPublicRoom;
                 if (!room) {

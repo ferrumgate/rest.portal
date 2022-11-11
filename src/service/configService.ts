@@ -983,11 +983,13 @@ export class ConfigService {
         const cloned = Util.clone(gateway);
         if (!finded) {
             this.config.gateways.push(cloned);
+            this.emitEvent({ type: 'saved', path: '/gateways', data: { id: cloned.id } });
         } else {
             this.config.gateways[findedIndex] = {
                 ...finded,
                 ...cloned
             }
+            this.emitEvent({ type: 'saved', path: '/gateways', data: { id: cloned.id } });
         }
         await this.saveConfigToFile();
     }

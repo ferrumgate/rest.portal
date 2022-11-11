@@ -17,12 +17,12 @@ RUN npm install
 
 ADD build/src /usr/src/app/build/src
 WORKDIR /usr/src/app
-RUN chown -R  node /usr/src/app
+#RUN chown -R  node /usr/src/app
 ### delete sensitive test data
 RUN  start=$(grep -n 'start point for delete' build/src/service/configService.js |cut -d':' -f1); \
     end=$(grep -n 'end point for delete' build/src/service/configService.js |cut -d':' -f1); \
     sed -i "${start},${end}d" build/src/service/configService.js
 
 
-USER node
+#USER node
 CMD ["npm","run","startdocker"]
