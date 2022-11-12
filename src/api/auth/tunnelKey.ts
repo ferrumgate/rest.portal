@@ -20,14 +20,15 @@ export function tunnelKeyInit() {
                 if (!tunnelkey)
                     throw new RestfullException(401, ErrorCodes.ErrTunnelKeyIsNotValid, 'tunnel key header not found');
 
-                logger.info(`passport with tunnelkey: ${tunnelkey})}`);
+                logger.info(`passport with tunnelkey: ${tunnelkey}`);
                 const appService = req.appService as AppService;
                 const configService = appService.configService;
                 const redisService = appService.redisService;
+                const tunnelService = appService.tunnelService;
 
                 if (!tunnelkey)
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
-                const tunnel = (await redisService.hgetAll(`/tunnel/${tunnelkey}`)) as unknown as Tunnel;
+                const tunnel = await tunnelService.getTunnel(tunnelkey);
                 await HelperService.isValidTunnel(tunnel);
                 //set user to request object
                 const user = await configService.getUserById(tunnel.userId || '0');

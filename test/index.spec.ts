@@ -12,7 +12,7 @@ const expect = chai.expect;
 
 
 
-describe('index testing application', async () => {
+describe('/test', async () => {
 
     beforeEach(async () => {
         await (app.appService as AppService).redisService.flushAll();

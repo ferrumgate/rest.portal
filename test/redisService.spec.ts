@@ -5,7 +5,8 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
-import { RedisService } from '../src/service/redisService';
+import { RedisService, RedisServiceManuel } from '../src/service/redisService';
+
 
 
 
@@ -202,7 +203,7 @@ describe('redisService', () => {
         const simpleRedis2 = new RedisService('localhost:6379');
         let obj = { ttl: 10 };
         let isDataReceived = false;
-        await simpleRedis.subsribe('test.channel');
+        await simpleRedis.subscribe('test.channel');
         await simpleRedis.onMessage((channel: string, message: string) => {
             isDataReceived = true;
         })
@@ -211,6 +212,225 @@ describe('redisService', () => {
         expect(isDataReceived).to.be.true;
 
     }).timeout(10000)
+
+
+    it('redis publish/subscribe on close disabled', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+        const simpleRedis2 = new RedisService('localhost:6379');
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        await simpleRedis.subscribe('test.channel');
+        await simpleRedis.onMessage((channel: string, message: string) => {
+            isDataReceived = true;
+        })
+        await simpleRedis2.publish('test.channel', obj);
+        await Util.sleep(2000);
+        expect(isDataReceived).to.be.true;
+
+        isDataReceived = false;
+        await simpleRedis.disconnect();
+        await Util.sleep(2000);
+        //message will not be received 
+        await simpleRedis2.publish('test.channel', obj);
+        await Util.sleep(2000);
+        expect(isDataReceived).to.be.false;
+
+
+    }).timeout(10000)
+
+
+    it('redis scan', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        const channel = Util.randomNumberString();
+        await simpleRedis.set('/test/deneme', 'obs');
+        await simpleRedis.set('/test/deneme2', 'obs');
+        let pos = '';
+        const [cursor, results] = await simpleRedis.scan('/test/*', pos);
+        expect(cursor).exist;
+        expect(cursor).to.equal('0');
+        expect(results.length).to.equal(2);
+
+
+    }).timeout(10000)
+
+    it('redis xadd/xread', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        const channel = Util.randomNumberString();
+        await simpleRedis.xadd(channel, { id: 2 }, '1-1');
+        const result = await simpleRedis.xread(channel, 1, '', 100);
+        expect(result.length).to.equal(1);
+        expect(result[0].xreadPos).to.equal('1-1');
+        expect(result[0].id).to.equal('2');
+
+
+
+    }).timeout(10000)
+
+    it('redis xadd/xreadmulti', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        const channel1 = Util.randomNumberString();
+        const channel2 = Util.randomNumberString();
+        await simpleRedis.xadd(channel1, { id: 2 }, '1-1');
+        await simpleRedis.xadd(channel2, { id: 3 }, '1-3');
+        const result = await simpleRedis.xreadmulti([{ pos: '0', key: channel1 }, { pos: '0', key: channel2 }], 2, 100);
+        expect(result.length).to.equal(2);
+        expect(result[0].channel).to.equal(channel1);
+        expect(result[1].channel).to.equal(channel2);
+        expect(result[0].items.length).to.equal(1);
+        expect(result[0].items[0].xreadPos).to.equal('1-1');
+        expect(result[0].items[0].id).to.equal('2');
+
+
+
+    }).timeout(10000)
+
+
+
+    it('redis xadd/xread', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let obj = { ttl: 10 };
+        let isDataReceived = false;
+        const channel = Util.randomNumberString();
+        await simpleRedis.xadd(channel, { id: 2 }, '1-1');
+        const result = await simpleRedis.xinfo(channel);
+        expect(result).exist;
+        expect(result['last-generated-id']).exist;
+
+
+
+    }).timeout(10000)
+
+
+    it('test pipeline', async () => {
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let pipe = await simpleRedis.multi()
+        for (let i = 0; i < 100; ++i) {
+            await pipe.hset(`deneme${i}`, { id: i, name: `test${i}` });
+        }
+        let results = await pipe.exec();
+
+        pipe = await simpleRedis.multi()
+        for (let i = 0; i < 105; ++i) {
+            await pipe.hgetAll(`deneme${i}`);
+        }
+        results = await pipe.exec();
+
+        expect(results).exist;
+
+
+        pipe = await simpleRedis.multi()
+        for (let i = 0; i < 100; ++i) {
+            await pipe.set(`deneme${i}`, { id: i, name: `test${i}` });
+        }
+        results = await pipe.exec();
+
+        pipe = await simpleRedis.multi()
+        for (let i = 0; i < 105; ++i) {
+            await pipe.get(`deneme${i}`);
+        }
+        results = await pipe.exec();
+
+        expect(results).exist;
+
+
+
+    }).timeout(10000);
+
+    it('redis info', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379', undefined, 'single',);
+        const info = await simpleRedis.info();
+        expect(info.includes(`role:master`)).to.be.true;
+
+    }).timeout(20000);
+
+    it('redis xtrim', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+        let key = '/test/stream';
+        await simpleRedis.xadd(key, 'test', `${new Date().getTime()}-1`)
+        await simpleRedis.xadd(key, 'test', `${new Date().getTime()}-2`)
+        await simpleRedis.xadd(key, 'test', `${new Date().getTime()}-3`)
+        await simpleRedis.xadd(key, 'test', `${new Date().getTime()}-4`)
+        await simpleRedis.xadd(key, 'test', `${new Date().getTime()}-5`)
+        await simpleRedis.xtrim(key, `${new Date().getTime() + 10}`);
+        const result = await simpleRedis.xread(key, 10, '0', 1000);
+        expect(result.length).to.be.equal(0);
+
+
+    }).timeout(20000);
+
+
+
+    it('redis onClose manuel stop', async () => {
+        let called = false;
+        let calledCount = 0;
+        const onClose = async () => {
+            called = true;
+            calledCount++;
+        }
+        const simpleRedis = new RedisServiceManuel('localhost:6700', undefined, 'single', onClose);
+        try {
+
+            await simpleRedis.set('abc', 'defs');
+            await Util.sleep(1000);
+
+
+        } catch (err) {
+            console.log(err);
+            try {
+                await simpleRedis.disconnect();
+            } catch (err) {
+                console.log(err);
+            }
+        }
+        expect(called).to.be.true;
+        expect(calledCount).to.equal(1);
+
+    }).timeout(20000)
+
+    it('redis onClose manuel stop', async () => {
+        let called = false;
+        let calledCount = 0;
+        const onClose = async () => {
+            called = true;
+            calledCount++;
+        }
+        let exception = false;
+        const simpleRedis = new RedisServiceManuel('localhost:6379', undefined, 'single', onClose);
+        try {
+
+            await simpleRedis.set('abc', 'defs');
+            await Util.sleep(1000);
+            await simpleRedis.disconnect();
+
+        } catch (err) {
+            exception = true;
+            console.log(err);
+        }
+        expect(called).to.be.false;
+        expect(calledCount).to.equal(0);
+        expect(exception).to.be.false;
+
+    }).timeout(20000);
+
+
 
 
 

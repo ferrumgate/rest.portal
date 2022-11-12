@@ -84,9 +84,9 @@ describe('clientApi ', async () => {
             clientIp: '192.168.8.8', tun: 'tun0',
             userId: user.id, hostId: gateway.id,
             serviceNetwork: '172.18.0.0/24',
-            is2FA: true, isPAM: false
+            is2FA: true, isPAM: false, trackId: 3
         };
-        await redisService.hset('/tunnel/akey', tunnel)
+        await redisService.hset('/tunnel/id/akey', tunnel)
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .get('/client/tunnel/ip')
@@ -113,11 +113,11 @@ describe('clientApi ', async () => {
             clientIp: '192.168.8.8', tun: 'tun0',
             userId: user.id, hostId: '1234',
             serviceNetwork: '192.168.0.0/24',
-            is2FA: true, isPAM: false
+            is2FA: true, isPAM: false, trackId: 5
         };
         await redisService.sadd('/clientNetwork/used', '10.0.0.1');
         // first get 
-        await redisService.hset('/tunnel/akey', tunnel)
+        await redisService.hset('/tunnel/id/akey', tunnel)
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/client/tunnel/confirm')

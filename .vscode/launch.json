@@ -17,8 +17,13 @@
                 "${workspaceFolder}/**/*.js"
             ],
             "env": {
-                "NODE_ENV": "development",
-                "LOCAL_TEST": "true"
+                "NODE_ENV": "development2",
+                "LOCAL_TEST": "true",
+                "PORT": "8181",
+                "REDIS_HOST": "localhost:6379",
+                "REDIS_SLAVE_HOST": "localhost:6379",
+                "REDIS_LOCAL_HOST": "localhost:6379",
+                "HOST_ID": "12edf",
             },
             "outputCapture": "console",
             "console": "integratedTerminal",

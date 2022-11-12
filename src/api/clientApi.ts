@@ -90,10 +90,12 @@ routerClientTunnelAuthenticated.get('/alive',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['headertunnelkey']),
     asyncHandler(async (req: any, res: any, next: any) => {
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const user = req.currentUser as User;
         const tunnel = req.currentTunnel as Tunnel;
+        logger.info(`i am alive tunnel: ${tunnel.id}`);
         const redisService = appService.redisService;
         const tunnelService = appService.tunnelService;
         await tunnelService.alive(tunnel.id || '');

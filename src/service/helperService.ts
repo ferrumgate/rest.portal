@@ -51,20 +51,35 @@ export class HelperService {
      * @param ses 
      */
     static isValidTunnel(tun: Tunnel | undefined) {
+        const result = HelperService.isValidTunnelNoException(tun);
+        if (result)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, result);
+
+    }
+
+    /**
+     * @summary check if tunnel session is valid without exception
+     * @param 
+     * @return error msg or empty message
+     */
+    static isValidTunnelNoException(tun: Tunnel | undefined) {
         if (!tun)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not found');
+            return 'not found';
         if (!tun.authenticatedTime)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
+            return 'not authenticated';
         if (!tun.tun)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not tunned');
+            return 'not tunned';
+        if (!tun.trackId)
+            return 'not tracked';
         if (!tun.userId)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
+            return 'not authenticated';
         if (!tun.assignedClientIp)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
+            return 'not authenticated';
         if (!tun.hostId)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, "not authenticated")
+            return "not authenticated";
         if (!tun.serviceNetwork)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, "not authenticated")
+            return "not authenticated";
+        return '';
 
     }
 } {

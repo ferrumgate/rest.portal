@@ -5,7 +5,7 @@ import { routerRegister } from "./api/registerApi";
 import { routerUserAuthenticated, routerUserEmailConfirm, routerUserForgotPassword, routerUserResetPassword } from "./api/userApi";
 import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "./common";
 import { ErrorCodes, RestfullException } from "./restfullException";
-import { AppService } from "./service/appService";
+import { AppService, AppSystemService } from "./service/appService";
 import { Util } from "./util";
 import * as helmet from 'helmet';
 import cors from 'cors';
@@ -28,13 +28,14 @@ const bodyParser = require('body-parser');
 const express = require('express');
 
 
-const port = Number(process.env.PORT) | 8080;
+const port = Number(process.env.PORT) | 8181;
 
 
 //express app
 export const app = express();
 app.use(express.static('dassets'));
 app.appService = new AppService();
+app.appSystemService = new AppSystemService(app.appService);
 
 //disable powerer by
 //app.disable('x-powered-by');
@@ -333,7 +334,9 @@ app.start = async function () {
     (app.appService as AppService).configService.setJWTSSLCertificate({
         privateKey: fs.readFileSync('./ferrumgate.com.key').toString('utf-8'),
         publicKey: fs.readFileSync('./ferrumgate.com.crt').toString('utf-8'),
-    })
+    });
+
+    await (app.appSystemService as AppSystemService).start();
 
 
     app.listen(port, () => {
@@ -342,6 +345,10 @@ app.start = async function () {
 }
 
 app.start();
+
+
+
+
 
 
 

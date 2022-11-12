@@ -109,7 +109,9 @@ export class ConfigService {
 
 
         }
-        //for testing
+        // start point for delete
+        //for testing start
+        //dont delete aboveline
         if (process.env.NODE_ENV == 'development') {
             this.config.auth.oauth = {
                 providers: [
@@ -328,6 +330,9 @@ export class ConfigService {
             })
 
         }
+        //dont delete below line
+        //for testing end
+        // end point for delete
         this.loadConfigFromFile();
 
         this.lastUpdateTime = new Date().toISOString();
@@ -978,11 +983,13 @@ export class ConfigService {
         const cloned = Util.clone(gateway);
         if (!finded) {
             this.config.gateways.push(cloned);
+            this.emitEvent({ type: 'saved', path: '/gateways', data: { id: cloned.id } });
         } else {
             this.config.gateways[findedIndex] = {
                 ...finded,
                 ...cloned
             }
+            this.emitEvent({ type: 'saved', path: '/gateways', data: { id: cloned.id } });
         }
         await this.saveConfigToFile();
     }

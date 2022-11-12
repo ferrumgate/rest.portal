@@ -259,11 +259,11 @@ export const Util = {
 
     },
 
-    async sleep(microseconds: number) {
+    async sleep(milisecond: number) {
         return new Promise((resolve, reject) => {
             setTimeout(() => {
                 resolve('timeout');
-            }, microseconds)
+            }, milisecond)
         })
     },
 
@@ -347,7 +347,7 @@ export const Util = {
      * @param val 
      * @returns 
      */
-    convertToNumber(val?: string): number {
+    convertToNumber(val?: string | number): number {
         if (!val) return 0;
         const n = Number(val)
         if (Number.isNaN(n)) return 0;

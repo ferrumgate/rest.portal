@@ -1557,9 +1557,7 @@ describe('configService', async () => {
 
 
         let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
-            eventDatas.push(data)
-        })
+
 
 
         let gateway: Gateway = {
@@ -1573,7 +1571,9 @@ describe('configService', async () => {
         }
 
         await configService.saveGateway(gateway);
-
+        configService.events.on('changed', (data: ConfigEvent) => {
+            eventDatas.push(data)
+        })
         await configService.deleteGateway(gateway.id);
 
 

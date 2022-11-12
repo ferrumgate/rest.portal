@@ -13,6 +13,23 @@ export interface Gateway {
     updateDate: string;
 }
 
+export interface GatewayDetail {
+    id: string;
+    arch?: string;
+    cpusCount?: number,
+    cpuInfo?: string,
+    hostname?: string,
+    totalMem: number,
+    type: string,
+    uptime?: number,
+    version: string,
+    platform: string,
+    release: string,
+    freeMem: number,
+    interfaces: string,
+    lastSeen: number
+}
+
 
 /**
  * @summary a group of @see Gateway s

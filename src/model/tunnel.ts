@@ -11,6 +11,8 @@ export interface Tunnel {
     clientIp?: string;
     // peer client ip
     assignedClientIp?: string;
+    // track id
+    trackId?: number;
     // authenticated user id
     userId?: string;
     // authentication time
