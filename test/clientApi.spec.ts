@@ -1,13 +1,10 @@
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
 import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
-import { config } from 'process';
-import { AuthSettings } from '../src/model/authSettings';
 import { Tunnel } from '../src/model/tunnel';
 import * as twofactor from 'node-2fa';
 import { Network } from '../src/model/network';

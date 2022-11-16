@@ -1,0 +1,107 @@
+# username elastic
+# password 123456
+#IP=192.168.88.250:9200
+
+
+GET 192.168.88.250:9200/_cat/indices
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+
+####
+
+GET 192.168.88.250:9200/ferrumgate-audit/_mapping
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+
+####
+
+DELETE  192.168.88.250:9200/ferrumgate-audit
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+
+
+####
+
+GET 192.168.88.250:9200/ferrumgate-audit/_search
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+
+###
+
+POST 192.168.88.250:9200/ferrumgate-audit/_search
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+    "query": {
+      "match_all": {}
+    }
+}
+
+###
+POST 192.168.88.250:9200/ferrumgate-audit/_search
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+    "from": 0,
+    "size": 10,
+    "sort": {
+        "insertDate": "desc"
+    },
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "range": {
+                        "insertDate": {
+                            "gte": "1901-01-31T22:03:04.000Z",
+                            "lt": "2022-12-15T16:29:17.901Z"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
+
+
+####
+
+POST 192.168.88.250:9200/ferrumgate-audit/_search
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+    "from": 0,
+    "size": 10,
+    "sort": {
+        "insertDate": "desc"
+    },
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "range": {
+                        "insertDate": {
+                            "gte": "1901-01-31T22:03:04.000Z",
+                            "lt": "2022-11-15T16:53:58.954Z"
+                        }
+                    }
+                },
+                {
+                    "bool": {
+                        "should": [
+                            {
+                                "term": {
+                                    "username": "test@test.com"
+                                }
+                            },
+                             {
+                                "term": {
+                                    "username": "test2@test.com"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}

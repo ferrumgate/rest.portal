@@ -7,7 +7,6 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Network } from '../src/model/network';
-import { config } from 'process';
 
 
 chai.use(chaiHttp);

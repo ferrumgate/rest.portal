@@ -10,6 +10,7 @@ import passport from "passport";
 import { RBACDefault } from "../model/rbac";
 import { config } from "process";
 import { authorizeAsAdmin } from "./commonApi";
+import { AuthSession } from "../model/authSession";
 
 
 
@@ -293,10 +294,13 @@ routerUserAuthenticated.delete('/:id',
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
 
         logger.info(`delete group with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
+        const auditService = appService.auditService;
 
         const user = await configService.getUserById(id);
         if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no user');
@@ -304,8 +308,9 @@ routerUserAuthenticated.delete('/:id',
         const adminUsers = await configService.getUserByRoleIds([RBACDefault.roleAdmin.id]);
         if (adminUsers.length == 1)
             throw new RestfullException(400, ErrorCodes.ErrNoAdminUserLeft, 'no admin user left');
-        await configService.deleteUser(user.id);
-        //TODO audit
+        const { before } = await configService.deleteUser(user.id);
+        await auditService.logDeleteUser(currentSession, currentUser, before);
+
         return res.status(200).json({});
 
     }))
@@ -321,9 +326,13 @@ routerUserAuthenticated.put('/',
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as User;
         logger.info(`changing user settings for ${input.id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
 
         await inputService.checkNotEmpty(input.id);
         const userDb = await configService.getUser(input.id);
@@ -374,9 +383,11 @@ routerUserAuthenticated.put('/',
         if (adminUsers.length == 1 && adminUsers[0].id == userDb.id && !userDb.roleIds?.includes(RBACDefault.roleAdmin.id))
             throw new RestfullException(400, ErrorCodes.ErrNoAdminUserLeft, 'no admin user left');
 
-        if (isChanged)
-            await configService.saveUser(userDb);
-        // TODO audit here
+        if (isChanged) {
+            const { before, after } = await configService.saveUser(userDb);
+            await auditService.logSaveUser(currentSession, currentUser, before, after);
+        }
+
         return res.status(200).json(userDb);
 
     }))

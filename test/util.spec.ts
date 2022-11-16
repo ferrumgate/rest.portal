@@ -5,7 +5,7 @@ import { Util } from '../src/util';
 import fs from 'fs';
 import del from 'del';
 import nock from 'nock';
-import fspromise from 'fs/promises';
+
 
 
 

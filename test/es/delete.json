@@ -1,0 +1,32 @@
+{
+    "from": 0,
+    "size": 10,
+    "sort": {
+        "insertDate": "desc"
+    },
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "range": {
+                        "insertDate": {
+                            "gte": "1901-01-31T22:03:04.000Z",
+                            "lt": "2022-11-15T17:09:28.433Z"
+                        }
+                    }
+                },
+                {
+                    "bool": {
+                        "should": [
+                            {
+                                "term": {
+                                    "message": "mysqlprod"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}

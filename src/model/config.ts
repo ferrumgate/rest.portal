@@ -44,7 +44,7 @@ export interface Config {
     url: string;
     auth: AuthSettings,
     jwtSSLCertificate: SSLCertificate,
-    sshCertificate: SSHCertificate,
+    //sshCertificate: SSHCertificate,
 
     users: User[];
     groups: Group[];

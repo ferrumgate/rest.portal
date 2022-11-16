@@ -2,21 +2,19 @@
 //docker run --net=host --name redis --rm -d redis
 
 
-import chai, { util } from 'chai';
+import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
-
 import { SystemWatcherService } from '../src/service/system/systemWatcherService';
 import { Tunnel } from '../src/model/tunnel';
-import { watch } from 'fs';
 import { RedisService, RedisServiceManuel } from '../src/service/redisService';
 import { PolicyAuthzListener, PolicyRoomService } from '../src/service/system/policyAuthzListener';
 import { ConfigService } from '../src/service/configService';
 import { PolicyAuthzResult, PolicyService } from '../src/service/policyService';
 import { TunnelService } from '../src/service/tunnelService';
 import { AuditService } from '../src/service/auditService';
-import { executionAsyncId } from 'async_hooks';
-
+import { ESService } from '../src/service/esService';
+import fs from 'fs'
 
 
 
@@ -132,29 +130,34 @@ describe('policyAuthzListener', () => {
             clientIp: '192.168.1.100', tun: 'tun0', hostId: hostId || '1234', serviceNetwork: '192.168.0.0/24'
         }
     }
-
+    const esHost = 'https://192.168.88.250:9200';
+    const esUser = "elastic";
+    const esPass = '123456';
     function createNeeds() {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         const redisService = new RedisService("localhost:6379");
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         configService.config.authenticationPolicy.rules = [];
         const tunnelService = new TunnelService(configService, redisService);
-        const auditService = new AuditService();
-        let policyService = new PolicyService(configService, tunnelService, auditService);
+        const esService = new ESService(esHost, esUser, esPass);
+        const auditService = new AuditService(redisService, esService);
+        let policyService = new PolicyService(configService, tunnelService);
         return { simpleRedis: redisService, configService: configService, policyService: policyService, tunnelService: tunnelService, auditService: auditService, };
     }
 
     it('publish i am alive', async () => {
-
+        const filename = `/tmp/${Util.randomNumberString()}config`;
+        fs.writeFileSync(filename, 'host=1234');
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
-        const policy = new PolicyAuthzListener(policyService, systemWatcher);
-        policy.start();
-        await Util.sleep(1000);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher, filename);
+        await policy.start();
+        await Util.sleep(2000);
         await simpleRedis.publish('/policy/service', 'alive/ab/cd/ef');
         await Util.sleep(5000);
         await policy.stop();
-        const item = await simpleRedis.hgetAll('/service/ab/cd/ef')
+        const item = await simpleRedis.hgetAll('/service/ab/cd/ef');
+        console.group(item);
         expect(item.lastSeen).to.exist;
 
 
@@ -162,13 +165,15 @@ describe('policyAuthzListener', () => {
 
     it('fillRoomService', async () => {
 
+        const filename = `/tmp/${Util.randomNumberString()}config`;
+        fs.writeFileSync(filename, 'host=1234');
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
         const tunnel1 = createTunnel(1234, 'abcd');
         const tunnel2 = createTunnel(1234, 'abcde');
         systemWatcher.tunnels.set(tunnel1.id || '0', tunnel1);
         systemWatcher.tunnels.set(tunnel2.id || '0', tunnel2);
-        const policy = new PolicyAuthzListener(policyService, systemWatcher);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher, filename);
 
         class Room2 extends PolicyRoomService {
             isPushed = 0;
@@ -185,14 +190,15 @@ describe('policyAuthzListener', () => {
 
 
     it('replicate', async () => {
-
+        const filename = `/tmp/${Util.randomNumberString()}config`;
+        fs.writeFileSync(filename, 'host=1234');
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
         const tunnel1 = createTunnel(1234, 'abcd');
         const tunnel2 = createTunnel(1234, 'abcde');
         //systemWatcher.tunnels.set(tunnel1.id || '0', tunnel1);
         //systemWatcher.tunnels.set(tunnel2.id || '0', tunnel2);
-        const policy = new PolicyAuthzListener(policyService, systemWatcher);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher, filename);
 
         await policy.replicate('abcd', '1234', 'wsdwd');
         expect(await policy.getRoom('abcd', '1234', 'wsdwd')).exist;
@@ -220,10 +226,12 @@ describe('policyAuthzListener', () => {
 
     it('policyCalculate', async () => {
 
+        const filename = `/tmp/${Util.randomNumberString()}config`;
+        fs.writeFileSync(filename, 'host=1234');
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
 
-        const policy = new PolicyAuthzListener(policyService, systemWatcher);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher, filename);
 
         //check reset command
         class Room2 extends PolicyRoomService {

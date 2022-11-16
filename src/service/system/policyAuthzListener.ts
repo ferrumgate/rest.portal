@@ -183,8 +183,9 @@ export class PolicyAuthzListener {
     private roomList = new Map<string, PolicyRoomService>();
     private hostId = '';
     private isStarted = false;
+    private configFile = '/etc/ferrumgate/config';
     constructor(private policyService: PolicyService,
-        private systemWatcher: SystemWatcherService) {
+        private systemWatcher: SystemWatcherService, configFile?: string) {
         this.hostId = process.env.HOST_ID || '';
         this.cache = new NodeCache({ checkperiod: 60, deleteOnExpire: true, useClones: false, stdTTL: 60 });
         this.redisGlobal = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
@@ -194,7 +195,9 @@ export class PolicyAuthzListener {
             await value.stop();
             this.roomList.delete(key);
         });
-
+        if (configFile) {
+            this.configFile = configFile;
+        }
 
     }
     async setHostId(hostId: string) {
@@ -205,6 +208,7 @@ export class PolicyAuthzListener {
         if (this.waitListTimer)
             await clearIntervalAsync(this.waitListTimer);
         this.waitListTimer = null;
+        this.isStarted = false;
     }
     async start() {
 
@@ -224,7 +228,7 @@ export class PolicyAuthzListener {
     async checkHostId() {
         if (!this.hostId) {
             try {
-                this.hostId = await HostId.read('/etc/ferrumgate/config')
+                this.hostId = await HostId.read(this.configFile)
             } catch (err) {
                 logger.error(err);
             }
@@ -351,6 +355,7 @@ export class PolicyAuthzListener {
     }
     async onServiceMessage(channel: string, message: string) {
         try {
+
             const parts = message.split('/');
             if (!parts.length)
                 return;
@@ -373,6 +378,7 @@ export class PolicyAuthzListener {
     async startListening() {
         try {
             if (this.isStarted) return;
+
             await this.redisLocalServiceListener.onMessage(this.onMessage);
             await this.redisLocalServiceListener.subscribe(`/policy/service`);
             this.isStarted = true;

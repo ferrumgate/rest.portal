@@ -15,6 +15,7 @@ import { AuthenticationRule, cloneAuthenticationRule } from "../model/authentica
 import { cloneAuthenticatonProfile } from "../model/authenticationProfile";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { cloneAuthorizationRule } from "../model/authorizationPolicy";
+import { AuthSession } from "../model/authSession";
 
 
 
@@ -73,15 +74,21 @@ routerAuthenticationPolicyAuthenticated.delete('/rule/:id',
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
 
         logger.info(`delete authentication rule with id: ${id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
+        const auditService = appService.auditService;
+
 
         const rule = await configService.getAuthenticationPolicyRule(id);
         if (!rule) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no rule');
 
-        await configService.deleteAuthenticationPolicyRule(rule.id);
+        const { before } = await configService.deleteAuthenticationPolicyRule(rule.id);
         await configService.updateAuthenticationPolicyUpdateTime();
-        //TODO audit
+        await auditService.logDeleteAuthenticationPolicyRule(currentSession, currentUser, before);
+
         return res.status(200).json({});
 
     }))
@@ -93,11 +100,16 @@ routerAuthenticationPolicyAuthenticated.put('/rule/pos/:id',
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const input = req.body as { previous: string, current: string };
         logger.info(`changing authentication policy rule pos with id:${id} to ${input}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
 
         await inputService.checkIsNumber(input.previous);
         await inputService.checkIsNumber(input.current);
@@ -105,11 +117,12 @@ routerAuthenticationPolicyAuthenticated.put('/rule/pos/:id',
         if (!rule) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no rule');
 
 
-        const previous = Number(input.previous);
-        const current = Number(input.current);
-        await configService.updateAuthenticationRulePos(rule.id, previous, current);
+        const previousNumber = Number(input.previous);
+        const currentNumber = Number(input.current);
+        const { item, iBefore, iAfter } = await configService.updateAuthenticationRulePos(rule.id, previousNumber, currentNumber);
         await configService.updateAuthenticationPolicyUpdateTime();
-        // TODO audit here
+        await auditService.logUpdateAuthenticationRulePos(currentSession, currentUser, item, iBefore, iAfter);
+
         return res.status(200).json(rule);
 
     }))
@@ -123,9 +136,13 @@ routerAuthenticationPolicyAuthenticated.put('/rule',
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as AuthenticationRule;
         logger.info(`changing authentication policy rule with id:${input.id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
 
         await inputService.checkNotEmpty(input.id);
         const rule = await configService.getAuthenticationPolicyRule(input.id);
@@ -138,9 +155,10 @@ routerAuthenticationPolicyAuthenticated.put('/rule',
 
         const safe = cloneAuthenticationRule(input);
         //copy original one
-        await configService.saveAuthenticationPolicyRule(safe);
+        const { before, after } = await configService.saveAuthenticationPolicyRule(safe);
         await configService.updateAuthenticationPolicyUpdateTime();
-        // TODO audit here
+        await auditService.logSaveAuthenticationPolicyRule(currentSession, currentUser, before, after);
+
         return res.status(200).json(safe);
 
     }))
@@ -152,9 +170,13 @@ routerAuthenticationPolicyAuthenticated.post('/rule',
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as AuthenticationRule;
         logger.info(`save authentication policy rule with name ${input.name}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
 
         await inputService.checkIfNotExits(input.id);
 
@@ -166,9 +188,10 @@ routerAuthenticationPolicyAuthenticated.post('/rule',
         input.id = Util.randomNumberString(16);
         const safe = cloneAuthenticationRule(input);
         //copy original one
-        await configService.saveAuthenticationPolicyRule(safe);
+        const { before, after } = await configService.saveAuthenticationPolicyRule(safe);
         await configService.updateAuthenticationPolicyUpdateTime();
-        // TODO audit here
+        await auditService.logSaveAuthenticationPolicyRule(currentSession, currentUser, before, after);
+
         return res.status(200).json(safe);
 
     }))
@@ -226,17 +249,21 @@ routerAuthorizationPolicyAuthenticated.delete('/rule/:id',
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
 
         logger.info(`delete authorization rule with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
+        const auditService = appService.auditService;
 
         const rule = await configService.getAuthorizationPolicyRule(id);
         if (!rule) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no rule');
 
-        await configService.deleteAuthorizationPolicyRule(rule.id);
+        const { before } = await configService.deleteAuthorizationPolicyRule(rule.id);
         await configService.updateAuthorizationPolicyUpdateTime();
-        //TODO audit
+        await auditService.logDeleteAuthorizationPolicyRule(currentSession, currentUser, before);
+
         return res.status(200).json({});
 
     }))
@@ -251,9 +278,13 @@ routerAuthorizationPolicyAuthenticated.put('/rule',
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as AuthorizationRule;
         logger.info(`changing authorization policy rule with id:${input.id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
 
         await inputService.checkNotEmpty(input.id);
         const rule = await configService.getAuthorizationPolicyRule(input.id);
@@ -266,9 +297,10 @@ routerAuthorizationPolicyAuthenticated.put('/rule',
 
         const safe = cloneAuthorizationRule(input);
         //copy original one
-        await configService.saveAuthorizationPolicyRule(safe);
+        const { before, after } = await configService.saveAuthorizationPolicyRule(safe);
         await configService.updateAuthorizationPolicyUpdateTime();
-        // TODO audit here
+        await auditService.logSaveAuthorizationPolicyRule(currentSession, currentUser, before, after);
+
         return res.status(200).json(safe);
 
     }))
@@ -280,9 +312,13 @@ routerAuthorizationPolicyAuthenticated.post('/rule',
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as AuthorizationRule;
         logger.info(`save authorization policy rule with name ${input.name}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
 
         await inputService.checkIfNotExits(input.id);
 
@@ -294,9 +330,10 @@ routerAuthorizationPolicyAuthenticated.post('/rule',
         input.id = Util.randomNumberString(16);
         const safe = cloneAuthorizationRule(input);
         //copy original one
-        await configService.saveAuthorizationPolicyRule(safe);
+        const { before, after } = await configService.saveAuthorizationPolicyRule(safe);
         await configService.updateAuthorizationPolicyUpdateTime();
-        // TODO audit here
+        await auditService.saveAuthorizationPolicyRule(currentSession, currentUser, before, after);
+
         return res.status(200).json(safe);
 
     }))

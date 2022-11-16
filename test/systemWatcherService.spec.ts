@@ -2,13 +2,12 @@
 //docker run --net=host --name redis --rm -d redis
 
 
-import chai, { util } from 'chai';
+import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
 
 import { SystemWatcherService } from '../src/service/system/systemWatcherService';
 import { Tunnel } from '../src/model/tunnel';
-import { watch } from 'fs';
 import { RedisServiceManuel } from '../src/service/redisService';
 
 

@@ -6,8 +6,7 @@ import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
-import { Gateway, Network } from '../src/model/network';
-import { config } from 'process';
+import { Gateway } from '../src/model/network';
 
 
 chai.use(chaiHttp);
