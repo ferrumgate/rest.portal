@@ -2,8 +2,6 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { ConfigService } from '../src/service/configService';
 import { Gateway, Network } from '../src/model/network';
 import { authorize, getNetworkByHostId } from '../src/api/commonApi';

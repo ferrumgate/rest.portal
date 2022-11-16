@@ -1,12 +1,6 @@
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
-import { InputService } from '../src/service/inputService';
-import { RestfullException } from '../src/restfullException';
-import { ErrorCodes } from '../src/restfullException';
 import { CaptchaService } from '../src/service/captchaService';
 import { ConfigService } from '../src/service/configService';
 import { Util } from '../src/util';

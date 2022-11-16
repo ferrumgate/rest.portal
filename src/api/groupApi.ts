@@ -11,34 +11,13 @@ import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
 import { authorize, authorizeAsAdmin } from "./commonApi";
 import { cloneGroup, Group } from "../model/group";
+import { AuthSession } from "../model/authSession";
 
 
 
 
 /////////////////////////////////  group //////////////////////////////////
 export const routerGroupAuthenticated = express.Router();
-
-
-/* routerGroupAuthenticated.get('/users',
-    asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
-    asyncHandler(async (req: any, res: any, next: any) => {
-        logger.info(`getting group users`);
-        const appService = req.appService as AppService;
-        const configService = appService.configService;
-        const inputService = appService.inputService;
-        const allUsers = await configService.getUsersBy();
-        const simpleUsers = allUsers.items.map(x => {
-            return { id: x.id, username: x.username, groupIds: x.groupIds }
-        })
-        return res.status(200).json({
-            items: simpleUsers
-        });
-
-    })) */
-
-
 
 routerGroupAuthenticated.get('/:id',
     asyncHandler(passportInit),
@@ -101,14 +80,20 @@ routerGroupAuthenticated.delete('/:id',
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
 
         logger.info(`delete group with id: ${id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
+        const auditService = appService.auditService;
 
         const group = await configService.getGroup(id);
         if (!group) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no group');
 
-        await configService.deleteGroup(group.id);
-        //TODO audit
+        const { before } = await configService.deleteGroup(group.id);
+        await auditService.logDeleteGroup(currentSession, currentUser, before);
+
         return res.status(200).json({});
 
     }))
@@ -124,9 +109,13 @@ routerGroupAuthenticated.put('/',
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as Group;
         logger.info(`changing group settings for ${input.id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
 
         await inputService.checkNotEmpty(input.id);
         const group = await configService.getGroup(input.id);
@@ -139,8 +128,10 @@ routerGroupAuthenticated.put('/',
         //copy original one
         safe.insertDate = group.insertDate;
         safe.updateDate = new Date().toISOString();
-        await configService.saveGroup(safe);
-        // TODO audit here
+
+        const { before, after } = await configService.saveGroup(safe);
+        await auditService.logSaveGroup(currentSession, currentUser, before, after);
+
         return res.status(200).json(safe);
 
     }))
@@ -151,9 +142,13 @@ routerGroupAuthenticated.post('/',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`saving a new group`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
 
         const input = req.body as Group;
         input.id = Util.randomNumberString(16);
@@ -165,8 +160,10 @@ routerGroupAuthenticated.post('/',
         const safe = cloneGroup(input);
         safe.insertDate = new Date().toISOString();
         safe.updateDate = new Date().toISOString();
-        await configService.saveGroup(safe);
-        //TODO audit
+
+        const { before, after } = await configService.saveGroup(safe);
+        await auditService.logSaveGroup(currentSession, currentUser, before, after);
+
         return res.status(200).json(safe);
 
     }))

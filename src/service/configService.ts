@@ -22,6 +22,7 @@ import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { urlToHttpOptions } from "url";
 import { EventEmitter } from "stream";
+import { runInThisContext } from "vm";
 
 
 
@@ -66,7 +67,6 @@ export class ConfigService {
             groups: [],
             services: [],
             captcha: {},
-            sshCertificate: {},
             jwtSSLCertificate: {},
             domain: 'ferrumgate.local',
             url: 'https://secure.yourdomain.com',
@@ -348,6 +348,7 @@ export class ConfigService {
      */
     emitEvent(event: ConfigEvent) {
         this.events.emit('changed', event);
+        return event;
     }
 
     private writeAsset(name: string, image: string) {
@@ -531,88 +532,99 @@ export class ConfigService {
 
     async triggerUserDeleted(user: User) {
         //check policy authentication
-        let policyAuthnChanged = false;
-        let rulesAuthnChanged: string[] = [];
+
+        let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
         this.config.authenticationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == user.id);
             if (userIdIndex >= 0) {
+                const prev = Util.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
-                policyAuthnChanged = true;
-                rulesAuthnChanged.push(x.id);
+                rulesAuthnChanged.push({ previous: prev, item: x });
             }
         })
         //check authorization
-        let policyAuthzChanged = false;
-        let rulesAuthzChanged: string[] = [];
+
+        let rulesAuthzChanged: { previous: AuthorizationRule, item: AuthorizationRule }[] = [];
         this.config.authorizationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == user.id);
             if (userIdIndex >= 0) {
+                const prev = Util.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
-                policyAuthzChanged = true;
-                rulesAuthzChanged.push(x.id);
+                rulesAuthzChanged.push({ previous: prev, item: x });
             }
         })
 
         rulesAuthnChanged.forEach(x => {
-            this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: { id: x } })
+            this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
         })
         if (rulesAuthnChanged.length)
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
         rulesAuthzChanged.forEach(x => {
-            this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: { id: x } })
+            this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
         })
         if (rulesAuthzChanged.length)
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
 
-        this.emitEvent({ type: 'deleted', path: '/users', data: { id: user.id } })
-
+        this.emitEvent({ type: 'deleted', path: '/users', data: this.createTrackEvent(user) })
+        //TODO sensitive data
 
     }
     async deleteUser(id: string) {
-        const user = await this.getUser(id);
         const indexId = this.config.users.findIndex(x => x.id == id);
+        const user = this.config.users[indexId];
         if (indexId >= 0 && user) {
             this.config.users.splice(indexId, 1);
             await this.saveConfigToFile();
             await this.triggerUserDeleted(user);
         }
+        //TODO sensitive data
+        return this.createTrackEvent(user);
     }
 
-    async triggerUserSavedOrUpdated(user: User, type: 'saved' | 'updated') {
-        this.emitEvent({ type: type, path: '/users', data: { id: user.id } })
-    }
 
     async saveUser(user: User) {
         let cloned = Util.clone(user);
-        let finded: User | undefined = undefined;
 
-        finded = this.config.users.find(x => x.username == user.username);
 
+        let findedIndex = this.config.users.findIndex(x => x.username == user.username);
+        let finded = this.config.users[findedIndex];
         if (!finded) {
             this.config.users.push(cloned);
-            finded = cloned;
-            this.triggerUserSavedOrUpdated(cloned, 'saved');
+            findedIndex = this.config.users.length - 1;
+
+            this.emitEvent({ type: 'saved', path: '/users', data: this.createTrackEvent(finded, this.config.users[findedIndex]) })
+
         }
         else {
             cloned.id = finded.id;//security
-            let newone = {
+            /* let newone = {
                 ...finded,
                 ...cloned
             }
-            Object.assign(finded, newone)
-            this.triggerUserSavedOrUpdated(cloned, 'updated');
+            Object.assign(finded, newone) */
+            this.config.users[findedIndex] = {
+                ...finded,
+                ...cloned
+            }
+            this.emitEvent({ type: 'updated', path: '/users', data: this.createTrackEvent(finded, this.config.users[findedIndex]) })
+
         }
+
         await this.saveConfigToFile();
+        return this.createTrackEvent(finded, this.config.users[findedIndex]);
+        //TODO sensitive data
     }
     async changeAdminUser(email: string, password: string) {
         let finded = this.config.users.find(x => x.username == 'admin');
         if (!finded)
             return;
-
+        const prev = Util.clone(finded);
         finded.username = email;
         finded.password = Util.bcryptHash(password);
         finded.updateDate = new Date().toISOString();
+        this.emitEvent({ type: 'updated', path: '/users', data: this.createTrackEvent(prev, finded) })
         await this.saveConfigToFile();
+        return this.createTrackEvent(prev, finded);
     }
     async getCaptcha(): Promise<Captcha> {
         return Util.clone(this.config.captcha);
@@ -620,12 +632,14 @@ export class ConfigService {
 
     async setCaptcha(captcha: Captcha | {}) {
         let cloned = Util.clone(captcha);
+        const prev = this.config.captcha;
         this.config.captcha = {
             ...this.config.captcha,
             ...cloned
         }
-        this.emitEvent({ type: 'updated', path: '/captcha' })
+        this.emitEvent({ type: 'updated', path: '/captcha', data: this.createTrackEvent(prev, this.config.captcha) })
         await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.captcha);
     }
 
     async getJWTSSLCertificate(): Promise<SSLCertificate> {
@@ -634,24 +648,14 @@ export class ConfigService {
 
     async setJWTSSLCertificate(cert: SSLCertificate | {}) {
         let cloned = Util.clone(cert);
+        const prev = this.config.jwtSSLCertificate;
         this.config.jwtSSLCertificate = {
             ...this.config.jwtSSLCertificate,
             ...cloned
         }
-        this.emitEvent({ type: 'updated', path: '/jwtSSLCertificate' })
+        this.emitEvent({ type: 'updated', path: '/jwtSSLCertificate', data: this.createTrackEvent(prev, this.config.jwtSSLCertificate) })
         await this.saveConfigToFile();
-    }
-    async getSSHCertificate(): Promise<SSHCertificate> {
-        return Util.clone(this.config.sshCertificate);
-    }
-    async setSSHCertificate(cert: SSHCertificate | {}) {
-        let cloned = Util.clone(cert);
-        this.config.sshCertificate = {
-            ...this.config.sshCertificate,
-            ...cloned
-        }
-        this.emitEvent({ type: 'updated', path: '/sshCertificate' })
-        await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.jwtSSLCertificate);
     }
 
 
@@ -661,12 +665,14 @@ export class ConfigService {
 
     async setEmailSettings(options: EmailSettings) {
         let cloned = Util.clone(options);
+        let prev = this.config.email;
         this.config.email = {
             ...this.config.email,
             ...cloned
         }
-        this.emitEvent({ type: 'updated', path: '/email' })
+        this.emitEvent({ type: 'updated', path: '/email', data: this.createTrackEvent(prev, this.config.email) })
         await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.email);
     }
 
     async getLogo(): Promise<LogoSettings> {
@@ -674,12 +680,14 @@ export class ConfigService {
     }
     async setLogo(logo: LogoSettings | {}) {
         let cloned = Util.clone(logo);
+        let prev = this.config.logo;
         this.config.logo = {
             ...this.config.logo,
             ...cloned
         }
-        this.emitEvent({ type: 'updated', path: '/logo' })
+        this.emitEvent({ type: 'updated', path: '/logo', data: this.createTrackEvent(prev, this.config.logo) })
         await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.logo);
     }
 
     async getAuthSettings(): Promise<AuthSettings> {
@@ -691,18 +699,22 @@ export class ConfigService {
     }
     async setAuthSettings(option: AuthSettings | {}) {
         let cloned = Util.clone(option);
+        let prev = this.config.auth;
         this.config.auth = {
             ...this.config.auth,
             ...cloned
         }
-        this.emitEvent({ type: 'updated', path: '/auth' })
+        this.emitEvent({ type: 'updated', path: '/auth', data: this.createTrackEvent(prev, this.config.auth) })
         await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.auth);
     }
     async setAuthSettingsCommon(common: AuthCommon) {
         let cloned = Util.clone(common);
+        let prev = this.config.auth.common;
         this.config.auth.common = cloned;
-        this.emitEvent({ type: 'updated', path: '/auth/common' })
+        this.emitEvent({ type: 'updated', path: '/auth/common', data: this.createTrackEvent(prev, this.config.auth.common) })
         await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.auth.common);
     }
     async getAuthSettingsCommon() {
         const common = Util.clone(this.config.auth.common);
@@ -712,9 +724,11 @@ export class ConfigService {
 
     async setAuthSettingsLocal(local: AuthLocal) {
         let cloned = Util.clone(local);
+        const prev = this.config.auth.local;
         this.config.auth.local = cloned;
-        this.emitEvent({ type: 'updated', path: '/auth/local' })
+        this.emitEvent({ type: 'updated', path: '/auth/local', data: this.createTrackEvent(prev, this.config.auth.local) })
         await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.auth.local);
     }
     async getAuthSettingsLocal() {
         const common = Util.clone(this.config.auth.local);
@@ -729,16 +743,23 @@ export class ConfigService {
         let cloned = Util.clone(provider);
         if (!this.config.auth.oauth)
             this.config.auth.oauth = { providers: [] };
-        const index = this.config.auth.oauth.providers.findIndex(x => x.id == cloned.id);
-        if (index < 0)
-            this.config.auth.oauth.providers.push(cloned);
+        let index = this.config.auth.oauth.providers.findIndex(x => x.id == cloned.id);
+        const previous = this.config.auth.oauth.providers[index];
 
-        else
+        if (index < 0) {
+            this.config.auth.oauth.providers.push(cloned);
+            index = this.config.auth.oauth.providers.length - 1;
+            this.emitEvent({ type: 'saved', path: '/auth/oauth/providers', data: this.createTrackEvent(previous, this.config.auth.oauth.providers[index]) })
+        }
+        else {
             this.config.auth.oauth.providers[index] = {
                 ...cloned
             }
-        this.emitEvent({ type: index < 0 ? 'saved' : 'updated', path: '/auth/oauth/providers', data: { id: cloned.id } })
+            this.emitEvent({ type: 'updated', path: '/auth/oauth/providers', data: this.createTrackEvent(previous, this.config.auth.oauth.providers[index]) })
+        }
+
         await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.auth.oauth.providers[index]);
     }
 
     async deleteAuthSettingOAuth(id: string) {
@@ -747,9 +768,10 @@ export class ConfigService {
         if (Number(index) >= 0 && provider) {
 
             this.config.auth.oauth?.providers.splice(Number(index), 1);
-            this.emitEvent({ type: 'deleted', path: '/auth/oauth/providers', data: { id: provider.id } })
+            this.emitEvent({ type: 'deleted', path: '/auth/oauth/providers', data: this.createTrackEvent(provider) })
             await this.saveConfigToFile();
         }
+        return this.createTrackEvent(provider);
     }
 
     async getAuthSettingLdap() {
@@ -759,24 +781,32 @@ export class ConfigService {
         let cloned = Util.clone(provider);
         if (!this.config.auth.ldap)
             this.config.auth.ldap = { providers: [] };
-        const index = this.config.auth.ldap.providers.findIndex(x => x.id == cloned.id);
-        if (index < 0)
+        let index = this.config.auth.ldap.providers.findIndex(x => x.id == cloned.id);
+        const previous = this.config.auth.ldap.providers[index];
+
+        if (index < 0) {
             this.config.auth.ldap.providers.push(cloned);
-        else
+            index = this.config.auth.ldap.providers.length - 1;
+            this.emitEvent({ type: 'saved', path: '/auth/ldap/providers', data: this.createTrackEvent(this.config.auth.ldap.providers[index]) })
+        }
+        else {
             this.config.auth.ldap.providers[index] = {
                 ...cloned
             }
-        this.emitEvent({ type: index < 0 ? 'saved' : 'updated', path: '/auth/ldap/providers', data: { id: cloned.id } })
+            this.emitEvent({ type: 'updated', path: '/auth/ldap/providers', data: this.createTrackEvent(this.config.auth.ldap.providers[index]) })
+        }
         await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.auth.ldap.providers[index]);
     }
     async deleteAuthSettingLdap(id: string) {
         const index = this.config.auth?.ldap?.providers.findIndex(x => x.id == id);
         const provider = this.config.auth?.ldap?.providers.find(x => x.id == id);
         if (Number(index) >= 0 && provider) {
             this.config.auth.ldap?.providers.splice(Number(index), 1);
-            this.emitEvent({ type: 'deleted', path: '/auth/ldap/providers', data: { id: provider.id } })
+            this.emitEvent({ type: 'deleted', path: '/auth/ldap/providers', data: this.createTrackEvent(provider) })
             await this.saveConfigToFile();
         }
+        return this.createTrackEvent(provider);
     }
 
     async getAuthSettingSaml() {
@@ -788,15 +818,22 @@ export class ConfigService {
         let cloned = Util.clone(provider);
         if (!this.config.auth.saml)
             this.config.auth.saml = { providers: [] };
-        const index = this.config.auth.saml.providers.findIndex(x => x.id == cloned.id);
-        if (index < 0)
+        let index = this.config.auth.saml.providers.findIndex(x => x.id == cloned.id);
+        const previous = this.config.auth.saml.providers[index];
+        if (index < 0) {
             this.config.auth.saml.providers.push(cloned);
-        else
+            index = this.config.auth.saml.providers.length - 1;
+            this.emitEvent({ type: 'saved', path: '/auth/saml/providers', data: this.createTrackEvent(this.config.auth.saml.providers[index]) })
+        }
+        else {
             this.config.auth.saml.providers[index] = {
                 ...cloned
             }
-        this.emitEvent({ type: index < 0 ? 'saved' : 'updated', path: '/auth/saml/providers', data: { id: cloned.id } })
+            this.emitEvent({ type: 'updated', path: '/auth/saml/providers', data: this.createTrackEvent(previous, this.config.auth.saml.providers[index]) })
+        }
+
         await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.auth.saml.providers[index]);
     }
 
 
@@ -805,9 +842,10 @@ export class ConfigService {
         const provider = this.config.auth?.saml?.providers.find(x => x.id == id);
         if (Number(index) >= 0 && provider) {
             this.config.auth.saml?.providers.splice(Number(index), 1);
-            this.emitEvent({ type: 'deleted', path: '/auth/saml/providers', data: { id: provider.id } })
+            this.emitEvent({ type: 'deleted', path: '/auth/saml/providers', data: this.createTrackEvent(provider) })
             await this.saveConfigToFile();
         }
+        return this.createTrackEvent(provider);
     }
 
     async getNetwork(id: string) {
@@ -822,8 +860,9 @@ export class ConfigService {
         ////// gateways
         let changedGateways = this.config.gateways.filter(x => x.networkId == net.id);
         changedGateways.forEach(x => {
+            let previous = Util.clone(x);
             x.networkId = '';
-            this.emitEvent({ type: "updated", path: '/gateways', data: { id: x.id } })
+            this.emitEvent({ type: "updated", path: '/gateways', data: this.createTrackEvent(previous, x) })
         });
 
         //////////services
@@ -831,21 +870,21 @@ export class ConfigService {
         let deleteServices = this.config.services.filter(x => x.networkId == net.id);
         this.config.services = this.config.services.filter(x => x.networkId != net.id);
         deleteServices.forEach(x => {
-            this.emitEvent({ type: 'deleted', path: '/services', data: { id: x.id } });
+            this.emitEvent({ type: 'deleted', path: '/services', data: this.createTrackEvent(x) });
         })
 
         //// policy authorization
         let deleteAuthorizationRules = this.config.authorizationPolicy.rules.filter(x => x.networkId == net.id);
         this.config.authorizationPolicy.rules = this.config.authorizationPolicy.rules.filter(x => x.networkId != net.id);
         deleteAuthorizationRules.forEach(x => {
-            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: { id: x.id } });
+            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) });
         })
         //check one more
         let deleteServicesId = deleteServices.map(x => x.id);
         let deleteAuthorizatonRules2 = this.config.authorizationPolicy.rules.filter(x => deleteServicesId.includes(x.serviceId));
         this.config.authorizationPolicy.rules = this.config.authorizationPolicy.rules.filter(x => !deleteServicesId.includes(x.serviceId));
         deleteAuthorizatonRules2.forEach(x => {
-            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: { id: x.id } });
+            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) });
         })
         if (deleteAuthorizationRules.length || deleteAuthorizatonRules2.length) {
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' });
@@ -855,13 +894,13 @@ export class ConfigService {
         let deleteAuthenticationRules = this.config.authenticationPolicy.rules.filter(x => x.networkId == net.id);
         this.config.authenticationPolicy.rules = this.config.authenticationPolicy.rules.filter(x => x.networkId != net.id);
         deleteAuthenticationRules.forEach(x => {
-            this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: { id: x.id } });
+            this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(x) });
         })
         if (deleteAuthenticationRules.length) {
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy' });
         }
 
-        this.emitEvent({ type: 'deleted', path: '/networks', data: { id: net.id } });
+        this.emitEvent({ type: 'deleted', path: '/networks', data: this.createTrackEvent(net) });
 
     }
 
@@ -873,6 +912,7 @@ export class ConfigService {
             await this.triggerNetworkDeleted(network)
             await this.saveConfigToFile();
         }
+        return this.createTrackEvent(network)
 
     }
 
@@ -914,19 +954,21 @@ export class ConfigService {
 
     async saveNetwork(network: Network) {
         let findedIndex = this.config.networks.findIndex(x => x.id == network.id);
-        let finded = findedIndex >= 0 ? this.config.networks[findedIndex] : null;
+        let finded = this.config.networks[findedIndex];
         const cloned = Util.clone(network);
         if (!finded) {
             this.config.networks.push(cloned);
-            this.emitEvent({ type: 'saved', path: '/networks', data: { id: cloned.id } });
+            findedIndex = this.config.networks.length - 1;
+            this.emitEvent({ type: 'saved', path: '/networks', data: this.createTrackEvent(finded, this.config.networks[findedIndex]) });
         } else {
             this.config.networks[findedIndex] = {
                 ...finded,
                 ...cloned
             }
-            this.emitEvent({ type: 'updated', path: '/networks', data: { id: cloned.id } });
+            this.emitEvent({ type: 'updated', path: '/networks', data: this.createTrackEvent(finded, this.config.networks[findedIndex]) });
         }
         await this.saveConfigToFile();
+        return this.createTrackEvent(finded, this.config.networks[findedIndex]);
     }
     async getDomain(): Promise<string> {
         return this.config.domain;
@@ -940,7 +982,7 @@ export class ConfigService {
         return Util.clone(gateway);
     }
     async triggerGatewayDeleted(gate: Gateway) {
-        this.emitEvent({ type: 'deleted', path: '/gateways', data: { id: gate.id } });
+        this.emitEvent({ type: 'deleted', path: '/gateways', data: this.createTrackEvent(gate) });
     }
 
     async deleteGateway(id: string) {
@@ -951,6 +993,7 @@ export class ConfigService {
             await this.triggerGatewayDeleted(gateway);
             await this.saveConfigToFile();
         }
+        return this.createTrackEvent(gateway);
 
     }
     async getGatewaysByNetworkId(id: string) {
@@ -983,21 +1026,25 @@ export class ConfigService {
         const cloned = Util.clone(gateway);
         if (!finded) {
             this.config.gateways.push(cloned);
-            this.emitEvent({ type: 'saved', path: '/gateways', data: { id: cloned.id } });
+            findedIndex = this.config.gateways.length - 1;
+            this.emitEvent({ type: 'saved', path: '/gateways', data: this.createTrackEvent(finded, this.config.gateways[findedIndex]) });
         } else {
             this.config.gateways[findedIndex] = {
                 ...finded,
                 ...cloned
             }
-            this.emitEvent({ type: 'saved', path: '/gateways', data: { id: cloned.id } });
+            this.emitEvent({ type: 'saved', path: '/gateways', data: this.createTrackEvent(finded, this.config.gateways[findedIndex]) });
         }
         await this.saveConfigToFile();
+        return await this.createTrackEvent(finded, this.config.gateways[findedIndex]);
     }
 
     async setDomain(domain: string) {
+        let previous = this.config.domain;
         this.config.domain = domain;
-        this.emitEvent({ type: 'updated', path: '/domain' })
+        this.emitEvent({ type: 'updated', path: '/domain', data: this.createTrackEvent(previous, this.config.domain) })
         await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.domain);
     }
 
 
@@ -1005,9 +1052,11 @@ export class ConfigService {
         return this.config.url;
     }
     async setUrl(url: string) {
+        let previous = this.config.url;
         this.config.url = url;
-        this.emitEvent({ type: 'updated', path: '/url' })
+        this.emitEvent({ type: 'updated', path: '/url', data: this.createTrackEvent(previous, this.config.url) })
         await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.url);
     }
 
     async getRBAC(): Promise<RBAC> {
@@ -1019,9 +1068,11 @@ export class ConfigService {
     }
 
     async setIsConfigured(val: number) {
+        let previous = this.config.isConfigured;
         this.config.isConfigured = val;
-        this.emitEvent({ type: 'updated', path: '/isConfigured' })
+        this.emitEvent({ type: 'updated', path: '/isConfigured', data: this.createTrackEvent(previous, this.config.isConfigured) })
         await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.isConfigured);
     }
 
     //// group entity
@@ -1048,50 +1099,57 @@ export class ConfigService {
 
     async triggerDeleteGroup(grp: Group) {
 
-        let usersChanged: string[] = [];
+        let usersChanged: { previous: User, item: User }[] = [];
         this.config.users.forEach(x => {
             let userGroupIndex = x.groupIds.findIndex(y => y == grp.id)
             if (userGroupIndex >= 0) {
+                let cloned = Util.clone(x);
                 x.groupIds.splice(userGroupIndex, 1);
-                usersChanged.push(x.id)
+                usersChanged.push({ previous: cloned, item: x })
             }
-
         })
+        //TODO this is sensitive data, more think
         //check policy authentication
 
-        let rulesAuthnChanged: string[] = [];
+        let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
         this.config.authenticationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
             if (userIdIndex >= 0) {
+                let cloned = Util.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
 
-                rulesAuthnChanged.push(x.id);
+                rulesAuthnChanged.push({ previous: cloned, item: x });
             }
         })
         //check authorization
 
-        let rulesAuthzChanged: string[] = [];
+        let rulesAuthzChanged: { previous: AuthorizationRule, item: AuthorizationRule }[] = [];
         this.config.authorizationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
             if (userIdIndex >= 0) {
+                let cloned = Util.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
 
-                rulesAuthzChanged.push(x.id);
+                rulesAuthzChanged.push({ previous: cloned, item: x });
             }
         })
 
+        usersChanged.forEach(x => {
+            this.emitEvent({ type: 'updated', path: '/users', data: this.createTrackEvent(x.previous, x.item) })
+        })
+
         rulesAuthnChanged.forEach(x => {
-            this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: { id: x } })
+            this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
         })
         if (rulesAuthnChanged.length)
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
         rulesAuthzChanged.forEach(x => {
-            this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: { id: x } })
+            this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
         })
         if (rulesAuthzChanged.length)
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
 
-        this.emitEvent({ type: 'deleted', path: '/groups', data: { id: grp.id } })
+        this.emitEvent({ type: 'deleted', path: '/groups', data: this.createTrackEvent(grp) })
 
 
 
@@ -1105,6 +1163,7 @@ export class ConfigService {
             this.triggerDeleteGroup(group)
             await this.saveConfigToFile();
         }
+        return this.createTrackEvent(group);
 
 
     }
@@ -1115,15 +1174,17 @@ export class ConfigService {
         const cloned = Util.clone(group);
         if (!finded) {
             this.config.groups.push(cloned);
-            this.emitEvent({ type: 'saved', path: '/groups', data: { id: cloned.id } })
+            findedIndex = this.config.groups.length - 1;
+            this.emitEvent({ type: 'saved', path: '/groups', data: this.createTrackEvent(finded, this.config.groups[findedIndex]) })
         } else {
             this.config.groups[findedIndex] = {
                 ...finded,
                 ...cloned
             }
-            this.emitEvent({ type: 'updated', path: '/groups', data: { id: cloned.id } })
+            this.emitEvent({ type: 'updated', path: '/groups', data: this.createTrackEvent(finded, this.config.groups[findedIndex]) })
         }
         await this.saveConfigToFile();
+        return this.createTrackEvent(finded, this.config.groups[findedIndex]);
     }
 
 
@@ -1174,6 +1235,30 @@ export class ConfigService {
 
     }
 
+    /**
+     * @summary create tracking items
+     * @param previous 
+     * @param item 
+     * @returns 
+     */
+    createTrackEvent(previous?: any, item?: any) {
+        return {
+            before: previous ? Util.clone(previous) : undefined,
+            after: item ? Util.clone(item) : undefined
+
+        }
+    }
+    /**
+     * @summary tracks an array object, if something changes
+     */
+    createTrackIndexEvent(item: any, iprevious: number, iitem: number) {
+        return {
+            item: Util.clone(item),
+            iBefore: iprevious,
+            iAfter: iitem
+        }
+    }
+
     async triggerServiceDeleted(svc: Service) {
 
         //check authorization
@@ -1181,13 +1266,12 @@ export class ConfigService {
         this.config.authorizationPolicy.rules = this.config.authorizationPolicy.rules.filter(x => x.serviceId != svc.id);
 
         rulesAuthzChanged.forEach(x => {
-            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: { id: x } })
+            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) })
         })
         if (rulesAuthzChanged.length)
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
 
-        this.emitEvent({ type: 'deleted', path: '/services', data: { id: svc.id } })
-
+        this.emitEvent({ type: 'deleted', path: '/services', data: this.createTrackEvent(svc) })
 
     }
 
@@ -1198,9 +1282,9 @@ export class ConfigService {
             this.config.services.splice(indexId, 1);
             await this.triggerServiceDeleted(svc);
             await this.saveConfigToFile();
+
         }
-
-
+        return this.createTrackEvent(svc);//return deleted service for log if exists
     }
 
     async saveService(service: Service) {
@@ -1208,17 +1292,19 @@ export class ConfigService {
         let finded = findedIndex >= 0 ? this.config.services[findedIndex] : null;
         const cloned = Util.clone(service);
         if (!finded) {
-
             this.config.services.push(cloned);
-            this.emitEvent({ type: 'saved', path: '/services', data: { id: cloned.id } })
+            findedIndex = this.config.services.length - 1;
+            this.emitEvent({ type: 'saved', path: '/services', data: this.createTrackEvent(finded, this.config.services[findedIndex]) })
         } else {
             this.config.services[findedIndex] = {
                 ...finded,
                 ...cloned
             }
-            this.emitEvent({ type: 'updated', path: '/services', data: { id: cloned.id } })
+            this.emitEvent({ type: 'updated', path: '/services', data: this.createTrackEvent(finded, this.config.services[findedIndex]) })
         }
         await this.saveConfigToFile();
+
+        return this.createTrackEvent(finded, this.config.services[findedIndex]);
     }
 
 
@@ -1226,16 +1312,20 @@ export class ConfigService {
 
     async saveAuthenticationPolicyRule(arule: AuthenticationRule) {
         const cloned = Util.clone(arule);
-        const ruleIndex = this.config.authenticationPolicy.rules.findIndex(x => x.id == arule.id);
+        let ruleIndex = this.config.authenticationPolicy.rules.findIndex(x => x.id == arule.id);
+        let previous = this.config.authenticationPolicy.rules[ruleIndex];
+
         if (ruleIndex >= 0) {
             this.config.authenticationPolicy.rules[ruleIndex] = cloned;
-            this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: { id: cloned.id } })
+            this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex]) })
         } else {
             this.config.authenticationPolicy.rules.push(cloned);
-            this.emitEvent({ type: 'saved', path: '/authenticationPolicy/rules', data: { id: cloned.id } })
+            ruleIndex = this.config.authenticationPolicy.rules.length - 1;
+            this.emitEvent({ type: 'saved', path: '/authenticationPolicy/rules', data: this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex]) })
         }
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
         await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex])
     }
     async getAuthenticationPolicy() {
         return Util.clone(this.config.authenticationPolicy);
@@ -1253,10 +1343,11 @@ export class ConfigService {
         const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
         if (ruleIndex >= 0 && rule) {
             this.config.authenticationPolicy.rules.splice(ruleIndex, 1);
-            this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: { id: rule.id } })
+            this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(rule) })
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
             await this.saveConfigToFile();
         }
+        return this.createTrackEvent(rule);
     }
     async updateAuthenticationPolicyUpdateTime() {
         this.config.authenticationPolicy.updateDate = new Date().toISOString();
@@ -1268,27 +1359,34 @@ export class ConfigService {
             throw new Error('no rule found at this position');
         if (previous < 0)
             throw new Error('array index can be negative');
-        this.config.authenticationPolicy.rules.splice(previous, 1);
 
+
+        this.config.authenticationPolicy.rules.splice(previous, 1);
         this.config.authenticationPolicy.rules.splice(index, 0, currentRule);
-        this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: { id: id } })
+        //TODO how to manage
+        this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
+        return this.createTrackIndexEvent(currentRule, previous, index);
 
     }
     //authorization policy
 
     async saveAuthorizationPolicyRule(arule: AuthorizationRule) {
         const cloned = Util.clone(arule);
-        const ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == arule.id);
+        let ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == arule.id);
+        const previous = this.config.authorizationPolicy.rules[ruleIndex];
         if (ruleIndex >= 0) {
             this.config.authorizationPolicy.rules[ruleIndex] = cloned;
-            this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: { id: arule.id } })
+            this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]) })
         } else {
             this.config.authorizationPolicy.rules.push(cloned);
-            this.emitEvent({ type: 'saved', path: '/authorizationPolicy/rules', data: { id: arule.id } })
+            ruleIndex = this.config.authenticationPolicy.rules.length - 1;
+            this.emitEvent({ type: 'saved', path: '/authorizationPolicy/rules', data: this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]) })
         }
         this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
         await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]);
+
     }
     async getAuthorizationPolicy() {
         return Util.clone(this.config.authorizationPolicy);
@@ -1305,22 +1403,16 @@ export class ConfigService {
         const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
         if (ruleIndex >= 0 && rule) {
             this.config.authorizationPolicy.rules.splice(ruleIndex, 1);
-            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: { id: rule.id } })
+            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(rule) })
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
             await this.saveConfigToFile();
         }
+        return this.createTrackEvent(rule);
     }
     async updateAuthorizationPolicyUpdateTime() {
         this.config.authorizationPolicy.updateDate = new Date().toISOString();
         await this.saveConfigToFile();
     }
-
-
-
-
-
-
-
 
 
 

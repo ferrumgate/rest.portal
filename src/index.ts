@@ -20,6 +20,8 @@ import { passportAuthenticate, passportInit } from "./api/auth/passportInit";
 import { routerGroupAuthenticated } from "./api/groupApi";
 import { routerServiceAuthenticated } from "./api/serviceApi";
 import { routerAuthenticationPolicyAuthenticated, routerAuthorizationPolicyAuthenticated } from "./api/policyApi";
+import { routerAuditAuthenticated } from "./api/auditApi";
+import { ESService } from "./service/esService";
 
 
 
@@ -317,6 +319,15 @@ app.use('(\/api)?/policy/authz',
     asyncHandlerWithArgs(checkCaptcha, 'policyAuthzCaptcha', 50),
     routerAuthorizationPolicyAuthenticated);
 
+app.use('(\/api)?/log/audit',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'logsAudit', 1000),
+    asyncHandlerWithArgs(rateLimit, 'logsAuditHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'logsAuditDaily', 5000),
+    asyncHandlerWithArgs(checkCaptcha, 'logsAuditCaptcha', 50),
+    routerAuditAuthenticated);
+
 
 
 
@@ -336,7 +347,13 @@ app.start = async function () {
         publicKey: fs.readFileSync('./ferrumgate.com.crt').toString('utf-8'),
     });
 
-    await (app.appSystemService as AppSystemService).start();
+    if (!process.env.NODE_TEST)
+        try {
+            await (app.esService as ESService).auditCreateIndexIfNotExits({} as any);
+        } catch (err) { logger.error(err); }
+
+    if (!process.env.NODE_TEST)
+        await (app.appSystemService as AppSystemService).start();
 
 
     app.listen(port, () => {

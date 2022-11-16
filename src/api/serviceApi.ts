@@ -12,6 +12,8 @@ import { RBACDefault } from "../model/rbac";
 import { authorize, authorizeAsAdmin } from "./commonApi";
 import { cloneService, Service } from "../model/service";
 import { Network } from "../model/network";
+import { AuditService } from "../service/auditService";
+import { AuthSession } from "../model/authSession";
 
 
 
@@ -67,16 +69,18 @@ routerServiceAuthenticated.delete('/:id',
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
 
         logger.info(`delete service with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
-
+        const auditService = appService.auditService;
         const service = await configService.getService(id);
         if (!service) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no service');
 
-        await configService.deleteService(service.id);
-        //TODO audit
+        const { before } = await configService.deleteService(service.id);
+        await auditService.logDeleteService(currentSession, currentUser, before);
         return res.status(200).json({});
 
     }))
@@ -90,9 +94,13 @@ routerServiceAuthenticated.put('/',
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as Service;
         logger.info(`changing service settings for ${input.id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
 
         await inputService.checkNotEmpty(input.id);
         const service = await configService.getService(input.id);
@@ -117,8 +125,8 @@ routerServiceAuthenticated.put('/',
         //copy orijinal 
         safe.insertDate = service.insertDate;
         safe.updateDate = new Date().toISOString();
-        await configService.saveService(safe);
-        // TODO audit here
+        const { before, after } = await configService.saveService(safe);
+        await auditService.logSaveService(currentSession, currentUser, before, after);
         return res.status(200).json(safe);
 
     }))
@@ -129,9 +137,13 @@ routerServiceAuthenticated.post('/',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`saving a new service`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
 
         const input = req.body as Service;
         input.id = Util.randomNumberString(16);
@@ -154,8 +166,8 @@ routerServiceAuthenticated.post('/',
         safe.assignedIp = getEmptyServiceIp(network, allServicesFromThisNetwork.map(x => x.assignedIp));
         safe.insertDate = new Date().toISOString();
         safe.updateDate = new Date().toISOString();
-        await configService.saveService(safe);
-        //TODO audit
+        const { before, after } = await configService.saveService(safe);
+        await auditService.logSaveService(currentSession, currentUser, before, after);
         return res.status(200).json(safe);
 
     }))
@@ -178,9 +190,6 @@ export function getEmptyServiceIp(network: Network, usedIpList: string[]): strin
     let end = Util.ipToBigInteger(range.end);
     if (start >= end)// if all pool ips used, then start from beginning for search
         start = Util.ipToBigInteger(range.start);
-
-
-
 
     for (let s = start; s < end; s++) {
         const ip = Util.bigIntegerToIp(s);

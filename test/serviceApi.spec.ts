@@ -6,7 +6,6 @@ import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
-import { config } from 'process';
 import { Service } from '../src/model/service';
 import { Network } from '../src/model/network';
 import { getEmptyServiceIp } from '../src/api/serviceApi';

@@ -18,6 +18,8 @@ import { SystemWatcherService } from "./system/systemWatcherService";
 import { logger } from "../common";
 import { GatewayService } from "./gatewayService";
 import { ConfigPublicListener } from "./system/configPublicListener";
+import { ESService } from "./esService";
+import { AuditLogToES } from "./system/auditLogToES";
 
 
 /**
@@ -39,6 +41,7 @@ export class AppService {
     public policyService: PolicyService;
     public auditService: AuditService;
     public gatewayService: GatewayService;
+    public esService: ESService;
     /**
      *
      */
@@ -50,12 +53,13 @@ export class AppService {
         twoFA?: TwoFAService, oauth2?: OAuth2Service,
         tunnel?: TunnelService, audit?: AuditService,
         event?: EventService,
+        es?: ESService,
         policy?: PolicyService,
         gateway?: GatewayService,
     ) {
         //create self signed certificates for JWT
 
-        this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development2' ? `/tmp/${Util.randomNumberString()}_config.yaml` : '/etc/ferrumgate/config.yaml');
+        this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? `/tmp/${Util.randomNumberString()}_config.yaml` : '/etc/ferrumgate/config.yaml');
         this.redisService = redis || new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS)
         this.rateLimit = rateLimit || new RateLimitService(this.configService, this.redisService);
         this.inputService = input || new InputService();
@@ -67,8 +71,9 @@ export class AppService {
         this.oauth2Service = oauth2 || new OAuth2Service(this.configService);
         this.tunnelService = tunnel || new TunnelService(this.configService, this.redisService);
         this.eventService = event || new EventService(this.configService, this.redisService);
-        this.auditService = audit || new AuditService();
-        this.policyService = policy || new PolicyService(this.configService, this.tunnelService, this.auditService);
+        this.esService = es || new ESService();
+        this.auditService = audit || new AuditService(this.redisService, this.esService);
+        this.policyService = policy || new PolicyService(this.configService, this.tunnelService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
 
 
@@ -81,24 +86,28 @@ export class AppSystemService {
     public systemWatcherService: SystemWatcherService;
     public policyAuthzChannel: PolicyAuthzListener;
     public configPublicListener: ConfigPublicListener;
+    public auditLogToES: AuditLogToES;
     /**
      *
      */
     constructor(app: AppService, systemWatcher?: SystemWatcherService,
-        policyAuthzChannel?: PolicyAuthzListener, configPublic?: ConfigPublicListener) {
+        policyAuthzChannel?: PolicyAuthzListener, configPublic?: ConfigPublicListener, auditLogES?: AuditLogToES) {
         this.systemWatcherService = systemWatcher || new SystemWatcherService();
         this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(app.policyService, this.systemWatcherService);
         this.configPublicListener = configPublic || new ConfigPublicListener(app.configService);
+        this.auditLogToES = auditLogES || new AuditLogToES(app.configService);
 
     }
     async start() {
         await this.systemWatcherService.start();
         await this.policyAuthzChannel.start();
         await this.configPublicListener.start();
+        await this.auditLogToES.start();
     }
     async stop() {
         await this.systemWatcherService.stop();
         await this.policyAuthzChannel.stop();
         await this.configPublicListener.stop();
+        await this.auditLogToES.stop();
     }
 }

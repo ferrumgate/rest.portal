@@ -22,7 +22,7 @@ export class PolicyService {
      */
     constructor(private configService: ConfigService,
         private tunnelService: TunnelService,
-        private auditService: AuditService) {
+    ) {
 
 
     }
@@ -58,38 +58,38 @@ export class PolicyService {
 
     }
     authenticateErrorNumber = 0;
-
+    // TODO 
     async authenticate(user: User, is2FAValidated: boolean, tunnelKey: string) {
         //get tunnel basic information
         this.authenticateErrorNumber = 0;
         const tunnel = await this.tunnelService.getTunnel(tunnelKey);
         if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.hostId) {
             this.authenticateErrorNumber = 1;
-            //todo activity
+            //TODO activity
             throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
         }
 
         const gateway = await this.configService.getGateway(tunnel.hostId);
         if (!gateway) {
             this.authenticateErrorNumber = 2;
-            //todo activity
+            //TODO activity
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no gateway');
         }
         if (!gateway.isEnabled) {
             this.authenticateErrorNumber = 3;
-            //todo activity
+            //TODO activity
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no gateway');
         }
         const network = await this.configService.getNetwork(gateway.networkId || '');
         if (!network) {
             this.authenticateErrorNumber = 4;
-            //todo activity
+            //TODO activity
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
         }
 
         if (!network.isEnabled) {
             this.authenticateErrorNumber = 5;
-            //todo activity
+            //TODO activity
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
         }
         const policy = await this.configService.getAuthenticationPolicy();
@@ -117,7 +117,7 @@ export class PolicyService {
         //no rule match
         this.authenticateErrorNumber = 100;
 
-        //todo activity
+        //TODO activity
         throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
 
 
@@ -129,14 +129,14 @@ export class PolicyService {
         this.authorizeErrorNumber = 0;
         const tunnelKey = tun ? `/tunnel/id/${tun.id}` : await this.tunnelService.getTunnelKeyFromTrackId(trackId);
         if (!tunnelKey) {
-            //todo activity
+
             this.authorizeErrorNumber = 1;
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'key not found');
         }
         const tunnel = tun || await this.tunnelService.getTunnel(tunnelKey);
         if (!tunnel) {
-            //todo activity
+
             this.authorizeErrorNumber = 2;
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'tunnel found');
@@ -145,13 +145,13 @@ export class PolicyService {
 
         if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.hostId || !tunnel.trackId || tunnel.trackId != trackId) {
             this.authorizeErrorNumber = 3;
-            //todo activity
+
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
         }
         const user = await this.configService.getUserById(tunnel.userId || '')
         if (!user) {
-            //todo activitiy  
+
             this.authorizeErrorNumber = 4;
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not found');
@@ -160,7 +160,7 @@ export class PolicyService {
             await HelperService.isValidUser(user);
         } catch (err) {
             this.authorizeErrorNumber = 4;
-            //todo activitity
+
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw err;
         }
@@ -169,13 +169,13 @@ export class PolicyService {
         const service = await this.configService.getService(serviceId);
         if (!service) {
             this.authorizeErrorNumber = 5;
-            //todo activity
+
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no service');
         }
         if (!service.isEnabled) {
             this.authorizeErrorNumber = 6;
-            //todo activity
+
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'service is not enabled');
         }
@@ -184,14 +184,14 @@ export class PolicyService {
         const network = await this.configService.getNetwork(service.networkId);
         if (!network) {
             this.authorizeErrorNumber = 7;
-            //todo activity
+
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
         }
 
         if (!network.isEnabled) {
             this.authorizeErrorNumber = 8;
-            //todo activity
+
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
         }
@@ -207,7 +207,7 @@ export class PolicyService {
             let f2 = await this.check2FA(rule, tunnel.is2FA || false);
             if (f1 && f2) {
 
-                //todo activity that this rule matched
+
                 return { error: 0, index: i, rule: rule };
             }
 
@@ -215,7 +215,7 @@ export class PolicyService {
         //no rule match
         this.authorizeErrorNumber = 100;
 
-        //todo activity
+
         if (!throwError) return { error: this.authorizeErrorNumber };
         throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
 

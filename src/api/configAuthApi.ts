@@ -16,6 +16,7 @@ import { EmailSettings } from "../model/emailSettings";
 import { AuthCommon, AuthLocal, BaseLdap, BaseLocal, BaseOAuth, BaseSaml } from "../model/authSettings";
 import { util } from "chai";
 import { config } from "process";
+import { AuthSession } from "../model/authSession";
 
 
 
@@ -52,15 +53,21 @@ routerConfigAuthAuthenticated.put('/common',
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as AuthCommon;
         logger.info(`getting config auth common`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
         await inputService.checkIfExists(input);
         //make it safe input data
         const safe = copyAuthCommon(input);
-        await configService.setAuthSettingsCommon(safe);
+        const { before, after } = await configService.setAuthSettingsCommon(safe);
+        await auditService.logSetAuthSettingsCommon(currentSession, currentUser, before, after);
+
         const output = await configService.getAuthSettingsCommon();
-        //TODO audit
         return res.status(200).json(output);
 
     }))
@@ -100,16 +107,23 @@ routerConfigAuthAuthenticated.put('/local',
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as BaseLocal;
         logger.info(`getting config auth local`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
         await inputService.checkIfExists(input);
         const db = await configService.getAuthSettingsLocal();
         const safe = copyAuthLocal(input);
         safe.insertDate = db.insertDate;
         safe.updateDate = new Date().toISOString();
-        await configService.setAuthSettingsLocal(safe);
-        //TODO audit
+
+        const { before, after } = await configService.setAuthSettingsLocal(safe);
+        await auditService.logSetAuthSettingsLocal(currentSession, currentUser, before, after);
+
         const local = await configService.getAuthSettingsLocal();
         return res.status(200).json(local);
 
@@ -206,10 +220,15 @@ routerConfigAuthAuthenticated.put('/oauth/providers',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`update config auth oauth provider`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const input = req.body as BaseOAuth;
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
         //check input data
         await inputService.checkIfExists(input);
         await inputService.checkIfExists(input.id);
@@ -221,8 +240,10 @@ routerConfigAuthAuthenticated.put('/oauth/providers',
         const safe = copyAuthOAuth(input);
         safe.insertDate = item.insertDate;
         safe.updateDate = new Date().toISOString();
-        await configService.addAuthSettingOAuth(safe)
-        //TODO audit
+
+        const { before, after } = await configService.addAuthSettingOAuth(safe)
+        await auditService.logAddAuthSettingOAuth(currentSession, currentUser, before, after);
+
         return res.status(200).json(safe);
 
     }))
@@ -233,13 +254,20 @@ routerConfigAuthAuthenticated.delete('/oauth/providers/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`delete config auth oauth provider`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const { id } = req.params;
         const appService = req.appService as AppService;
         const configService = appService.configService;
+        const auditService = appService.auditService;
+
         const item = (await configService.getAuthSettingOAuth()).providers.find(x => x.id == id);
-        if (item)
-            await configService.deleteAuthSettingOAuth(id);
-        //TODO audit
+        if (item) {
+            const { before } = await configService.deleteAuthSettingOAuth(id);
+            await auditService.logDeleteAuthSettingOAuth(currentSession, currentUser, before);
+        }
+
         return res.status(200).json({});
 
     }))
@@ -342,10 +370,15 @@ routerConfigAuthAuthenticated.put('/ldap/providers',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`update config auth ldap provider`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const input = req.body as BaseLdap;
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
         //check input
         await inputService.checkIfExists(input);
         await inputService.checkIfExists(input.id);
@@ -362,8 +395,10 @@ routerConfigAuthAuthenticated.put('/ldap/providers',
         const safe = copyAuthLdap(input);
         safe.insertDate = item.insertDate;
         safe.updateDate = new Date().toISOString();
-        await configService.addAuthSettingLdap(safe)
-        //TODO audit
+
+        const { before, after } = await configService.addAuthSettingLdap(safe)
+        await auditService.logAddAuthSettingLdap(currentSession, currentUser, before, after);
+
         return res.status(200).json(safe);
 
     }))
@@ -374,13 +409,20 @@ routerConfigAuthAuthenticated.delete('/ldap/providers/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`delete config auth ldap provider`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const { id } = req.params;
         const appService = req.appService as AppService;
         const configService = appService.configService;
+        const auditService = appService.auditService;
+
         const item = (await configService.getAuthSettingLdap()).providers.find(x => x.id == id);
-        if (item)
-            await configService.deleteAuthSettingLdap(id);
-        //TODO audit
+        if (item) {
+            const { before } = await configService.deleteAuthSettingLdap(id);
+            await auditService.logDeleteAuthSettingLdap(currentSession, currentUser, before);
+        }
+
         return res.status(200).json({});
 
     }))
@@ -482,10 +524,15 @@ routerConfigAuthAuthenticated.put('/saml/providers',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`update config auth saml provider`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const input = req.body as BaseSaml;
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
         //check input
         await inputService.checkIfExists(input);
         await inputService.checkIfExists(input.id);
@@ -502,8 +549,10 @@ routerConfigAuthAuthenticated.put('/saml/providers',
         const safe = copyAuthSaml(input);
         safe.insertDate = item.insertDate;
         safe.updateDate = new Date().toISOString();
-        await configService.addAuthSettingSaml(safe)
-        //TODO audit
+
+        const { before, after } = await configService.addAuthSettingSaml(safe)
+        await auditService.logAddAuthSettingSaml(currentSession, currentUser, before, after);
+
         return res.status(200).json(safe);
 
     }))
@@ -514,13 +563,20 @@ routerConfigAuthAuthenticated.delete('/saml/providers/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`delete config auth saml provider`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const { id } = req.params;
         const appService = req.appService as AppService;
         const configService = appService.configService;
+        const auditService = appService.auditService;
+
         const item = (await configService.getAuthSettingSaml()).providers.find(x => x.id == id);
-        if (item)
-            await configService.deleteAuthSettingSaml(id);
-        //TODO audit
+        if (item) {
+            const { before } = await configService.deleteAuthSettingSaml(id);
+            await auditService.logDeleteAuthSettingSaml(currentSession, currentUser, before);
+        }
+
         return res.status(200).json({});
 
     }))

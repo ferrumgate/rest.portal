@@ -6,9 +6,7 @@ import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
-import { config } from 'process';
-import { AuthCommon, AuthSettings } from '../src/model/authSettings';
-import { RedisService } from '../src/service/redisService';
+import { AuthSettings } from '../src/model/authSettings';
 import { EmailSettings } from '../src/model/emailSettings';
 
 

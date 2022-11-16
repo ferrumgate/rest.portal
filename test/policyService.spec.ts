@@ -2,25 +2,18 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
-import { InputService } from '../src/service/inputService';
-import { RestfullException } from '../src/restfullException';
-import { ErrorCodes } from '../src/restfullException';
 import { ConfigService } from '../src/service/configService';
-import { Email, EmailService } from '../src/service/emailService';
-import { RBAC, RBACDefault } from '../src/model/rbac';
 import { Util } from '../src/util';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { PolicyService } from '../src/service/policyService';
 import { TunnelService } from '../src/service/tunnelService';
 import { RedisService } from '../src/service/redisService';
-import { AuditService } from '../src/service/auditService';
 import { Network } from '../src/model/network';
 import { Gateway } from '../src/model/network';
 import { Service } from '../src/model/service';
 import { User } from '../src/model/user';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
+import { ESService } from '../src/service/esService';
 
 
 
@@ -56,7 +49,7 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService), new AuditService())
+        const policyService = new PolicyService(configService, new TunnelService(configService, redisService))
         let result = await policyService.checkUserIdOrGroupId(rule, { id: 'x', groupIds: [] } as any)
         expect(result).to.be.false;
 
@@ -87,7 +80,7 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService), new AuditService())
+        const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
         let result = await policyService.check2FA(rule, false)
         expect(result).to.be.true;
 
@@ -124,7 +117,7 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService), new AuditService())
+        const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
         let result = await policyService.checkIps(rule, '1.2.3,4')
         expect(result).to.be.true;
 
@@ -179,7 +172,7 @@ describe('policyService ', async () => {
         let redisValue = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: gateway.id };
         await redisService.hset(`/tunnel/id/testsession`, redisValue);
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService), new AuditService())
+        const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
 
         //no tunnel with this key
         try {
@@ -260,7 +253,9 @@ describe('policyService ', async () => {
     }).timeout(5000);
 
 
-
+    const esHost = 'https://192.168.88.250:9200';
+    const esUser = "elastic";
+    const esPass = '123456';
     it('authorize', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
@@ -307,7 +302,9 @@ describe('policyService ', async () => {
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
         await redisService.set(`/tunnel/trackId/3`, 'testsession');
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService), new AuditService())
+        const es = new ESService(esHost, esUser, esPass)
+
+        const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
 
         //no client with this key
         try {
@@ -422,13 +419,6 @@ describe('policyService ', async () => {
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(0); //success
-
-
-
-
-
-
-
 
     }).timeout(5000);
 

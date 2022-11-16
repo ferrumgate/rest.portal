@@ -1,7 +1,6 @@
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
 import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';

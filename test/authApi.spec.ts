@@ -6,7 +6,6 @@ import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
-import { config } from 'process';
 import { AuthSettings } from '../src/model/authSettings';
 import * as twofactor from 'node-2fa';
 import { Gateway } from '../src/model/network';

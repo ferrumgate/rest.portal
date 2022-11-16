@@ -11,6 +11,7 @@ import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
 import { authorize, authorizeAsAdmin } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
+import { AuthSession } from "../model/authSession";
 
 
 /////////////////////////////////  network //////////////////////////////////
@@ -48,7 +49,7 @@ routerNetworkAuthenticated.get('/',
     asyncHandler(async (req: any, res: any, next: any) => {
         const search = req.query.search;
         const ids = req.query.ids as string;
-        logger.info(`configuring system for startup`);
+        logger.info(`query network`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         let items: Network[] = [];
@@ -79,16 +80,19 @@ routerNetworkAuthenticated.delete('/:id',
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
 
         logger.info(`delete network with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
+        const auditService = appService.auditService;
 
         const network = await configService.getNetwork(id);
         if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no network');
 
-        await configService.deleteNetwork(network.id);
-        //TODO audit
+        const { before } = await configService.deleteNetwork(network.id);
+        await auditService.logDeleteNetwork(currentSession, currentUser, before);
         return res.status(200).json({});
 
     }))
@@ -102,9 +106,13 @@ routerNetworkAuthenticated.put('/',
     asyncHandler(async (req: any, res: any, next: any) => {
         const input = req.body as Network;
         logger.info(`changing network settings for ${input.id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
 
         await inputService.checkNotEmpty(input.id);
         const network = await configService.getNetwork(input.id);
@@ -117,8 +125,9 @@ routerNetworkAuthenticated.put('/',
         const safe = cloneNetwork(input);
         safe.insertDate = network.insertDate;
         safe.updateDate = new Date().toISOString();
-        await configService.saveNetwork(safe);
-        // TODO audit here
+        const { before, after } = await configService.saveNetwork(safe);
+        await auditService.logSaveNetwork(currentSession, currentUser, before, after);
+
         return res.status(200).json(safe);
 
     }))
@@ -129,9 +138,12 @@ routerNetworkAuthenticated.post('/',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`saving a new network`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
 
         const input = req.body as Network;
         input.id = Util.randomNumberString(16);
@@ -143,8 +155,8 @@ routerNetworkAuthenticated.post('/',
         const safe = cloneNetwork(input);
         safe.insertDate = new Date().toISOString();
         safe.updateDate = new Date().toISOString();
-        await configService.saveNetwork(safe);
-        //TODO audit
+        const { before, after } = await configService.saveNetwork(safe);
+        await auditService.logSaveNetwork(currentSession, currentUser, before, after);
         return res.status(200).json(safe);
 
     }))

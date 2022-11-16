@@ -16,6 +16,7 @@ import { EmailSettings } from "../model/emailSettings";
 import { AuthCommon, AuthLocal, BaseLocal, BaseOAuth } from "../model/authSettings";
 import { util } from "chai";
 import { config } from "process";
+import { AuthSession } from "../model/authSession";
 
 
 
@@ -88,7 +89,7 @@ routerConfigAuthenticated.get('/common',
         return res.status(200).json({ url: url, domain: domain });
 
     }))
-const configChangedChannel = '/config/changed'
+
 routerConfigAuthenticated.put('/common',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -97,28 +98,29 @@ routerConfigAuthenticated.put('/common',
 
         const input = req.body as { url?: string, domain?: string };
         logger.info(`changing config common settings`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
 
         const appService = req.appService as AppService;
         const redisService = appService.redisService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
         const url = await configService.getUrl();
         const domain = await configService.getDomain();
         if (input.url && input.url != url) {
             await inputService.checkUrl(input.url);
-            await configService.setUrl(input.url);
-            //inform system that config changed
-            await redisService.publish(configChangedChannel, `url=${input.url}`)
-            //TODO audit
+            const { before, after } = await configService.setUrl(input.url);
+            await auditService.logSetUrl(currentSession, currentUser, before, after);
+
 
         }
 
         if (input.domain && input.domain != domain) {
             await inputService.checkDomain(input.domain);
-            await configService.setDomain(input.domain);
-            //inform system that config changed
-            await redisService.publish(configChangedChannel, `domain=${input.domain}`)
-            //TODO audit
+            const { before, after } = await configService.setDomain(input.domain);
+            await auditService.logSetDomain(currentSession, currentUser, before, after);
         }
         const urlAfter = await configService.getUrl();
         const domainAfter = await configService.getDomain();
@@ -156,15 +158,19 @@ routerConfigAuthenticated.put('/captcha',
 
         const input = req.body as Captcha
         logger.info(`changing config captcha settings`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
 
         const appService = req.appService as AppService;
         const redisService = appService.redisService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
         const captcha = await configService.getCaptcha();
         if (captcha.client != input.client || captcha.server != input.server) {
-            await configService.setCaptcha(input);
-            //TODO audit
+            const { before, after } = await configService.setCaptcha(input);
+            await auditService.logSetCaptcha(currentSession, currentUser, before, after);
         }
         const again = await configService.getCaptcha();
         return res.status(200).json(again);
@@ -228,20 +234,25 @@ routerConfigAuthenticated.put('/email',
 
         const input = req.body as EmailSettings
         logger.info(`changing config email settings`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
 
         const appService = req.appService as AppService;
         const redisService = appService.redisService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
         await inputService.checkIfExists(input);
         const emailService = appService.emailService;
         const email = await configService.getEmailSettings();
         const diffFields = diff.detailedDiff(email, input);
         if (Object.keys(diffFields)) {
             const setting = getEmailSettingFrom(input);
-            await configService.setEmailSettings(setting);
+            const { before, after } = await configService.setEmailSettings(setting);
+            await auditService.logSetEmailSettings(currentSession, currentUser, before, after);
             await emailService.reset();
-            //TODO audit
+
         }
         const again = await configService.getEmailSettings();
         return res.status(200).json(again);
@@ -256,18 +267,23 @@ routerConfigAuthenticated.delete('/email',
 
 
         logger.info(`deleting config email settings`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
 
         const appService = req.appService as AppService;
         const redisService = appService.redisService;
         const configService = appService.configService;
         const inputService = appService.inputService;
         const emailService = appService.emailService;
+        const auditService = appService.auditService;
+
         const email = await configService.getEmailSettings();
 
         if (email) {
-            await configService.setEmailSettings({ type: 'empty', fromname: '', pass: '', user: '' });
+            const { before, after } = await configService.setEmailSettings({ type: 'empty', fromname: '', pass: '', user: '' });
+            await auditService.logSetEmailSettings(currentSession, currentUser, before, after);
             await emailService.reset();
-            //TODO audit
+
         }
         const again = await configService.getEmailSettings();
         return res.status(200).json(again);

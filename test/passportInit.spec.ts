@@ -1,16 +1,6 @@
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
-import { config } from 'process';
-import { AuthSettings } from '../src/model/authSettings';
-import * as twofactor from 'node-2fa';
-import { Gateway } from '../src/model/network';
-import { Network } from '../src/model/network';
 import passport from 'passport';
 import passportCustom from 'passport-custom';
 import { passportAuthenticate, passportConf } from '../src/api/auth/passportInit';

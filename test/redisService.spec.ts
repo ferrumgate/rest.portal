@@ -6,7 +6,7 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
 import { RedisService, RedisServiceManuel } from '../src/service/redisService';
-
+import cryp from 'crypto';
 
 
 
@@ -26,6 +26,8 @@ describe('redisService', () => {
         await simpleRedis.set('deneme', 'deneme', { ttl: '15000' });
         let data = await simpleRedis.get<string>('deneme', false);
         expect(data).to.equal('deneme');
+
+
         let contains = await simpleRedis.containsKey('deneme');
         expect(contains).to.be.true;
         for (let i = 0; i < 1000; ++i) {

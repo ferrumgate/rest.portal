@@ -4,7 +4,6 @@ import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
-import { TemplateService } from '../src/service/templateService';
 import { ConfigService } from '../src/service/configService';
 import { Util } from '../src/util';
 import { RedisService } from '../src/service/redisService';

@@ -24,6 +24,7 @@ export function oauthGoogleInit(google: BaseOAuth, url: string) {
     },
         async (req: any, accessToken: any, refreshToken: any, profile: any, done: any) => {
             try {
+
                 const email = profile.email;
                 const name = profile.displayName;
                 logger.info(`passport google with email: ${email}`);
