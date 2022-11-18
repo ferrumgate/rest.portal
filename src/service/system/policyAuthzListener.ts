@@ -10,6 +10,7 @@ import { rootCertificates } from "tls";
 import { channel } from "diagnostics_channel";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 import fsp from 'fs/promises';
+import { Util } from "../../util";
 
 
 //below are how commands work
@@ -27,7 +28,7 @@ interface PolicyRoomCommand {
 
 export class PolicyRoomService {
     serviceId: string = '';
-    hostId: string = '';
+    gatewayId: string = '';
     instanceId: string = '';
     private interval: any;
 
@@ -41,13 +42,13 @@ export class PolicyRoomService {
     private waitListInterval: any;
     public lastProcessSuccessfull: number = new Date().getTime();
     private trimStreamInterval: any;
-    constructor(_hostId: string, _serviceId: string, _instanceId: string) {
-        this.hostId = _hostId;
+    constructor(_gatewayId: string, _serviceId: string, _instanceId: string) {
+        this.gatewayId = _gatewayId;
         this.serviceId = _serviceId;
         this.instanceId = _instanceId;
 
         this.redisLocal = new RedisService(process.env.REDIS_LOCAL_HOST || "localhost:6379", process.env.REDIS_LOCAL_PASS);
-        this.redisStreamKey = `/policy/service/${this.hostId}/${this.serviceId}/${this.instanceId}`;
+        this.redisStreamKey = `/policy/service/${this.gatewayId}/${this.serviceId}/${this.instanceId}`;
 
     }
     private xaddId(commandId: number) {
@@ -92,20 +93,20 @@ export class PolicyRoomService {
         }
     }
     async pushOk() {
-        logger.debug(`policy room: ${this.hostId}/${this.serviceId}/${this.instanceId} push ok`)
+        logger.debug(`policy room: /${this.gatewayId}/${this.serviceId}/${this.instanceId} push ok`)
         this.waitList.push({ isOK: true })
     }
     async pushReset() {
-        logger.debug(`policy room: ${this.hostId}/${this.serviceId}/${this.instanceId} push reset`)
+        logger.debug(`policy room: /${this.gatewayId}/${this.serviceId}/${this.instanceId} push reset`)
         this.waitList.splice(0);
         this.waitList.push({ isReset: true })
     }
     async pushDelete(trackId: number) {
-        logger.debug(`policy room: ${this.hostId}/${this.serviceId}/${this.instanceId} push delete`)
+        logger.debug(`policy room: /${this.gatewayId}/${this.serviceId}/${this.instanceId} push delete`)
         this.waitList.push({ trackId: trackId, isDelete: true });
     }
     async push(trackId: number, result: PolicyAuthzResult) {
-        logger.debug(`policy room: ${this.hostId}/${this.serviceId}/${this.instanceId} push`)
+        logger.debug(`policy room: /${this.gatewayId}/${this.serviceId}/${this.instanceId} push`)
         this.waitList.push({ trackId: trackId, policyResult: result });
     }
 
@@ -113,34 +114,35 @@ export class PolicyRoomService {
         let tmp = this.commandId;//store it
         try {
             let page = 0;
-            logger.debug(`policy room: ${this.hostId}/${this.serviceId}/${this.instanceId} wait list: ${this.waitList.length}`)
+            logger.debug(`policy room: /${this.gatewayId}/${this.serviceId}/${this.instanceId} wait list: ${this.waitList.length}`)
             while (this.waitList.length) {
-                logger.info(`policy room: executing wait list service on /${this.hostId}/${this.serviceId}/${this.instanceId} page:${page}`)
+                logger.info(`policy room: executing wait list service on /${this.gatewayId}/${this.serviceId}/${this.instanceId} page:${page}`)
                 let snapshot = this.waitList.slice(0, 10000);
                 let pipeline = await this.redisLocal.multi();
                 for (const cmd of snapshot) {
                     if (cmd.isReset) {
                         await pipeline.delete(this.redisStreamKey);
+                        //await pipeline.xtrim(this.redisStreamKey, new Date().getTime().toString());
                         this.commandId = 0;
                         this.commandId++;
                         await pipeline.xadd(this.redisStreamKey, { cmd: `${this.commandId}/reset` }, this.xaddId(this.commandId));
-                        logger.debug(`policy room: write push reset to service: /${this.hostId}/${this.serviceId}/${this.instanceId}`)
+                        logger.debug(`policy room: write push reset to service: /${this.gatewayId}/${this.serviceId}/${this.instanceId}`)
                     } else
                         if (cmd.isOK) {
                             this.commandId++;
                             await pipeline.xadd(this.redisStreamKey, { cmd: `${this.commandId}/ok` }, this.xaddId(this.commandId));
-                            logger.debug(`policy room: write push ok to service: /${this.hostId}/${this.serviceId}/${this.instanceId}`)
+                            logger.debug(`policy room: write push ok to service: /${this.gatewayId}/${this.serviceId}/${this.instanceId}`)
                         }
                         else if (cmd.isDelete && cmd.trackId) {
                             this.commandId++;
                             await pipeline.xadd(this.redisStreamKey, { cmd: `${this.commandId}/delete/${cmd.trackId}` }, this.xaddId(this.commandId));
-                            logger.debug(`policy room: write push delete to service: /${this.hostId}/${this.serviceId}/${this.instanceId}`)
+                            logger.debug(`policy room: write push delete to service: /${this.gatewayId}/${this.serviceId}/${this.instanceId}`)
                         }
                         else if (cmd.trackId && cmd.policyResult) {
                             this.commandId++;
                             let isDrop = cmd.policyResult.error ? 1 : 0;
                             await pipeline.xadd(this.redisStreamKey, { cmd: `${this.commandId}/update/${cmd.trackId}/${isDrop}/${cmd.policyResult.index || 0}/${cmd.policyResult.error + 10000}/${cmd.policyResult.rule?.id || 0}` }, this.xaddId(this.commandId));
-                            logger.debug(`policy room: write push update to service: /${this.hostId}/${this.serviceId}/${this.instanceId}`)
+                            logger.debug(`policy room: write push update to service: /${this.gatewayId}/${this.serviceId}/${this.instanceId}`)
                         }
                 }
                 await pipeline.exec();
@@ -155,20 +157,20 @@ export class PolicyRoomService {
 
 }
 
-class HostId {
+class GatewayId {
 
 
     static async read(configFilePath: string) {
 
         const file = (await fsp.readFile(configFilePath)).toString();
-        const hostline = file.split('\n').find(x => x.startsWith('host='));
-        if (!hostline) throw new Error(`no host id found in config ${configFilePath}`);
+        const hostline = file.split('\n').find(x => x.startsWith('gatewayId='));
+        if (!hostline) throw new Error(`no gateway id found in config ${configFilePath}`);
         const parts = hostline.split('=');
-        if (parts.length != 2) throw new Error(`no host id found in config ${configFilePath}`);
-        let hostId = parts[1];
-        if (!hostId)
-            throw new Error(`no host id found in config ${configFilePath}`);
-        return hostId;
+        if (parts.length != 2) throw new Error(`no gateway id found in config ${configFilePath}`);
+        let gatewayId = parts[1];
+        if (!gatewayId)
+            throw new Error(`no gateway id found in config ${configFilePath}`);
+        return gatewayId;
     }
 }
 
@@ -181,12 +183,12 @@ export class PolicyAuthzListener {
     private waitListTimer: any | null = null;
 
     private roomList = new Map<string, PolicyRoomService>();
-    private hostId = '';
+    private gatewayId = '';
     private isStarted = false;
     private configFile = '/etc/ferrumgate/config';
     constructor(private policyService: PolicyService,
         private systemWatcher: SystemWatcherService, configFile?: string) {
-        this.hostId = process.env.HOST_ID || '';
+        this.gatewayId = process.env.GATEWAY_ID || '';
         this.cache = new NodeCache({ checkperiod: 60, deleteOnExpire: true, useClones: false, stdTTL: 60 });
         this.redisGlobal = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
         this.redisLocalServiceListener = new RedisService(process.env.REDIS_LOCAL_HOST || "localhost:6379", process.env.REDIS_LOCAL_PASS);
@@ -200,8 +202,8 @@ export class PolicyAuthzListener {
         }
 
     }
-    async setHostId(hostId: string) {
-        this.hostId = hostId;
+    async setGatewayId(gatewayId: string) {
+        this.gatewayId = gatewayId;
     }
     async stop() {
         await this.redisLocalServiceListener.disconnect();
@@ -220,15 +222,15 @@ export class PolicyAuthzListener {
             await clearIntervalAsync(this.waitListTimer);
         this.waitListTimer = null;
         this.waitListTimer = setIntervalAsync(async () => {
-            await this.checkHostId();
+            await this.checkGatewayId();
             await this.startListening();
             await this.processWaitList();
         }, 1000);
     }
-    async checkHostId() {
-        if (!this.hostId) {
+    async checkGatewayId() {
+        if (!this.gatewayId) {
             try {
-                this.hostId = await HostId.read(this.configFile)
+                this.gatewayId = await GatewayId.read(this.configFile)
             } catch (err) {
                 logger.error(err);
             }
@@ -243,14 +245,14 @@ export class PolicyAuthzListener {
             }
         }
         else {
-            const hostId = item.tunnel?.hostId;
-            if (!hostId || this.hostId != hostId)//check if this tunnel belongs to this tunnel
+            const gatewayId = item.tunnel?.gatewayId;
+            if (!gatewayId || this.gatewayId != gatewayId)//check if this tunnel belongs to this tunnel
                 return;
             if (!item.tunnel?.trackId)
                 return;
 
             for (const room of this.roomList.values()) {
-                if (room.hostId != this.hostId)//check if any problem
+                if (room.gatewayId != this.gatewayId)//check if any problem
                     continue;
                 if (item.action == 'delete')
                     await room.pushDelete(item.tunnel.trackId);
@@ -269,8 +271,8 @@ export class PolicyAuthzListener {
         try {
             if (this.waitList.length) {
                 logger.info(`policy authz waiting list count ${this.waitList.length}`);
-                if (!this.hostId)
-                    logger.fatal('policy authz there is not hostId');
+                if (!this.gatewayId)
+                    logger.fatal('policy authz there is not gatewayId');
             }
 
             while (this.waitList.length) {
@@ -289,21 +291,22 @@ export class PolicyAuthzListener {
 
     }
 
-    async replicate(hostId?: string, serviceId?: string, instanceId?: string) {
+    async replicate(gatewayId?: string, serviceId?: string, instanceId?: string) {
         try {
-            if (!hostId || !serviceId || !instanceId) return;
-            let key = `/${hostId}/${serviceId}/${instanceId}`;
+            if (!gatewayId || !serviceId || !instanceId) return;
+            let key = `/${gatewayId}/${serviceId}/${instanceId}`;
             logger.info(`policy authz replicate to service ${key}`);
 
             let item = this.cache.get(key) as PolicyRoomService;
             if (item) {
+                logger.info(`resetting service ${key}`);
                 await item.pushReset();
 
             } else {
-                const room = new PolicyRoomService(hostId, serviceId, instanceId);
+                const room = new PolicyRoomService(gatewayId, serviceId, instanceId);
                 this.cache.set(key, room);
                 this.roomList.set(key, room);
-
+                logger.info(`resetting service ${key}`);
                 await room.pushReset();
                 await room.start();
                 item = room;
@@ -313,20 +316,20 @@ export class PolicyAuthzListener {
             logger.error(err);
         }
     }
-    async getRoom(hostId: string, serviceId: string, instanceId: string) {
+    async getRoom(gatewayId: string, serviceId: string, instanceId: string) {
 
-        return await this.roomList.get(`/${hostId}/${serviceId}/${instanceId}`);
+        return await this.roomList.get(`/${gatewayId}/${serviceId}/${instanceId}`);
     }
     async addRoom(room: PolicyRoomService) {
-        let key = `/${room.hostId}/${room.serviceId}/${room.instanceId}`;
+        let key = `/${room.gatewayId}/${room.serviceId}/${room.instanceId}`;
         this.cache.set(key, room)
         await this.roomList.set(key, room);
     }
     async fillRoomService(room: PolicyRoomService) {
         //snapshot of tunnels
-        logger.info(`policy authz filling service /${room.hostId}/${room.serviceId}/${room.instanceId}`)
+        logger.info(`policy authz filling service /${room.gatewayId}/${room.serviceId}/${room.instanceId}`)
         let allTunnels = [...this.systemWatcher.tunnels.values()];
-        let filteredTunnels = allTunnels.filter(x => x.hostId == room.hostId);//only this service
+        let filteredTunnels = allTunnels.filter(x => x.gatewayId == room.gatewayId);//only this service
         for (const tunnel of filteredTunnels) {
             if (!tunnel.trackId)
                 continue;
@@ -337,18 +340,18 @@ export class PolicyAuthzListener {
         }
     }
 
-    async iAmAliveMessage(hostId?: string, serviceId?: string, instanceId?: string) {
-        if (!hostId || !serviceId || !instanceId) return;
-        let key = `/${hostId}/${serviceId}/${instanceId}`;
+    async iAmAliveMessage(gatewayId?: string, serviceId?: string, instanceId?: string) {
+        if (!gatewayId || !serviceId || !instanceId) return;
+        let key = `/${gatewayId}/${serviceId}/${instanceId}`;
         logger.info(`i am alive service: ${key}`);
         const item = this.cache.get(key) as PolicyRoomService;
         if (item) {//cache has this item, then set ttl again
             this.cache.ttl(key, 60);
         }
         //set to the global
-        let serviceKey = `/service/${hostId}/${serviceId}/${instanceId}`;
+        let serviceKey = `/service/${gatewayId}/${serviceId}/${instanceId}`;
         await this.redisGlobal.hset(serviceKey, {
-            hostId: hostId, serviceId: serviceId, instanceId: instanceId, lastSeen: new Date().getTime()
+            gatewayId: gatewayId, serviceId: serviceId, instanceId: instanceId, lastSeen: new Date().getTime()
         })
         await this.redisGlobal.expire(serviceKey, 5 * 60 * 1000);
 

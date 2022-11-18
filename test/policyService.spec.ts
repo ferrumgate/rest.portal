@@ -169,7 +169,7 @@ describe('policyService ', async () => {
         configService.config.networks = [net];
         configService.config.gateways = [gateway];
 
-        let redisValue = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: gateway.id };
+        let redisValue = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
         await redisService.hset(`/tunnel/id/testsession`, redisValue);
 
         const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
@@ -185,7 +185,7 @@ describe('policyService ', async () => {
         //no gateway
 
         try {
-            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: 'non absent gateway' });
+            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: 'non absent gateway' });
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
         } catch (err) { }
         expect(policyService.authenticateErrorNumber).to.equal(2);
@@ -197,7 +197,7 @@ describe('policyService ', async () => {
             const newGateway = Util.clone<Gateway>(gateway);
             newGateway.networkId = 'not absent';
             configService.config.gateways = [newGateway];
-            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: newGateway.id });
+            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: newGateway.id });
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
         } catch (err) { }
         expect(policyService.authenticateErrorNumber).to.equal(4);
@@ -224,7 +224,7 @@ describe('policyService ', async () => {
         try {
 
             configService.config.gateways = [gateway];
-            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: gateway.id });
+            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id });
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
         } catch (err) { }
         expect(policyService.authenticateErrorNumber).to.equal(10);
@@ -237,7 +237,7 @@ describe('policyService ', async () => {
         try {
 
             configService.config.gateways = [gateway];
-            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', hostId: gateway.id });
+            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id });
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
         } catch (err) { }
         expect(policyService.authenticateErrorNumber).to.equal(0);
@@ -297,7 +297,7 @@ describe('policyService ', async () => {
         configService.config.networks = [net];
         configService.config.gateways = [gateway];
 
-        let redisValue = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', trackId: 3, hostId: gateway.id, is2FA: true };
+        let redisValue = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', trackId: 3, gatewayId: gateway.id, is2FA: true };
         await redisService.hset(`/tunnel/id/testsession`, redisValue);
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
         await redisService.set(`/tunnel/trackId/3`, 'testsession');
@@ -351,7 +351,7 @@ describe('policyService ', async () => {
         configService.config.users = [user1];
 
         //no service
-        let redisValue2 = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', trackId: 3, hostId: gateway.id, is2FA: true, userId: user1.id };
+        let redisValue2 = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', trackId: 3, gatewayId: gateway.id, is2FA: true, userId: user1.id };
         await redisService.hset(`/tunnel/id/testsession`, redisValue2);
         configService.config.services = [];
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');

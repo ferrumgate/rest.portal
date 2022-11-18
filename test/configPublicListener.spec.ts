@@ -174,12 +174,12 @@ describe('configPublicRoom ', async () => {
         const { gateway, gateway2, network, service, configService } = await createSampleData();
         const room = new ConfigPublicRoom('231a0932', configService);
         let isError = false;
-        try { await room.executeRequest({ hostId: 'someid' } as any); } catch (err) { isError = true; }
+        try { await room.executeRequest({ gatewayId: 'someid' } as any); } catch (err) { isError = true; }
 
         isError = false
-        try { await room.executeRequest({ id: '221', hostId: '231a0932', func: 'notfound' } as any) } catch (err) { isError = true };
+        try { await room.executeRequest({ id: '221', gatewayId: '231a0932', func: 'notfound' } as any) } catch (err) { isError = true };
 
-        const result = await room.executeRequest({ id: '23232', hostId: '231a0932', func: 'getNetworkByGatewayId', params: ['231a0932'] });
+        const result = await room.executeRequest({ id: '23232', gatewayId: '231a0932', func: 'getNetworkByGatewayId', params: ['231a0932'] });
 
         expect(result.id).to.equal('23232');
         expect(result.isError).to.be.undefined;
@@ -193,11 +193,11 @@ describe('configPublicRoom ', async () => {
         const { gateway, gateway2, network, service, configService } = await createSampleData();
         const room = new ConfigPublicRoom('231a0932', configService);
 
-        await room.waitList.push({ id: '10', hostId: '231a0932', func: 'getNetworkByGatewayId', params: ['231a0932'] });
+        await room.waitList.push({ id: '10', gatewayId: '231a0932', func: 'getNetworkByGatewayId', params: ['231a0932'] });
         await room.processWaitList();
         expect(room.waitList.length).to.equal(0);
         let pos = '0';
-        const result = await simpleRedis.xread('/query/host/231a0932', 100, pos, 1000);
+        const result = await simpleRedis.xread('/query/gateway/231a0932', 100, pos, 1000);
         expect(result.length).to.be.equal(1);
         pos = result[0].xreadPos;
         const response = JSON.parse(Buffer.from(result[0].data, 'base64').toString()) as ConfigResponse;
@@ -232,7 +232,7 @@ describe('configPublicListener ', async () => {
         const { gateway, gateway2, network, service, configService } = await createSampleData();
         const listener = new ConfigPublicListener(configService);
         const msg: ConfigRequest = {
-            id: 'adfaf', func: 'getServiceId', hostId: 'somehost', params: []
+            id: 'adfaf', func: 'getServiceId', gatewayId: 'somehost', params: []
         }
         await listener.executeMessage('channe;', Buffer.from(JSON.stringify(msg)).toString('base64'));
         expect(listener.roomList.size).to.equal(1);

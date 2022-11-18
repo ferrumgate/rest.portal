@@ -79,7 +79,7 @@ describe('clientApi ', async () => {
             id: 'akey', assignedClientIp: '10.0.0.1',
             authenticatedTime: new Date().toISOString(),
             clientIp: '192.168.8.8', tun: 'tun0',
-            userId: user.id, hostId: gateway.id,
+            userId: user.id, gatewayId: gateway.id,
             serviceNetwork: '172.18.0.0/24',
             is2FA: true, isPAM: false, trackId: 3
         };
@@ -108,7 +108,7 @@ describe('clientApi ', async () => {
             id: 'akey', assignedClientIp: '10.0.0.1',
             authenticatedTime: new Date().toISOString(),
             clientIp: '192.168.8.8', tun: 'tun0',
-            userId: user.id, hostId: '1234',
+            userId: user.id, gatewayId: '1234',
             serviceNetwork: '192.168.0.0/24',
             is2FA: true, isPAM: false, trackId: 5
         };
@@ -128,7 +128,7 @@ describe('clientApi ', async () => {
         })
 
         expect(response.status).to.equal(200);
-        const result = await redisService.sismember(`/tunnel/configure/${tunnel.hostId}`, 'akey');
+        const result = await redisService.sismember(`/tunnel/configure/${tunnel.gatewayId}`, 'akey');
         expect(result == 1).to.be.true;
 
     }).timeout(50000);

@@ -79,7 +79,7 @@ export class HelperService {
             return 'not authenticated';
         if (!tun.assignedClientIp)
             return 'not authenticated';
-        if (!tun.hostId)
+        if (!tun.gatewayId)
             return "not authenticated";
         if (!tun.serviceNetwork)
             return "not authenticated";

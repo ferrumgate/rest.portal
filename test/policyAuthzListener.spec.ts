@@ -36,7 +36,7 @@ describe('policyRoomService', () => {
         return {
             id: Util.randomNumberString(64), userId: Util.randomNumberString(), authenticatedTime: new Date().toString(),
             assignedClientIp: '10.0.0.3', trackId: Math.floor(Math.random() * 4000000000),
-            clientIp: '192.168.1.100', tun: 'tun0', hostId: '1234', serviceNetwork: '192.168.0.0/24'
+            clientIp: '192.168.1.100', tun: 'tun0', gatewayId: '1234', serviceNetwork: '192.168.0.0/24'
         }
     }
 
@@ -123,11 +123,11 @@ describe('policyAuthzListener', () => {
 
     })
 
-    function createTunnel(trackId?: number, hostId?: string): Tunnel {
+    function createTunnel(trackId?: number, gatewayId?: string): Tunnel {
         return {
             id: Util.randomNumberString(64), userId: Util.randomNumberString(), authenticatedTime: new Date().toString(),
             assignedClientIp: '10.0.0.3', trackId: trackId || Math.floor(Math.random() * 4000000000),
-            clientIp: '192.168.1.100', tun: 'tun0', hostId: hostId || '1234', serviceNetwork: '192.168.0.0/24'
+            clientIp: '192.168.1.100', tun: 'tun0', gatewayId: gatewayId || '1234', serviceNetwork: '192.168.0.0/24'
         }
     }
     const esHost = 'https://192.168.88.250:9200';
@@ -147,7 +147,7 @@ describe('policyAuthzListener', () => {
 
     it('publish i am alive', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config`;
-        fs.writeFileSync(filename, 'host=1234');
+        fs.writeFileSync(filename, 'gatewayId=1234');
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
         const policy = new PolicyAuthzListener(policyService, systemWatcher, filename);
@@ -166,7 +166,7 @@ describe('policyAuthzListener', () => {
     it('fillRoomService', async () => {
 
         const filename = `/tmp/${Util.randomNumberString()}config`;
-        fs.writeFileSync(filename, 'host=1234');
+        fs.writeFileSync(filename, 'gatewayId=1234');
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
         const tunnel1 = createTunnel(1234, 'abcd');
@@ -191,7 +191,7 @@ describe('policyAuthzListener', () => {
 
     it('replicate', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config`;
-        fs.writeFileSync(filename, 'host=1234');
+        fs.writeFileSync(filename, 'gatewayId=1234');
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
         const tunnel1 = createTunnel(1234, 'abcd');
@@ -215,7 +215,7 @@ describe('policyAuthzListener', () => {
         }
         const room = new Room2('abcd', '1234', 'askdjfa');
         await policy.addRoom(room);
-        await policy.replicate(room.hostId, room.serviceId, room.instanceId);
+        await policy.replicate(room.gatewayId, room.serviceId, room.instanceId);
         expect(room.isPushedReset).to.equal(1);
 
 
@@ -227,7 +227,7 @@ describe('policyAuthzListener', () => {
     it('policyCalculate', async () => {
 
         const filename = `/tmp/${Util.randomNumberString()}config`;
-        fs.writeFileSync(filename, 'host=1234');
+        fs.writeFileSync(filename, 'gatewayId=1234');
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
 
@@ -248,7 +248,7 @@ describe('policyAuthzListener', () => {
                 this.isPushedDelete++;
             }
         }
-        policy.setHostId('abcd');
+        policy.setGatewayId('abcd');
         const room1 = new Room2('abcd', '1234', 'askdjfa');
         await policy.addRoom(room1);
 
@@ -260,14 +260,14 @@ describe('policyAuthzListener', () => {
         expect(room1.isPushedReset).to.equal(1);
         expect(room2.isPushedReset).to.equal(1);
 
-        await policy.policyCalculate({ action: 'delete', tunnel: { hostId: 'abcdefsd', trackId: 10 } });
+        await policy.policyCalculate({ action: 'delete', tunnel: { gatewayId: 'abcdefsd', trackId: 10 } });
         expect(room1.isPushedReset).to.equal(1);
         expect(room2.isPushedReset).to.equal(1);
         expect(room1.isPushedDelete).to.equal(0);
         expect(room2.isPushedDelete).to.equal(0);
 
 
-        await policy.policyCalculate({ action: 'delete', tunnel: { hostId: 'abcd', trackId: 10 } });
+        await policy.policyCalculate({ action: 'delete', tunnel: { gatewayId: 'abcd', trackId: 10 } });
         expect(room1.isPushedReset).to.equal(1);
         expect(room2.isPushedReset).to.equal(1);
         expect(room1.isPushedDelete).to.equal(1);
@@ -276,7 +276,7 @@ describe('policyAuthzListener', () => {
         expect(room2.isPushed).to.equal(0);
 
 
-        await policy.policyCalculate({ action: 'update', tunnel: { hostId: 'abcd', trackId: 10 } });
+        await policy.policyCalculate({ action: 'update', tunnel: { gatewayId: 'abcd', trackId: 10 } });
         expect(room1.isPushedReset).to.equal(1);
         expect(room2.isPushedReset).to.equal(1);
         expect(room1.isPushedDelete).to.equal(1);

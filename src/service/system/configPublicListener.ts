@@ -11,7 +11,7 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 export interface ConfigRequest {
     id: string;
-    hostId: string;
+    gatewayId: string;
     func: string,
     params: string[]
 }
@@ -31,7 +31,7 @@ export class ConfigPublicRoom {
     redis: RedisService;
     constructor(private gatewayId: string,
         private configService: ConfigService) {
-        this.redisStreamKey = `/query/host/${gatewayId}`;
+        this.redisStreamKey = `/query/gateway/${gatewayId}`;
         this.redis = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
 
     }
@@ -125,7 +125,7 @@ export class ConfigPublicRoom {
 
     async executeRequest(item: ConfigRequest): Promise<ConfigResponse> {
 
-        if (item.hostId != this.gatewayId) throw new Error(`execute query host id not equal`);
+        if (item.gatewayId != this.gatewayId) throw new Error(`execute query gateway id not equal`);
         logger.info(`config public execution query ${item.id}:${item.func}`);
         switch (item.func) {
             case 'getGatewayById':
@@ -297,17 +297,17 @@ export class ConfigPublicListener {
         try {
 
             const query = JSON.parse(Buffer.from(msg, 'base64').toString()) as ConfigRequest;
-            logger.info(`config public config query received from host:${query.hostId} func:${query.func}`)
-            if (query.hostId) {
-                let room = this.cache.get(query.hostId) as ConfigPublicRoom;
+            logger.info(`config public config query received from gateway:${query.gatewayId} func:${query.func}`)
+            if (query.gatewayId) {
+                let room = this.cache.get(query.gatewayId) as ConfigPublicRoom;
                 if (!room) {
-                    const roomNew = new ConfigPublicRoom(query.hostId, this.configService);
-                    await this.roomList.set(query.hostId, roomNew);
-                    await this.cache.set(query.hostId, roomNew);
+                    const roomNew = new ConfigPublicRoom(query.gatewayId, this.configService);
+                    await this.roomList.set(query.gatewayId, roomNew);
+                    await this.cache.set(query.gatewayId, roomNew);
                     room = roomNew;
                     await room.start();
                 } else {
-                    this.cache.ttl(query.hostId, 600);
+                    this.cache.ttl(query.gatewayId, 600);
                 }
                 await room.push(query);
             }

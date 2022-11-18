@@ -4,7 +4,7 @@ import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { ConfigService } from '../src/service/configService';
 import { Gateway, Network } from '../src/model/network';
-import { authorize, getNetworkByHostId } from '../src/api/commonApi';
+import { authorize, getNetworkByGatewayId } from '../src/api/commonApi';
 import { Util } from '../src/util';
 
 
@@ -22,13 +22,13 @@ describe('commonApi', async () => {
         if (fs.existsSync(filename))
             fs.rmSync(filename);
     })
-    it('getNetworkByHostId throws Error because of hostId is empty', async () => {
+    it('getNetworkByGatewayId throws Error because of gatewayId is empty', async () => {
 
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
 
         let exception = false;
         try {
-            await getNetworkByHostId(configService, '');
+            await getNetworkByGatewayId(configService, '');
         } catch (err) {
             exception = true;
         }
@@ -36,12 +36,12 @@ describe('commonApi', async () => {
 
 
     }).timeout(5000);
-    it('getNetworkByHostId throws Error because of no gateway', async () => {
+    it('getNetworkByGatewayId throws Error because of no gateway', async () => {
 
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         let exception = false;
         try {
-            await getNetworkByHostId(configService, 'fakegateway');
+            await getNetworkByGatewayId(configService, 'fakegateway');
         } catch (err) {
             exception = true;
         }
@@ -50,7 +50,7 @@ describe('commonApi', async () => {
     }).timeout(5000);
 
 
-    it('getNetworkByHostId throws Error because of gateway is not joined or active', async () => {
+    it('getNetworkByGatewayId throws Error because of gateway is not joined or active', async () => {
 
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         const net: Network = {
@@ -76,7 +76,7 @@ describe('commonApi', async () => {
 
         let exception = false;
         try {
-            await getNetworkByHostId(configService, gateway.id);
+            await getNetworkByGatewayId(configService, gateway.id);
         } catch (err) {
             exception = true;
         }
@@ -84,7 +84,7 @@ describe('commonApi', async () => {
 
     }).timeout(5000);
 
-    it('getNetworkByHostId throws Error because of gateway network not found', async () => {
+    it('getNetworkByGatewayId throws Error because of gateway network not found', async () => {
 
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         const net: Network = {
@@ -110,7 +110,7 @@ describe('commonApi', async () => {
 
         let exception = false;
         try {
-            await getNetworkByHostId(configService, gateway.id);
+            await getNetworkByGatewayId(configService, gateway.id);
         } catch (err) {
             exception = true;
         }

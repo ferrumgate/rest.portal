@@ -29,7 +29,7 @@ export class GatewayService {
         let pos = '0';
         let items: GatewayDetail[] = [];
         while (true) {
-            const [cursor, elements] = await this.redisService.scan(`/host/alive/id/*`, pos, 10000, 'hash');
+            const [cursor, elements] = await this.redisService.scan(`/gateway/alive/id/*`, pos, 10000, 'hash');
             pos = cursor;
 
             const pipeline = await this.redisService.multi();
@@ -51,7 +51,7 @@ export class GatewayService {
     }
 
     async getAliveById(id: string) {
-        let key = `/host/alive/id/${id}`;
+        let key = `/gateway/alive/id/${id}`;
         const isExists = await this.redisService.containsKey(key);
         if (!isExists) return null;
         const gatewayDetail = await this.redisService.hgetAll(key) as unknown as GatewayDetail;

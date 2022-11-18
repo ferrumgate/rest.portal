@@ -12,7 +12,7 @@ import { config } from "process";
 import { Tunnel } from "../model/tunnel";
 import { TunnelService } from "../service/tunnelService";
 import { HelperService } from "../service/helperService";
-import { getNetworkByHostId } from "./commonApi";
+import { getNetworkByGatewayId } from "./commonApi";
 
 
 
@@ -34,7 +34,7 @@ routerClientTunnelAuthenticated.get('/ip',
         const user = req.currentUser as User;
         const tunnel = req.currentTunnel as Tunnel;
 
-        const network = await getNetworkByHostId(configService, tunnel.hostId);
+        const network = await getNetworkByGatewayId(configService, tunnel.gatewayId);
         return res.status(200).json(
             { assignedIp: tunnel.assignedClientIp, serviceNetwork: network.serviceNetwork }
         );
@@ -55,7 +55,7 @@ routerClientTunnelAuthenticated.get('/renewip',
         const user = req.currentUser as User;
         const tunnel = req.currentTunnel as Tunnel;
         HelperService.isValidTunnel(tunnel);
-        const network = await getNetworkByHostId(configService, tunnel.hostId);
+        const network = await getNetworkByGatewayId(configService, tunnel.gatewayId);
         const newtunnel = await tunnelService.renewIp(tunnel.id || '');
 
         return res.status(200).json({
