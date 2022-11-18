@@ -51,7 +51,7 @@ describe('systemWatcherService', () => {
         console.info('insert time records:%d (hr): %ds %dms', total, hrend[0], hrend[1] / 1000000);
 
         const watcher = new SystemWatcherService();
-        (watcher as any).hostId = '1234';
+        (watcher as any).gatewayId = '1234';
         watcher.createConnections();
         hrstart = process.hrtime();
         await watcher.startFirstFilling();
@@ -87,7 +87,7 @@ describe('systemWatcherService', () => {
 
         let updatedTunnelCount = 0;
         const watcher = new SystemWatcherService();
-        (watcher as any).hostId = '1234';//for test manipulate
+        (watcher as any).gatewayId = '1234';//for test manipulate
         watcher.on('tunnelUpdated', (tun: Tunnel) => {
             updatedTunnelCount++;
         })
@@ -108,14 +108,14 @@ describe('systemWatcherService', () => {
         return {
             id: Util.randomNumberString(64), userId: Util.randomNumberString(), authenticatedTime: new Date().toString(),
             assignedClientIp: '10.0.0.3', trackId: Math.floor(Math.random() * 4000000000),
-            clientIp: '192.168.1.100', tun: 'tun0', hostId: '1234', serviceNetwork: '192.168.0.0/24'
+            clientIp: '192.168.1.100', tun: 'tun0', gatewayId: '1234', serviceNetwork: '192.168.0.0/24'
         }
     }
 
     it('startAgain', async () => {
 
         const watcher = new SystemWatcherService();
-        (watcher as any).hostId = '1234';
+        (watcher as any).gatewayId = '1234';
         let updatedTunnelCount = 0;
         const simpleRedis = new RedisServiceManuel('localhost:6379', undefined, 'single');
         let firstlist = [];
@@ -185,7 +185,7 @@ describe('systemWatcherService', () => {
 
     it('reset', async () => {
         const watcher = new SystemWatcherService();
-        (watcher as any).hostId = '1234';
+        (watcher as any).gatewayId = '1234';
         const simpleRedis = new RedisServiceManuel('localhost:6379', undefined, 'single');
         let firstlist = [];
         let total = 0;
@@ -218,7 +218,7 @@ describe('systemWatcherService', () => {
 
     it('executeWaitlist', async () => {
         const watcher = new SystemWatcherService();
-        (watcher as any).hostId = '1234';
+        (watcher as any).gatewayId = '1234';
         await watcher.createConnections();
         const simpleRedis = new RedisServiceManuel('localhost:6379', undefined, 'single');
         let firstlist = [];

@@ -126,7 +126,10 @@ export class RedisPipelineService {
         this.pipeline = await this.pipeline.xadd(key, ...arr);
         return this;
     }
-
+    async xtrim(key: string, pos: string) {
+        this.pipeline = await this.pipeline.xtrim(key, 'MINID', pos);
+        return this.pipeline;
+    }
 
 }
 export class RedisService {

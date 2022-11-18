@@ -51,7 +51,7 @@ describe('gatewayService', async () => {
             lastSeen: new Date().getTime()
 
         }
-        await redisService.hset(`/host/alive/id/${detail.id}`, detail);
+        await redisService.hset(`/gateway/alive/id/${detail.id}`, detail);
         const gw = new GatewayService(configService, redisService);
         const items = await gw.getAllAlive();
         expect(items.length).to.equal(1);
@@ -78,7 +78,7 @@ describe('gatewayService', async () => {
             lastSeen: new Date().getTime()
 
         }
-        await redisService.hset(`/host/alive/id/${detail.id}`, detail);
+        await redisService.hset(`/gateway/alive/id/${detail.id}`, detail);
         const gw = new GatewayService(configService, redisService);
         const item = await gw.getAliveById(detail.id)
         expect(item).to.deep.equal(detail);

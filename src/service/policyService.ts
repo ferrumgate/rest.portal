@@ -63,13 +63,13 @@ export class PolicyService {
         //get tunnel basic information
         this.authenticateErrorNumber = 0;
         const tunnel = await this.tunnelService.getTunnel(tunnelKey);
-        if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.hostId) {
+        if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.gatewayId) {
             this.authenticateErrorNumber = 1;
 
             throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
         }
 
-        const gateway = await this.configService.getGateway(tunnel.hostId);
+        const gateway = await this.configService.getGateway(tunnel.gatewayId);
         if (!gateway) {
             this.authenticateErrorNumber = 2;
 
@@ -143,7 +143,7 @@ export class PolicyService {
         }
 
 
-        if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.hostId || !tunnel.trackId || tunnel.trackId != trackId) {
+        if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.gatewayId || !tunnel.trackId || tunnel.trackId != trackId) {
             this.authorizeErrorNumber = 3;
 
             if (!throwError) return { error: this.authorizeErrorNumber };

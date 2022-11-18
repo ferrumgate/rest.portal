@@ -57,7 +57,7 @@ export function tunnelKeyInit() {
                     act.assignedIp = tunnel?.assignedClientIp;
                     act.tunnelId = tunnel?.id;
                     act.is2FA = tunnel?.is2FA;
-                    act.gatewayId = tunnel?.hostId
+                    act.gatewayId = tunnel?.gatewayId
                     act.isPAM = tunnel?.isPAM;
                     act.serviceId = tunnel?.sessionId;
                     act.trackId = tunnel?.trackId;

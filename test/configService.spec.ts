@@ -421,7 +421,7 @@ describe('configService', async () => {
 
         await configService.saveNetwork(network);
         await configService.saveGateway(gateway);
-        const networkDb = await configService.getNetworkByHost(gateway.id);
+        const networkDb = await configService.getNetworkByGateway(gateway.id);
         expect(networkDb).to.deep.include(network);
 
     });

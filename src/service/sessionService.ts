@@ -6,7 +6,7 @@ import { RedisService } from "./redisService";
 import { Util } from "../util";
 import { Tunnel } from "../model/tunnel";
 import { HelperService } from "./helperService";
-import { getNetworkByHostId } from "../api/commonApi";
+import { getNetworkByGatewayId } from "../api/commonApi";
 import { AuthSession } from "../model/authSession";
 
 

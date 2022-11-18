@@ -923,8 +923,8 @@ export class ConfigService {
         }
         return Util.clone(network);
     }
-    async getNetworkByHost(hostId: string) {
-        const gateway = this.config.gateways.find(x => x.id == hostId);
+    async getNetworkByGateway(gatewayId: string) {
+        const gateway = this.config.gateways.find(x => x.id == gatewayId);
         if (!gateway || !gateway.networkId) {
             return null;
         }
