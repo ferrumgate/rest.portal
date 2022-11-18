@@ -20,6 +20,7 @@ const expect = chai.expect;
 describe('gatewayApi', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
+    const sessionService = appService.sessionService;
     const user: User = {
         username: 'hamza@ferrumgate.com',
         groupIds: [],
@@ -51,7 +52,9 @@ describe('gatewayApi', async () => {
         const clonedUser = Util.clone(user);
         clonedUser.roleIds = ['User'];
         await appService.configService.saveUser(clonedUser);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const gateway: Gateway = {
             id: Util.randomNumberString(),
@@ -82,7 +85,9 @@ describe('gatewayApi', async () => {
         //prepare data
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const gateway: Gateway = {
             id: Util.randomNumberString(),
@@ -114,7 +119,9 @@ describe('gatewayApi', async () => {
         //prepare data
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
 
@@ -139,7 +146,8 @@ describe('gatewayApi', async () => {
         //prepare data
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const gateway: Gateway = {
             id: Util.randomNumberString(),
@@ -181,7 +189,8 @@ describe('gatewayApi', async () => {
         //prepare data
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const gateway: Gateway = {
             id: Util.randomNumberString(),
@@ -215,7 +224,8 @@ describe('gatewayApi', async () => {
         //prepare data
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const gateway: Gateway = {
             id: Util.randomNumberString(),
@@ -251,7 +261,8 @@ describe('gatewayApi', async () => {
         //prepare data
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const gateway: Gateway = {
             id: '',

@@ -22,6 +22,7 @@ import { routerServiceAuthenticated } from "./api/serviceApi";
 import { routerAuthenticationPolicyAuthenticated, routerAuthorizationPolicyAuthenticated } from "./api/policyApi";
 import { routerAuditAuthenticated } from "./api/auditApi";
 import { ESService } from "./service/esService";
+import { routerActivityAuthenticated } from "./api/activityApi";
 
 
 
@@ -328,6 +329,15 @@ app.use('(\/api)?/log/audit',
     asyncHandlerWithArgs(checkCaptcha, 'logsAuditCaptcha', 50),
     routerAuditAuthenticated);
 
+app.use('(\/api)?/insight/activity',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'insightActivity', 1000),
+    asyncHandlerWithArgs(rateLimit, 'insightActivityHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'insightActivityDaily', 5000),
+    asyncHandlerWithArgs(checkCaptcha, 'insightActivityCaptcha', 50),
+    routerActivityAuthenticated);
+
 
 
 
@@ -349,7 +359,7 @@ app.start = async function () {
 
     if (!process.env.NODE_TEST)
         try {
-            await (app.esService as ESService).auditCreateIndexIfNotExits({} as any);
+            await (app.appService as AppService).esService.auditCreateIndexIfNotExits({} as any);
         } catch (err) { logger.error(err); }
 
     if (!process.env.NODE_TEST)

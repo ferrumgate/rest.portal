@@ -5,7 +5,7 @@ import { Service } from "../model/service";
 import { User } from "../model/user";
 
 import { ConfigService } from "./configService";
-import { ESService } from "./esService";
+import { ESService, SearchAuditLogsRequest } from "./esService";
 import { RedisService } from "./redisService";
 import { logger } from "../common";
 import * as odiff from 'deep-object-diff';
@@ -30,7 +30,7 @@ export class AuditService {
      */
     public encKey = process.env.ENCRYPT_KEY || 'AdHCEKwju33MmqSrz4sm6wWOzIzBylfd';
     trimInterval: any;
-    removePropertyList = ['id', 'password', 'twoFASecret', 'apiKey'];;
+    removePropertyList = ['id', 'password', 'twoFASecret', 'apiKey'];
     constructor(private redisService: RedisService, private esService: ESService) {
 
         this.trimInterval = setIntervalAsync(async () => {
@@ -276,8 +276,8 @@ export class AuditService {
             `${before?.name || after?.name}`)
     }
 
-    async search(startDate?: string, endDate?: string, search?: string, users?: string, types?: string, page?: number, pageSize?: number) {
-        return await this.esService.searchAuditLogs(startDate, endDate, search, users, types, page, pageSize);
+    async search(req: SearchAuditLogsRequest) {
+        return await this.esService.searchAuditLogs(req);
     }
 
 

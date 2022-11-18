@@ -58,38 +58,38 @@ export class PolicyService {
 
     }
     authenticateErrorNumber = 0;
-    // TODO 
+    // TODO  make this errors  most meaning full
     async authenticate(user: User, is2FAValidated: boolean, tunnelKey: string) {
         //get tunnel basic information
         this.authenticateErrorNumber = 0;
         const tunnel = await this.tunnelService.getTunnel(tunnelKey);
         if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.hostId) {
             this.authenticateErrorNumber = 1;
-            //TODO activity
+
             throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
         }
 
         const gateway = await this.configService.getGateway(tunnel.hostId);
         if (!gateway) {
             this.authenticateErrorNumber = 2;
-            //TODO activity
+
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no gateway');
         }
         if (!gateway.isEnabled) {
             this.authenticateErrorNumber = 3;
-            //TODO activity
+
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no gateway');
         }
         const network = await this.configService.getNetwork(gateway.networkId || '');
         if (!network) {
             this.authenticateErrorNumber = 4;
-            //TODO activity
+
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
         }
 
         if (!network.isEnabled) {
             this.authenticateErrorNumber = 5;
-            //TODO activity
+
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
         }
         const policy = await this.configService.getAuthenticationPolicy();
@@ -117,12 +117,12 @@ export class PolicyService {
         //no rule match
         this.authenticateErrorNumber = 100;
 
-        //TODO activity
         throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
 
 
     }
 
+    //TODO
     authorizeErrorNumber = 0;
     async authorize(trackId: number, serviceId: string, throwError: boolean = true, tun?: Tunnel): Promise<PolicyAuthzResult> {
         //TODO make this so fast

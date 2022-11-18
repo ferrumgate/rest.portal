@@ -20,6 +20,7 @@ const expect = chai.expect;
 describe('userApiAuthenticated', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
+    const sessionService = appService.sessionService;
     const user: User = {
         username: 'hamza@ferrumgate.com',
 
@@ -48,8 +49,9 @@ describe('userApiAuthenticated', async () => {
 
     it('GET /user/current will return 200', async () => {
         //prepare data
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -73,8 +75,9 @@ describe('userApiAuthenticated', async () => {
 
     it('GET /user/:id will return 200', async () => {
         //prepare data
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -173,15 +176,18 @@ describe('userApiAuthenticated', async () => {
 
     it('GET /user will  search return 200', async () => {
         //prepare data
+
         const { user1, user2, user3, user4, user5 } = createSampleData();
+
         await appService.configService.saveUser(user1);
         await appService.configService.saveUser(user2);
         await appService.configService.saveUser(user3);
         await appService.configService.saveUser(user4);
         await appService.configService.saveUser(user5);
+        const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
 
 
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid1' }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid1', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -206,15 +212,17 @@ describe('userApiAuthenticated', async () => {
 
     it('GET /user will  isVerified is2FA isEmailVerified return 200', async () => {
         //prepare data
+
         const { user1, user2, user3, user4, user5 } = createSampleData();
         await appService.configService.saveUser(user1);
         await appService.configService.saveUser(user2);
         await appService.configService.saveUser(user3);
         await appService.configService.saveUser(user4);
         await appService.configService.saveUser(user5);
+        const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
 
 
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid1' }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid1', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -245,9 +253,10 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveUser(user3);
         await appService.configService.saveUser(user4);
         await appService.configService.saveUser(user5);
+        const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
 
 
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid1' }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid1', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -298,7 +307,9 @@ describe('userApiAuthenticated', async () => {
         user1.groupIds = ['grou1', 'group1'];
         user1.roleIds = ['role1', 'Admin'];
 
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)

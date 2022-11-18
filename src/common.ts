@@ -1,4 +1,5 @@
 
+import { request } from 'http';
 import log4js from 'log4js';
 import { ErrorCodes, RestfullException } from './restfullException';
 import { RedisService } from './service/redisService';
@@ -23,6 +24,21 @@ export const asyncHandler = (fn: any) => (req: any, res: any, next: any) =>
     Promise
         .resolve(fn(req, res, next))
         .catch(next)
+
+/**
+ * @description async handler for middleware
+ */
+/* export const asyncHandlerTryCatch = (fn: any) => (req: any, res: any, next: any) =>
+    Promise
+        .resolve(async () => {
+            try {
+                await fn(req, res, next);
+
+            } catch (err) {
+                req.tryCatchError = err;
+            }
+        })
+        .catch(next) */
 
 /**
  * @description async handler for middleware

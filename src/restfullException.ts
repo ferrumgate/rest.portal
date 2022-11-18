@@ -45,6 +45,7 @@ export class ErrorCodes {
     static ErrJWTVerifyFailed: string = 'ErrJWTVerifyFailed';
     static ErrUserLockedOrNotVerified: string = 'ErrUserLockedOrNotVerified';
     static ErrUserSourceNotVerified: string = 'ErrUserSourceNotVerified';
+    static ErrUserSourceConflict: string = 'ErrUserSourceConflict';
     static ErrCaptchaVerifyFailed: string = 'ErrCaptchaVerifyFailed';
     static Err2FAVerifyFailed: string = 'Err2FAVerifyFailed';
     static ErrSecureTunnelFailed: string = 'ErrSecureTunnelFailed';
@@ -63,6 +64,9 @@ export class ErrorCodes {
     static ErrDisabledSource: string = 'ErrDisabledSource';
     static ErrNoAdminUserLeft: string = 'ErrNoAdminUserLeft';
     static ErrNetworkNotFound: string = 'ErrNetworkNotFound';
+    static ErrNotInLdapGroups: string = 'ErrNotInLdapGroups';
+
+
 
 
 }

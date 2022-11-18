@@ -105,3 +105,53 @@ Content-Type: application/json
         }
     }
 }
+
+
+####
+GET 192.168.88.250:9200/_cat/indices
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+
+####
+GET https://192.168.88.250:9200/ferrumgate-activity-20221117/_search
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+
+####
+
+DELETE  192.168.88.250:9200/ferrumgate-audit
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+
+###
+
+POST https://192.168.88.250:9200/ferrumgate-activity-20221117/_search
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+    "from": 0,
+    "size": 10,
+    "sort": {
+        "insertDate": "desc"
+    },
+    "query": {
+        "bool": {
+            "must": [
+                {
+                "query_string": {
+                    "query": "12345*",
+                    "fields": ["requestId", "type", "authSource", "ip", "statusMessage",
+                        "username", "userId", "gatewayId", "gatewayName", "trackId", "networkId", "networkName"]
+                }
+            }
+            ]
+        }
+    }
+}
+
+####
+POST https://192.168.88.250:9200/ferrumgate-activity-20221117/_search
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{"from":0,"size":10,"sort":{"insertDate":"desc"},"query":{"bool":{"must":[{"range":
+{"insertDate":{"gte":"2020-01-31T21:00:00.000Z","lt":"now"}}},{"query_string":{"query":"123456",
+"fields":["requestId""type","authSource","ip","statusMessage","serviceId","serviceName","username","userId","gatewayId","gatewayName",,"networkId","networkName"]}}]}}}

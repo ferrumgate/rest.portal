@@ -12,38 +12,26 @@ import { RBACDefault } from "../model/rbac";
 import { authorize, authorizeAsAdmin } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
+import { SearchActivityLogsRequest } from "../service/esService";
 
 
-/////////////////////////////////  audit //////////////////////////////////
-export const routerAuditAuthenticated = express.Router();
+/////////////////////////////////  activity //////////////////////////////////
+export const routerActivityAuthenticated = express.Router();
 
-routerAuditAuthenticated.get('/',
+routerActivityAuthenticated.get('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
-        const startDate = req.query.startDate;
-        const endDate = req.query.endDate;
-        const search = req.query.search;
-        const username = req.query.username;
-        const message = req.query.message;
-        const page = req.query.page;
-        const pageSize = req.query.pageSize;
-        logger.info(`getting audit logs`);
+        const query = req.query as SearchActivityLogsRequest;
+        logger.info(`getting activity logs`);
         const appService = req.appService as AppService;
         const auditService = appService.auditService;
+        const activityService = appService.activityService;
 
 
-        const data = await auditService.search(
-            {
-                startDate,
-                endDate,
-                search,
-                username, message,
-                page, pageSize
-            }
-        );
-        return res.status(200).json({ total: data.total, page: page, pageSize: pageSize, items: data.items });
+        const data = await activityService.search(query);
+        return res.status(200).json({ total: data.total, page: query.page, pageSize: query.pageSize, items: data.items });
 
     }))
 

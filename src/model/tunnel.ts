@@ -25,4 +25,6 @@ export interface Tunnel {
     is2FA?: boolean;
     // is PAM used
     isPAM?: boolean
+    //belongs sessionId
+    sessionId?: string;
 }
