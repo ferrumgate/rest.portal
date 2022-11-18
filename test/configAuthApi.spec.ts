@@ -106,9 +106,10 @@ describe('configAuthApi ', async () => {
     //const simpleRedis = new RedisService('localhost:6379,localhost:6390');
 
     const appService = (app.appService) as AppService;
-    //appService.redisService = simpleRedis;
+
     const redisService = appService.redisService;
     const configService = appService.configService;
+    const sessionService = appService.sessionService;
 
     const user: User = {
         username: 'hamza@ferrumgate.com',
@@ -180,7 +181,8 @@ describe('configAuthApi ', async () => {
     it('GET /config/auth/common will return 200, with common auth settigns', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const common: AuthCommon = {
             test: ''
         }
@@ -212,7 +214,8 @@ describe('configAuthApi ', async () => {
     it('PUT /config/auth/common will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const common: AuthCommon = {
             test: ''
         }
@@ -243,7 +246,8 @@ describe('configAuthApi ', async () => {
     it('GET /config/auth/local will return 200, with local auth settigns', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const local = createSampleLocal();
         await configService.setAuthSettingsLocal(local);
 
@@ -270,7 +274,8 @@ describe('configAuthApi ', async () => {
     it('PUT /config/auth/local will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const local = createSampleLocal();
         await configService.setAuthSettingsLocal(local);
         local.name = 'changed';
@@ -304,7 +309,8 @@ describe('configAuthApi ', async () => {
     it('GET /config/auth/oauth/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const oauth = createSampleOauth1();
         await configService.addAuthSettingOAuth(oauth);
 
@@ -334,7 +340,8 @@ describe('configAuthApi ', async () => {
     it('POST /config/auth/oauth/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const oauth = createSampleOauth1();
         await configService.addAuthSettingOAuth(oauth);
 
@@ -367,7 +374,8 @@ describe('configAuthApi ', async () => {
     it('POST /config/auth/oauth/providers will return 400', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const oauth = createSampleOauth1();
         await configService.addAuthSettingOAuth(oauth);
 
@@ -396,7 +404,8 @@ describe('configAuthApi ', async () => {
     it('PUT /config/auth/oauth/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const oauth = createSampleOauth1();
         await configService.addAuthSettingOAuth(oauth);
         const oauthAny = oauth as any;
@@ -432,7 +441,8 @@ describe('configAuthApi ', async () => {
     it('PUT /config/auth/oauth/providers will return 400', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const oauth = createSampleOauth1();
         await configService.addAuthSettingOAuth(oauth);
         const oauthAny = oauth as any;
@@ -481,7 +491,8 @@ describe('configAuthApi ', async () => {
     it('DELETE /config/auth/oauth/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const oauth = createSampleOauth1();
         await configService.addAuthSettingOAuth(oauth);
 
@@ -512,7 +523,8 @@ describe('configAuthApi ', async () => {
     it('GET /config/auth/ldap/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const ldap = createSampleLdap1();
         await configService.addAuthSettingLdap(ldap);
 
@@ -542,7 +554,8 @@ describe('configAuthApi ', async () => {
     it('POST /config/auth/ldap/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
         const ldap = createSampleLdap1();
@@ -574,7 +587,8 @@ describe('configAuthApi ', async () => {
     it('POST /config/auth/ldap/providers will return 400', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
         const ldap1 = createSampleLdap1();
@@ -602,7 +616,8 @@ describe('configAuthApi ', async () => {
     it('PUT /config/auth/ldap/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const ldap = createSampleLdap1();
         await configService.addAuthSettingLdap(ldap);
         const ldapAny = ldap as any;
@@ -638,7 +653,8 @@ describe('configAuthApi ', async () => {
     it('PUT /config/auth/ldap/providers will return 400', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const ldap = createSampleLdap1();
         await configService.addAuthSettingLdap(ldap);
         const ldapAny = ldap as any;
@@ -687,7 +703,8 @@ describe('configAuthApi ', async () => {
     it('DELETE /config/auth/ldap/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const ldap = createSampleLdap1();
         await configService.addAuthSettingLdap(ldap);
 
@@ -725,7 +742,8 @@ describe('configAuthApi ', async () => {
     it('GET /config/auth/saml/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const saml = createSampleSaml1();
         await configService.addAuthSettingSaml(saml);
 
@@ -755,7 +773,8 @@ describe('configAuthApi ', async () => {
     it('POST /config/auth/saml/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
         const saml = createSampleSaml1();
@@ -787,7 +806,8 @@ describe('configAuthApi ', async () => {
     it('POST /config/auth/saml/providers will return 400', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
         const saml1 = createSampleSaml1();
@@ -815,7 +835,8 @@ describe('configAuthApi ', async () => {
     it('PUT /config/auth/saml/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const saml = createSampleSaml1();
         await configService.addAuthSettingSaml(saml);
         const samlAny = saml as any;
@@ -852,7 +873,8 @@ describe('configAuthApi ', async () => {
     it('PUT /config/auth/saml/providers will return 400', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const saml = createSampleSaml1();
         await configService.addAuthSettingSaml(saml);
         const samlAny = saml as any;
@@ -901,7 +923,8 @@ describe('configAuthApi ', async () => {
     it('DELETE /config/auth/saml/providers will return 200', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const saml = createSampleSaml1();
         await configService.addAuthSettingSaml(saml);
 

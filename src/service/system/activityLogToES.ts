@@ -3,14 +3,16 @@ import { Util } from "../../util";
 import { logger } from "../../common";
 import { ESService } from "../esService";
 import { RedisService } from "../redisService";
-import { AuditLog } from "../../model/auditLog";
+
 import { ConfigService } from "../configService";
+import { ActivityLog } from "../../model/activityLog";
+
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
- * @summary a class that watches audit logs and writes them to es
+ * @summary a class that watches activity logs and writes them to es
  */
-export class AuditLogToES {
+export class ActivityLogToES {
 
     /**
      *
@@ -19,8 +21,7 @@ export class AuditLogToES {
     timer: any;
     isRedisMaster = false;
     lastRedisMasterCheck = 0;
-    auditStreamKey = '/audit/logs';
-    public encKey = process.env.ENCRYPT_KEY || 'AdHCEKwju33MmqSrz4sm6wWOzIzBylfd';
+    activityStreamKey = '/activity/logs';
     es: ESService;
     redis: RedisService;
     constructor(private configService: ConfigService) {
@@ -69,7 +70,7 @@ export class AuditLogToES {
                 return;
             }
             if (!this.lastPos) {
-                const pos = await this.redis.get('/audit/logs/pos', false) as string;
+                const pos = await this.redis.get('/activity/logs/pos', false) as string;
                 if (pos)
                     this.lastPos = pos;
                 else
@@ -77,28 +78,41 @@ export class AuditLogToES {
 
             }
             while (true) {
-                const items = await this.redis.xread(this.auditStreamKey, 10000, this.lastPos, 5000);
-                logger.info(`audit logs getted size: ${items.length}`);
+                const items = await this.redis.xread(this.activityStreamKey, 10000, this.lastPos, 5000);
+                logger.info(`activity logs getted size: ${items.length}`);
                 let pushItems = [];
+                let unknownItemsCount = 0;
                 for (const item of items) {
                     try {
-                        const message = Util.decrypt(this.encKey, item.data);
-                        const log = JSON.parse(message) as AuditLog;
-                        this.lastPos = item.xreadPos;
+                        if (item.type == 'b64') {
+                            const message = Buffer.from(item.data, 'base64').toString();
+                            const log = JSON.parse(message) as ActivityLog;
+                            this.lastPos = item.xreadPos;
 
-                        const nitem = await this.es.auditCreateIndexIfNotExits(log)
-                        pushItems.push(nitem);
+                            const nitem = await this.es.activityCreateIndexIfNotExits(log)
+                            pushItems.push(nitem);
+                        } else {
+                            logger.warn(`unknown type for activity log ${item.type}, skipping`);
+                            this.lastPos = item.xreadPos;
+                            unknownItemsCount++;
+
+                        }
 
 
                     } catch (err) {
                         logger.error(err);
+
                     }
                 }
                 if (pushItems.length) {
-                    await this.es.auditSave(pushItems);
-                    await this.redis.set('/audit/logs/pos', this.lastPos);
-                    logger.info(`audit logs written to es size: ${pushItems.length}`)
-                }
+                    await this.es.activitySave(pushItems);
+                    await this.redis.set('/activity/logs/pos', this.lastPos);
+                    logger.info(`activity logs written to es size: ${pushItems.length}`)
+                } else
+                    if (unknownItemsCount) {//save only new pos
+                        await this.redis.set('/activity/logs/pos', this.lastPos);
+                    }
+
                 if (!items.length)
                     break;
             }

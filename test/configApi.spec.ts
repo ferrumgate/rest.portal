@@ -23,6 +23,7 @@ describe('configApi ', async () => {
     //appService.redisService = simpleRedis;
     const redisService = appService.redisService;
     const configService = appService.configService;
+    const sessionService = appService.sessionService;
 
     const user: User = {
         username: 'hamza@ferrumgate.com',
@@ -127,7 +128,8 @@ describe('configApi ', async () => {
 
     it('GET /config/common will return url and domain', async () => {
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -152,7 +154,8 @@ describe('configApi ', async () => {
         const clonedUser = Util.clone(user);
         clonedUser.roleIds = ['User'];
         await appService.configService.saveUser(clonedUser);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -176,7 +179,8 @@ describe('configApi ', async () => {
     it('PUT /config/common will return 200, with new fields', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const newValues = {
             domain: 'ferrumgate.com'
         }
@@ -207,7 +211,9 @@ describe('configApi ', async () => {
 
     it('GET /config/captcha will return keys', async () => {
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -232,7 +238,8 @@ describe('configApi ', async () => {
         const clonedUser = Util.clone(user);
         clonedUser.roleIds = ['User'];
         await appService.configService.saveUser(clonedUser);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -256,7 +263,8 @@ describe('configApi ', async () => {
     it('PUT /config/captcha will return 200, with new fields', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const newValues = {
             server: 'serverkey',
             client: 'clientkey'
@@ -288,7 +296,8 @@ describe('configApi ', async () => {
 
     it('GET /config/email will return settings', async () => {
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const emailSettings: EmailSettings = {
             fromname: 'testferrum', pass: 'apass', type: 'google', user: 'auser'
         }
@@ -316,7 +325,8 @@ describe('configApi ', async () => {
         const clonedUser = Util.clone(user);
         clonedUser.roleIds = ['User'];
         await appService.configService.saveUser(clonedUser);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -340,7 +350,8 @@ describe('configApi ', async () => {
     it('PUT /config/email will return 200, with new fields', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const emailSettings: EmailSettings = {
             fromname: 'testferrum', pass: 'apass', type: 'google', user: 'auser'
         }
@@ -371,7 +382,8 @@ describe('configApi ', async () => {
     it('DELETE /config/email will return 200, with new fields', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const emailSettings: EmailSettings = {
             fromname: 'testferrum', pass: 'apass', type: 'google', user: 'auser'
         }
@@ -401,7 +413,8 @@ describe('configApi ', async () => {
     it.skip('POST /config/email/check will return 200, with no error', async () => {
 
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const emailSettings: EmailSettings = {
             fromname: 'testferrum', pass: 'nqquxankumksakon', type: 'google', user: 'ferrumgates@gmail.com'
         }

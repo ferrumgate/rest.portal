@@ -29,7 +29,7 @@ export class HelperService {
 
     static isValidUser(user: User | undefined) {
         if (!user)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not found');
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, 'not found');
         if (!user.isVerified)
             throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
         if (user.isLocked)
@@ -38,10 +38,10 @@ export class HelperService {
     }
     static isFromSource(user: User | undefined, source: string) {
         if (!user)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not found');
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, 'not found');
 
         if (user.source != source)
-            throw new RestfullException(401, ErrorCodes.ErrUserSourceNotVerified, "user source not verified");
+            throw new RestfullException(401, ErrorCodes.ErrUserSourceConflict, "user source not verified");
     }
 
 
@@ -52,8 +52,12 @@ export class HelperService {
      */
     static isValidTunnel(tun: Tunnel | undefined) {
         const result = HelperService.isValidTunnelNoException(tun);
-        if (result)
+        if (result == 'not found')
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, result);
+        else if (result == 'not authenticated')
             throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, result);
+        else if (result)
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, result);
 
     }
 

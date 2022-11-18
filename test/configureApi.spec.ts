@@ -7,6 +7,7 @@ import { app } from '../src/index';
 import { Util } from '../src/util';
 import { Network } from '../src/model/network';
 import { Gateway } from '../src/model/network';
+import { User } from '../src/model/user';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -18,7 +19,7 @@ describe('configureApi ', async () => {
     const appService = (app.appService) as AppService;
     const redisService = appService.redisService;
     const configService = appService.configService;
-
+    const sessionService = appService.sessionService;
 
     const net: Network = {
         id: '1ksfasdfasf',
@@ -84,7 +85,8 @@ describe('configureApi ', async () => {
 
     })
     it('only admin user can callit', async () => {
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin2' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'admin2' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin2', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/configure')
@@ -105,7 +107,8 @@ describe('configureApi ', async () => {
 
     it('configure must no be configured before', async () => {
         await configService.setIsConfigured(1);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'admin' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/configure')
@@ -126,7 +129,8 @@ describe('configureApi ', async () => {
 
     it('sended data must be checked', async () => {
         await configService.setIsConfigured(0);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'admin' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/configure')
@@ -147,7 +151,8 @@ describe('configureApi ', async () => {
 
     it('email is not email', async () => {
         await configService.setIsConfigured(0);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'admin' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/configure')
@@ -171,7 +176,8 @@ describe('configureApi ', async () => {
 
     it('is configured', async () => {
         await configService.setIsConfigured(0);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'admin' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/configure')

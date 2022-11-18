@@ -13,7 +13,7 @@ import bcrypt from 'bcrypt';
 import randtoken from 'rand-token';
 import ip6addr from 'ip6addr';
 import ChildProcess from 'child_process';
-import { transformAuthInfo } from 'passport';
+
 
 
 export interface IpRange {
@@ -76,11 +76,11 @@ export const Util = {
 
 
         var chars = "0123456789abcdefghiklmnopqrstuvwxyzABCDEFGHIKLMNOPQRSTUVWXYZ";
-
+        const bytes = crypto.randomBytes(string_length * 2);
         var randomstring = '';
         for (var i = 0; i < string_length; i++) {
-            var rnum = Math.floor(Math.random() * chars.length);
-            randomstring += chars.substring(rnum, rnum + 1);
+            //var rnum = Math.floor(bytes[i] * chars.length);
+            randomstring += chars[bytes[i] % chars.length];
         }
         return randomstring;
     },

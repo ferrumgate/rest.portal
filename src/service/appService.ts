@@ -20,6 +20,9 @@ import { GatewayService } from "./gatewayService";
 import { ConfigPublicListener } from "./system/configPublicListener";
 import { ESService } from "./esService";
 import { AuditLogToES } from "./system/auditLogToES";
+import { SessionService } from "./sessionService";
+import { ActivityService } from "./activityService";
+import { ActivityLogToES } from "./system/activityLogToES";
 
 
 /**
@@ -42,6 +45,8 @@ export class AppService {
     public auditService: AuditService;
     public gatewayService: GatewayService;
     public esService: ESService;
+    public sessionService: SessionService;
+    public activityService: ActivityService;
     /**
      *
      */
@@ -56,6 +61,8 @@ export class AppService {
         es?: ESService,
         policy?: PolicyService,
         gateway?: GatewayService,
+        session?: SessionService,
+        activity?: ActivityService
     ) {
         //create self signed certificates for JWT
 
@@ -68,13 +75,16 @@ export class AppService {
         this.templateService = template || new TemplateService(this.configService);
         this.emailService = email || new EmailService(this.configService);
         this.twoFAService = twoFA || new TwoFAService();
-        this.oauth2Service = oauth2 || new OAuth2Service(this.configService);
+        this.sessionService = session || new SessionService(this.configService, this.redisService);
+        this.oauth2Service = oauth2 || new OAuth2Service(this.configService, this.sessionService);
         this.tunnelService = tunnel || new TunnelService(this.configService, this.redisService);
         this.eventService = event || new EventService(this.configService, this.redisService);
         this.esService = es || new ESService();
+        this.activityService = activity || new ActivityService(this.redisService, this.esService);
         this.auditService = audit || new AuditService(this.redisService, this.esService);
         this.policyService = policy || new PolicyService(this.configService, this.tunnelService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
+
 
 
     }
@@ -87,15 +97,19 @@ export class AppSystemService {
     public policyAuthzChannel: PolicyAuthzListener;
     public configPublicListener: ConfigPublicListener;
     public auditLogToES: AuditLogToES;
+    public activityLogToES: ActivityLogToES;
+
     /**
      *
      */
     constructor(app: AppService, systemWatcher?: SystemWatcherService,
-        policyAuthzChannel?: PolicyAuthzListener, configPublic?: ConfigPublicListener, auditLogES?: AuditLogToES) {
+        policyAuthzChannel?: PolicyAuthzListener, configPublic?: ConfigPublicListener,
+        auditLogES?: AuditLogToES, activityLogToES?: ActivityLogToES) {
         this.systemWatcherService = systemWatcher || new SystemWatcherService();
         this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(app.policyService, this.systemWatcherService);
         this.configPublicListener = configPublic || new ConfigPublicListener(app.configService);
         this.auditLogToES = auditLogES || new AuditLogToES(app.configService);
+        this.activityLogToES = activityLogToES || new ActivityLogToES(app.configService);
 
     }
     async start() {
@@ -103,11 +117,13 @@ export class AppSystemService {
         await this.policyAuthzChannel.start();
         await this.configPublicListener.start();
         await this.auditLogToES.start();
+        await this.activityLogToES.start();
     }
     async stop() {
         await this.systemWatcherService.stop();
         await this.policyAuthzChannel.stop();
         await this.configPublicListener.stop();
         await this.auditLogToES.stop();
+        await this.activityLogToES.stop();
     }
 }

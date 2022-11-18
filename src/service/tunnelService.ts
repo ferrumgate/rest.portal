@@ -79,10 +79,12 @@ export class TunnelService {
     async getTunnel(tunnelKey: string) {
         const key = `/tunnel/id/${tunnelKey}`;
         const tunnel = await this.redisService.hgetAll(key) as unknown as Tunnel;
-
-        tunnel.is2FA = Util.convertToBoolean(tunnel.is2FA);
-        tunnel.isPAM = Util.convertToBoolean(tunnel.isPAM);
-        return tunnel;
+        if (Object.keys(tunnel)) {
+            tunnel.is2FA = Util.convertToBoolean(tunnel.is2FA);
+            tunnel.isPAM = Util.convertToBoolean(tunnel.isPAM);
+            return tunnel;
+        }
+        return undefined;
     }
     async getTunnelKeyFromClientIp(clientIp: string) {
         return await this.redisService.get(`/tunnel/ip/${clientIp}`, false) as string | undefined;

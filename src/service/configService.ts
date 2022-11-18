@@ -566,7 +566,7 @@ export class ConfigService {
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
 
         this.emitEvent({ type: 'deleted', path: '/users', data: this.createTrackEvent(user) })
-        //TODO sensitive data
+
 
     }
     async deleteUser(id: string) {
@@ -577,7 +577,7 @@ export class ConfigService {
             await this.saveConfigToFile();
             await this.triggerUserDeleted(user);
         }
-        //TODO sensitive data
+
         return this.createTrackEvent(user);
     }
 
@@ -612,7 +612,7 @@ export class ConfigService {
 
         await this.saveConfigToFile();
         return this.createTrackEvent(finded, this.config.users[findedIndex]);
-        //TODO sensitive data
+
     }
     async changeAdminUser(email: string, password: string) {
         let finded = this.config.users.find(x => x.username == 'admin');
@@ -1108,7 +1108,7 @@ export class ConfigService {
                 usersChanged.push({ previous: cloned, item: x })
             }
         })
-        //TODO this is sensitive data, more think
+
         //check policy authentication
 
         let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
@@ -1243,8 +1243,8 @@ export class ConfigService {
      */
     createTrackEvent(previous?: any, item?: any) {
         return {
-            before: previous ? Util.clone(previous) : undefined,
-            after: item ? Util.clone(item) : undefined
+            before: Util.isUndefinedOrNull(previous) ? undefined : Util.clone(previous),
+            after: Util.isUndefinedOrNull(item) ? undefined : Util.clone(item)
 
         }
     }

@@ -4,6 +4,7 @@ import JWT from 'jsonwebtoken';
 import { logger } from '../common';
 import { ErrorCodes, RestfullException } from '../restfullException';
 import { HelperService } from './helperService';
+import { SessionService } from './sessionService';
 
 
 
@@ -33,7 +34,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
     /**
      *
      */
-    constructor(private config: ConfigService) {
+    constructor(private config: ConfigService, private session: SessionService) {
 
 
     }
@@ -41,7 +42,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
     private generatePayload(type: "access" | "refresh", user: OAuth2Server.User, client: OAuth2Server.Client): Payload {
         let expire = new Date();
         expire.setSeconds(expire.getSeconds() + type == 'access' ? config.JWT_TOKEN_EXPIRY_SECONDS : config.JWT_TOKEN_EXPIRY_SECONDS * 2);
-        let targetUser = { id: user.id } as any;
+        let targetUser = { id: user.id, sid: user.sid } as any;
 
         let payload = {
             expires: expire.getTime(),
@@ -69,9 +70,19 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
         })
 
         if (!findUser)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'unauthorized access');
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, 'unauthorized access');
+
+        let findSession = await this.session.getSession(user.sid).catch(err => {
+            logger.fatal(JSON.stringify(err));
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal error");
+        })
+
+        if (!findSession || findSession.userId != findUser.id)
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, 'unauthorized access');
+
 
         user.id = findUser.id;
+        user.sid = user.sid;
 
         let token = await this.generateToken("access", user, client);
 
@@ -107,9 +118,21 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
         })
 
         HelperService.isValidUser(user);
+
+
+        let session = await this.session.getSession(decoded.user.sid).catch(err => {
+            logger.fatal(JSON.stringify(err));
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal error");
+        })
+        if (!session || !user || session.userId != user.id)
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, "unauthorized access");
+
+
+
+
         let token = {
             accessTokenExpiresAt: new Date(decoded.expires),
-            user: { id: user?.id },
+            user: { id: user?.id, sid: session.id },
             client: decoded.client,
             type: decoded.type,
             accessToken: accessToken
@@ -158,9 +181,16 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
         HelperService.isValidUser(user);
 
+        let session = await this.session.getSession(decoded.user.sid).catch(err => {
+            logger.fatal(JSON.stringify(err));
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal error");
+        })
+        if (!session || !user || session.userId != user.id)
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, "unauthorized access");
+
         let token = {
             refreshTokenExpiresAt: new Date(decoded.expires),
-            user: { id: user?.id },
+            user: { id: user?.id, sid: session.id },
             client: decoded.client,
             type: decoded.type,
             refreshToken: refreshToken

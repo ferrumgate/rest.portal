@@ -9,6 +9,7 @@ import { User } from '../../model/user';
 import { Util } from '../../util';
 import { ErrorCodes, RestfullException } from '../../restfullException';
 import { HelperService } from '../../service/helperService';
+import { attachActivitySessionId, attachActivitySource, attachActivityUser, saveActivity, saveActivityError } from './commonAuth';
 
 const name = 'jwt';
 export function jwtInit() {
@@ -16,9 +17,11 @@ export function jwtInit() {
         async (req: any, done: any) => {
             try {
 
+                attachActivitySource(req, name);
                 const appService = req.appService as AppService;
                 const configService = appService.configService;
                 const oauth2Service = appService.oauth2Service;
+                const sessionService = appService.sessionService;
 
                 let authorizationHeader = req.get('Authorization') as string;
                 if (!authorizationHeader)
@@ -32,15 +35,22 @@ export function jwtInit() {
                     throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, 'jwt header not found');
 
                 const userId = token.user.id;
-
+                const sid = token.user.sid;
+                attachActivitySessionId(req, sid);
+                const currentSession = await sessionService.getSession(sid);
+                req.currentSession = currentSession;
 
                 const user = await configService.getUserById(userId);
+                attachActivityUser(req, user);
                 HelperService.isValidUser(user);
                 //set user to request object
                 req.currentUser = user;
+
+                //await saveActivity(req, 'token verify');
                 return done(null, user);
 
             } catch (err) {
+                await saveActivityError(req, 'token verify', err);
                 return done(null, null, err);
             }
 

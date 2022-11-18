@@ -62,6 +62,7 @@ function createSampleData() {
 describe('groupApi', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
+    const sessionService = appService.sessionService;
 
     before(async () => {
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
@@ -83,7 +84,9 @@ describe('groupApi', async () => {
         const clonedUser = Util.clone(user1);
         clonedUser.roleIds = ['User'];
         await appService.configService.saveUser(clonedUser);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -106,7 +109,9 @@ describe('groupApi', async () => {
         //prepare data
         const { group1, group2, group3, user1 } = createSampleData();
         await appService.configService.saveUser(user1);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
         await appService.configService.saveGroup(group1);
@@ -133,7 +138,9 @@ describe('groupApi', async () => {
         //prepare data
         const { group1, group2, group3, user1 } = createSampleData();
         await appService.configService.saveUser(user1);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         await appService.configService.saveGroup(group1);
         await appService.configService.saveGroup(group2);
@@ -161,7 +168,9 @@ describe('groupApi', async () => {
         //prepare data
         const { group1, group2, group3, user1 } = createSampleData();
         await appService.configService.saveUser(user1);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         group1.labels = ['bla'];
         await appService.configService.saveGroup(group1);
@@ -190,7 +199,9 @@ describe('groupApi', async () => {
         //prepare data
         const { group1, group2, group3, user1 } = createSampleData();
         await appService.configService.saveUser(user1);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         await appService.configService.saveGroup(group1);
         await appService.configService.saveGroup(group2);
@@ -218,7 +229,8 @@ describe('groupApi', async () => {
         //prepare data
         const { group1, group2, group3, user1 } = createSampleData();
         await appService.configService.saveUser(user1);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         await appService.configService.saveGroup(group1);
         await appService.configService.saveGroup(group2);
@@ -253,7 +265,8 @@ describe('groupApi', async () => {
         const { group1, group2, group3, user1 } = createSampleData();
 
         await appService.configService.saveUser(user1);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         group1.id = '';
 

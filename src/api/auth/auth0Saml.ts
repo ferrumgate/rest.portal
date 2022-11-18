@@ -10,7 +10,7 @@ import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
 import { group } from 'console';
 import { ErrorCodes, RestfullException } from '../../restfullException';
-import { checkUser } from './commonAuth';
+import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
 
 function prepareCert(cert: string) {
     return cert.replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').replace('\r\n', '').replace('\n', '').replace(' ', '');
@@ -28,10 +28,13 @@ export function samlAuth0Init(saml: BaseSaml, url: string) {
 
     },
         async (req: any, profile: any, done: any) => {
+
             try {
+                attachActivitySource(req, name);
 
                 const username = profile.attributes[saml.usernameField];
-                const name = profile.attributes[saml.nameField];
+                attachActivityUsername(req, username);
+                const uname = profile.attributes[saml.nameField];
 
                 logger.info(`passport active directory with username: ${username}`);
                 const appService = req.appService as AppService;
@@ -47,22 +50,26 @@ export function samlAuth0Init(saml: BaseSaml, url: string) {
                 const source = `${saml.baseType}-${saml.type}`;
                 let user = await configService.getUserByUsername(username);
                 if (!user) {
-                    let userSave: User = HelperService.createUser(source, username, name, '');
+                    let userSave: User = HelperService.createUser(source, username, uname, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);
                     //get back
                     user = await configService.getUserByUsername(username);
+                    attachActivityUser(req, user);
 
                 } else {
+                    attachActivityUser(req, user);
                     await checkUser(user, saml);
                 }
 
                 //set user to request object
                 req.currentUser = user;
+                await saveActivity(req, 'login try');
                 return done(null, user);
 
 
             } catch (err) {
+                await saveActivityError(req, 'login try', err);
                 return done(null, null, err);
             }
         }

@@ -20,6 +20,8 @@ const expect = chai.expect;
 describe('networkApi', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
+    const sessionService = appService.sessionService;
+
     const user: User = {
         username: 'hamza@ferrumgate.com',
         groupIds: [],
@@ -51,7 +53,9 @@ describe('networkApi', async () => {
         const clonedUser = Util.clone(user);
         clonedUser.roleIds = ['User'];
         await appService.configService.saveUser(clonedUser);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const network: Network = {
             id: Util.randomNumberString(),
@@ -83,7 +87,9 @@ describe('networkApi', async () => {
     it('GET /network/:id will return 200', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const network: Network = {
             id: Util.randomNumberString(),
@@ -116,7 +122,8 @@ describe('networkApi', async () => {
     it('GET /network/:id will return 401', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
 
@@ -141,7 +148,8 @@ describe('networkApi', async () => {
     it('GET /network/search will return 200', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const network: Network = {
             id: Util.randomNumberString(),
@@ -222,7 +230,8 @@ describe('networkApi', async () => {
     it('DELETE /network/id will return 200', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const network: Network = {
             id: Util.randomNumberString(),
@@ -258,7 +267,8 @@ describe('networkApi', async () => {
     it('PUT /network will return 200', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const network: Network = {
             id: Util.randomNumberString(),
@@ -302,7 +312,8 @@ describe('networkApi', async () => {
     it('POST /network will return 200', async () => {
         //prepare data
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid' }, 'ferrum')
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         const network: Network = {
             id: '',
