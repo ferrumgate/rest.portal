@@ -35,7 +35,7 @@ export class PolicyRoomService {
 
     redisStreamKey: string;
     private commandId: number = 0;
-    private redisLocal: RedisService;
+    private redis: RedisService;
     //pipeline
 
     private waitList: PolicyRoomCommand[] = [];
@@ -47,7 +47,7 @@ export class PolicyRoomService {
         this.serviceId = _serviceId;
         this.instanceId = _instanceId;
 
-        this.redisLocal = new RedisService(process.env.REDIS_LOCAL_HOST || "localhost:6379", process.env.REDIS_LOCAL_PASS);
+        this.redis = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
         this.redisStreamKey = `/policy/service/${this.gatewayId}/${this.serviceId}/${this.instanceId}`;
 
     }
@@ -87,7 +87,7 @@ export class PolicyRoomService {
         try {
             logger.info(`policy room trimming stream ${this.redisStreamKey}`);
             let lastDay = new Date().getTime() - (24 * 60 * 60 * 1000);
-            await this.redisLocal.xtrim(this.redisStreamKey, lastDay.toString());
+            await this.redis.xtrim(this.redisStreamKey, lastDay.toString());
         } catch (err) {
             logger.error(err);
         }
@@ -118,7 +118,7 @@ export class PolicyRoomService {
             while (this.waitList.length) {
                 logger.info(`policy room: executing wait list service on /${this.gatewayId}/${this.serviceId}/${this.instanceId} page:${page}`)
                 let snapshot = this.waitList.slice(0, 10000);
-                let pipeline = await this.redisLocal.multi();
+                let pipeline = await this.redis.multi();
                 for (const cmd of snapshot) {
                     if (cmd.isReset) {
                         await pipeline.delete(this.redisStreamKey);
@@ -157,26 +157,10 @@ export class PolicyRoomService {
 
 }
 
-class GatewayId {
-
-
-    static async read(configFilePath: string) {
-
-        const file = (await fsp.readFile(configFilePath)).toString();
-        const hostline = file.split('\n').find(x => x.startsWith('gatewayId='));
-        if (!hostline) throw new Error(`no gateway id found in config ${configFilePath}`);
-        const parts = hostline.split('=');
-        if (parts.length != 2) throw new Error(`no gateway id found in config ${configFilePath}`);
-        let gatewayId = parts[1];
-        if (!gatewayId)
-            throw new Error(`no gateway id found in config ${configFilePath}`);
-        return gatewayId;
-    }
-}
 
 export class PolicyAuthzListener {
 
-    private redisLocalServiceListener: RedisService;
+    private redisServiceListener: RedisService;
     private redisGlobal: RedisService;
     private cache: NodeCache;
     private waitList: { tunnel?: Tunnel, action: string }[] = [];
@@ -185,28 +169,27 @@ export class PolicyAuthzListener {
     private roomList = new Map<string, PolicyRoomService>();
     private gatewayId = '';
     private isStarted = false;
-    private configFile = '/etc/ferrumgate/config';
+
     constructor(private policyService: PolicyService,
         private systemWatcher: SystemWatcherService, configFile?: string) {
         this.gatewayId = process.env.GATEWAY_ID || '';
         this.cache = new NodeCache({ checkperiod: 60, deleteOnExpire: true, useClones: false, stdTTL: 60 });
         this.redisGlobal = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
-        this.redisLocalServiceListener = new RedisService(process.env.REDIS_LOCAL_HOST || "localhost:6379", process.env.REDIS_LOCAL_PASS);
+        this.redisServiceListener = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
 
         this.cache.on("expired", async (key, value: PolicyRoomService) => {
             await value.stop();
             this.roomList.delete(key);
         });
-        if (configFile) {
-            this.configFile = configFile;
-        }
+
+        this.gatewayId = process.env.GATEWAY_ID || 'unknown'
 
     }
     async setGatewayId(gatewayId: string) {
         this.gatewayId = gatewayId;
     }
     async stop() {
-        await this.redisLocalServiceListener.disconnect();
+        await this.redisServiceListener.disconnect();
         if (this.waitListTimer)
             await clearIntervalAsync(this.waitListTimer);
         this.waitListTimer = null;
@@ -222,20 +205,12 @@ export class PolicyAuthzListener {
             await clearIntervalAsync(this.waitListTimer);
         this.waitListTimer = null;
         this.waitListTimer = setIntervalAsync(async () => {
-            await this.checkGatewayId();
+
             await this.startListening();
             await this.processWaitList();
         }, 1000);
     }
-    async checkGatewayId() {
-        if (!this.gatewayId) {
-            try {
-                this.gatewayId = await GatewayId.read(this.configFile)
-            } catch (err) {
-                logger.error(err);
-            }
-        }
-    }
+
     async policyCalculate(item: { tunnel?: Tunnel, action: string }) {
 
         if (item.action == 'reset') {
@@ -382,8 +357,8 @@ export class PolicyAuthzListener {
         try {
             if (this.isStarted) return;
 
-            await this.redisLocalServiceListener.onMessage(this.onMessage);
-            await this.redisLocalServiceListener.subscribe(`/policy/service`);
+            await this.redisServiceListener.onMessage(this.onMessage);
+            await this.redisServiceListener.subscribe(`/policy/service`);
             this.isStarted = true;
         } catch (err) {
             logger.error(err);
