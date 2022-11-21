@@ -29,7 +29,7 @@ export class SessionService {
         const session: AuthSession = {
             id: Util.randomNumberString(64),
             insertDate: new Date().toISOString(),
-            ip: clientIp, is2FA: is2FA, isPAM: false,
+            ip: clientIp, is2FA: is2FA,
             lastSeen: new Date().toISOString(),
             source: authSource || 'unknown',
             userId: user.id,
@@ -45,7 +45,7 @@ export class SessionService {
         const session: AuthSession = {
             id: Util.randomNumberString(64),
             insertDate: new Date().toISOString(),
-            ip: clientIp, is2FA: is2FA, isPAM: false,
+            ip: clientIp, is2FA: is2FA,
             lastSeen: new Date().toISOString(),
             source: authSource || 'unknown',
             userId: user.id,
@@ -61,7 +61,7 @@ export class SessionService {
 
         if (Object.keys(authSession).length) {
             authSession.is2FA = Util.convertToBoolean(authSession.is2FA);
-            authSession.isPAM = Util.convertToBoolean(authSession.isPAM);
+
             return authSession;
         }
         return undefined;

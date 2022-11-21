@@ -81,7 +81,7 @@ describe('clientApi ', async () => {
             clientIp: '192.168.8.8', tun: 'tun0',
             userId: user.id, gatewayId: gateway.id,
             serviceNetwork: '172.18.0.0/24',
-            is2FA: true, isPAM: false, trackId: 3
+            is2FA: true, trackId: 3
         };
         await redisService.hset('/tunnel/id/akey', tunnel)
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -110,7 +110,7 @@ describe('clientApi ', async () => {
             clientIp: '192.168.8.8', tun: 'tun0',
             userId: user.id, gatewayId: '1234',
             serviceNetwork: '192.168.0.0/24',
-            is2FA: true, isPAM: false, trackId: 5
+            is2FA: true, trackId: 5
         };
         await redisService.sadd('/clientNetwork/used', '10.0.0.1');
         // first get 
