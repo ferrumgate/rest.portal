@@ -57,7 +57,7 @@ describe('sessionService', () => {
         const session = await sessionService.createSession(user, true, '1.2.3.4', 'local');
         const session2 = await simpleRedis.hgetAll(`/session/id/${session.id}`);
         session.is2FA = session.is2FA.toString() as any;
-        session.isPAM = session.isPAM.toString() as any;
+
         expect(session).deep.equal(session2);
 
 

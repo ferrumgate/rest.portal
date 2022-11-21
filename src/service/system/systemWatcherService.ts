@@ -92,7 +92,7 @@ export class SystemWatcherService extends EventEmitter {
     parseTunnel(tunnel: Tunnel) {
         tunnel.trackId = Util.convertToNumber(tunnel.trackId)
         tunnel.is2FA = Util.convertToBoolean(tunnel.is2FA);
-        tunnel.isPAM = Util.convertToBoolean(tunnel.isPAM);
+
 
     }
     async startFirstFilling() {

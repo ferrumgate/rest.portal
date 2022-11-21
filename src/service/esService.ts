@@ -46,7 +46,7 @@ export interface SearchActivityLogsRequest {
 
     sessionId?: string;
     is2FA?: boolean;
-    isPAM?: boolean;
+
     trackId?: number;
     assignedIp?: string;
     tunnelId?: string;
@@ -411,10 +411,6 @@ export class ESService {
 
                             },
                             is2FA: {
-                                type: "boolean"
-
-                            },
-                            isPAM: {
                                 type: "boolean"
 
                             },

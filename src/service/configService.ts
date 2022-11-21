@@ -290,7 +290,7 @@ export class ConfigService {
                 networkId: net.id,
                 serviceId: service1.id,
                 userOrgroupIds: [standartUser.id],
-                profile: { is2FA: false, isPAM: false }
+                profile: { is2FA: false }
             })
 
             //

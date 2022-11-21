@@ -365,7 +365,7 @@ describe('policy', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {
-                is2FA: false, isPAM: false
+                is2FA: false,
             },
             serviceId: 's1',
             isEnabled: true
@@ -380,7 +380,7 @@ describe('policy', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {
-                is2FA: false, isPAM: false
+                is2FA: false,
             },
             serviceId: 's1',
             isEnabled: true
@@ -393,7 +393,7 @@ describe('policy', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {
-                is2FA: false, isPAM: false
+                is2FA: false,
             },
             serviceId: 's1',
             isEnabled: true

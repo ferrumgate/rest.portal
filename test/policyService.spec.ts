@@ -398,7 +398,7 @@ describe('policyService ', async () => {
             userOrgroupIds: [user1.id],
 
             profile: {
-                is2FA: true, isPAM: false
+                is2FA: true,
             },
             isEnabled: false
 

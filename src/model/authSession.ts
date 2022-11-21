@@ -6,6 +6,6 @@ export interface AuthSession {
     insertDate: string;
     lastSeen: string;
     is2FA: boolean;
-    isPAM: boolean;
+    //isPAM: boolean;
     source: string;
 }

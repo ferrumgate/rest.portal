@@ -1186,7 +1186,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
-            profile: { is2FA: true, isPAM: true },
+            profile: { is2FA: true },
             isEnabled: true
 
         }
@@ -1210,7 +1210,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
-            profile: { is2FA: true, isPAM: true },
+            profile: { is2FA: true, },
             isEnabled: true
 
         }
@@ -1234,7 +1234,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
-            profile: { is2FA: true, isPAM: true },
+            profile: { is2FA: true, },
             isEnabled: true
 
         }
@@ -1260,7 +1260,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
-            profile: { is2FA: true, isPAM: true },
+            profile: { is2FA: true },
             isEnabled: true
 
         }
@@ -1305,7 +1305,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: [aUser.id],
             serviceId: 'some service',
-            profile: { is2FA: true, isPAM: true },
+            profile: { is2FA: true, },
             isEnabled: true
 
         }
@@ -1480,7 +1480,7 @@ describe('configService', async () => {
             networkId: network.id,
             userOrgroupIds: [aUser.id],
             serviceId: service1.id,
-            profile: { is2FA: true, isPAM: true },
+            profile: { is2FA: true, },
             isEnabled: true
 
         }
@@ -1637,7 +1637,7 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: [aGroup.id],
             serviceId: 'some service',
-            profile: { is2FA: true, isPAM: true },
+            profile: { is2FA: true, },
             isEnabled: true
 
         }
@@ -1753,7 +1753,7 @@ describe('configService', async () => {
             networkId: 'ssid',
             userOrgroupIds: [aUser.id],
             serviceId: service1.id,
-            profile: { is2FA: true, isPAM: true },
+            profile: { is2FA: true, },
             isEnabled: true
 
         }

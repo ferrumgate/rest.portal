@@ -23,8 +23,7 @@ export interface Tunnel {
     serviceNetwork?: string;
     // is2FA used
     is2FA?: boolean;
-    // is PAM used
-    isPAM?: boolean
+    /*  */
     //belongs sessionId
     sessionId?: string;
 }
