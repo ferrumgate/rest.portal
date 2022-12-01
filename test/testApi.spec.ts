@@ -58,46 +58,23 @@ describe('testApi ', async () => {
 
 
     it('check ratelimit ', async () => {
+        for (let i = 0; i < 21; ++i) {
+            let response: any = await new Promise((resolve: any, reject: any) => {
+                chai.request(app)
+                    .get('/test')
+                    .end((err, res) => {
+                        if (err)
+                            reject(err);
+                        else
+                            resolve(res);
 
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .get('/test')
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-
-                });
-        })
-
-        expect(response.status).to.equal(200);
-        response = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .get('/test')
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-
-                });
-        })
-
-        expect(response.status).to.equal(200);
-        response = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .get('/test')
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-
-                });
-        })
-
-        expect(response.status).to.equal(429);
+                    });
+            })
+            if (i < 20)
+                expect(response.status).to.equal(200);
+            else
+                expect(response.status).to.equal(429);
+        }
 
     }).timeout(50000);
 

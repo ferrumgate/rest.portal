@@ -11,6 +11,7 @@ import passport from "passport";
 import { ErrorCodes, RestfullException } from "../../restfullException";
 import { logger } from "../../common";
 import { samlAuth0Init, samlAuth0Unuse } from "./auth0Saml";
+import { exchangeKeyInit, exchangeKeyUnuse } from "./exchangeKey";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -39,10 +40,15 @@ export async function passportInit(req: any, res: any, next: any) {
         jwtUnuse();
         const jwt = jwtInit();
         activeStrategies.push(jwt);
-        // init sessionkey
+        // init tunnelKey
         tunnelKeyUnuse();
-        const tunnelkey = tunnelKeyInit();
-        activeStrategies.push(tunnelkey);
+        const tunnelKey = tunnelKeyInit();
+        activeStrategies.push(tunnelKey);
+
+        // init exchangeKey
+        exchangeKeyUnuse();
+        const exchangeKey = exchangeKeyInit();
+        activeStrategies.push(exchangeKey);
         // init google
         oauthGoogleUnuse();
         const oauthGoogle = auth.oauth?.providers.find(x => x.type == 'google');

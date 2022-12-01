@@ -9,6 +9,9 @@ import { AppService, AppSystemService } from "./service/appService";
 import { Util } from "./util";
 import * as helmet from 'helmet';
 import cors from 'cors';
+import http from 'http';
+import https from 'https';
+
 import { corsOptionsDelegate } from "./api/cors";
 import { routerClientTunnelAuthenticated } from "./api/clientApi";
 import fs from "fs";
@@ -23,6 +26,7 @@ import { routerAuthenticationPolicyAuthenticated, routerAuthorizationPolicyAuthe
 import { routerAuditAuthenticated } from "./api/auditApi";
 import { ESService } from "./service/esService";
 import { routerActivityAuthenticated } from "./api/activityApi";
+import { ConfigService } from "./service/configService";
 
 
 
@@ -32,6 +36,7 @@ const express = require('express');
 
 
 const port = Number(process.env.PORT) | 8181;
+const ports = Number(process.env.PORTS) | 8383;
 
 
 //express app
@@ -350,12 +355,32 @@ app.use(globalErrorHandler);
 
 app.start = async function () {
     //create new jwt certificates
+    const appService = (app.appService as AppService);
+    const configService = appService.configService;
 
-    await Util.createSelfSignedCrt("ferrumgate.com");
-    (app.appService as AppService).configService.setJWTSSLCertificate({
-        privateKey: fs.readFileSync('./ferrumgate.com.key').toString('utf-8'),
-        publicKey: fs.readFileSync('./ferrumgate.com.crt').toString('utf-8'),
+    const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.com");
+    configService.setJWTSSLCertificate({
+        privateKey: privateKey,
+        publicKey: publicKey,
     });
+    //create ca ssl certificate if not exists;
+    if (!(await configService.getCASSLCertificate()).privateKey) {
+        const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.local");
+        configService.setSSLCertificate({
+            privateKey: privateKey,
+            publicKey: publicKey,
+        });
+    }
+    //create ssl certificates if not exists
+    if (!(await configService.getSSLCertificate()).privateKey) {
+        const { privateKey, publicKey } = await Util.createSelfSignedCrt("secure.ferrumgate.local");
+        configService.setSSLCertificate({
+            privateKey: privateKey,
+            publicKey: publicKey,
+        });
+    }
+
+
 
     if (!process.env.NODE_TEST)
         try {
@@ -365,10 +390,18 @@ app.start = async function () {
     if (!process.env.NODE_TEST)
         await (app.appSystemService as AppSystemService).start();
 
+    const httpServer = http.createServer(app);
+    const ssl = await configService.getSSLCertificate();
+    const httpsServer = https.createServer({ cert: ssl.publicKey, key: ssl.privateKey }, app);
 
-    app.listen(port, () => {
+    httpServer.listen(port, () => {
         logger.info('service started on ', port);
     })
+    httpsServer.listen(ports, () => {
+        logger.info('service started on ', ports);
+    })
+
+
 }
 
 app.start();

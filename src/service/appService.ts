@@ -79,9 +79,9 @@ export class AppService {
         this.oauth2Service = oauth2 || new OAuth2Service(this.configService, this.sessionService);
         this.tunnelService = tunnel || new TunnelService(this.configService, this.redisService);
         this.eventService = event || new EventService(this.configService, this.redisService);
-        this.esService = es || new ESService();
+        this.esService = es || new ESService(process.env.ES_HOST, process.env.ES_USER, process.env.ES_PASS);
         this.activityService = activity || new ActivityService(this.redisService, this.esService);
-        this.auditService = audit || new AuditService(this.redisService, this.esService);
+        this.auditService = audit || new AuditService(this.configService, this.redisService, this.esService);
         this.policyService = policy || new PolicyService(this.configService, this.tunnelService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
 

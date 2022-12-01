@@ -9,6 +9,18 @@ import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import ip from 'ip-cidr';
 import { HelperService } from "./helperService";
+import { logger } from "../common";
+import { Network } from "../model/network";
+
+
+export interface UserNetworkListResponse {
+    network: Network,
+    action: 'deny' | 'allow',
+    needs2FA?: boolean,
+    needsIp?: boolean,
+    needsGateway?: boolean;
+
+}
 
 
 export interface PolicyAuthzResult {
@@ -57,38 +69,38 @@ export class PolicyService {
         return false;
 
     }
-    authenticateErrorNumber = 0;
+    errorNumber = 0;
     // TODO  make this errors  most meaning full
     async authenticate(user: User, is2FAValidated: boolean, tunnelKey: string) {
         //get tunnel basic information
-        this.authenticateErrorNumber = 0;
+        this.errorNumber = 0;
         const tunnel = await this.tunnelService.getTunnel(tunnelKey);
         if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.gatewayId) {
-            this.authenticateErrorNumber = 1;
+            this.errorNumber = 1;
 
             throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
         }
 
         const gateway = await this.configService.getGateway(tunnel.gatewayId);
         if (!gateway) {
-            this.authenticateErrorNumber = 2;
+            this.errorNumber = 2;
 
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no gateway');
         }
         if (!gateway.isEnabled) {
-            this.authenticateErrorNumber = 3;
+            this.errorNumber = 3;
 
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no gateway');
         }
         const network = await this.configService.getNetwork(gateway.networkId || '');
         if (!network) {
-            this.authenticateErrorNumber = 4;
+            this.errorNumber = 4;
 
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
         }
 
         if (!network.isEnabled) {
-            this.authenticateErrorNumber = 5;
+            this.errorNumber = 5;
 
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
         }
@@ -102,12 +114,10 @@ export class PolicyService {
             let f3 = await this.checkIps(rule, tunnel.clientIp);
             if (f1 && f2 && f3) {
                 if (rule.action == 'allow') {
-                    //todo activity that this rule matched
-                    return;
+                    return rule;
                 }
                 else {
-                    this.authenticateErrorNumber = 10;
-                    //todo activiy 
+                    this.errorNumber = 10;
                     throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
                 }
 
@@ -115,17 +125,73 @@ export class PolicyService {
 
         }
         //no rule match
-        this.authenticateErrorNumber = 100;
+        this.errorNumber = 100;
 
         throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
+    }
+
+    /**
+     * @summary find networks that user can connect or why not connect
+     * @returns 
+     */
+    async userNetworks(user: User, is2FAValidated: boolean, clientIp: string) {
+
+        this.errorNumber = 0;
+        let result: UserNetworkListResponse[] = [];
+
+        const networks = await this.configService.getNetworksAll();
+        const policy = await this.configService.getAuthenticationPolicy();
+        for (const network of networks) {
+
+
+            if (!network) {
+                this.errorNumber = 1;
+                continue;
+            }
+
+            if (!network.isEnabled) {
+                this.errorNumber = 5;
+                continue;
+            }
+
+
+            const rules = await policy.rules.filter(x => x.networkId == network.id);
+            for (const rule of rules) {
+                if (!rule.isEnabled)
+                    continue;
+                let f1 = await this.checkUserIdOrGroupId(rule, user);
+                let f2 = await this.check2FA(rule, is2FAValidated);
+                let f3 = await this.checkIps(rule, clientIp);
+                if (f1 && f2 && f3) {
+                    if (rule.action == 'allow') {
+                        const gateways = await this.configService.getGatewaysByNetworkId(network.id);
+                        if (!gateways.find(x => x.isEnabled)) {
+                            result.push({ network: network, action: 'deny', needsGateway: true });
+                        } else
+                            result.push({ network: network, action: 'allow', })
+                        break
+                    }
+                    else {
+                        break
+                    }
+                } else if (f1) {
+                    result.push({ network: network, action: 'deny', needs2FA: !f2, needsIp: !f3 });
+                    break;
+                }
+            }
+        }
+
+        return result;
 
 
     }
+
 
     //TODO
     authorizeErrorNumber = 0;
     async authorize(trackId: number, serviceId: string, throwError: boolean = true, tun?: Tunnel): Promise<PolicyAuthzResult> {
         //TODO make this so fast
+        logger.debug(`policy authorize calculate trackId: ${trackId} serviceId:${serviceId}`);
         this.authorizeErrorNumber = 0;
         const tunnelKey = tun ? `/tunnel/id/${tun.id}` : await this.tunnelService.getTunnelKeyFromTrackId(trackId);
         if (!tunnelKey) {
@@ -207,7 +273,7 @@ export class PolicyService {
             let f2 = await this.check2FA(rule, tunnel.is2FA || false);
             if (f1 && f2) {
 
-
+                logger.debug(`policy authorize calculate trackId: ${trackId} serviceId:${serviceId} rule matched: ${rule.id}`);
                 return { error: 0, index: i, rule: rule };
             }
 

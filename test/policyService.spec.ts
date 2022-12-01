@@ -179,7 +179,7 @@ describe('policyService ', async () => {
             let result = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'no tunnel')
 
         } catch (err) { }
-        expect(policyService.authenticateErrorNumber).to.equal(1);
+        expect(policyService.errorNumber).to.equal(1);
 
 
         //no gateway
@@ -188,7 +188,7 @@ describe('policyService ', async () => {
             await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: 'non absent gateway' });
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
         } catch (err) { }
-        expect(policyService.authenticateErrorNumber).to.equal(2);
+        expect(policyService.errorNumber).to.equal(2);
 
 
         //no network
@@ -200,7 +200,7 @@ describe('policyService ', async () => {
             await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: newGateway.id });
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
         } catch (err) { }
-        expect(policyService.authenticateErrorNumber).to.equal(4);
+        expect(policyService.errorNumber).to.equal(4);
 
         configService.config.gateways = [gateway];
 
@@ -216,8 +216,6 @@ describe('policyService ', async () => {
                 ips: [{ ip: '10.0.0.0/24' }]
             },
             isEnabled: true
-
-
         }
         configService.config.authenticationPolicy.rules = [rule];
 
@@ -227,7 +225,7 @@ describe('policyService ', async () => {
             await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id });
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
         } catch (err) { }
-        expect(policyService.authenticateErrorNumber).to.equal(10);
+        expect(policyService.errorNumber).to.equal(10);
 
 
 
@@ -240,7 +238,7 @@ describe('policyService ', async () => {
             await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id });
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
         } catch (err) { }
-        expect(policyService.authenticateErrorNumber).to.equal(0);
+        expect(policyService.errorNumber).to.equal(0);
 
 
 
@@ -421,6 +419,100 @@ describe('policyService ', async () => {
         expect(policyService.authorizeErrorNumber).to.equal(0); //success
 
     }).timeout(5000);
+    it('userNetworks', async () => {
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            isEnabled: true
+        }
+        const gateway: Gateway = {
+            id: '123kasdfa',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id,
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        const net2: Network = {
+            id: '12323ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            isEnabled: true
+        }
+
+        configService.config.networks = [net, net2];
+        configService.config.gateways = [gateway];
+
+        //rule drop
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'deny',
+            networkId: net.id,
+            userOrgroupIds: ['somegroupid'],
+            profile: {
+                is2FA: true,
+                ips: []
+            },
+            isEnabled: true
+
+
+        }
+        configService.config.authenticationPolicy.rules = [rule];
+
+
+
+        const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
+        //prepare for test
+        net.isEnabled = false; net2.isEnabled = false;
+        let result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, true, '1.1.1.1');
+        expect(result.length).to.be.equal(0);
+
+        //prepare for test
+        net.isEnabled = true, net2.isEnabled = true;
+        rule.action = 'allow';
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, true, '1.1.1.1');
+        expect(result.length).to.be.equal(1);
+        expect(result[0].action).to.be.equal('allow');
+
+
+        configService.config.gateways = [];
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, true, '1.1.1.1');
+        expect(result.length).to.be.equal(1);
+        expect(result[0].needsGateway).to.be.true;
+
+        //push it back
+        configService.config.gateways = [gateway];
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, false, '1.1.1.1');
+        expect(result.length).to.be.equal(1);
+        expect(result[0].needs2FA).to.be.true;
+        expect(result[0].needsIp).to.be.false;
+
+        rule.profile.ips?.push({ ip: '1.2.3.4' });
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, false, '1.1.1.1');
+        expect(result.length).to.be.equal(1);
+        expect(result[0].needs2FA).to.be.true;
+
+        expect(result[0].needsIp).to.be.true;
+
+
+
+    })
 
 
 

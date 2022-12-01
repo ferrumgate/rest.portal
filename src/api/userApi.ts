@@ -11,6 +11,7 @@ import { RBACDefault } from "../model/rbac";
 import { config } from "process";
 import { authorizeAsAdmin } from "./commonApi";
 import { AuthSession } from "../model/authSession";
+import { UserNetworkListResponse } from "../service/policyService";
 
 
 
@@ -174,6 +175,41 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
 /////////////////////////////// current user ////////////////////////////
 
 export const routerUserAuthenticated = express.Router();
+
+
+//// get current user networks
+
+routerUserAuthenticated.get('/current/network',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+
+        logger.info(`getting current user networks`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+
+        const networks = await policyService.userNetworks(currentUser, currentSession?.is2FA, currentSession?.ip);
+        const results = networks.map(x => {
+            return {
+                id: x.network.id, name: x.network.name,
+                action: x.action, needs2FA: x.needs2FA, needsIp: x.needsIp,
+                sshHost: x.network.sshHost,
+            }
+        })
+
+        return res.status(200).json({ items: results });
+
+    }))
+
+
+
 
 routerUserAuthenticated.get('/current',
     asyncHandler(passportInit),
@@ -391,5 +427,10 @@ routerUserAuthenticated.put('/',
         return res.status(200).json(userDb);
 
     }))
+
+
+
+
+
 
 

@@ -37,6 +37,7 @@ export interface SearchActivityLogsRequest {
     ip?: string;
     status?: number;//0 success;
     statusMessage?: string;
+    statusMessage2?: string;
 
 
     username?: string;
@@ -68,6 +69,7 @@ export interface SearchActivityLogsRequest {
     osVersion?: string;
     browser?: string;
     browserVersion?: string;
+    requestPath?: string;
 }
 /**
  * @summary elastic service
@@ -84,9 +86,9 @@ export class ESService {
      */
     constructor(host?: string, username?: string, password?: string) {
         let option: ES.ClientOptions = {
-            node: host || process.env.ES_HOST || 'http://localhost:9200', auth: {
-                username: username || process.env.ES_USER || '',
-                password: password || process.env.ES_PASS || ''
+            node: host || 'http://localhost:9200', auth: {
+                username: username || '',
+                password: password || ''
             },
             tls: { rejectUnauthorized: false },
 
@@ -394,11 +396,19 @@ export class ESService {
                                 type: "keyword"
 
                             },
+                            statusMessage2: {
+                                type: "keyword"
+
+                            },
                             username: {
                                 type: "keyword"
 
                             },
                             userId: {
+                                type: "keyword"
+
+                            },
+                            requestPath: {
                                 type: "keyword"
 
                             },
@@ -559,6 +569,7 @@ export class ESService {
         this.addToQuery(req.authSource, 'authSource', request.body.query.bool.must);
         this.addToQuery(req.ip, 'ip', request.body.query.bool.must);
         this.addToQuery(req.statusMessage, 'statusMessage', request.body.query.bool.must);
+        this.addToQuery(req.statusMessage2, 'statusMessage2', request.body.query.bool.must);
         this.addToQuery(req.username, 'username', request.body.query.bool.must);
         this.addToQuery(req.sessionId, 'sessionId', request.body.query.bool.must);
         this.addToQuery(req.serviceName, 'serviceName', request.body.query.bool.must);
@@ -574,7 +585,7 @@ export class ESService {
             let item = {
                 query_string: {
                     query: `${req.search}`,
-                    fields: ['requestId', "type", "authSource", "ip", "statusMessage", "serviceId", "serviceName",
+                    fields: ['requestId', "type", "authSource", "ip", "statusMessage", "statusMessage2", "serviceId", "serviceName",
                         "username", "userId", "gatewayId", "gatewayName", "networkId", "networkName", "authnId", "authnName", "authzId", "authzName"]
                 }
             }

@@ -7,6 +7,9 @@ import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Group } from '../src/model/group';
+import { Network } from '../src/model/network';
+import { Gateway } from '../src/model/network';
+import { AuthenticationRule } from '../src/model/authenticationPolicy';
 
 
 chai.use(chaiHttp);
@@ -43,6 +46,9 @@ describe('userApiAuthenticated', async () => {
     beforeEach(async () => {
         appService.configService.config.users = [];
         appService.configService.config.groups = [];
+        appService.configService.config.authenticationPolicy.rules = [];
+        appService.configService.config.networks = [];
+        appService.configService.config.gateways = [];
         await redisService.flushAll();
     })
 
@@ -342,6 +348,89 @@ describe('userApiAuthenticated', async () => {
             expect(userret.groupIds.length).to.be.equal(1);
             expect(userret.groupIds[0]).to.equal('group1');
         }
+
+
+
+    }).timeout(50000);
+
+
+    it('PUT /user/current/network will return 200', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+
+        const group: Group = {
+            id: 'group1', name: 'group1', isEnabled: true, labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+        await appService.configService.saveGroup(group);
+
+
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+        appService.configService.config.authenticationPolicy.rules = [];
+
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            isEnabled: true
+        }
+        const gateway: Gateway = {
+            id: '123kasdfa',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id,
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+
+
+        appService.configService.config.networks = [net];
+        appService.configService.config.gateways = [gateway];
+
+        //rule drop
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: net.id,
+            userOrgroupIds: ['someid'],
+            profile: {
+                is2FA: false,
+                ips: []
+            },
+            isEnabled: true
+
+
+        }
+        appService.configService.config.authenticationPolicy.rules = [rule];
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/user/current/network`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        const result = response.body;
+        expect(result.items.length).to.equal(1);
 
 
 

@@ -33,6 +33,7 @@ export class ConfigService {
     protected configfile = `/etc/ferrumgate/config.yaml`;
     private secretKey = '';
     lastUpdateTime = '';
+
     /**
      *
      */
@@ -43,6 +44,7 @@ export class ConfigService {
         const adminUser = HelperService.createUser('local-local', 'admin', 'default admin', 'ferrumgate');
         adminUser.isVerified = true;
         adminUser.roleIds = ['Admin'];
+
 
         //default network
         const defaultNetwork: Network = {
@@ -60,6 +62,7 @@ export class ConfigService {
         if (configFile)
             this.configfile = configFile;
         this.config = {
+            encKey: Util.randomNumberString(32),
             isConfigured: 0,
             users: [
                 adminUser
@@ -68,6 +71,8 @@ export class ConfigService {
             services: [],
             captcha: {},
             jwtSSLCertificate: {},
+            sslCertificate: {},
+            caSSLCertificate: {},
             domain: 'ferrumgate.local',
             url: 'https://secure.yourdomain.com',
             email: {
@@ -89,7 +94,11 @@ export class ConfigService {
                     insertDate: new Date().toISOString(),
                     updateDate: new Date().toISOString()
 
-                }
+                },
+                ldap: { providers: [] },
+                oauth: { providers: [] },
+                saml: { providers: [] }
+
             },
             rbac: {
                 roles: [RBACDefault.roleAdmin, RBACDefault.roleReporter, RBACDefault.roleUser],
@@ -336,6 +345,13 @@ export class ConfigService {
         this.loadConfigFromFile();
 
         this.lastUpdateTime = new Date().toISOString();
+
+    }
+    getEncKey() {
+        return this.secretKey;
+    }
+    getEncKey2() {
+        return this.config.encKey;
     }
     resetUpdateTime() {
         this.lastUpdateTime = new Date(1900, 1, 1).toISOString();
@@ -656,6 +672,41 @@ export class ConfigService {
         this.emitEvent({ type: 'updated', path: '/jwtSSLCertificate', data: this.createTrackEvent(prev, this.config.jwtSSLCertificate) })
         await this.saveConfigToFile();
         return this.createTrackEvent(prev, this.config.jwtSSLCertificate);
+    }
+
+    async getSSLCertificate(): Promise<SSLCertificate> {
+        return Util.clone(this.config.sslCertificate);
+    }
+
+    async setSSLCertificate(cert: SSLCertificate | {}) {
+        let cloned = Util.clone(cert);
+        const prev = this.config.sslCertificate;
+        this.config.sslCertificate = {
+            ...this.config.sslCertificate,
+            ...cloned
+        }
+        this.emitEvent({ type: 'updated', path: '/sslCertificate', data: this.createTrackEvent(prev, this.config.sslCertificate) })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.sslCertificate);
+    }
+
+    async getCASSLCertificate(): Promise<SSLCertificate> {
+        return Util.clone(this.config.caSSLCertificate);
+    }
+    async getCASSLCertificatePublic(): Promise<string | null | undefined> {
+        return this.config.caSSLCertificate.publicKey;
+    }
+
+    async setCASSLCertificate(cert: SSLCertificate | {}) {
+        let cloned = Util.clone(cert);
+        const prev = this.config.caSSLCertificate;
+        this.config.sslCertificate = {
+            ...this.config.caSSLCertificate,
+            ...cloned
+        }
+        this.emitEvent({ type: 'updated', path: '/caSSLCertificate', data: this.createTrackEvent(prev, this.config.sslCertificate) })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.caSSLCertificate);
     }
 
 

@@ -9,7 +9,8 @@ import { Tunnel } from '../src/model/tunnel';
 import * as twofactor from 'node-2fa';
 import { Network } from '../src/model/network';
 import { Gateway } from '../src/model/network';
-
+import fs from 'fs';
+import { config } from 'process';
 chai.use(chaiHttp);
 const expect = chai.expect;
 
@@ -44,7 +45,8 @@ describe('clientApi ', async () => {
         clientNetwork: '10.0.0.0/24',
         serviceNetwork: '172.18.0.0/24',
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
+        isEnabled: true
     }
     const gateway: Gateway = {
         id: 'w20kaaoe',
@@ -59,18 +61,19 @@ describe('clientApi ', async () => {
     before(async () => {
 
 
-
     })
+
 
     beforeEach(async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         await configService.setConfigPath(filename);
-
+        await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
         await redisService.flushAll();
         configService.config.users = [];
         await configService.saveUser(user);
+        configService.config.authenticationPolicy.rules = [];
 
 
     })
@@ -130,6 +133,34 @@ describe('clientApi ', async () => {
         expect(response.status).to.equal(200);
         const result = await redisService.sismember(`/tunnel/configure/${tunnel.gatewayId}`, 'akey');
         expect(result == 1).to.be.true;
+
+    }).timeout(50000);
+
+
+    it('POST /client/tunnel', async () => {
+        await appService.configService.saveAuthenticationPolicyRule({ id: '123', action: 'allow', isEnabled: true, name: 'test', networkId: net.id, profile: {}, userOrgroupIds: [user.id] })
+        const session = await appService.sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        await redisService.hset(`/tunnel/id/kq0gxvko3j2v5tarpp9s8jsn5faxqd4knr0vplwhtiey3m2jo8k3dux2nvfem5sa`, {
+            id: `kq0gxvko3j2v5tarpp9s8jsn5faxqd4knr0vplwhtiey3m2jo8k3dux2nvfem5sa`,
+            clientIp: '1234', gatewayId: gateway.id
+        })
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/client/tunnel')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ tunnelKey: 'kq0gxvko3j2v5tarpp9s8jsn5faxqd4knr0vplwhtiey3m2jo8k3dux2nvfem5sa' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        const result = await redisService.hgetAll(`/tunnel/id/kq0gxvko3j2v5tarpp9s8jsn5faxqd4knr0vplwhtiey3m2jo8k3dux2nvfem5sa`);
+        expect(result.id).exist;
 
     }).timeout(50000);
 

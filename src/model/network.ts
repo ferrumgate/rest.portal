@@ -44,6 +44,16 @@ export interface Network {
     updateDate: string;
     isEnabled?: boolean;
 
+    /**
+     * @summary ssh tunnel connection public ip and port
+     * @example ssh.ferrumgate.com:9999
+     */
+    sshHost?: string;
+    /*  openVpnHost?: string;
+     wireguardHost?: string; */
+
+
+
 }
 
 /***
@@ -53,7 +63,8 @@ export function cloneNetwork(net: Network): Network {
     return {
         id: net.id, clientNetwork: net.clientNetwork, labels: net.labels,
         name: net.name, serviceNetwork: net.serviceNetwork, insertDate: net.insertDate, updateDate: net.updateDate,
-        isEnabled: net.isEnabled
+        isEnabled: net.isEnabled, sshHost: net.sshHost,
+        /* openVpnHost: net.openVpnHost, wireguardHost: net.wireguardHost */
 
 
     }

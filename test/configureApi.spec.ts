@@ -187,7 +187,8 @@ describe('configureApi ', async () => {
                     url: 'https://secure.ferrumgate.com',
                     domain: 'ferrumgate.local',
                     serviceNetwork: '10.0.0.0/16',
-                    clientNetwork: '172.18.18.0/24'
+                    clientNetwork: '172.18.18.0/24',
+                    sshHost: '1.2.3.4:1111'
                 })
                 .end((err, res) => {
                     if (err)

@@ -214,8 +214,9 @@ routerAuth.post('/accesstoken',
             const tunnelService = appService.tunnelService;
             const policyService = appService.policyService;
             const sessionService = appService.sessionService;
+            const inputService = appService.inputService;
             //tunnel field is the tunnel tunnel key
-            const request = req.body as { key: string, tunnelKey?: string };
+            const request = req.body as { key: string, exchangeKey?: string };
             if (!request.key) {
                 throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs parameters");
             }
@@ -240,17 +241,18 @@ routerAuth.post('/accesstoken',
             const authSession = await sessionService.createSession(req.currentUser, access.is2FA, req.clientIp, req.activity?.authSource || 'unknown');
             req.currentSession = authSession;
             attachActivitySessionId(req, authSession.id);
-            attachActivityTunnelId(req, request.tunnelKey);
+            //attachActivityTunnelId(req, request.tunnelKey);
             //check tunnel session
             //TODO disable tunnel keys for access tokens
-            if (request.tunnelKey) {
-                //check if user can authenticate to this network
+            /*  if (request.tunnelKey) {
+                 //check if user can authenticate to this network
+ 
+                 //check policy authentication
+                 await policyService.authenticate(user, access.is2FA, request.tunnelKey);
+                 await tunnelService.createTunnel(user, request.tunnelKey);
+                 //TODO add this to tunnel list
+             } */
 
-                //check policy authentication
-                await policyService.authenticate(user, access.is2FA, request.tunnelKey);
-                await tunnelService.createTunnel(user, request.tunnelKey);
-                //TODO add this to tunnel list
-            }
 
             const accessTokenStr = await oauth2Service.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum')
             const accessToken = await oauth2Service.getAccessToken(accessTokenStr);
@@ -258,9 +260,16 @@ routerAuth.post('/accesstoken',
             const refreshToken = await oauth2Service.getRefreshToken(refreshTokenStr);
             await redisService.delete(key);
 
+            if (request.exchangeKey) {
+                const exKey = Util.decrypt(configService.getEncKey2(), request.exchangeKey);
+                const key = `/exchange/id/${exKey}`
+                await redisService.set(key, authSession.id);
+                await redisService.expire(key, 60000);// 1 minute exchange key
+            }
+
             await saveActivity(req, 'access token', (log) => {
                 log.sessionId = authSession.id;
-                log.tunnelId = request.tunnelKey;
+
             });
 
             return res.status(200).json({ ...accessToken, ...refreshToken });
@@ -335,6 +344,53 @@ routerAuth.post('/refreshtoken',
             const refreshToken = await oauth2Service.getRefreshToken(refreshTokenStr);
 
             //await saveActivity(req, 'refresh token'); // no need to save
+            return res.status(200).json({ ...accessToken, ...refreshToken });
+        } catch (err) {
+            await saveActivityError(req, 'refresh token', err);
+            throw err;
+        }
+    })
+);
+
+routerAuth.get('/exchangetoken',
+    asyncHandler(async (req: any, res: any, next: any) => {
+        try {
+            const appService = req.appService as AppService;
+            const configService = appService.configService;
+            const redisService = appService.redisService;
+            const oauth2Service = appService.oauth2Service;
+            const sessionService = appService.sessionService;
+            logger.info(`get exchange token`);
+            const str = Util.encrypt(configService.getEncKey2(), Util.randomNumberString(128));
+            return res.status(200).json({ token: str });
+        } catch (err) {
+            await saveActivityError(req, 'refresh token', err);
+            throw err;
+        }
+    })
+);
+
+routerAuth.post('/exchangetoken',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['exchangeKey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        try {
+            const appService = req.appService as AppService;
+            const configService = appService.configService;
+            const redisService = appService.redisService;
+            const oauth2Service = appService.oauth2Service;
+            const sessionService = appService.sessionService;
+
+            logger.info(`exchange token ${req.exchangeToken}`);
+
+            const user = req.currentUser as User;
+            const authSession = req.currentSession as AuthSession;
+
+            const accessTokenStr = await oauth2Service.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum')
+            const accessToken = await oauth2Service.getAccessToken(accessTokenStr);
+            const refreshTokenStr = await oauth2Service.generateRefreshToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum');
+            const refreshToken = await oauth2Service.getRefreshToken(refreshTokenStr);
+
             return res.status(200).json({ ...accessToken, ...refreshToken });
         } catch (err) {
             await saveActivityError(req, 'refresh token', err);

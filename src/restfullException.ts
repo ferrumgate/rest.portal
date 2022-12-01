@@ -16,6 +16,7 @@ export class RestfullException extends Error {
      */
     code: string;
 
+
     constructor(status: number, code: string, message: string) {
         super();
         this.status = status;
@@ -34,6 +35,7 @@ export class ErrorCodes {
     static ErrNotAuthorized: string = 'ErrNotAuthorized';
     static ErrApiKeyIsNotValid: string = 'ErrApiKeyIsNotValid';
     static ErrTunnelKeyIsNotValid: string = 'ErrTunnelKeyIsNotValid';
+    static ErrExchangeKeyIsNotValid: string = 'ErrExchangeKeyIsNotValid';
     static ErrBadArgument: string = 'ErrBadArgument';
     static ErrNotFound: string = 'ErrNotFound';
     static ErrInternalError: string = 'ErrInternalError';
@@ -65,6 +67,7 @@ export class ErrorCodes {
     static ErrNoAdminUserLeft: string = 'ErrNoAdminUserLeft';
     static ErrNetworkNotFound: string = 'ErrNetworkNotFound';
     static ErrNotInLdapGroups: string = 'ErrNotInLdapGroups';
+    static ErrKeyLengthSmall: string = 'ErrKeyLengthSmall';
 
 
 

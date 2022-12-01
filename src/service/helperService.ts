@@ -4,9 +4,11 @@ import *  as twofactor from 'node-2fa';
 import { ErrorCodes, RestfullException } from "../restfullException";
 import { RBACDefault } from "../model/rbac";
 import { Tunnel } from "../model/tunnel";
+import { AuthSession } from "../model/authSession";
 
 
 export class HelperService {
+
     static createUser(source: string, username: string, name: string, password?: string) {
         const user: User = {
             source: source,
@@ -86,7 +88,8 @@ export class HelperService {
         return '';
 
     }
-} {
-
-
-}
+    static isValidSession(session: AuthSession) {
+        if (!session)
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, 'no session');
+    }
+} 

@@ -44,7 +44,7 @@ export class ActivityLogToES {
     }
     async stop() {
         if (this.timer)
-            await clearIntervalAsync(this.timer);
+            clearIntervalAsync(this.timer);
         this.timer = null;
     }
     async checkRedisIsMaster() {

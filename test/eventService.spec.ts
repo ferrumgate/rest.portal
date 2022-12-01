@@ -28,7 +28,7 @@ describe.skip('eventService', async () => {
         await configService.loadConfigFromFile();
     })
     beforeEach(async () => {
-        await (app.appService as AppService).redisService.flushAll();
+        await redisService.flushAll();
     })
     it('test events', async () => {
         const event = new EventService(configService, redisService);

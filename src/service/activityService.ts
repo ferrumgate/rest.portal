@@ -60,7 +60,7 @@ export class ActivityService {
      */
     async stop() {
         if (this.trimInterval)
-            await clearIntervalAsync(this.trimInterval);
+            clearIntervalAsync(this.trimInterval);
         this.trimInterval = null;
     }
 

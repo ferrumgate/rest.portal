@@ -362,13 +362,6 @@ describe('util ', () => {
 
     });
 
-    it('createSelfSignedCrt ', async () => {
-        const domain = `${Util.randomNumberString(8)}.com`;
-        const output = await Util.createSelfSignedCrt(domain, '/tmp')
-        expect(fs.existsSync(`/tmp/${domain}.crt`)).to.be.true
-        expect(fs.existsSync(`/tmp/${domain}.key`)).to.be.true
-
-    });
 
     it('isArrayElementExist ', async () => {
         expect(Util.isArrayElementExist(undefined, undefined)).to.be.false;
@@ -400,6 +393,56 @@ describe('util ', () => {
 
 
     });
+
+
+    it('createSelfSignedCrt ', async () => {
+        const random = Util.randomNumberString();
+        const domain = `${Util.randomNumberString(8)}.com`;
+        const output = await Util.createSelfSignedCrt(domain, `/tmp/${random}`);
+        expect(output.privateKey).exist;
+        expect(output.publicKey).exist;
+        expect(fs.existsSync(`/tmp/${random}/${domain}.crt`)).to.be.true
+        expect(fs.existsSync(`/tmp/${random}/${domain}.key`)).to.be.true
+
+    });
+
+    it('createCASignedCrt ', async () => {
+        const random = Util.randomNumberString();
+        const cahostname = `${Util.randomNumberString(8)}.com`;
+        const ca = await Util.createSelfSignedCrt(cahostname, `/tmp/${random}`);
+
+
+        const domain = `${Util.randomNumberString(8)}.com`;
+        const output = await Util.createCASignedCrt(domain, ca, `/tmp/${random}`);
+        expect(output.privateKey).exist;
+        expect(output.publicKey).exist;
+        expect(fs.existsSync(`/tmp/${random}/${domain}.crt`)).to.be.true
+        expect(fs.existsSync(`/tmp/${random}/${domain}.key`)).to.be.true
+
+    });
+    it('getCertificateInfo ', async () => {
+        const cahostname = `cahost`;
+        const ca = await Util.createSelfSignedCrt(cahostname);
+
+
+        const domain = `test.com`;
+        const output = await Util.createCASignedCrt(domain, ca);
+        const x = await Util.getCertificateInfo(output.publicKey, ca.publicKey);
+        expect(x.isValid).to.be.true;
+        expect(x.remainingMS > 0);
+
+
+        const cahostname2 = `cahost2`;
+        const ca2 = await Util.createSelfSignedCrt(cahostname2);
+        const x2 = await Util.getCertificateInfo(output.publicKey, ca2.publicKey);
+        expect(x2.isValid).to.be.false;
+        expect(x2.remainingMS > 0);
+
+
+
+
+    }).timeout(120000);
+
 
 
 

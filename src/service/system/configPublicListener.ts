@@ -44,7 +44,7 @@ export class ConfigPublicRoom {
     async stop() {
         this.waitList.splice(0);
         if (this.intervalWaitList)
-            await clearIntervalAsync(this.intervalWaitList);
+            clearIntervalAsync(this.intervalWaitList);
         this.intervalWaitList = null;
     }
     async getGatewayById(queryId: string, gatewayId?: string) {
@@ -237,11 +237,11 @@ export class ConfigPublicListener {
     }
     async stop() {
         if (this.intervalCheckRedis)
-            await clearIntervalAsync(this.intervalCheckRedis);
+            clearIntervalAsync(this.intervalCheckRedis);
         this.intervalCheckRedis = null;
         if (this.intervalPublish)
-            await clearIntervalAsync(this.intervalPublish);
-        this.intervalCheckRedis = null;
+            clearIntervalAsync(this.intervalPublish);
+        this.intervalPublish = null;
 
     }
     async checkRedisRole() {

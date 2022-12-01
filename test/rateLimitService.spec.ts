@@ -34,7 +34,7 @@ describe('rateLimitService integration', () => {
         let errorOccured = false;
         try {
             const ratelimit = new RateLimitService(configService, redisService);
-            for (let index = 0; index < 15; index++) {
+            for (let index = 0; index < 150; index++) {
                 await ratelimit.check('1.1.1.1', 'checksystem', 10);
             }
         } catch (err) {

@@ -5,6 +5,7 @@ import { ESService } from "../esService";
 import { RedisService } from "../redisService";
 import { AuditLog } from "../../model/auditLog";
 import { ConfigService } from "../configService";
+import { config } from "process";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -20,10 +21,11 @@ export class AuditLogToES {
     isRedisMaster = false;
     lastRedisMasterCheck = 0;
     auditStreamKey = '/audit/logs';
-    public encKey = process.env.ENCRYPT_KEY || 'AdHCEKwju33MmqSrz4sm6wWOzIzBylfd';
+    public encKey = '';
     es: ESService;
     redis: RedisService;
     constructor(private configService: ConfigService) {
+        this.encKey = this.configService.getEncKey();
         this.es = this.createESService();
         this.redis = this.createRedis();
     }
@@ -43,7 +45,7 @@ export class AuditLogToES {
     }
     async stop() {
         if (this.timer)
-            await clearIntervalAsync(this.timer);
+            clearIntervalAsync(this.timer);
         this.timer = null;
     }
     async checkRedisIsMaster() {

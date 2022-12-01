@@ -129,12 +129,15 @@ export async function saveActivityError(req: any, type: string, err: any, extFun
             status: ActivitiyStatus.Success,
             userId: act.user?.id,
             user2FA: act.user?.is2FA,//user needs 2FA            
-            sessionId: act.sessionId
+            sessionId: act.sessionId,
+            requestPath: req.path
         }
 
         if (err instanceof RestfullException) {
             activity.status = err.status;
             activity.statusMessage = err.code;
+            //activity.statusMessage2=err.:
+            //TODO
         }
         else if (err instanceof Error) {
             activity.status = 500;
@@ -166,7 +169,8 @@ export async function saveActivity(req: any, type: string, extFunc?: (log: Activ
             insertDate: new Date().toISOString(),
             ip: act.clientIp || req.clientIp,
             status: ActivitiyStatus.Success,
-            sessionId: act.sessionId
+            sessionId: act.sessionId,
+            requestPath: req.path
         }
         if (extFunc)
             extFunc(activity);

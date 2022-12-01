@@ -18,6 +18,7 @@ interface Configure {
     url: string;
     clientNetwork: string;
     serviceNetwork: string;
+    sshHost: string;
 }
 
 
@@ -56,6 +57,10 @@ routerConfigureAuthenticated.post('/',
             logger.error("input data is not valid");
             throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
         }
+        if (!data.sshHost) {
+            logger.error("input data is not valid");
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
+        }
 
         //check email and password 
         await inputService.checkEmail(data.email);
@@ -66,7 +71,7 @@ routerConfigureAuthenticated.post('/',
         await inputService.checkUrl(data.url);
         await inputService.checkCidr(data.serviceNetwork);
         await inputService.checkCidr(data.clientNetwork);
-
+        await inputService.checkHost(data.sshHost);
 
         const adminUser = await configService.getUserByUsername('admin');
         if (!adminUser) {
@@ -91,7 +96,7 @@ routerConfigureAuthenticated.post('/',
 
         defaultNetwork.clientNetwork = data.clientNetwork;
         defaultNetwork.serviceNetwork = data.serviceNetwork;
-
+        defaultNetwork.sshHost = data.sshHost;
         await configService.saveNetwork(defaultNetwork);
 
         return res.status(200).json({});

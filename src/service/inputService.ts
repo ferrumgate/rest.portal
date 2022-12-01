@@ -10,6 +10,7 @@ import validator from 'validator';
  * checks input data
  */
 export class InputService {
+
     checkEmail(email: string) {
         if (!email)
             throw new RestfullException(400, ErrorCodes.ErrEmailIsInvalid, 'email is invalid');
@@ -54,8 +55,24 @@ export class InputService {
      */
     checkDomain(domain: string) {
         if (!domain) throw new RestfullException(400, ErrorCodes.ErrDomainNotValid, 'fqdn is invalid');
-        const result = validator.isFQDN(domain);
+        const result = validator.isFQDN(domain, { require_tld: false });
         if (!result) throw new RestfullException(400, ErrorCodes.ErrDomainNotValid, 'fqdn is invalid');
+    }
+
+    checkHost(domainIp: string) {
+        if (!domainIp) throw new RestfullException(400, ErrorCodes.ErrDomainNotValid, 'host is invalid');
+        let domain = domainIp;
+        let port = '9999';
+        if (domainIp.includes(":")) {
+            let parts = domainIp.split(":");
+            port = parts[1];
+            domain = parts[0];
+        }
+        const vport = validator.isPort(port)
+
+        const vresult = validator.isFQDN(domain, { require_tld: false }) || validator.isIP(domain);
+        if (!vresult || !vport) throw new RestfullException(400, ErrorCodes.ErrDomainNotValid, 'host is invalid');
+
     }
 
     /**
@@ -64,7 +81,7 @@ export class InputService {
      */
     checkUrl(url: string) {
         if (!url) throw new RestfullException(400, ErrorCodes.ErrUrlNotValid, 'url is invalid');
-        const result = (url.startsWith('http://') || url.startsWith('https://')) && validator.isURL(url);
+        const result = (url.startsWith('http://') || url.startsWith('https://')) && (validator.isURL(url, { require_tld: false }) || url.includes('localhost'));
         if (!result) throw new RestfullException(400, ErrorCodes.ErrUrlNotValid, 'url is invalid');
     }
 
@@ -94,6 +111,10 @@ export class InputService {
         let val = Number(value);
         if (Number.isNaN(val)) throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'input is invalid');
 
+    }
+    checkStringLength(exchangeKey: string, len: number) {
+        if (exchangeKey.length < len)
+            throw new RestfullException(400, ErrorCodes.ErrKeyLengthSmall, 'length is invalid');
     }
 
 }
