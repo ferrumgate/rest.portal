@@ -56,10 +56,11 @@ export function tunnelKeyInit() {
                     act.assignedIp = tunnel?.assignedClientIp;
                     act.tunnelId = tunnel?.id;
                     act.is2FA = tunnel?.is2FA;
-                    act.gatewayId = tunnel?.gatewayId
+                    act.gatewayId = tunnel?.gatewayId;
                     act.serviceId = tunnel?.sessionId;
                     act.trackId = tunnel?.trackId;
                     act.tun = tunnel?.tun;
+                    act.tunType = tunnel?.type;
 
                 });
                 return done(null, user);

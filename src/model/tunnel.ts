@@ -26,4 +26,7 @@ export interface Tunnel {
     /*  */
     //belongs sessionId
     sessionId?: string;
+
+    //tunnel type
+    type?: string;
 }

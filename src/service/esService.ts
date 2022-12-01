@@ -454,6 +454,9 @@ export class ESService {
                             tun: {
                                 type: "keyword"
                             },
+                            tunType: {
+                                type: "keyword"
+                            },
                             authnId: {
                                 type: "keyword"
 

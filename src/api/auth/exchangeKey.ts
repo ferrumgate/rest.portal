@@ -7,7 +7,7 @@ import { ErrorCodes, RestfullException } from '../../restfullException';
 import { HelperService } from '../../service/helperService';
 import { Tunnel } from '../../model/tunnel';
 import passportCustom from 'passport-custom';
-import { attachActivitySessionId, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
+import { attachActivitySession, attachActivitySessionId, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
 import { ActivityLog } from '../../model/activityLog';
 import { Util } from '../../util';
 
@@ -44,7 +44,7 @@ export function exchangeKeyInit() {
 
 
                 req.currentSession = currentSession;
-                attachActivitySessionId(req, currentSession.id);
+                attachActivitySession(req, currentSession);
                 //set user to request object
                 const user = await configService.getUserById(currentSession.userId || '0');
                 attachActivityUser(req, user);

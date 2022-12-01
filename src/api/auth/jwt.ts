@@ -9,7 +9,7 @@ import { User } from '../../model/user';
 import { Util } from '../../util';
 import { ErrorCodes, RestfullException } from '../../restfullException';
 import { HelperService } from '../../service/helperService';
-import { attachActivitySessionId, attachActivitySource, attachActivityUser, saveActivity, saveActivityError } from './commonAuth';
+import { attachActivitySession, attachActivitySessionId, attachActivitySource, attachActivityUser, saveActivity, saveActivityError } from './commonAuth';
 
 const name = 'jwt';
 export function jwtInit() {
@@ -36,9 +36,10 @@ export function jwtInit() {
 
                 const userId = token.user.id;
                 const sid = token.user.sid;
-                attachActivitySessionId(req, sid);
+                attachActivitySession(req, { id: sid } as any);
                 const currentSession = await sessionService.getSession(sid);
                 req.currentSession = currentSession;
+                attachActivitySession(req, currentSession);
 
                 const user = await configService.getUserById(userId);
                 attachActivityUser(req, user);
