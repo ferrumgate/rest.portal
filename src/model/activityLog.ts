@@ -8,15 +8,15 @@ export interface ActivityLog {
     type: string;//'login try','login success','login deny','service success','service deny','pam activated'
     authSource: string;//google, apikey
     ip: string;
-    status: number;//0 success;
+    status: number;//200 success;
     statusMessage?: string;
-
+    statusMessage2?: string;
 
     username?: string;
     userId?: string;
     user2FA?: boolean;
 
-
+    requestPath?: string;
     sessionId?: string;
     is2FA?: boolean;
     trackId?: number;

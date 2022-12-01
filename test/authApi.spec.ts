@@ -657,7 +657,7 @@ describe('authApi', async () => {
     }).timeout(50000);
 
 
-    it('POST /auth/accesstoken with tunnel parameter with result 200', async () => {
+    /* it('POST /auth/accesstoken with tunnel parameter with result 200', async () => {
 
         await redisService.set(`/auth/access/test`, { userId: 'someid' });
         await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id });
@@ -679,7 +679,7 @@ describe('authApi', async () => {
                 });
         })
 
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(401);
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
 
@@ -687,7 +687,7 @@ describe('authApi', async () => {
         expect(retVAl.assignedClientIp).exist;
 
 
-    }).timeout(50000);
+    }).timeout(50000); */
 
 
     it('POST /auth/refreshtoken with result 200', async () => {
@@ -726,6 +726,30 @@ describe('authApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
+
+    }).timeout(50000);
+
+
+    it('POST /auth/exchangetoken with result 200', async () => {
+        await redisService.hset('/session/id/abc', { userId: 'someid', id: 'abc' })
+        await redisService.set(`/exchange/id/12`, 'abc');
+        const ex = Util.encrypt(configService.getEncKey2(), '12')
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth/exchangetoken')
+                .send({ 'exchangeKey': ex })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.accessToken).exist;
+        expect(response.body.refreshToken).exist;
+
 
     }).timeout(50000);
 

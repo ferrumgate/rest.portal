@@ -200,7 +200,7 @@ routerConfigAuthAuthenticated.post('/oauth/providers',
         await inputService.checkIfExists(provider.baseType);
 
         const oauth = await configService.getAuthSettingOAuth();
-        const indexA = oauth?.providers.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
+        const indexA = oauth?.providers?.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
 
         if (Number(indexA) >= 0) {
             throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
@@ -350,7 +350,7 @@ routerConfigAuthAuthenticated.post('/ldap/providers',
 
         // check if same provider exists
         const ldap = await configService.getAuthSettingLdap();
-        const indexA = ldap?.providers.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
+        const indexA = ldap?.providers?.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
 
         if (Number(indexA) >= 0) {
             throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
@@ -504,7 +504,7 @@ routerConfigAuthAuthenticated.post('/saml/providers',
 
         // check if same provider exists
         const saml = await configService.getAuthSettingSaml();
-        const indexA = saml?.providers.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
+        const indexA = saml?.providers?.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
 
         if (Number(indexA) >= 0) {
             throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");

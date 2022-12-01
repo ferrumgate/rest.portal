@@ -7,6 +7,7 @@ import { AuditService, ObjectDiffer } from '../src/service/auditService';
 import { AuditLog } from '../src/model/auditLog';
 import { Util } from '../src/util';
 import { ESService } from '../src/service/esService';
+import { ConfigService } from '../src/service/configService';
 
 
 
@@ -56,14 +57,16 @@ describe('auditService ', async () => {
     const esHost = 'https://192.168.88.250:9200';
     const esUser = "elastic";
     const esPass = '123456';
+    const config = new ConfigService('fljvc7rm1xfo37imbu3ryc5mfbh9jpm5', `/tmp/${Util.randomNumberString()}`)
     it('saveToRedis', async () => {
+
         const es = new ESService(esHost, esUser, esPass);
         const redis = new RedisService();
         await redis.delete(streamKey)
         let audit = {
             id: 1
         } as any;
-        const auditService = new AuditService(redis, es);
+        const auditService = new AuditService(config, redis, es);
         await auditService.saveToRedis(audit);
         await Util.sleep(1000);
         const items = await redis.xread(streamKey, 10, '0', 1000);
@@ -81,7 +84,7 @@ describe('auditService ', async () => {
     it('executeTryCatch', async () => {
         const es = new ESService(esHost, esUser, esPass)
         const redis = new RedisService();
-        const auditService = new AuditService(redis, es);
+        const auditService = new AuditService(config, redis, es);
         //expect no error 
         await auditService.executeTryCatch(async () => {
             throw new Error('this is will be ignored')
@@ -106,7 +109,7 @@ describe('auditService ', async () => {
             city: 'singapore'
         } as any;
 
-        const auditService = new AuditService(redis, es);
+        const auditService = new AuditService(config, redis, es);
         await auditService.executeDelete(
             { ip: '1.2.3.4' } as any,
             { id: 'someid', username: 'auser' } as any,
@@ -148,7 +151,7 @@ describe('auditService ', async () => {
             city: 'singapore'
         } as any;
 
-        const auditService = new AuditService(redis, es);
+        const auditService = new AuditService(config, redis, es);
         await auditService.executeSave(
             { ip: '1.2.3.4' } as any,
             { id: 'someid', username: 'auser' } as any,

@@ -13,6 +13,8 @@ import { Tunnel } from "../model/tunnel";
 import { TunnelService } from "../service/tunnelService";
 import { HelperService } from "../service/helperService";
 import { getNetworkByGatewayId } from "./commonApi";
+import { AuthSession } from "../model/authSession";
+import { attachActivity, attachActivitySessionId, attachActivityTunnelId, attachActivityUser, saveActivity, saveActivityError } from "./auth/commonAuth";
 
 
 
@@ -27,7 +29,7 @@ export const routerClientTunnelAuthenticated = express.Router();
 
 routerClientTunnelAuthenticated.get('/ip',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['headertunnelkey']),
+    asyncHandlerWithArgs(passportAuthenticate, ['tunnelKey']),
     asyncHandler(async (req: any, res: any, next: any) => {
         const appService = req.appService as AppService;
         const configService = appService.configService;
@@ -46,7 +48,7 @@ routerClientTunnelAuthenticated.get('/ip',
  */
 routerClientTunnelAuthenticated.get('/renewip',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['headertunnelkey']),
+    asyncHandlerWithArgs(passportAuthenticate, ['tunnelKey']),
     asyncHandler(async (req: any, res: any, next: any) => {
         const appService = req.appService as AppService;
         const configService = appService.configService;
@@ -64,12 +66,55 @@ routerClientTunnelAuthenticated.get('/renewip',
     })
 );
 
+
+routerClientTunnelAuthenticated.post('/',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        try {
+            const appService = req.appService as AppService;
+            const configService = appService.configService;
+            const policyService = appService.policyService;
+            const inputService = appService.inputService;
+            const tunnelService = appService.tunnelService;
+
+
+            const user = req.currentUser as User;
+            attachActivityUser(req, user);
+            const session = req.currentSession as AuthSession;
+            attachActivitySessionId(req, session.id);
+
+            const tunnelKey = req.body.tunnelKey || req.query.tunnelKey;
+            logger.info(`creating tunnel for ${tunnelKey}`);
+            attachActivityTunnelId(req, tunnelKey);
+
+            await inputService.checkIfExists(tunnelKey);
+            await inputService.checkStringLength(tunnelKey, 63);
+            HelperService.isValidUser(user);
+            HelperService.isValidSession(session);
+
+            const rule = await policyService.authenticate(user, session.is2FA, tunnelKey);
+            await tunnelService.createTunnel(user, tunnelKey);
+            await saveActivity(req, 'create tunnel', (log) => {
+                log.authnRuleId = rule.id;
+                log.authnRuleName = rule.name;
+            });
+
+            return res.status(200).json({});
+
+        } catch (err) {
+            await saveActivityError(req, 'create tunnel', err);
+            throw err;
+        }
+    })
+);
+
 /**
  * @summary after client created tunnel successfuly, it confirms 
  */
 routerClientTunnelAuthenticated.post('/confirm',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['headertunnelkey']),
+    asyncHandlerWithArgs(passportAuthenticate, ['tunnelKey']),
     asyncHandler(async (req: any, res: any, next: any) => {
         const appService = req.appService as AppService;
         const configService = appService.configService;
@@ -88,19 +133,29 @@ routerClientTunnelAuthenticated.post('/confirm',
  */
 routerClientTunnelAuthenticated.get('/alive',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['headertunnelkey']),
+    asyncHandlerWithArgs(passportAuthenticate, ['tunnelKey']),
     asyncHandler(async (req: any, res: any, next: any) => {
+        try {
+            const appService = req.appService as AppService;
+            const configService = appService.configService;
+            const redisService = appService.redisService;
+            const tunnelService = appService.tunnelService;
+            const user = req.currentUser as User;
+            attachActivityUser(req, user);
+            const session = req.currentSession as AuthSession;
+            attachActivitySessionId(req, session.id);
+            const tunnel = req.currentTunnel as Tunnel;
+            attachActivityTunnelId(req, tunnel.id);
+            logger.info(`i am alive tunnel: ${tunnel.id}`);
+            await tunnelService.alive(tunnel.id || '');
 
-        const appService = req.appService as AppService;
-        const configService = appService.configService;
-        const user = req.currentUser as User;
-        const tunnel = req.currentTunnel as Tunnel;
-        logger.info(`i am alive tunnel: ${tunnel.id}`);
-        const redisService = appService.redisService;
-        const tunnelService = appService.tunnelService;
-        await tunnelService.alive(tunnel.id || '');
+            await saveActivity(req, 'tunnel alive');
 
-        return res.status(200).json({});
+            return res.status(200).json({});
+        } catch (err) {
+            await saveActivityError(req, 'tunnel alive', err);
+            throw err;
+        }
     })
 );
 

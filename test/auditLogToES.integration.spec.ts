@@ -70,7 +70,7 @@ describe('auditLogToES ', async () => {
         const es = new ESService(esHost, esUser, esPass);
         const { log1, log2 } = createSampleData();
 
-        const auditService = new AuditService(redis, es);
+        const auditService = new AuditService(configService, redis, es);
         await auditService.saveToRedis(log1);
         await auditService.saveToRedis(log2);
 

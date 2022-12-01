@@ -62,7 +62,7 @@ export class PolicyRoomService {
     async start() {
         this.interval = setIntervalAsync(async () => {
             await this.pushOk();
-        }, 5000);
+        }, 15000);
         this.waitListInterval = setIntervalAsync(async () => {
             await this.processWaitList();
         }, 1000);
@@ -74,13 +74,13 @@ export class PolicyRoomService {
     async stop() {
         this.waitList.splice(0);
         if (this.interval)
-            await clearIntervalAsync(this.interval);
+            clearIntervalAsync(this.interval);
         this.interval = null;
         if (this.waitListInterval)
-            await clearIntervalAsync(this.waitListInterval);
+            clearIntervalAsync(this.waitListInterval);
         this.waitListInterval = null;
         if (this.trimStreamInterval)
-            await clearIntervalAsync(this.trimStreamInterval);
+            clearIntervalAsync(this.trimStreamInterval);
         this.trimStreamInterval = null;
     }
     async trimStream() {
@@ -114,8 +114,10 @@ export class PolicyRoomService {
         let tmp = this.commandId;//store it
         try {
             let page = 0;
-            logger.debug(`policy room: /${this.gatewayId}/${this.serviceId}/${this.instanceId} wait list: ${this.waitList.length}`)
+
+
             while (this.waitList.length) {
+                logger.debug(`policy room: /${this.gatewayId}/${this.serviceId}/${this.instanceId} wait list: ${this.waitList.length}`)
                 logger.info(`policy room: executing wait list service on /${this.gatewayId}/${this.serviceId}/${this.instanceId} page:${page}`)
                 let snapshot = this.waitList.slice(0, 10000);
                 let pipeline = await this.redis.multi();
@@ -191,18 +193,19 @@ export class PolicyAuthzListener {
     async stop() {
         await this.redisServiceListener.disconnect();
         if (this.waitListTimer)
-            await clearIntervalAsync(this.waitListTimer);
+            clearIntervalAsync(this.waitListTimer);
         this.waitListTimer = null;
         this.isStarted = false;
     }
     async start() {
 
         this.systemWatcher.on('tunnel', async (arg: { tunnel?: Tunnel, action: string }) => {
+            logger.debug(`policy authz tunnel event received trackId:${arg.tunnel?.trackId || 0}`)
             this.waitList.push(arg);
         })
 
         if (this.waitListTimer)
-            await clearIntervalAsync(this.waitListTimer);
+            clearIntervalAsync(this.waitListTimer);
         this.waitListTimer = null;
         this.waitListTimer = setIntervalAsync(async () => {
 
@@ -212,7 +215,7 @@ export class PolicyAuthzListener {
     }
 
     async policyCalculate(item: { tunnel?: Tunnel, action: string }) {
-
+        logger.debug(`policy authz calculate trackId: ${item.tunnel?.trackId || 0} action: ${item.action} gatewayId: ${item.tunnel?.gatewayId || ''}`)
         if (item.action == 'reset') {
 
             for (const room of this.roomList.values()) {
@@ -222,17 +225,25 @@ export class PolicyAuthzListener {
         else {
             const gatewayId = item.tunnel?.gatewayId;
             if (!gatewayId || this.gatewayId != gatewayId)//check if this tunnel belongs to this tunnel
+            {
+                logger.debug(`policy authz gateway not found`);
                 return;
-            if (!item.tunnel?.trackId)
+            }
+            if (!item.tunnel?.trackId) {
+                logger.fatal(`policy authz trackId not found`);
                 return;
+            }
 
             for (const room of this.roomList.values()) {
-                if (room.gatewayId != this.gatewayId)//check if any problem
+                if (room.gatewayId != this.gatewayId) {//check if any problem
+                    logger.debug(`policy authz room gatewayId not equal ${room.gatewayId}:${this.gatewayId}`);
                     continue;
+                }
                 if (item.action == 'delete')
                     await room.pushDelete(item.tunnel.trackId);
                 else {
                     const presult = await this.policyService.authorize(item.tunnel.trackId, room.serviceId, false, item.tunnel);
+                    logger.debug(`policy authz calculated trackId: ${item.tunnel?.trackId || 0} serviceId: ${room.serviceId} result: error=>${presult.error} ruleId=>${presult.rule?.id}`);
                     await room.push(item.tunnel.trackId, presult);
                 }
             }

@@ -28,11 +28,11 @@ export class AuditService {
     /**
      *
      */
-    public encKey = process.env.ENCRYPT_KEY || 'AdHCEKwju33MmqSrz4sm6wWOzIzBylfd';
+    public encKey;
     trimInterval: any;
     removePropertyList = ['id', 'password', 'twoFASecret', 'apiKey'];
-    constructor(private redisService: RedisService, private esService: ESService) {
-
+    constructor(private configService: ConfigService, private redisService: RedisService, private esService: ESService) {
+        this.encKey = this.configService.getEncKey();
         this.trimInterval = setIntervalAsync(async () => {
             await this.trimStream();
         }, 1 * 60 * 60 * 1000)
@@ -50,7 +50,7 @@ export class AuditService {
      */
     async stop() {
         if (this.trimInterval)
-            await clearIntervalAsync(this.trimInterval);
+            clearIntervalAsync(this.trimInterval);
         this.trimInterval = null;
     }
 

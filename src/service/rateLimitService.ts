@@ -16,16 +16,16 @@ export class RateLimitService {
 
     }
     async check(ip: string, what: string, max?: number) {
-        let maxlimit = max || this.baseLimit;
+        let maxlimit = (max || this.baseLimit) * 10;
         const minute = new Date().getUTCMinutes();
         const key = `/ratelimit/${what}/${ip}/${minute}`;
-        logger.info(`checking ratelimit for ${key} max:${max}`);
+        logger.info(`checking ratelimit for ${key} max:${maxlimit}`);
         const exists = await this.redis.get(key, false);
         if (exists == null || exists == undefined) {
             await this.redis.set(key, 0, { ttl: 60 * 1000 });
         }
         const value = await this.redis.incr(key);
-        logger.info(`checking ratelimit for ${key} current:${value} max:${max}`);
+        logger.info(`checking ratelimit for ${key} current:${value} max:${maxlimit}`);
         if (value > maxlimit) {
             logger.warn(`too many request from ${ip} for ${what}`)
             throw new RestfullException(429, ErrorCodes.ErrTooManyRequests, 'too many requests');

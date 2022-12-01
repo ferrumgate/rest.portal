@@ -110,7 +110,7 @@ describe('inputService ', async () => {
         const inputService = new InputService();
         let error = false;
         try {
-            expect(inputService.checkDomain('localhost'));
+            expect(inputService.checkDomain('https://localhost'));
         } catch (ignore) {
             error = true;
         }
@@ -143,6 +143,39 @@ describe('inputService ', async () => {
         error = false;
         try {
             expect(inputService.checkUrl('https://secure.ferrumgate.local'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.false;
+
+        done();
+
+    }).timeout(5000);
+
+
+    it('checkHost ', (done) => {
+        const inputService = new InputService();
+        let error = false;
+        try {
+            expect(inputService.checkHost('secure.ferrumgate.local'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.false;
+
+
+        error = false;
+        try {
+            expect(inputService.checkHost('https://secure.ferrumgate.local'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.true;
+
+
+        error = false;
+        try {
+            expect(inputService.checkHost('secure.ferrumgate.local:123'));
         } catch (ignore) {
             error = true;
         }

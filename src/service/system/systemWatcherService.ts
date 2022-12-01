@@ -47,7 +47,8 @@ export class SystemWatcherService extends EventEmitter {
     }
     async stop() {
         this.isStoping = true;
-        await clearIntervalAsync(this.startTimer);
+        clearIntervalAsync(this.startTimer);
+        this.startTimer = null;
 
     }
     async startAgain() {
@@ -76,7 +77,8 @@ export class SystemWatcherService extends EventEmitter {
                     await this.executeWaitList();
                 } catch (err) {
                     logger.error(err);
-                    await clearIntervalAsync(this.waitListTimer);
+                    clearIntervalAsync(this.waitListTimer);
+                    this.waitListTimer = null;
                     this.isWorking = false;
                     await this.reset();
                 }

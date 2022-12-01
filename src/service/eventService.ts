@@ -14,9 +14,9 @@ export class EventService {
      */
     trimInterval: any;
     lastCommandNumber = 0;
-    public encKey = process.env.ENCRYPT_KEY || 'AdHCEKwju33MmqSrz4sm6wWOzIzBylfd';
+    public encKey;
     constructor(private configService: ConfigService, private redisService: RedisService) {
-
+        this.encKey = this.configService.getEncKey();
         this.trimInterval = setIntervalAsync(async () => {
             await this.trimReplication();
         }, 1 * 60 * 60 * 1000)
@@ -60,7 +60,7 @@ export class EventService {
     }
     async stop() {
         if (this.trimInterval)
-            await clearIntervalAsync(this.trimInterval);
+            clearIntervalAsync(this.trimInterval);
         this.trimInterval = null;
     }
 }

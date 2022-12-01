@@ -13,8 +13,9 @@ import bcrypt from 'bcrypt';
 import randtoken from 'rand-token';
 import ip6addr from 'ip6addr';
 import ChildProcess from 'child_process';
-
-
+import fsp from 'fs/promises'
+import https from 'https';
+import { X509Certificate } from 'crypto';
 
 export interface IpRange {
     start: string;
@@ -296,13 +297,54 @@ export const Util = {
         })
     },
 
+
     async createSelfSignedCrt(domain: string, folder?: string) {
         //openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${domain}.key -out ${domain}.crt -subj "/CN=${domain}/O=${domain}"
-        if (!folder)
-            await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${domain}.key -out ${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false)
-        else
-            await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${folder}/${domain}.key -out ${folder}/${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false)
+        const tmpFolder = folder || `/tmp/${Util.randomNumberString()}`;
+        if (!fs.existsSync(tmpFolder))
+            await fsp.mkdir(tmpFolder, { recursive: true });
+        await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${tmpFolder}/${domain}.key -out ${tmpFolder}/${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false);
+        let val = { privateKey: await fsp.readFile(`${tmpFolder}/${domain}.key`, 'utf-8'), publicKey: await fsp.readFile(`${tmpFolder}/${domain}.crt`, 'utf-8') }
+        if (!folder) {
+            await fsp.rm(tmpFolder, { force: true, recursive: true });
+        }
+        return val;
     },
+    async createCASignedCrt(domain: string, cerficate: { privateKey: string, publicKey: string }, folder?: string) {
+        const tmpFolder = folder || `/tmp/${Util.randomNumberString()}`;
+        if (!fs.existsSync(tmpFolder))
+            await fsp.mkdir(tmpFolder, { recursive: true });
+        await fsp.writeFile(`${tmpFolder}/ca.key`, cerficate.privateKey, 'utf-8');
+        await fsp.writeFile(`${tmpFolder}/ca.crt`, cerficate.publicKey, 'utf-8');
+        await this.exec(`openssl req -nodes -days 3650 -newkey rsa:2048 -keyout ${tmpFolder}/${domain}.key -out ${tmpFolder}/${domain}.csr -subj "/CN=${domain}/O=${domain}"`, false);
+        await this.exec(`openssl x509 -req -CA ${tmpFolder}/ca.crt -CAkey ${tmpFolder}/ca.key -CAcreateserial -days 3650 -in ${tmpFolder}/${domain}.csr -out ${tmpFolder}/${domain}.crt`, false);
+        let ret = { privateKey: await fsp.readFile(`${tmpFolder}/${domain}.key`, 'utf-8'), publicKey: await fsp.readFile(`${tmpFolder}/${domain}.crt`, 'utf-8') }
+        if (!folder) {
+            await fsp.rm(tmpFolder, { force: true, recursive: true });
+        }
+        return ret;
+    },
+    async getCertificateInfo(crt: string, ca: string) {
+        const getDaysBetween = (validFrom: any, validTo: any) => {
+            return Math.round(Math.abs(+validFrom - +validTo) / 8.64e7);
+        };
+
+        const getDaysRemaining = (validTo: any) => {
+
+            return new Date(validTo).getTime() - new Date().getTime();
+
+        };
+
+
+
+        const x509 = new X509Certificate(Buffer.from(crt));
+        const cax509 = new X509Certificate(Buffer.from(ca));
+        const isValid = x509.verify(cax509.publicKey);
+
+        return { isValid, remainingMS: getDaysRemaining(x509.validTo), issuer: x509.issuer, subject: x509.subject, validFrom: x509.validFrom, validTo: x509.validTo }
+
+    },
+
     /**
      * @summary source array at least 1 element exits in target array
      */
