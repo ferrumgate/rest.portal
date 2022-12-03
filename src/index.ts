@@ -27,6 +27,7 @@ import { routerAuditAuthenticated } from "./api/auditApi";
 import { ESService } from "./service/esService";
 import { routerActivityAuthenticated } from "./api/activityApi";
 import { ConfigService } from "./service/configService";
+import { routerSummaryAuthenticated } from "./api/summaryApi";
 
 
 
@@ -342,6 +343,16 @@ app.use('(\/api)?/insight/activity',
     asyncHandlerWithArgs(rateLimit, 'insightActivityDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'insightActivityCaptcha', 50),
     routerActivityAuthenticated);
+
+
+app.use('(\/api)?/summary',
+    asyncHandler(setAppService),
+    asyncHandler(findClientIp),
+    asyncHandlerWithArgs(rateLimit, 'summary', 1000),
+    asyncHandlerWithArgs(rateLimit, 'summaryHourly', 1000),
+    asyncHandlerWithArgs(rateLimit, 'summaryDaily', 5000),
+    asyncHandlerWithArgs(checkCaptcha, 'summaryCaptcha', 50),
+    routerSummaryAuthenticated);
 
 
 

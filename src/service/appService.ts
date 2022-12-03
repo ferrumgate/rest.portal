@@ -23,6 +23,7 @@ import { AuditLogToES } from "./system/auditLogToES";
 import { SessionService } from "./sessionService";
 import { ActivityService } from "./activityService";
 import { ActivityLogToES } from "./system/activityLogToES";
+import { SummaryService } from "./summaryService";
 
 
 /**
@@ -47,6 +48,7 @@ export class AppService {
     public esService: ESService;
     public sessionService: SessionService;
     public activityService: ActivityService;
+    public summaryService: SummaryService;
     /**
      *
      */
@@ -62,7 +64,8 @@ export class AppService {
         policy?: PolicyService,
         gateway?: GatewayService,
         session?: SessionService,
-        activity?: ActivityService
+        activity?: ActivityService,
+        summary?: SummaryService
     ) {
         //create self signed certificates for JWT
 
@@ -84,7 +87,7 @@ export class AppService {
         this.auditService = audit || new AuditService(this.configService, this.redisService, this.esService);
         this.policyService = policy || new PolicyService(this.configService, this.tunnelService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
-
+        this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
 
 
     }

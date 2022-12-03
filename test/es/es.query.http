@@ -122,7 +122,7 @@ Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
 
 ###
 
-POST https://192.168.88.250:9200/ferrumgate-activity-20221117/_search
+POST https://192.168.88.250:9200/ferrumgate-activity-*/_search
 Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
 Content-Type: application/json
 
@@ -139,7 +139,7 @@ Content-Type: application/json
                 "query_string": {
                     "query": "12345*",
                     "fields": ["requestId", "type", "authSource", "ip", "statusMessage",
-                        "username", "userId", "gatewayId", "gatewayName", "trackId", "networkId", "networkName"]
+                        "username", "userId", "gatewayId", "gatewayName", "networkId", "networkName"]
                 }
             }
             ]
@@ -148,10 +148,64 @@ Content-Type: application/json
 }
 
 ####
-POST https://192.168.88.250:9200/ferrumgate-activity-20221117/_search
+POST https://192.168.88.250:9200/ferrumgate-activity-*/_search
 Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
 Content-Type: application/json
 
 {"from":0,"size":10,"sort":{"insertDate":"desc"},"query":{"bool":{"must":[{"range":
 {"insertDate":{"gte":"2020-01-31T21:00:00.000Z","lt":"now"}}},{"query_string":{"query":"123456",
 "fields":["requestId""type","authSource","ip","statusMessage","serviceId","serviceName","username","userId","gatewayId","gatewayName",,"networkId","networkName"]}}]}}}
+
+
+###
+
+
+POST http://192.168.88.51:9200/ferrumgate-activity-*/_search
+Authorization: Basic ZWxhc3RpYzp1eDRleXJrYnI0N3o2c2NreWY5em1hdnZnenhndnJ6ZWJzaDA4MmR1bWZrNTlqM2I1dGk5ZnZ5OTVzN3N5Ym14
+Content-Type: application/json
+
+{
+    "size":0,
+        "sort": {
+        "insertDate": "asc"
+    },
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "range": {
+                        "insertDate": {
+                            "gte": "2022-01-31T22:03:04.000Z",
+                            "lt": "2022-12-15T16:53:58.954Z"
+                        }
+                    }
+                },
+                {                            
+                                "term": {
+                                    "type": "login try"
+                                }                 
+                        
+                    
+                }
+            ]
+        }
+    },
+     "aggs": {
+        "insertDate": {
+      "date_histogram": {
+        "field": "insertDate",
+        "calendar_interval": "day",
+        "min_doc_count": 0,
+        "extended_bounds": { "min": "2022-01-31T22:03:04.000Z", "max": "2022-12-15T16:53:58.954Z" }
+      },
+      "aggs":{
+        "status": {
+      "terms": {
+        "field": "status"
+      }
+    }
+      }
+    }
+    
+  }
+}

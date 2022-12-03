@@ -11,11 +11,13 @@ import { attachActivitySession, attachActivitySessionId, attachActivitySource, a
 import { ActivityLog } from '../../model/activityLog';
 import { Util } from '../../util';
 
+
 const name = 'exchangeKey';
 export function exchangeKeyInit() {
     passport.use(name, new passportCustom.Strategy(
         async (req: any, done: any) => {
-
+            //logs show too much error, we are trying to handle this valid tries
+            let needToSaveActivityError = true;
             try {
 
                 attachActivitySource(req, name);
@@ -34,6 +36,14 @@ export function exchangeKeyInit() {
 
                 const exchangeKey = Util.decrypt(configService.getEncKey2(), exchangeKeyEnc)
 
+                //key decrypted, check if too much try occured, client checks every 2 seconds
+                try {
+                    needToSaveActivityError = false;
+                    await appService.rateLimit.check(req.clientIp, `/exchange/id/${exchangeKey}`, 5);
+                } catch (ignored) {
+                    //too much tried
+                    needToSaveActivityError = true;
+                }
 
                 const sessionKey = await redisService.get(`/exchange/id/${exchangeKey}`, false) as string;
                 if (!sessionKey)
@@ -56,7 +66,8 @@ export function exchangeKeyInit() {
                 return done(null, user);
 
             } catch (err) {
-                await saveActivityError(req, 'login try', err);
+                if (needToSaveActivityError)
+                    await saveActivityError(req, 'login try', err);
                 return done(null, null, err);
             }
 

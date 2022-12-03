@@ -520,6 +520,9 @@ export class ConfigService {
 
         return users;
     }
+    async getUserCount() {
+        return this.config.users.length;
+    }
 
 
     async getUserRoles(user: User) {
@@ -906,6 +909,9 @@ export class ConfigService {
         }
         return Util.clone(network);
     }
+    async getNetworkCount() {
+        return this.config.networks.length;
+    }
 
     async triggerNetworkDeleted(net: Network) {
         ////// gateways
@@ -1032,6 +1038,9 @@ export class ConfigService {
         }
         return Util.clone(gateway);
     }
+    async getGatewayCount() {
+        return this.config.gateways.length;
+    }
     async triggerGatewayDeleted(gate: Gateway) {
         this.emitEvent({ type: 'deleted', path: '/gateways', data: this.createTrackEvent(gate) });
     }
@@ -1130,6 +1139,9 @@ export class ConfigService {
     async getGroup(id: string): Promise<Group | undefined> {
         return Util.clone(this.config.groups.find(x => x.id == id));
 
+    }
+    async getGroupCount() {
+        return this.config.groups.length;
     }
 
     async getGroupsBySearch(query: string) {
@@ -1244,6 +1256,9 @@ export class ConfigService {
 
         return Util.clone(this.config.services.find(x => x.id == id));
 
+    }
+    async getServiceCount() {
+        return this.config.services.length;
     }
 
     async getServicesBy(query?: string, networkIds?: string[], ids?: string[]) {
@@ -1381,12 +1396,16 @@ export class ConfigService {
     async getAuthenticationPolicy() {
         return Util.clone(this.config.authenticationPolicy);
     }
+
     async getAuthenticationPolicyUnsafe() {
         return this.config.authenticationPolicy;
     }
     async getAuthenticationPolicyRule(id: string) {
         const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
         return Util.clone(rule);
+    }
+    async getAuthenticationPolicyRuleCount() {
+        return this.config.authenticationPolicy.rules.length;
     }
 
     async deleteAuthenticationPolicyRule(id: string) {
@@ -1448,6 +1467,10 @@ export class ConfigService {
     async getAuthorizationPolicyRule(id: string) {
         const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
         return Util.clone(rule);
+    }
+
+    async getAuthorizationPolicyRuleCount() {
+        return this.config.authorizationPolicy.rules.length;
     }
     async deleteAuthorizationPolicyRule(id: string) {
         const ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == id);

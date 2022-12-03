@@ -60,9 +60,6 @@ export class TunnelService {
         if (start >= end)// if all pool ips used, then start from beginning for search
             start = Util.ipToBigInteger(range.start);
 
-
-
-
         for (let s = start; s < end; s++) {
             const ip = Util.bigIntegerToIp(s);
             const isExists = await this.redisService.containsKey(`/tunnel/ip/${ip}`);
@@ -196,14 +193,16 @@ export class TunnelService {
 
     }
 
-    async getAllTunnels() {
-        /* let pos = "0";
+    async getTunnelKeys() {
+        let pos = "0";
         let tunnelKeyList: string[] = [];
         while (true) {
-            const items = await this.redisService.scan("/tunnel/id/*", pos, "hash");
-            tunnelKeyList = tunnelKeyList.concat(items[1]);
-            if (items[0] == "0")
+            const [cursor, elements] = await this.redisService.scan("/tunnel/id/*", pos, 10000, "hash");
+            tunnelKeyList = tunnelKeyList.concat(elements);
+            if (!cursor || cursor == '0')
                 break;
-        } */
+            pos = cursor;
+        }
+        return tunnelKeyList;
     }
 }

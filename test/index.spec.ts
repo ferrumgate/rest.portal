@@ -11,7 +11,7 @@ const expect = chai.expect;
 
 
 
-describe('/test', async () => {
+describe('test', async () => {
 
     beforeEach(async () => {
         await (app.appService as AppService).redisService.flushAll();

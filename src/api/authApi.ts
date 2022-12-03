@@ -365,7 +365,7 @@ routerAuth.get('/exchangetoken',
             const str = Util.encrypt(configService.getEncKey2(), Util.randomNumberString(128));
             return res.status(200).json({ token: str });
         } catch (err) {
-            await saveActivityError(req, 'refresh token', err);
+            await saveActivityError(req, 'exchange token', err);
             throw err;
         }
     })
@@ -394,7 +394,7 @@ routerAuth.post('/exchangetoken',
 
             return res.status(200).json({ ...accessToken, ...refreshToken });
         } catch (err) {
-            await saveActivityError(req, 'refresh token', err);
+            await saveActivityError(req, 'exchange token', err);
             throw err;
         }
     })

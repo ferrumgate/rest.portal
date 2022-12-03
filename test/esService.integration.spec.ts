@@ -221,6 +221,7 @@ describe('esService ', async () => {
 
 
     it('activitySearch', async () => {
+
         const es = new ESService(host, user, pass);
         const { activity1, activity2 } = createSampleData3();
         const data = await es.activityCreateIndexIfNotExits(activity1);
@@ -254,6 +255,103 @@ describe('esService ', async () => {
 
         items = await es.searchActivityLogs({ startDate: new Date(2020, 1, 1).toISOString(), search: '123456' });
         expect(items.total).to.equal(1);
+
+
+
+
+    }).timeout(120000);
+
+
+
+
+    function createSampleData4() {
+        let activity1: ActivityLog = {
+            "requestId": "nPvMKlEQ4nufB5MsU8Xg7RZCrthkUUefbFhvs99BgGq89IcZSUs48LfyS24cFnWU",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:55:02.396Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+        let activity2: ActivityLog = {
+            "requestId": "VkUmVlPqmPcalXrm6QmrchdKeLKPxQKDSev1gpL6WbVwuXHG2yfkoP6VVLsbzcxN",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:08.215Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+
+        let activity3: ActivityLog = {
+            "requestId": "WontUXiNgeyp6WSaZTPDYbr0rcZhqhQ8OoAUUyGTW8cKIkM86MK0YxufqolyiMkp",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "authSource": "local",
+            "insertDate": "2022-12-03T11:28:20.685Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+        let activity4: ActivityLog = {
+            "requestId": "WontUXiNgeyp6WSaZTPDYbr0rcZhqhQ8OoAUUyGTW8cKIkM86MK0YxufqolyiMkp",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "authSource": "local",
+            "insertDate": "2022-12-03T11:28:20.685Z",
+            "ip": "127.0.0.1",
+            "status": 200,
+            "requestPath": "/",
+            "statusMessage": ""
+        }
+        return { activity1, activity2, activity3, activity4 };
+    }
+
+    function dayBefore(hour: number, start?: Date) {
+        let s = start || new Date();
+        return new Date(s.getTime() - hour * 60 * 60 * 1000);
+    }
+
+    it('getSummaryLoginTry', async () => {
+        /* const host = 'http://192.168.88.51:9200';
+        const user = 'elastic';
+        const pass = 'ux4eyrkbr47z6sckyf9zmavvgzxgvrzebsh082dumfk59j3b5ti9fvy95s7sybmx'; */
+        const es = new ESService(host, user, pass);
+
+        const { activity1, activity2, activity3, activity4 } = createSampleData4();
+        activity1.insertDate = dayBefore(24, new Date()).toISOString();
+        activity2.insertDate = dayBefore(24 * 2, new Date()).toISOString();
+        activity3.insertDate = dayBefore(24 * 3, new Date()).toISOString();
+        activity4.insertDate = dayBefore(24 * 4, new Date()).toISOString();
+
+        const data = await es.activityCreateIndexIfNotExits(activity1);
+        await es.activitySave([data]);
+        const data2 = await es.activityCreateIndexIfNotExits(activity2);
+        await es.activitySave([data2]);
+        const data3 = await es.activityCreateIndexIfNotExits(activity3);
+        await es.activitySave([data3]);
+        const data4 = await es.activityCreateIndexIfNotExits(activity4);
+        await es.activitySave([data4]);
+        let test = 60000;//wait for es to flush
+        while (test) {
+            //check 
+            const items = await es.searchActivityLogs({});
+            if (items.total)
+                break;
+            test -= 5000;
+            await Util.sleep(5000);
+        }
+
+        let items = await es.getSummaryLoginTry({});
+        expect(items.total).to.equal(4);
+        expect(items.aggs.length).to.equal(4);
+        expect(items.aggs[0].sub?.length).to.equal(1);
 
 
 

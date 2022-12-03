@@ -1,9 +1,5 @@
 {
-    "from": 0,
-    "size": 10,
-    "sort": {
-        "insertDate": "desc"
-    },
+    "size": 0,
     "query": {
         "bool": {
             "must": [
@@ -11,22 +7,31 @@
                     "range": {
                         "insertDate": {
                             "gte": "1901-01-31T22:03:04.000Z",
-                            "lt": "2022-11-15T17:09:28.433Z"
+                            "lt": "2022-12-15T16:53:58.954Z"
                         }
                     }
                 },
                 {
-                    "bool": {
-                        "should": [
-                            {
-                                "term": {
-                                    "message": "mysqlprod"
-                                }
-                            }
-                        ]
+                    "term": {
+                        "type": "login try"
                     }
                 }
             ]
+        }
+    },
+    "aggs": {
+        "insertDate": {
+            "date_histogram": {
+                "field": "insertDate",
+                "calendar_interval": "day"
+            },
+            "aggs": {
+                "status": {
+                    "terms": {
+                        "field": "status"
+                    }
+                }
+            }
         }
     }
 }

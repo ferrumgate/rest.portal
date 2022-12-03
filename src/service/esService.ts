@@ -1,6 +1,6 @@
 import * as ES from '@elastic/elasticsearch'
 import { json } from 'body-parser';
-import { query } from 'express';
+import { query, response } from 'express';
 import { Util } from '../util';
 import { ActivityLog } from '../model/activityLog';
 //import dateformat from 'dateformat'
@@ -71,12 +71,29 @@ export interface SearchActivityLogsRequest {
     browserVersion?: string;
     requestPath?: string;
 }
+
+export interface SearchSummaryRequest {
+    startDate?: string;
+    endDate?: string;
+}
+
+/**
+ * @summary elastic search aggregeation
+ */
+export interface ESAgg {
+    total: number;
+    aggs: ESAggItem[];
+}
+export interface ESAggItem {
+    key: any,
+    value: number;
+    sub?: ESAggItem[]
+
+}
 /**
  * @summary elastic service
  */
 export class ESService {
-
-
 
     private auditIndexes: Map<string, string> = new Map<string, string>();
     private activityIndexes: Map<string, string> = new Map<string, string>();
@@ -353,8 +370,8 @@ export class ESService {
                 body: {
                     settings: {
                         index: {
-                            number_of_replicas: 16,
-                            number_of_shards: 16,
+                            number_of_replicas: Number(process.env.ES_REPLICAS) || 2,
+                            number_of_shards: Number(process.env.ES_SHARDS) || 1,
                             "refresh_interval": "60s",
                             translog: {
                                 "durability": "async",
@@ -602,6 +619,95 @@ export class ESService {
 
     }
 
+    private getSummaryQuery(type: string, start: string, end: string) {
+        return {
+            "size": 0,
+            "sort": {
+                "insertDate": "asc"
+            },
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "range": {
+                                "insertDate": {
+                                    "gte": start,
+                                    "lt": end
+                                }
+                            }
+                        },
+                        {
+                            "term": {
+                                "type": type
+                            }
+                        }
+                    ]
+                }
+            },
+            "aggs": {
+                "insertDate": {
+                    "date_histogram": {
+                        "field": "insertDate",
+                        "calendar_interval": "day",
+                        "min_doc_count": 0,
+                        "extended_bounds": { "min": start, "max": end }
+                    },
+                    "aggs": {
+                        "status": {
+                            "terms": {
+                                "field": "status"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
+    private getSummaryLast7Days(_start?: Date, _end?: Date) {
+        const now = _end || new Date();
+        const tmp = _start || new Date(new Date().getTime() - (7 * this.OneDayMS))
+        tmp.setUTCHours(0, 0, 0);
+        return { start: tmp.toISOString(), end: now.toISOString() };
+    }
+
+    private getSummaryDates(request: SearchSummaryRequest) {
+        return this.getSummaryLast7Days(
+            request.startDate ? new Date(request.startDate) : undefined,
+            request.endDate ? new Date(request.endDate) : undefined);
+    }
+
+    async getSummaryLoginTry(sreq: SearchSummaryRequest) {
+
+        const { start, end } = this.getSummaryDates(sreq);
+
+
+        const dates = this.indexCalculator(new Date(start), new Date(end));
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
+        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        const srequest = this.getSummaryQuery('login try', start, end);
+        console.log(JSON.stringify(srequest));
+        let request = {
+            ignore_unavailable: true,
+            index: cindexes,
+            body: srequest
+        };
+        const result = await this.client.search(request) as any;
+        let retVal: ESAgg = {
+            total: result.hits.total.value,
+            aggs: result.aggregations?.insertDate?.buckets?.map((x: any) => {
+                return {
+                    key: x.key, value: x.doc_count,
+                    sub: x.status?.buckets?.map((y: any) => {
+                        return {
+                            key: y.key, value: y.doc_count
+                        }
+                    })
+                }
+            }) || []
+        }
+        return retVal;
+    }
 }
+
 

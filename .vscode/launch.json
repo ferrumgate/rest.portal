@@ -30,6 +30,35 @@
             "outputCapture": "console",
             "console": "integratedTerminal",
             "preLaunchTask": "build"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Test Env",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "cwd": "${workspaceFolder}/build",
+            "program": "${workspaceFolder}/build/src/index.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ],
+            "env": {
+                "NODE_ENV": "development",
+                "LOCAL_TEST": "true",
+                "PORT": "8181",
+                "REDIS_HOST": "192.168.88.51:6379",
+                "REDIS_PASS": "1dpkz8g8xg6e8tfz3tv1usddjhcu1m81pjcp2ai9je08zlop73t64eis6y0thxlv",
+                "REDIS_SLAVE_HOST": "192.168.88.51:6379",
+                "REDIS_SLAVE_PASS": "1dpkz8g8xg6e8tfz3tv1usddjhcu1m81pjcp2ai9je08zlop73t64eis6y0thxlv",
+                "ES_HOST": "http://192.168.88.51:9200",
+                "ES_USER": "elastic",
+                "ES_PASS": "ux4eyrkbr47z6sckyf9zmavvgzxgvrzebsh082dumfk59j3b5ti9fvy95s7sybmx",
+                "GATEWAY_ID": "4s6ro4xte8009p96",
+            },
+            "outputCapture": "console",
+            "console": "integratedTerminal",
+            "preLaunchTask": "build"
         }
     ]
 }
