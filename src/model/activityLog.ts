@@ -29,6 +29,7 @@ export interface ActivityLog {
     gatewayId?: string;
     gatewayName?: string;
     tun?: string;
+    tunType?: string;
     authnRuleId?: string
     authnRuleName?: string;
     authzRuleId?: string;

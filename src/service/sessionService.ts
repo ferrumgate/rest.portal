@@ -96,4 +96,16 @@ export class SessionService {
         await this.redisService.sremove(sidtunkey, tunnelId);
         await this.redisService.expire(sidtunkey, 5 * 60 * 1000);
     }
+    async getSessionKeys() {
+        let pos = "0";
+        let sesionKeyList: string[] = [];
+        while (true) {
+            const [cursor, elements] = await this.redisService.scan("/session/id/*", pos, 10000, "hash");
+            sesionKeyList = sesionKeyList.concat(elements);
+            if (!cursor || cursor == '0')
+                break;
+            pos = cursor;
+        }
+        return sesionKeyList;
+    }
 }

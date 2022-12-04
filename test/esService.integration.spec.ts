@@ -221,6 +221,7 @@ describe('esService ', async () => {
 
 
     it('activitySearch', async () => {
+
         const es = new ESService(host, user, pass);
         const { activity1, activity2 } = createSampleData3();
         const data = await es.activityCreateIndexIfNotExits(activity1);
@@ -259,6 +260,362 @@ describe('esService ', async () => {
 
 
     }).timeout(120000);
+
+
+
+
+    function createSampleData4() {
+        let activity1: ActivityLog = {
+            "requestId": "nPvMKlEQ4nufB5MsU8Xg7RZCrthkUUefbFhvs99BgGq89IcZSUs48LfyS24cFnWU",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:55:02.396Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+        let activity2: ActivityLog = {
+            "requestId": "VkUmVlPqmPcalXrm6QmrchdKeLKPxQKDSev1gpL6WbVwuXHG2yfkoP6VVLsbzcxN",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:08.215Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+
+        let activity3: ActivityLog = {
+            "requestId": "WontUXiNgeyp6WSaZTPDYbr0rcZhqhQ8OoAUUyGTW8cKIkM86MK0YxufqolyiMkp",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "authSource": "local",
+            "insertDate": "2022-12-03T11:28:20.685Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+        let activity4: ActivityLog = {
+            "requestId": "WontUXiNgeyp6WSaZTPDYbr0rcZhqhQ8OoAUUyGTW8cKIkM86MK0YxufqolyiMkp",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "authSource": "local",
+            "insertDate": "2022-12-03T11:28:20.685Z",
+            "ip": "127.0.0.1",
+            "status": 200,
+            "requestPath": "/",
+            "statusMessage": ""
+        }
+        return { activity1, activity2, activity3, activity4 };
+    }
+
+    function dayBefore(hour: number, start?: Date) {
+        let s = start || new Date();
+        return new Date(s.getTime() - hour * 60 * 60 * 1000);
+    }
+
+    it('getSummaryLoginTry', async () => {
+        /*  const host = 'http://192.168.88.51:9200';
+         const user = 'elastic';
+         const pass = 'ux4eyrkbr47z6sckyf9zmavvgzxgvrzebsh082dumfk59j3b5ti9fvy95s7sybmx'; */
+        const es = new ESService(host, user, pass);
+        //let items2 = await es.getSummaryLoginTry({});
+        const { activity1, activity2, activity3, activity4 } = createSampleData4();
+        activity1.insertDate = dayBefore(24, new Date()).toISOString();
+        activity2.insertDate = dayBefore(24 * 2, new Date()).toISOString();
+        activity3.insertDate = dayBefore(24 * 3, new Date()).toISOString();
+        activity4.insertDate = dayBefore(24 * 4, new Date()).toISOString();
+
+        const data = await es.activityCreateIndexIfNotExits(activity1);
+        await es.activitySave([data]);
+        const data2 = await es.activityCreateIndexIfNotExits(activity2);
+        await es.activitySave([data2]);
+        const data3 = await es.activityCreateIndexIfNotExits(activity3);
+        await es.activitySave([data3]);
+        const data4 = await es.activityCreateIndexIfNotExits(activity4);
+        await es.activitySave([data4]);
+        let test = 60000;//wait for es to flush
+        while (test) {
+            //check 
+            const items = await es.searchActivityLogs({});
+            if (items.total)
+                break;
+            test -= 5000;
+            await Util.sleep(5000);
+        }
+
+        let items = await es.getSummaryLoginTry({});
+        expect(items.total).to.equal(3);
+        expect(items.aggs.length).to.equal(7);
+        expect(items.aggs[4].sub?.length).to.equal(1);
+
+
+
+
+    }).timeout(120000);
+
+
+
+    function createSampleData5() {
+        let activity1: ActivityLog = {
+            "requestId": "4FBday56qSKrTdxctpHl8h942vFsdG8VCwGqz0P0tbX0BghNyP7gxmapYG2Hy3GV",
+            "type": "create tunnel",
+            "username": "hamza@hamzakilic.com",
+            "userId": "efnD8OvDcIQ9l4L0",
+            "user2FA": false,
+            "authSource": "local",
+            "insertDate": "2022-12-03T19:37:01.513Z",
+            "ip": "172.18.0.6",
+            "status": 200,
+            "sessionId": "ouKaeKqTT7v4vCTuduqYVW0nWugbs22sgfKrB3yDBRQSOVp9Hr6kivuY6emMl5Yy",
+            "requestPath": "/",
+            "assignedIp": "100.64.0.1",
+            "tunnelId": "532gb5N4ORQArOaaxTPUfrXmZmPEWEWkSDVlc4DpY0jjPJ2KT53TfkmgIXSbQcz0",
+            "tunType": "ssh",
+            "trackId": 1,
+            "gatewayId": "4s6ro4xte8009p96",
+            "authnRuleId": "TzNauO9iacb9GEv7",
+            "authnRuleName": "test"
+        }
+
+        return { activity1 };
+    }
+
+
+
+    it('getSummaryCreateTunnel', async () => {
+        /* const host = 'http://192.168.88.51:9200';
+        const user = 'elastic';
+        const pass = 'ux4eyrkbr47z6sckyf9zmavvgzxgvrzebsh082dumfk59j3b5ti9fvy95s7sybmx'; */
+        const es = new ESService(host, user, pass);
+
+        const { activity1 } = createSampleData5();
+        activity1.insertDate = dayBefore(24, new Date()).toISOString();
+
+        const data = await es.activityCreateIndexIfNotExits(activity1);
+        await es.activitySave([data]);
+
+        let test = 60000;//wait for es to flush
+        while (test) {
+            //check 
+            const items = await es.searchActivityLogs({});
+            if (items.total)
+                break;
+            test -= 5000;
+            await Util.sleep(5000);
+        }
+
+        let items = await es.getSummaryCreateTunnel({});
+        expect(items.total).to.equal(1);
+        expect(items.aggs.length).to.equal(7);
+        expect(items.aggs[5].sub?.length).to.equal(1);
+
+    }).timeout(120000);
+
+
+
+    function createSampleData6() {
+        let activity1: ActivityLog = {
+            "requestId": "4FBday56qSKrTdxctpHl8h942vFsdG8VCwGqz0P0tbX0BghNyP7gxmapYG2Hy3GV",
+            "type": "2fa check",
+            "username": "hamza@hamzakilic.com",
+            "userId": "efnD8OvDcIQ9l4L0",
+            "user2FA": true,
+            "authSource": "local",
+            "insertDate": "2022-12-03T19:37:01.513Z",
+            "ip": "172.18.0.6",
+            "status": 200,
+            "sessionId": "ouKaeKqTT7v4vCTuduqYVW0nWugbs22sgfKrB3yDBRQSOVp9Hr6kivuY6emMl5Yy",
+            "requestPath": "/",
+            "assignedIp": "100.64.0.1",
+            "tunnelId": "532gb5N4ORQArOaaxTPUfrXmZmPEWEWkSDVlc4DpY0jjPJ2KT53TfkmgIXSbQcz0",
+            "tunType": "ssh",
+            "trackId": 1,
+            "gatewayId": "4s6ro4xte8009p96",
+            "authnRuleId": "TzNauO9iacb9GEv7",
+            "authnRuleName": "test"
+        }
+        let activity2: ActivityLog = {
+            "requestId": "4FBday56qSKrTdxctpHl8h942vFsdG8VCwGqz0P0tbX0BghNyP7gxmapYG2Hy3GV",
+            "type": "2fa check",
+            "username": "hamza@hamzakilic.com",
+            "userId": "efnD8OvDcIQ9l4L0",
+            "user2FA": true,
+            "authSource": "local",
+            "insertDate": "2022-12-03T19:37:01.513Z",
+            "ip": "172.18.0.6",
+            "status": 401,
+            "sessionId": "ouKaeKqTT7v4vCTuduqYVW0nWugbs22sgfKrB3yDBRQSOVp9Hr6kivuY6emMl5Yy",
+            "requestPath": "/",
+            "assignedIp": "100.64.0.1",
+            "tunnelId": "532gb5N4ORQArOaaxTPUfrXmZmPEWEWkSDVlc4DpY0jjPJ2KT53TfkmgIXSbQcz0",
+            "tunType": "ssh",
+            "trackId": 1,
+            "gatewayId": "4s6ro4xte8009p96",
+            "authnRuleId": "TzNauO9iacb9GEv7",
+            "authnRuleName": "test"
+        }
+
+        return { activity1, activity2 };
+    }
+
+
+
+    it('getSummary2faCheck', async () => {
+        /* const host = 'http://192.168.88.51:9200';
+        const user = 'elastic';
+        const pass = 'ux4eyrkbr47z6sckyf9zmavvgzxgvrzebsh082dumfk59j3b5ti9fvy95s7sybmx'; */
+        const es = new ESService(host, user, pass);
+
+        const { activity1, activity2 } = createSampleData6();
+        activity1.insertDate = dayBefore(24, new Date()).toISOString();
+        activity2.insertDate = dayBefore(48, new Date()).toISOString();
+
+
+        const data = await es.activityCreateIndexIfNotExits(activity1);
+        await es.activitySave([data]);
+
+        const data2 = await es.activityCreateIndexIfNotExits(activity2);
+        await es.activitySave([data2]);
+
+        let test = 60000;//wait for es to flush
+        while (test) {
+            //check 
+            const items = await es.searchActivityLogs({});
+            if (items.total)
+                break;
+            test -= 5000;
+            await Util.sleep(5000);
+        }
+
+        let items = await es.getSummary2faCheck({});
+        expect(items.total).to.equal(2);
+        expect(items.aggs.length).to.equal(7);
+        expect(items.aggs[4].sub?.length).to.equal(1);
+
+    }).timeout(120000);
+
+
+
+
+    function createSampleData7() {
+        let activity1: ActivityLog = {
+            "requestId": "4FBday56qSKrTdxctpHl8h942vFsdG8VCwGqz0P0tbX0BghNyP7gxmapYG2Hy3GV",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "userId": "efnD8OvDcIQ9l4L0",
+            "user2FA": true,
+            "authSource": "local",
+            "insertDate": "2022-12-03T19:37:01.513Z",
+            "ip": "172.18.0.6",
+            "status": 200,
+            "sessionId": "ouKaeKqTT7v4vCTuduqYVW0nWugbs22sgfKrB3yDBRQSOVp9Hr6kivuY6emMl5Yy",
+            "requestPath": "/",
+            "assignedIp": "100.64.0.1",
+            "tunnelId": "532gb5N4ORQArOaaxTPUfrXmZmPEWEWkSDVlc4DpY0jjPJ2KT53TfkmgIXSbQcz0",
+            "tunType": "ssh",
+            "trackId": 1,
+            "gatewayId": "4s6ro4xte8009p96",
+            "authnRuleId": "TzNauO9iacb9GEv7",
+            "authnRuleName": "test"
+        }
+        let activity2: ActivityLog = {
+            "requestId": "4FBday56qSKrTdxctpHl8h942vFsdG8VCwGqz0P0tbX0BghNyP7gxmapYG2Hy3GV",
+            "type": "login try",
+            "username": "admin@hamzakilic.com",
+            "userId": "efnD8OsDcIQ9l4L0",
+            "user2FA": true,
+            "authSource": "local",
+            "insertDate": "2022-12-03T19:37:01.513Z",
+            "ip": "172.18.0.6",
+            "status": 401,
+            "sessionId": "ouKaeKqTT7v4vCTuduqYVW0nWugbs22sgfKrB3yDBRQSOVp9Hr6kivuY6emMl5Yy",
+            "requestPath": "/",
+            "assignedIp": "100.64.0.1",
+            "tunnelId": "532gb5N4ORQArOaaxTPUfrXmZmPEWEWkSDVlc4DpY0jjPJ2KT53TfkmgIXSbQcz0",
+            "tunType": "ssh",
+            "trackId": 1,
+            "gatewayId": "4s6ro4xte8009p96",
+            "authnRuleId": "TzNauO9iacb9GEv7",
+            "authnRuleName": "test"
+        }
+
+        return { activity1, activity2 };
+    }
+
+
+    it('getSummaryUserLoginSuccess', async () => {
+        /* const host = 'http://192.168.88.51:9200';
+        const user = 'elastic';
+        const pass = 'ux4eyrkbr47z6sckyf9zmavvgzxgvrzebsh082dumfk59j3b5ti9fvy95s7sybmx'; */
+        const es = new ESService(host, user, pass);
+
+        const { activity1, activity2 } = createSampleData7();
+        activity1.insertDate = dayBefore(24, new Date()).toISOString();
+        activity2.insertDate = dayBefore(48, new Date()).toISOString();
+
+
+        const data = await es.activityCreateIndexIfNotExits(activity1);
+        await es.activitySave([data]);
+
+        const data2 = await es.activityCreateIndexIfNotExits(activity2);
+        await es.activitySave([data2]);
+
+        let test = 60000;//wait for es to flush
+        while (test) {
+            //check 
+            const items = await es.searchActivityLogs({});
+            if (items.total)
+                break;
+            test -= 5000;
+            await Util.sleep(5000);
+        }
+
+        let items = await es.getSummaryUserLoginSuccess({});
+        expect(items.total).to.equal(1);
+        expect(items.aggs.length).to.equal(1);
+
+
+    }).timeout(120000);
+
+    it('getSummaryUserLoginFailed', async () => {
+        /* const host = 'http://192.168.88.51:9200';
+        const user = 'elastic';
+        const pass = 'ux4eyrkbr47z6sckyf9zmavvgzxgvrzebsh082dumfk59j3b5ti9fvy95s7sybmx'; */
+        const es = new ESService(host, user, pass);
+
+        const { activity1, activity2 } = createSampleData7();
+        activity1.insertDate = dayBefore(24, new Date()).toISOString();
+        activity2.insertDate = dayBefore(48, new Date()).toISOString();
+
+
+        const data = await es.activityCreateIndexIfNotExits(activity1);
+        await es.activitySave([data]);
+
+        const data2 = await es.activityCreateIndexIfNotExits(activity2);
+        await es.activitySave([data2]);
+
+        let test = 60000;//wait for es to flush
+        while (test) {
+            //check 
+            const items = await es.searchActivityLogs({});
+            if (items.total)
+                break;
+            test -= 5000;
+            await Util.sleep(5000);
+        }
+
+        let items = await es.getSummaryUserLoginFailed({});
+        expect(items.total).to.equal(1);
+        expect(items.aggs.length).to.equal(1);
+
+
+    }).timeout(120000);
+
 
 
 

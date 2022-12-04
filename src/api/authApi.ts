@@ -19,7 +19,7 @@ import { corsOptionsDelegate } from "./cors";
 import { stringify } from "querystring";
 import { userInfo } from "os";
 import { AuthSession } from "../model/authSession";
-import { attachActivity, attachActivitySessionId, attachActivityTunnelId, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
+import { attachActivity, attachActivitySession, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
 
 
 
@@ -240,7 +240,7 @@ routerAuth.post('/accesstoken',
             //create a session
             const authSession = await sessionService.createSession(req.currentUser, access.is2FA, req.clientIp, req.activity?.authSource || 'unknown');
             req.currentSession = authSession;
-            attachActivitySessionId(req, authSession.id);
+            attachActivitySession(req, authSession);
             //attachActivityTunnelId(req, request.tunnelKey);
             //check tunnel session
             //TODO disable tunnel keys for access tokens
@@ -309,7 +309,7 @@ routerAuth.post('/refreshtoken',
 
             const userId = inputRefreshToken.user.id;
             const sessionId = inputRefreshToken.user.sid;
-            attachActivitySessionId(req, sessionId);
+            attachActivitySession(req, { id: sessionId } as AuthSession);
             //checkuser
             const user = await configService.getUserById(userId);
             attachActivityUser(req, user);
@@ -331,6 +331,7 @@ routerAuth.post('/refreshtoken',
             //check session
             const sid = inputRefreshToken.user.sid;
             const authSession = await sessionService.getSession(sid);
+            attachActivitySession(req, authSession);
 
             if (!authSession || authSession.userId != user.id)
                 throw new RestfullException(401, ErrorCodes.ErrNotFound, "not authenticated");
@@ -364,7 +365,7 @@ routerAuth.get('/exchangetoken',
             const str = Util.encrypt(configService.getEncKey2(), Util.randomNumberString(128));
             return res.status(200).json({ token: str });
         } catch (err) {
-            await saveActivityError(req, 'refresh token', err);
+            await saveActivityError(req, 'exchange token', err);
             throw err;
         }
     })
@@ -393,7 +394,7 @@ routerAuth.post('/exchangetoken',
 
             return res.status(200).json({ ...accessToken, ...refreshToken });
         } catch (err) {
-            await saveActivityError(req, 'refresh token', err);
+            await saveActivityError(req, 'exchange token', err);
             throw err;
         }
     })

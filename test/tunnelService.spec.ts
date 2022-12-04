@@ -366,5 +366,36 @@ describe('tunnelService', () => {
 
 
 
+    it('getAllTunnels', async () => {
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
+
+
+        const tunnel = new TunnelService(configService2, simpleRedis);
+        const user: User = { id: 'adfaf' } as User;
+        await simpleRedis.hset(`/tunnel/id/randomtunnelid`,
+            {
+                id: 'randomtunnelid', userId: 100, authenticatedTime: new Date().toString(),
+                assignedClientIp: '10.0.0.3', trackId: '12',
+                clientIp: '192.168.1.100', tun: 'tun0', gatewayId: '1234', serviceNetwork: '192.168.0.0/24'
+            })
+
+        await simpleRedis.hset(`/tunnel/id/randomtunnelid2`,
+            {
+                id: 'randomtunnelid2', userId: 100, authenticatedTime: new Date().toString(),
+                assignedClientIp: '10.0.0.3', trackId: '12',
+                clientIp: '192.168.1.100', tun: 'tun0', gatewayId: '1234', serviceNetwork: '192.168.0.0/24'
+            })
+
+        const tunnelKeys = await tunnel.getTunnelKeys();
+        expect(tunnelKeys.length).to.equal(2);
+
+
+
+    }).timeout(10000)
+
+
+
+
 
 })

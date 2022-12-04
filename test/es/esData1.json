@@ -1,0 +1,1170 @@
+[
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Mi6w14QBPB4cY53wlxam",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "GSpiW1B7CrIpZN8sDt5xs0k20V0ccyUgr48DIDRX6CzhAQxEBTEsncXPlNCuCkRZ",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T11:13:02.375Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "UC6914QBPB4cY53wYRb3",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "t6hUQoP7avSYzdXRTWhY74Ztni9oYar50Hk2LcPpLFNz3MCEF6Xw6EuCCxL0UWGN",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:03.680Z",
+            "ip": "::1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "eS6-14QBPB4cY53wBhZF",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "QZaRUNIhF4VGvfXohyIbPdiH3Ca6Wx61kHLBglMV2b7TUCrrG8yBN45UlO7UFFE3",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:45.731Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "oS6-14QBPB4cY53wjhbL",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "WontUXiNgeyp6WSaZTPDYbr0rcZhqhQ8OoAUUyGTW8cKIkM86MK0YxufqolyiMkp",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "authSource": "local",
+            "insertDate": "2022-12-03T11:28:20.685Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "xy6_14QBPB4cY53wExZh",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "RF659AwacGx6tvbEbO3oF9PIUdyP4THDbaSxHHLvzLAOg5lybMfN8FX7TQDbGYYV",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:54.623Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "yC6_14QBPB4cY53wExZr",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "RF659AwacGx6tvbEbO3oF9PIUdyP4THDbaSxHHLvzLAOg5lybMfN8FX7TQDbGYYV",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:54.623Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "yS6_14QBPB4cY53wGxYt",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "preE0ANKeTHV31eaRq8LUtUeGsRDuXD7unqukuGP0irza6qzhzhGhBqVxWrmIIem",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:56.627Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "yy6_14QBPB4cY53wIhbu",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "OH2Tgp1Mnh51KNTC2BDP2ge3AasbuR45SVuNIEOq5WcLu5b57ndcSxAFnLt2CNUm",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:58.615Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "4S7U14QBPB4cY53wVhZK",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "xffQo5nOH1dy3HuG3zn4r48Zbm8O9sNT4cg8hCbWA904Zb671dD1uyridV1nB274",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "authSource": "local",
+            "insertDate": "2022-12-03T11:52:08.014Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "7y7U14QBPB4cY53wdhZZ",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "nz3UAu3wRhUdU41tqKLXdelNFFUcleeOAZvOpBagP7ZGKGIzII0NZQn4aCZMQCyK",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:16.226Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Dy7U14QBPB4cY53w8xd1",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "N91hYWtikOVKBQfmRhiLeeNE1bf7K25R346uhMMan69w2iK5KOS3zux7LIMfRpCL",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:48.255Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "LC4e2IQBPB4cY53waBfZ",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "324WRKTC0DL1NFyw7EttM3WDi1ONtY6zk642Ruhxf2mbeO6t261K7YFoazR2Zua2",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T13:13:02.408Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "MC4p2IQBPB4cY53wZRdk",
+        "_score": 1.1053605,
+        "_source": {
+            "requestId": "WUgV7l3B6PRxaOZTfbiUOm2OPduLGg5Ealxpp1staAkd3CazgItQwPTPiKIQu8b4",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T13:25:02.416Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "kC6-14QBPB4cY53wXxZ9",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "DbvTikPB0mSdfl2zAXz1f1IcBIoI4wqWofUp5QPPsuilaBaCOBr6EcpDRdUkLkKA",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:08.578Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "mC6-14QBPB4cY53wdBaS",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "9hOow9QZIyyfQc8KkFr7PSwwgFuTI9qU4wcrkcMOGPRX7T5vkzY2KuKgIXyD9TNQ",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "authSource": "local",
+            "insertDate": "2022-12-03T11:28:13.978Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "oy6-14QBPB4cY53wlhZJ",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "uOgXdn9bP8K7kIByXdkZz4nuKvHzbWekq6CMOB1To9nmYV2sllAa8Qyb7T1gseRU",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:22.612Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "vC6-14QBPB4cY53w5BZ9",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "1VOvD0Y7mpg7fDaoXCDW4yV84lxUNkbP5AlHKbuGnbTYO5ElEdSys8PwpLVsPyte",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:42.612Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Ui6914QBPB4cY53waRbW",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "8ffib9hYhrsimUXYQHeF3qy6aAQHELnFe514yAD1sVbGvTCKRE113KwtS32mKs8h",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:05.692Z",
+            "ip": "::1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "cy6914QBPB4cY53w7hbT",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "p7enTYUEHPRt6fn4EXN1WGglY3dgf79K5X2KW2GMTQzaaqFbERCbofB5E1UH9pBR",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:39.730Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "ei6-14QBPB4cY53wBhZK",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "QZaRUNIhF4VGvfXohyIbPdiH3Ca6Wx61kHLBglMV2b7TUCrrG8yBN45UlO7UFFE3",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:45.731Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "TS6914QBPB4cY53wWhZd",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "IIwRAVSMywRU9HhlQPVnUY6f8lgkB4WuP8LebwKZDNe7W5kIWdLrEq0vUEaLfccU",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:01.725Z",
+            "ip": "::1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "GC7n14QBPB4cY53wehco",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "DwEsPb7cIZrzKDdMSVR658qUOpAc3EHKQUbkxOd0IuDfxVMY7TpdoI3CZ5e1XxWM",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:13:02.370Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "1i7J14QBPB4cY53wQxbg",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "W6p474izaf6dPnTUWTCu7Q3G7HhYVsy3Qdqf21QTXdlfk33ubM29kFk6aYLD1M92",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T11:40:02.361Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Ei7W14QBPB4cY53w_xfJ",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "fIrsO4ehCGmY6aY2oRIz8aQuclp6Zxfgtbol3cocSscSHcheIidZEVveFsInh3r6",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T11:55:02.370Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "GS7q14QBPB4cY53wOReS",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "9C8cGEd95loZS5o795kpwCD6Q90lVy7VRXHoa7BaWixyCowhpcXW90H1sefXf1D5",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:16:02.374Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Gi7s14QBPB4cY53w-BeM",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "kF9Z9MVnkZmHe5ypOHLz5vpyR2orSuuZ5M9Au9coZW2oKIbbGU00zyETH9W1cGqu",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:19:02.389Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "HS7114QBPB4cY53wNRfn",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "vvdI2K2c0UuKLtyIpFr1y8zXQQa5zm3wizqR82mB1Gmfzq1QwkdMUyBW2VqSFhgk",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:28:02.401Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "6y7U14QBPB4cY53wbhaL",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "ueNwklK5sars2uUzDyXf39L5E3ccS5ctvX30lx7A97hLqT0hrY11sPOfxBVlZKXp",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:14.226Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "9S7U14QBPB4cY53wjRbO",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "CTtyWLyZu8zrQxWepyZFaqsm3KzLeTp1feQxlSKa99xCVT93xZuB8YrLZ6BPsxyI",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:22.232Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "-S7U14QBPB4cY53wnRZ4",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "Yx0eCuq3Osr3vQ7NVcYIlSwyxr1Mczdc7Sb6YBR4gOiEfdAMAv090MV660IbKVvK",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:26.237Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "_C7U14QBPB4cY53wrRYX",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "hAws6aqUlWD4XodK3yerTQfILh6X2H4xyTo3pI32SYWW2aaKkZLIr4oC5M3guwrd",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:30.240Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Hy7614QBPB4cY53wtBcr",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "7Maf4RiAe6ppZkslIPXedS6Im8hw0QpcMVchsGFIC1WtVEvQimtc5bKc816ry4Ly",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:34:02.392Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Jy4Q2IQBPB4cY53wrRdj",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "TsTfnnXUznnWw9Ng038I9F7qre7PYCwa11Z6adBFi7QRdkSh3CGZsesp6xUs9paa",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:58:02.391Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "LS4h2IQBPB4cY53wJxf5",
+        "_score": 1.0674412,
+        "_source": {
+            "requestId": "dQT3KeaL4ho4L2gLuDHB0euTFWbqyZbDgUk49HW8trbtrrUFdFaOt85h5Ct2Iidr",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T13:16:02.408Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "OS6z14QBPB4cY53wtRZ9",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "Cchifi5C07qpe01BI3WHWupZeSg9i8UvU5UA2hPW2keUPlmYwdA20E79SEUlq275",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "authSource": "local",
+            "insertDate": "2022-12-03T11:16:29.681Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Xy6914QBPB4cY53woBad",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "n63Oqv0QM760E50YMfpxWZ8l9Xyo6t5lzK0oDM4d9fOreSnu473UlsrIuEoOa7uO",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:19.707Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "ii6-14QBPB4cY53wTxbT",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "eTM1u6w15NwGcASU7RMiDmmg03erByPXCsI7RruzLagu5V0eftbI4Fw62lUpaU6l",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:04.567Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "8y7U14QBPB4cY53whRb9",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "sfc47iCeIviMnRznTuI5435YzgkQrkZM2Lulmb7rMlx3RR9UeYtm9O6UwCyME2gS",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:20.224Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Ai7U14QBPB4cY53wxBeT",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "fzT77MN75xVzEAUiidvqCAYqyiqOcvvnGULl6odDwfUKLsB4SpyXBMIFEAonwo2c",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:36.253Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Bi7U14QBPB4cY53w1Bcx",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "xGQnVkYb4f0mm5BCLDqk9NGwLqeyOrQG1hUsb5Wrpabr8Rc6ZfsD3Is7btX22vHi",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:40.253Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Ey7Z14QBPB4cY53wvheS",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "9SUnEkQUikV1VeeFoWmbGM59mwA0Rk39LwSbhlfmgox7Zr5wro03ZuhV2o1unv4Q",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T11:58:02.367Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Gy7v14QBPB4cY53wtxeu",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "2Z8214dIdgv6thlkrk1WAEpbhL5ndtqwUAeXc1EG4AaLbnaeEosdAeNogv5uWw6x",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:22:02.382Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "bS6914QBPB4cY53w1xZV",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "rsDxNYQSAY17yZb6xaVoe9tzDKhmWN9Zmtm9tGT95FIFaed0ivt7b5VVdb5BWRSM",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:33.717Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "gi6-14QBPB4cY53wJRaT",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "msS4SSg5fC7s5lICqA3A3atA2ollnbFtw63k2rA846Ei1R460s7k1xZHcO4WO0I4",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:53.739Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "ki6-14QBPB4cY53wZxZm",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "ygW6hlz7C7A4TAS48NAlvy8N8GAzpMmyf5ufCie09dfiTng08U6Y39oonR3czWVQ",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:10.590Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "pC6-14QBPB4cY53wlhZL",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "uOgXdn9bP8K7kIByXdkZz4nuKvHzbWekq6CMOB1To9nmYV2sllAa8Qyb7T1gseRU",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:22.612Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "0S7D14QBPB4cY53wxRbj",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "HfIETn6fw7UqgwV9nV69uGaghnUn6soHv43utwpb1V4BHNBlnox8lLg07sUFSYLr",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T11:34:02.368Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "1S7J14QBPB4cY53wQxbc",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "W6p474izaf6dPnTUWTCu7Q3G7HhYVsy3Qdqf21QTXdlfk33ubM29kFk6aYLD1M92",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T11:40:02.361Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "8C7U14QBPB4cY53wfhYg",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "YdMG2USUD0zrUAu36FDLmcDHIqMOXuDVWRa7QqnTsUp2wKFC2bzznaY2cww6RgLS",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:18.222Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Ii4C2IQBPB4cY53w8ReH",
+        "_score": 1.0571585,
+        "_source": {
+            "requestId": "f3mtwL11nohPPIDY8HBughhxwE9mf2b8R2Z8g0NnBilLMKw6E4CeEw3KXZVkuusZ",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:43:02.390Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "PS6z14QBPB4cY53wvha6",
+        "_score": 1.0512933,
+        "_source": {
+            "requestId": "v4E6vAfnPQ5Fyn7l2KRI3rX03xVQKBdPFNRvLtNWzKZQ8H95poqdEwxvDy2Mk7f1",
+            "type": "login try",
+            "username": "2376283b7701b39ba715d8dda1d20da946ed73ee873c7c55d316b4cc62c3da8bfae7c26e2cab7891d44a76af14acfab861d394440602fca1d434abaa3d258af2daa69a1f48a4153fef723c00dce5b778a3801a46a4aa6f227d8da6945a73657531d9e0e11ce8d54f2433a71a8379970f215a21a8ec57bded564b6d1f6e28bb036b22cc7b897bde6fa1704b84e5b4cec7",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:16:32.037Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "kS6-14QBPB4cY53wZxZh",
+        "_score": 1.0512933,
+        "_source": {
+            "requestId": "ygW6hlz7C7A4TAS48NAlvy8N8GAzpMmyf5ufCie09dfiTng08U6Y39oonR3czWVQ",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:10.590Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "ni6-14QBPB4cY53whhau",
+        "_score": 1.0512933,
+        "_source": {
+            "requestId": "Pm6AFlCG3U0yT9IzmbLOf65k3lrSWQLmWbyPeyo40qsOroInFGdOa8LAyx37ifvu",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:18.590Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "ny6-14QBPB4cY53wjhZp",
+        "_score": 1.0512933,
+        "_source": {
+            "requestId": "KH5O3qNBC5boOVTi41zNfPmBGitscB1rxfZ4Y8ALnfTx4I5dV3aY3CPQ0hhkmnSx",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:20.595Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "qy6-14QBPB4cY53wqhbu",
+        "_score": 1.0512933,
+        "_source": {
+            "requestId": "UbnoLoibB2bVrDIWSZ1z3wIxHU94sbchsNLhushqmdHv4xZdWvirVDPtzzfhRCow",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "authSource": "local",
+            "insertDate": "2022-12-03T11:28:27.882Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "7C7U14QBPB4cY53wchZa",
+        "_score": 1.0512933,
+        "_source": {
+            "requestId": "acrvFtVpH8hozZQp7AkW6uyuardsdhsBuSrs9t4hYdZNVuPa86CBRPrvp4E5yfqO",
+            "type": "login try",
+            "username": "hamza@hamzakilic.com",
+            "authSource": "local",
+            "insertDate": "2022-12-03T11:52:15.205Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "ES7U14QBPB4cY53w-xda",
+        "_score": 1.0512933,
+        "_source": {
+            "requestId": "5Ohtga1sksiyuodaXYuzoYWa8pCwvEK66xseoIFW1dAzBUuT4a0RmvD9tAKr9nge",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:50.263Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "HC7y14QBPB4cY53wdhe-",
+        "_score": 1.0512933,
+        "_source": {
+            "requestId": "ZufuTiASQtL0PxlQ3VGTbRtUKh6IY4nG6d6DPE201nHphUbFw5A4S6pWkU8u4osy",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:25:02.379Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Li4j2IQBPB4cY53w5xdY",
+        "_score": 1.0512933,
+        "_source": {
+            "requestId": "3ds3ebRZZZ0FWAfFIotMNCMPpva50TQYgLo6k6YlIScBUAluWw0SxPAlDFGdbtxk",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T13:19:02.397Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Zy6914QBPB4cY53wvxbr",
+        "_score": 1.04652,
+        "_source": {
+            "requestId": "pD9KQTZi1zqROPRRAbT0IOzFP93qQbH1cm5qZxKi3uIsYk1k2ayNuebge0wXRgM8",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:27.719Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "bC6914QBPB4cY53wzxZ_",
+        "_score": 1.04652,
+        "_source": {
+            "requestId": "VHRGcbNZnL3o79ukeqhwrQCBNIuhbf2HoOlne4p969BPfhMnY2K2NucfpWi937q5",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:31.709Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "iS6-14QBPB4cY53wTxbQ",
+        "_score": 1.04652,
+        "_source": {
+            "requestId": "eTM1u6w15NwGcASU7RMiDmmg03erByPXCsI7RruzLagu5V0eftbI4Fw62lUpaU6l",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:04.567Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "xi6_14QBPB4cY53wCxaZ",
+        "_score": 1.04652,
+        "_source": {
+            "requestId": "DEFRxtxnr6YeoAg9GTqI7YPq00mtaXMTrImZpxAr4DugZoFIrgnc33VkZ75uZMX6",
+            "type": "login try",
+            "username": "62b880d2ec808de89752a6c5a6e860a0d182bbde8e36d9311f0986f93ba0ad4cd389b797925e0c396c3f801a8bb5d4800f92dd7b7c24a78f86332f93067f61308224d9e76275fadcde6ee99a2a7a86d233ddb59bfb54e4875bf0e6e848372f990a93d91c14973aa2d747dc4123546951d6fa671bd157e61fc0d9b976a5dfa721c8606826de1691e4bcc36cebcf8d1a34",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:28:52.623Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "1y7M14QBPB4cY53wAxYS",
+        "_score": 1.04652,
+        "_source": {
+            "requestId": "LNclkxNFTYZg7gbaOymiW165d14PfrwiR4IR6zGBOKiuPTx07hWNNtYghend5XoV",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T11:43:02.386Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "4i7U14QBPB4cY53wVxYK",
+        "_score": 1.04652,
+        "_source": {
+            "requestId": "VkUmVlPqmPcalXrm6QmrchdKeLKPxQKDSev1gpL6WbVwuXHG2yfkoP6VVLsbzcxN",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:08.215Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Ay7U14QBPB4cY53wxBee",
+        "_score": 1.04652,
+        "_source": {
+            "requestId": "fzT77MN75xVzEAUiidvqCAYqyiqOcvvnGULl6odDwfUKLsB4SpyXBMIFEAonwo2c",
+            "type": "login try",
+            "username": "9c13e48c6a2594475ec08ef761a6a04c5e4159e6bb769e95ecdf66f89d2e4f22b0981f57a459a5a7bb9a2ca4a7cce7bfadb7e64edfb6b86e690a31ce8cedd5e5d43db9dcafbb9074d00bc096e06ca8b28f37004f758d1710df00f5c237e60e1f23b6db4e8b28201f13292dab0ab7f7cab8ec4398daea4ac06e5af7c0724983de929150fe4826613dca36056418befa02",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:52:36.253Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "IC7914QBPB4cY53wcxeh",
+        "_score": 1.04652,
+        "_source": {
+            "requestId": "VY3ATOM7U4WszEmqFGwVrue6D2Xci6fr60HzXO1YF05S8yMIycUpuuwInpnMrroB",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:37:02.392Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "IS4A2IQBPB4cY53wMhdo",
+        "_score": 1.04652,
+        "_source": {
+            "requestId": "qKd1xOkmW64H7ohL2cEs1od0l6mWpgxX4gvqgsn0Ka4Hr9Sf35urmdYgX6FiE7tq",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:40:02.390Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Ji4N2IQBPB4cY53w7hcO",
+        "_score": 1.04652,
+        "_source": {
+            "requestId": "nPvMKlEQ4nufB5MsU8Xg7RZCrthkUUefbFhvs99BgGq89IcZSUs48LfyS24cFnWU",
+            "type": "login try",
+            "username": "DdRMKfJvA2HG2eibzoJPcj4SkDw5ThR5dSIWjYra2fbipj0XmGOpQeAuPrmbcOar",
+            "authSource": "tunnelKey",
+            "insertDate": "2022-12-03T12:55:02.396Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/alive",
+            "statusMessage": "ErrNotAuthenticated"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Oy6z14QBPB4cY53wthbe",
+        "_score": 1.0339016,
+        "_source": {
+            "requestId": "729PGrbU2d453LmbZcuC29BVo75ZC9fq2X66SfRM24bFSNUpfPhkV9Gs2Lio5P1f",
+            "type": "login try",
+            "username": "2376283b7701b39ba715d8dda1d20da946ed73ee873c7c55d316b4cc62c3da8bfae7c26e2cab7891d44a76af14acfab861d394440602fca1d434abaa3d258af2daa69a1f48a4153fef723c00dce5b778a3801a46a4aa6f227d8da6945a73657531d9e0e11ce8d54f2433a71a8379970f215a21a8ec57bded564b6d1f6e28bb036b22cc7b897bde6fa1704b84e5b4cec7",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:16:30.020Z",
+            "ip": "172.18.0.7",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "Wy6914QBPB4cY53wkBb5",
+        "_score": 1.0339016,
+        "_source": {
+            "requestId": "xhgQ3ULpkXySTTxAaxXx2ata4dyxeP8baeWdZ0XdTovZVU977byPCm4dUYcV0KN3",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:15.699Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "aC6914QBPB4cY53wvxb3",
+        "_score": 1.0339016,
+        "_source": {
+            "requestId": "pD9KQTZi1zqROPRRAbT0IOzFP93qQbH1cm5qZxKi3uIsYk1k2ayNuebge0wXRgM8",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:27.719Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    },
+    {
+        "_index": "ferrumgate-activity-20221203",
+        "_id": "gS6-14QBPB4cY53wJRaP",
+        "_score": 1.0339016,
+        "_source": {
+            "requestId": "msS4SSg5fC7s5lICqA3A3atA2ollnbFtw63k2rA846Ei1R460s7k1xZHcO4WO0I4",
+            "type": "login try",
+            "username": "9fe87ee8b733e57c3f61426894051d1eae975ed7679bf6efebb06b4d604bb9b4783020578d8771338586c5104545aff7cea50fff2d8a2cf5371096af9a1e5aba40cac82b26bb22712542da7bb29990dda760c71bc8590acc0b6417369570a9acd69992457c8875d8f6b9a5ed95a7cac24692dbd70c579403ee3c8c3c2f87f5ef2c02a50d5044ff671fad0e4d1a783fa0",
+            "authSource": "exchangeKey",
+            "insertDate": "2022-12-03T11:27:53.739Z",
+            "ip": "127.0.0.1",
+            "status": 401,
+            "requestPath": "/exchangetoken",
+            "statusMessage": "ErrNotFound"
+        }
+    }
+]
