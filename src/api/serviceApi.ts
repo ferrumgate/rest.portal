@@ -79,6 +79,9 @@ routerServiceAuthenticated.delete('/:id',
         const service = await configService.getService(id);
         if (!service) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no service');
 
+        if (service.isSystem)
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, "you cannot delete system services");
+
         const { before } = await configService.deleteService(service.id);
         await auditService.logDeleteService(currentSession, currentUser, before);
         return res.status(200).json({});

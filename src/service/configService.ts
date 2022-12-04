@@ -269,7 +269,7 @@ export class ConfigService {
                 id: Util.randomNumberString(16),
                 name: 'mysql-dev', host: '10.0.0.12', protocol: 'raw', tcp: 3306,
                 assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
-                insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
+                insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), isSystem: true
             }
             this.config.services.push(service1);
 
