@@ -43,7 +43,7 @@ export function samlAuth0Init(saml: BaseSaml, url: string) {
                 const inputService = appService.inputService;
 
                 if (!saml.isEnabled)// check extra
-                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, 'disabled source');
+                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, ErrorCodes.ErrDisabledSource, 'disabled source');
 
                 await inputService.checkIfExists(username);
 

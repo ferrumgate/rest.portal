@@ -1,5 +1,5 @@
 import express from "express";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
@@ -9,7 +9,7 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
-import { authorize, authorizeAsAdmin } from "./commonApi";
+import { authorizeAsAdmin } from "./commonApi";
 import { cloneGroup, Group } from "../model/group";
 import { AuthSession } from "../model/authSession";
 
@@ -25,14 +25,14 @@ routerGroupAuthenticated.get('/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
 
         logger.info(`getting group with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
         const group = await configService.getGroup(id);
-        if (!group) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no group');
+        if (!group) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGroupNotFound, 'no group');
 
         //const gateways = await configService.getGatewaysByGroupId(group.id);
 
@@ -77,7 +77,7 @@ routerGroupAuthenticated.delete('/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
 
         logger.info(`delete group with id: ${id}`);
         const currentUser = req.currentUser as User;
@@ -89,7 +89,7 @@ routerGroupAuthenticated.delete('/:id',
         const auditService = appService.auditService;
 
         const group = await configService.getGroup(id);
-        if (!group) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no group');
+        if (!group) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGroupNotFound, 'no group');
 
         const { before } = await configService.deleteGroup(group.id);
         await auditService.logDeleteGroup(currentSession, currentUser, before);
@@ -119,7 +119,7 @@ routerGroupAuthenticated.put('/',
 
         await inputService.checkNotEmpty(input.id);
         const group = await configService.getGroup(input.id);
-        if (!group) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no group');
+        if (!group) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGroupNotFound, 'no group');
 
         await inputService.checkNotEmpty(input.name);
         input.name = input.name || 'group';

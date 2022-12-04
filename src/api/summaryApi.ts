@@ -9,7 +9,7 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
-import { authorize, authorizeAsAdmin } from "./commonApi";
+import { authorizeAsAdmin } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
 import { SearchActivityLogsRequest, SearchSummaryRequest } from "../service/esService";

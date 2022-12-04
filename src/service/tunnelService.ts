@@ -1,6 +1,6 @@
 import { User } from "../model/user";
 import { logger } from "../common";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { ConfigService } from "./configService";
 import { RedisService } from "./redisService";
 import { Util } from "../util";
@@ -40,7 +40,7 @@ export class TunnelService {
                 };
         }
         logger.fatal("tunnel track id pool is over");
-        throw new RestfullException(500, ErrorCodes.ErrTrackIdAssignFailed, 'track id pool is over');
+        throw new RestfullException(500, ErrorCodes.ErrTrackIdAssignFailed, ErrorCodes.ErrTrackIdAssignFailed, 'track id pool is over');
 
 
     }
@@ -50,7 +50,7 @@ export class TunnelService {
         const clientCidr = network.clientNetwork;
         if (!clientCidr.includes('/')) {
             logger.error("config client network is not valid");
-            throw new RestfullException(500, ErrorCodes.ErrInternalError, "client network is not valid");
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrClientNetworkNotValid, "client network is not valid");
         }
         const parts = clientCidr.split('/');
         const range = Util.ipCidrToRange(parts[0], Number(parts[1]));
@@ -67,7 +67,7 @@ export class TunnelService {
         }
 
         logger.fatal("tunnel ip pool is over");
-        throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, 'ip pool is over');
+        throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, ErrorCodesInternal.ErrIpPoolIsOver, 'ip pool is over');
     }
     async getNetwork(tunnel: Tunnel) {
         const network = getNetworkByGatewayId(this.config, tunnel.gatewayId);
@@ -95,7 +95,7 @@ export class TunnelService {
         const tunnel = await this.getTunnel(tunnelKey);
         if (!tunnel || !tunnel.id || !tunnel.clientIp) {
             logger.error(`tunnel not found or some fields are absent => ${tunnel || ''}`);
-            throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
+            throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'secure tunnel failed');
         }
 
         //security check

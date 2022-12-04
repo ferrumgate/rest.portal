@@ -2,7 +2,7 @@
 import { HelperService } from "../../service/helperService";
 import { BaseAuth } from "../../model/authSettings";
 import { User } from "../../model/user";
-import { RestfullException } from "../../restfullException";
+import { ErrorCodesInternal, RestfullException } from "../../restfullException";
 import { ErrorCodes } from "../../restfullException";
 import { Util } from "../../util";
 import { AuthSession } from "../../model/authSession";
@@ -18,8 +18,10 @@ import { Tunnel } from "../../model/tunnel";
  * @param user 
  */
 export async function checkUser(user?: User, baseAuth?: BaseAuth) {
-    if (!user || !baseAuth)
-        throw new RestfullException(401, ErrorCodes.ErrBadArgument, "not authenticated");
+    if (!user)
+        throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrInputNotExists, "not authenticated");
+    if (!baseAuth)
+        throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrInputNotExists, "not authenticated");
     HelperService.isValidUser(user);
     HelperService.isFromSource(user, `${baseAuth.baseType}-${baseAuth.type}`);
 
@@ -151,7 +153,8 @@ export function attachActivity(req: any, activity?: any) {
 
 export async function saveActivityError(req: any, type: string, err: any, extFunc?: (log: ActivityLog) => void) {
     try {
-
+        if (!(err instanceof RestfullException))
+            return;
         const appService = req.appService as AppService;
         const activityService = appService.activityService;
         const act = req.activity;
@@ -177,16 +180,10 @@ export async function saveActivityError(req: any, type: string, err: any, extFun
 
         }
 
-        if (err instanceof RestfullException) {
-            activity.status = err.status;
-            activity.statusMessage = err.code;
-            //activity.statusMessage2=err.:
-            //TODO
-        }
-        else if (err instanceof Error) {
-            activity.status = 500;
-            activity.statusMessage = err.message;
-        }
+
+        activity.status = err.status;
+        activity.statusMessage = err.codeInternal || err.code;
+
         if (extFunc)
             extFunc(activity);
         await activityService.save(activity);

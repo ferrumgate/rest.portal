@@ -37,7 +37,8 @@ export interface SearchActivityLogsRequest {
     ip?: string;
     status?: number;//0 success;
     statusMessage?: string;
-    statusMessage2?: string;
+    statusMessageDetail?: string;
+
 
 
     username?: string;
@@ -413,7 +414,7 @@ export class ESService {
                                 type: "keyword"
 
                             },
-                            statusMessage2: {
+                            statusMessageDetail: {
                                 type: "keyword"
 
                             },
@@ -589,7 +590,7 @@ export class ESService {
         this.addToQuery(req.authSource, 'authSource', request.body.query.bool.must);
         this.addToQuery(req.ip, 'ip', request.body.query.bool.must);
         this.addToQuery(req.statusMessage, 'statusMessage', request.body.query.bool.must);
-        this.addToQuery(req.statusMessage2, 'statusMessage2', request.body.query.bool.must);
+        this.addToQuery(req.statusMessageDetail, 'statusMessageDetail', request.body.query.bool.must);
         this.addToQuery(req.username, 'username', request.body.query.bool.must);
         this.addToQuery(req.sessionId, 'sessionId', request.body.query.bool.must);
         this.addToQuery(req.serviceName, 'serviceName', request.body.query.bool.must);

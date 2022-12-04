@@ -1,5 +1,5 @@
 import express from "express";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
@@ -165,17 +165,17 @@ routerAuth.post('/2fa',
 
             const request = req.body as { key: string, twoFAToken: string };
             if (!request.key || !request.twoFAToken)
-                throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs key, 2FASecret and 2FAToken");
+                throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs key, 2FASecret and 2FAToken");
             logger.info(`2fa check with key:${request.key}`);
 
             const rKey = `/auth/2fa/${request.key}`;
             const { userId, activity } = await redisService.get(rKey) as { userId: string, activity: any };
             if (!userId)
-                throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'key not found');
+                throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrKeyNotFound, 'key not found');
             //save some data for activitiy
             attachActivity(req, activity);
             const user = await configService.getUserById(userId);
-            if (!user) throw new RestfullException(401, ErrorCodes.ErrNotFound, 'not authenticated');
+            if (!user) throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrUserNotFound, 'not authenticated');
             attachActivityUser(req, user);
             HelperService.isValidUser(user);
 
@@ -218,13 +218,13 @@ routerAuth.post('/accesstoken',
             //tunnel field is the tunnel tunnel key
             const request = req.body as { key: string, exchangeKey?: string };
             if (!request.key) {
-                throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs parameters");
+                throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs parameters");
             }
             logger.info(`getting access token with key ${request.key}`);
             const key = `/auth/access/${request.key}`;
             const access = await redisService.get<{ userId: string, is2FA: boolean, activity: any }>(key, true);
             if (!access || !access.userId) {
-                throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+                throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrKeyNotFound, "not authorized");
             }
             attachActivity(req, access?.activity);
 
@@ -234,7 +234,7 @@ routerAuth.post('/accesstoken',
             //set user to request object
             req.currentUser = user;
             if (!user?.id) {
-                throw new RestfullException(500, ErrorCodes.ErrInternalError, "something went wrong");
+                throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodes.ErrInternalError, "something went wrong");
             }
 
             //create a session
@@ -299,13 +299,13 @@ routerAuth.post('/refreshtoken',
             const sessionService = appService.sessionService;
             const request = req.body as { refreshToken: string };
             if (!request.refreshToken) {
-                throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs parameters");
+                throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs parameters");
             }
             logger.info(`getting refresh token with key ${request.refreshToken.substring(0, 6)}`);
 
             const inputRefreshToken = await oauth2Service.getRefreshToken(request.refreshToken);
             if (!inputRefreshToken)
-                throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed");
+                throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed");
 
             const userId = inputRefreshToken.user.id;
             const sessionId = inputRefreshToken.user.sid;
@@ -316,16 +316,16 @@ routerAuth.post('/refreshtoken',
 
             await HelperService.isValidUser(user);
             if (!user)
-                throw new RestfullException(401, ErrorCodes.ErrNotFound, "not authenticated");
+                throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrUserNotFound, "not authenticated");
             //check also currentUser that comes from accessToken
             if (req.currentUser.id != user.id)
-                throw new RestfullException(401, ErrorCodes.ErrDataVerifyFailed, "not authenticated");
+                throw new RestfullException(401, ErrorCodes.ErrDataVerifyFailed, ErrorCodes.ErrDataVerifyFailed, "not authenticated");
 
 
             //set user to request object
             req.currentUser = user;
             if (!user?.id) {
-                throw new RestfullException(500, ErrorCodes.ErrInternalError, "something went wrong");
+                throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodes.ErrInternalError, "something went wrong");
             }
 
             //check session
@@ -334,7 +334,7 @@ routerAuth.post('/refreshtoken',
             attachActivitySession(req, authSession);
 
             if (!authSession || authSession.userId != user.id)
-                throw new RestfullException(401, ErrorCodes.ErrNotFound, "not authenticated");
+                throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrSessionNotFound, "not authenticated");
 
             await sessionService.setSession(sid, { lastSeen: new Date().toISOString() })
             await sessionService.setExpire(sid);

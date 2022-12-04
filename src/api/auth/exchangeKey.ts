@@ -3,7 +3,7 @@ import passport from 'passport';
 import * as passportapikey from 'passport-headerapikey';
 import { logger } from '../../common';
 import { AppService } from '../../service/appService';
-import { ErrorCodes, RestfullException } from '../../restfullException';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
 import { HelperService } from '../../service/helperService';
 import { Tunnel } from '../../model/tunnel';
 import passportCustom from 'passport-custom';
@@ -24,7 +24,7 @@ export function exchangeKeyInit() {
                 let exchangeKeyEnc = req.get('ExchangeKey') as string || req.query.exchangeKey || req.body.exchangeKey;
 
                 if (!exchangeKeyEnc)
-                    throw new RestfullException(401, ErrorCodes.ErrExchangeKeyIsNotValid, 'exchange key not found');
+                    throw new RestfullException(401, ErrorCodes.ErrExchangeKeyIsNotValid, ErrorCodes.ErrExchangeKeyIsNotValid, 'exchange key not found');
                 attachActivityUsername(req, exchangeKeyEnc);
                 logger.info(`passport with exchangekey: ${exchangeKeyEnc}`);
 
@@ -47,10 +47,10 @@ export function exchangeKeyInit() {
 
                 const sessionKey = await redisService.get(`/exchange/id/${exchangeKey}`, false) as string;
                 if (!sessionKey)
-                    throw new RestfullException(401, ErrorCodes.ErrNotFound, "invalid key");
+                    throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrKeyNotFound, "invalid key");
                 const currentSession = await sessionService.getSession(sessionKey);
                 if (!currentSession)
-                    throw new RestfullException(401, ErrorCodes.ErrNotFound, "invalid key");
+                    throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrSessionNotFound, "invalid key");
 
 
                 req.currentSession = currentSession;

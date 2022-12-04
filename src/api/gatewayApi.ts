@@ -1,5 +1,5 @@
 import express from "express";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
@@ -9,7 +9,7 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
-import { authorize, authorizeAsAdmin } from "./commonApi";
+import { authorizeAsAdmin } from "./commonApi";
 import { cloneGateway, Gateway, GatewayDetail, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
 
@@ -25,14 +25,14 @@ routerGatewayAuthenticated.get('/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
 
         logger.info(`getting gateway with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
         const gateway = await configService.getGateway(id);
-        if (!gateway) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no gateway');
+        if (!gateway) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGatewayNotFound, 'no gateway');
 
 
         return res.status(200).json(gateway);
@@ -120,7 +120,7 @@ routerGatewayAuthenticated.delete('/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
 
         logger.info(`delete gateway with id: ${id}`);
         const currentUser = req.currentUser as User;
@@ -131,7 +131,7 @@ routerGatewayAuthenticated.delete('/:id',
         const auditService = appService.auditService;
 
         const gateway = await configService.getGateway(id);
-        if (!gateway) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no gateway');
+        if (!gateway) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGatewayNotFound, 'no gateway');
 
         const { before } = await configService.deleteGateway(gateway.id);
         await auditService.logDeleteGateway(currentSession, currentUser, before);
@@ -162,7 +162,7 @@ routerGatewayAuthenticated.put('/',
         await inputService.checkNotEmpty(input.id);
         const gateway = await configService.getGateway(input.id);
         const notRegistered = await gatewayService.getAliveById(input.id);
-        if (!gateway && !notRegistered) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no gateway');
+        if (!gateway && !notRegistered) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGatewayNotFound, 'no gateway');
 
 
         input.name = input.name || 'gateway';

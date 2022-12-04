@@ -8,7 +8,7 @@ import { AppService } from "../../service/appService";
 import { tunnelKeyInit, tunnelKeyUnuse } from "./tunnelKey";
 import { activeDirectoryInit, activeDirectoryUnuse } from "./activeDirectory";
 import passport from "passport";
-import { ErrorCodes, RestfullException } from "../../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../../restfullException";
 import { logger } from "../../common";
 import { samlAuth0Init, samlAuth0Unuse } from "./auth0Saml";
 import { exchangeKeyInit, exchangeKeyUnuse } from "./exchangeKey";
@@ -113,7 +113,7 @@ export async function passportAuthenticate(req: any, res: any, next: any, strate
                         info = [info];
                     let results = (info as any[]);
                     if (!results.length)
-                        reject(new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'no method'));
+                        reject(new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrAuthMethodNotFound, 'no method'));
                     else {
                         const errors = results.filter(y => y);
                         const success = results.filter(y => !y);
@@ -121,7 +121,7 @@ export async function passportAuthenticate(req: any, res: any, next: any, strate
                             resolve('');
                         else {
                             const error = errors.find(x => x instanceof RestfullException);
-                            reject(error || new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'no success'));
+                            reject(error || new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrAuthMethodNoSuccess, 'no success'));
                         }
                     }
                 }

@@ -55,7 +55,7 @@ export const asyncHandlerWithArgs = (fn: any, ...args: any) => (req: any, res: a
  */
 export function globalErrorHandler(err: any, req: any, res: any, nex: any) {
 
-    logger.error(err.stack || err);
+    logger.error(((err.codeInternal || err.code || '') + "->" + err.stack) || err);
     if (err.status && err.code)
         res.status(err.status).json({ status: err.status, code: err.code, message: err.message });
     else res.status(500).json({ status: 500, code: ErrorCodes.ErrInternalError, message: "internal server error" });

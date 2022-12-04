@@ -203,7 +203,7 @@ routerConfigAuthAuthenticated.post('/oauth/providers',
         const indexA = oauth?.providers?.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
 
         if (Number(indexA) >= 0) {
-            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
+            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, ErrorCodes.ErrAllreadyExits, "input data is problem");
         }
         provider.id = Util.randomNumberString(16);
         const safe = copyAuthOAuth(provider);
@@ -236,7 +236,7 @@ routerConfigAuthAuthenticated.put('/oauth/providers',
         const item = (await configService.getAuthSettingOAuth()).providers.find(x => x.id == input.id);
         await inputService.checkIfExists(item);
         if (item?.type != input.type && item?.baseType != input.baseType)
-            throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
+            throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
         const safe = copyAuthOAuth(input);
         safe.insertDate = item.insertDate;
         safe.updateDate = new Date().toISOString();
@@ -353,7 +353,7 @@ routerConfigAuthAuthenticated.post('/ldap/providers',
         const indexA = ldap?.providers?.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
 
         if (Number(indexA) >= 0) {
-            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
+            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, ErrorCodes.ErrAllreadyExits, "input data is problem");
         }
         provider.id = Util.randomNumberString(16);
         const safe = copyAuthLdap(provider);
@@ -391,7 +391,7 @@ routerConfigAuthAuthenticated.put('/ldap/providers',
         const item = (await configService.getAuthSettingLdap()).providers.find(x => x.id == input.id);
         await inputService.checkIfExists(item);
         if (item?.type != input.type && item?.baseType != input.baseType)
-            throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
+            throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
         const safe = copyAuthLdap(input);
         safe.insertDate = item.insertDate;
         safe.updateDate = new Date().toISOString();
@@ -507,7 +507,7 @@ routerConfigAuthAuthenticated.post('/saml/providers',
         const indexA = saml?.providers?.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
 
         if (Number(indexA) >= 0) {
-            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, "input data is problem");
+            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, ErrorCodes.ErrAllreadyExits, "input data is problem");
         }
         provider.id = Util.randomNumberString(16);
         const safe = copyAuthSaml(provider);
@@ -545,7 +545,7 @@ routerConfigAuthAuthenticated.put('/saml/providers',
         const item = (await configService.getAuthSettingSaml()).providers.find(x => x.id == input.id);
         await inputService.checkIfExists(item);
         if (item?.type != input.type && item?.baseType != input.baseType)
-            throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
+            throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
         const safe = copyAuthSaml(input);
         safe.insertDate = item.insertDate;
         safe.updateDate = new Date().toISOString();

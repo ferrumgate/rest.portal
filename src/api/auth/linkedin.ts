@@ -36,7 +36,7 @@ export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
                 const configService = appService.configService;
                 const redisService = appService.redisService;
                 if (!linkedin.isEnabled)
-                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, 'disabled source');
+                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, ErrorCodes.ErrDisabledSource, 'disabled source');
                 const source = `${linkedin.baseType}-${linkedin.type}`;
                 let user = await configService.getUserByUsername(email);
                 if (!user) {

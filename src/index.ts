@@ -28,6 +28,7 @@ import { ESService } from "./service/esService";
 import { routerActivityAuthenticated } from "./api/activityApi";
 import { ConfigService } from "./service/configService";
 import { routerSummaryAuthenticated } from "./api/summaryApi";
+import { saveActivityError } from "./api/auth/commonAuth";
 
 
 
@@ -60,40 +61,53 @@ const setAppService = async (req: any, res: any, next: any) => {
 };
 
 const rateLimit = async (req: any, res: any, next: any, ...args: any) => {
-    const appService = req.appService as AppService;
-    await appService.rateLimit.check(req.clientIp, args[0][0], args[0][1]);
-    next();
+    try {
+        const appService = req.appService as AppService;
+        await appService.rateLimit.check(req.clientIp, args[0][0], args[0][1]);
+        next();
+    } catch (err) {
+        await saveActivityError(req, 'ratelimit', err, (log) => {
+            log.statusMessageDetail = args[0][0];
+        });
+        throw err;
+    }
+
 };
 const checkCaptcha = async (req: any, res: any, next: any, ...args: any) => {
-    const appService = req.appService as AppService;
-    const configService = appService.configService;
-    const captcha = await configService.getCaptcha();
-    const captchaIsOK = captcha.client && captcha.server;
-    if (captchaIsOK) {
-        if (req.body.captcha) {
-            await appService.captchaService.check(req.body.captcha, req.body.action);
-            // TODO delete ratelimit 
-            // await appService.rateLimit.delete(req.clientIp, args[0][0], args[0][1]);
-        } else
-            if (req.query.captcha) {
-                await appService.captchaService.check(req.query.captcha, req.query.action);
+    try {
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const captcha = await configService.getCaptcha();
+        const captchaIsOK = captcha.client && captcha.server;
+        if (captchaIsOK) {
+            if (req.body.captcha) {
+                await appService.captchaService.check(req.body.captcha, req.body.action);
                 // TODO delete ratelimit 
                 // await appService.rateLimit.delete(req.clientIp, args[0][0], args[0][1]);
-            } else {
-                try {
-                    await appService.rateLimit.check(req.clientIp, args[0][0], args[0][1]);
-                } catch (err: any) {
-                    // TODO check here if captcha key exists
-                    // otherwise dont check captcha
+            } else
+                if (req.query.captcha) {
+                    await appService.captchaService.check(req.query.captcha, req.query.action);
+                    // TODO delete ratelimit 
+                    // await appService.rateLimit.delete(req.clientIp, args[0][0], args[0][1]);
+                } else {
+                    try {
+                        await appService.rateLimit.check(req.clientIp, args[0][0], args[0][1]);
+                    } catch (err: any) {
+                        // TODO check here if captcha key exists
+                        // otherwise dont check captcha
 
-                    throw new RestfullException(428, ErrorCodes.ErrCaptchaRequired, 'captcha required');
+                        throw new RestfullException(428, ErrorCodes.ErrCaptchaRequired, ErrorCodes.ErrCaptchaRequired, 'captcha required');
+                    }
                 }
-            }
-    } else {
-        //no captcha settings
-        logger.warn(`captcha settings is empty, please fill it`);
+        } else {
+            //no captcha settings
+            logger.warn(`captcha settings is empty, please fill it`);
+        }
+        next();
+    } catch (err) {
+        saveActivityError(req, "captcha", err);
+        throw err;
     }
-    next();
 };
 const findClientIp = async (req: any, res: any, next: any) => {
     req.clientIp = Util.findClientIpAddress(req);

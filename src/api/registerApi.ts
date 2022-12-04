@@ -1,5 +1,5 @@
 import express from "express";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
@@ -12,7 +12,7 @@ export const routerRegister = express.Router();
 routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     const userInput = req.body as { username: string, password: string, name?: string };
     if (!userInput.username || !userInput.password)
-        throw new RestfullException(400, ErrorCodes.ErrBadArgument, "username and password required");
+        throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrUsernameOrPasswordInvalid, "username and password required");
 
     const appService = req.appService as AppService;
     const configService = appService.configService;
@@ -25,12 +25,12 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     const isSystemConfigured = await configService.getIsConfigured();
     if (!isSystemConfigured) {
         logger.warn(`system is not configured yet`);
-        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, "not configured yet");
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
     }
     const authSettings = await configService.getAuthSettings();
     if (!authSettings.local.isRegister) {
         logger.warn(`register is not allowed`);
-        throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, "register not enabled");
+        throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, ErrorCodes.ErrMethodNotAllowed, "register not enabled");
     }
 
 
