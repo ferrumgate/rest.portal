@@ -70,6 +70,22 @@ export class SummaryService {
         return await this.esService.getSummaryLoginTry(request);
     }
 
+    async getSummaryCreateTunnel(request: SearchSummaryRequest) {
+        return await this.esService.getSummaryCreateTunnel(request);
+    }
+    async getSummary2faCheck(request: SearchSummaryRequest) {
+        return await this.esService.getSummary2faCheck(request);
+    }
+
+    async getSummaryUserLoginSuccess(request: SearchSummaryRequest) {
+        return await this.esService.getSummaryUserLoginSuccess(request);
+    }
+
+    async getSummaryUserLoginFailed(request: SearchSummaryRequest) {
+        return await this.esService.getSummaryUserLoginFailed(request);
+    }
+
+
 
 
 

@@ -6,8 +6,8 @@
                 {
                     "range": {
                         "insertDate": {
-                            "gte": "1901-01-31T22:03:04.000Z",
-                            "lt": "2022-12-15T16:53:58.954Z"
+                            "gte": "2022-11-27T00:00:00.000Z",
+                            "lt": "2022-12-04T22:53:58.954Z"
                         }
                     }
                 },
@@ -15,22 +15,32 @@
                     "term": {
                         "type": "login try"
                     }
+                },
+                {
+                    "term": {
+                        "status": 200
+                    }
                 }
-            ]
+            ],
+            "must_not": []
         }
     },
     "aggs": {
-        "insertDate": {
-            "date_histogram": {
-                "field": "insertDate",
-                "calendar_interval": "day"
-            },
-            "aggs": {
-                "status": {
-                    "terms": {
-                        "field": "status"
+        "username": {
+            "sum": {
+                "field": "username"
+            }
+        },
+        "username_sort": {
+            "bucket_sort": {
+                "sort": [
+                    {
+                        "username": {
+                            "order": "desc"
+                        }
                     }
-                }
+                ],
+                "size": 10
             }
         }
     }

@@ -67,6 +67,65 @@ routerSummaryAuthenticated.get('/logintry',
     }))
 
 
+routerSummaryAuthenticated.get('/createtunnel',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const query = req.query as SearchSummaryRequest;
+        logger.info(`getting create tunnel`);
+        const appService = req.appService as AppService;
+        const summaryService = appService.summaryService;
+        const data = await summaryService.getSummaryCreateTunnel(query);
+        return res.status(200).json(data);
+
+    }))
+
+routerSummaryAuthenticated.get('/2facheck',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const query = req.query as SearchSummaryRequest;
+        logger.info(`getting 2fa check`);
+        const appService = req.appService as AppService;
+        const summaryService = appService.summaryService;
+        const data = await summaryService.getSummary2faCheck(query);
+        return res.status(200).json(data);
+
+    }))
+
+routerSummaryAuthenticated.get('/userloginsuccess',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const query = req.query as SearchSummaryRequest;
+        logger.info(`getting 2fa check`);
+        const appService = req.appService as AppService;
+        const summaryService = appService.summaryService;
+        const data = await summaryService.getSummaryUserLoginSuccess(query);
+        return res.status(200).json(data);
+
+    }))
+
+
+
+routerSummaryAuthenticated.get('/userloginfailed',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const query = req.query as SearchSummaryRequest;
+        logger.info(`getting 2fa check`);
+        const appService = req.appService as AppService;
+        const summaryService = appService.summaryService;
+        const data = await summaryService.getSummaryUserLoginFailed(query);
+        return res.status(200).json(data);
+
+    }))
+
+
 
 
 
