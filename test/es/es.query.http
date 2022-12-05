@@ -316,3 +316,127 @@ Content-Type: application/json
             }
 
 }
+
+
+####
+
+POST http://192.168.88.51:9200/ferrumgate-activity-*/_search
+Authorization: Basic ZWxhc3RpYzp1eDRleXJrYnI0N3o2c2NreWY5em1hdnZnenhndnJ6ZWJzaDA4MmR1bWZrNTlqM2I1dGk5ZnZ5OTVzN3N5Ym14
+Content-Type: application/json
+
+{
+    "size":10,
+        "sort": {
+        "insertDate": "asc"
+    },
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "range": {
+                        "insertDate": {
+                            "gte": "2022-11-27T00:00:00.000Z",
+                            "lt": "2022-12-06T22:53:58.954Z"
+                        }
+                    }
+                },
+                {                            
+                                "term": {
+                                    "type": "login try"
+                                }                 
+                        
+                    
+                },
+                 {                            
+                                "term": {
+                                    "username": "hamza@hamzakilic.com"
+                                }                 
+                        
+                    
+                }
+            ],
+             "must_not": [
+            ]
+        }
+    },
+     "aggs": {
+        "insertDate": {
+      "date_histogram": {
+        "field": "insertDate",
+        "calendar_interval": "day",
+        "min_doc_count": 0,
+        "extended_bounds": { "min": "2022-11-27T00:00:00.000Z", "max": "2022-12-06T23:59:00.000Z" }
+      },
+      "aggs":{
+        "status": {
+      "terms": {
+        "field": "status"
+      }
+    }
+      }
+    }
+    
+  }
+}
+
+####
+
+POST http://192.168.88.51:9200/ferrumgate-activity-*/_search
+Authorization: Basic ZWxhc3RpYzp1eDRleXJrYnI0N3o2c2NreWY5em1hdnZnenhndnJ6ZWJzaDA4MmR1bWZrNTlqM2I1dGk5ZnZ5OTVzN3N5Ym14
+Content-Type: application/json
+
+{
+    "size":10,
+        "sort": {
+        "insertDate": "asc"
+    },
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "range": {
+                        "insertDate": {
+                            "gte": "2022-11-27T00:00:00.000Z",
+                            "lt": "2022-12-06T22:53:58.954Z"
+                        }
+                    }
+                },
+                {                            
+                                "term": {
+                                    "type": "login try"
+                                }                 
+                        
+                    
+                },
+                 {                            
+                                "term": {
+                                    "username": "hamza@hamzakilic.com"
+                                }                 
+                        
+                    
+                }
+            ],
+             "must_not": [
+            ]
+        }
+    },
+     "aggs": {
+        "insertDate": {
+      "date_histogram": {
+        "field": "insertDate",
+        "calendar_interval": "hour",
+        "min_doc_count": 0,
+        "extended_bounds": { "min": "2022-11-27T00:00:00.000Z", "max": "2022-12-06T23:59:00.000Z" }
+      },
+      "aggs":{
+        "status": {
+      "terms": {
+        "field": "status"
+      }
+    }
+      }
+    }
+    
+  }
+}
+

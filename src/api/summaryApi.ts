@@ -12,7 +12,7 @@ import { RBACDefault } from "../model/rbac";
 import { authorizeAsAdmin, authorizeAsAdminOrReporter } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
-import { SearchActivityLogsRequest, SearchSummaryRequest } from "../service/esService";
+import { SearchActivityLogsRequest, SearchSummaryRequest, SearchSummaryUserRequest } from "../service/esService";
 
 
 /////////////////////////////////  summary //////////////////////////////////
@@ -121,6 +121,52 @@ routerSummaryAuthenticated.get('/userloginfailed',
         const appService = req.appService as AppService;
         const summaryService = appService.summaryService;
         const data = await summaryService.getSummaryUserLoginFailed(query);
+        return res.status(200).json(data);
+
+    }))
+
+/**
+ * @summary current user login try
+ */
+routerSummaryAuthenticated.get('/user/logintry',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const query = req.query as SearchSummaryUserRequest;
+
+        logger.info(`getting user login try`);
+        const appService = req.appService as AppService;
+        const summaryService = appService.summaryService;
+        const inputService = appService.inputService;
+
+        const currentUser = req.currentUser as User;
+        query.username = currentUser.username;
+        //important
+        await inputService.checkNotEmpty(query.username);
+        const data = await summaryService.getSummaryUserLoginTry(query);
+        return res.status(200).json(data);
+
+    }))
+
+/**
+* @summary current user login try hours
+*/
+routerSummaryAuthenticated.get('/user/logintryhours',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const query = req.query as SearchSummaryUserRequest;
+
+        logger.info(`getting user login try`);
+        const appService = req.appService as AppService;
+        const summaryService = appService.summaryService;
+        const inputService = appService.inputService;
+
+        const currentUser = req.currentUser as User;
+        query.username = currentUser.username;
+        //important
+        await inputService.checkNotEmpty(query.username);
+        const data = await summaryService.getSummaryUserLoginTryHours(query);
         return res.status(200).json(data);
 
     }))

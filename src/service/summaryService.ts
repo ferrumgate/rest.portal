@@ -5,7 +5,7 @@ import { Service } from "../model/service";
 import { User } from "../model/user";
 
 import { ConfigService } from "./configService";
-import { ESService, SearchActivityLogsRequest, SearchSummaryRequest } from "./esService";
+import { ESService, SearchActivityLogsRequest, SearchSummaryRequest, SearchSummaryUserRequest } from "./esService";
 import { RedisService } from "./redisService";
 import { logger } from "../common";
 import * as odiff from 'deep-object-diff';
@@ -84,6 +84,15 @@ export class SummaryService {
     async getSummaryUserLoginFailed(request: SearchSummaryRequest) {
         return await this.esService.getSummaryUserLoginFailed(request);
     }
+
+    async getSummaryUserLoginTry(request: SearchSummaryUserRequest) {
+        return await this.esService.getSummaryUserLoginTry(request);
+    }
+
+    async getSummaryUserLoginTryHours(request: SearchSummaryUserRequest) {
+        return await this.esService.getSummaryUserLoginTryHours(request);
+    }
+
 
 
 

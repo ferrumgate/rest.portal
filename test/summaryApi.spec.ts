@@ -297,6 +297,55 @@ describe('summaryApi', async () => {
     }).timeout(50000);
 
 
+    it('/summary/user/logintry', async () => {
+
+        const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
+        //prepare data
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/summary/user/logintry`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body.total).exist
+        expect(response.body.aggs).exist;
+
+    }).timeout(50000);
+
+
+
+    it('/summary/user/logintryhours', async () => {
+
+        const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
+        //prepare data
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/summary/user/logintryhours`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body.total).exist
+        expect(response.body.aggs).exist;
+
+    }).timeout(50000);
+
+
+
+
 
 
 

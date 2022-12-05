@@ -76,6 +76,10 @@ export interface SearchActivityLogsRequest {
 export interface SearchSummaryRequest {
     startDate?: string;
     endDate?: string;
+
+}
+export interface SearchSummaryUserRequest extends SearchSummaryRequest {
+    username: string;
 }
 
 /**
@@ -620,7 +624,7 @@ export class ESService {
 
     }
 
-    private getSummaryQuery(type: string, start: string, end: string, aggField: string) {
+    private getSummaryQuery(type: string, start: string, end: string, aggField: string, interval = 'day', offset = '0') {
         return {
             "size": 0,
             "sort": {
@@ -650,7 +654,7 @@ export class ESService {
                 "insertDate": {
                     "date_histogram": {
                         "field": "insertDate",
-                        "calendar_interval": "day",
+                        "calendar_interval": interval,
                         "min_doc_count": 0,
                         "extended_bounds": { "min": start, "max": end }
                     },
@@ -905,6 +909,96 @@ export class ESService {
         }
         return retVal;
     }
+
+    async getSummaryUserLoginTry(sreq: SearchSummaryUserRequest) {
+
+        const { start, end } = this.getSummaryDates(sreq);
+
+
+        const dates = this.indexCalculator(new Date(start), new Date(end));
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
+        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        const srequest = this.getSummaryQuery('login try', start, end, 'status');
+        console.log(JSON.stringify(srequest));
+        let request = {
+            ignore_unavailable: true,
+            index: cindexes,
+            body: srequest
+        };
+        request.body.query.bool.must.push({
+            "term": {
+                "username": sreq.username
+            } as any
+        })
+        request.body.query.bool.must_not.push(
+            {
+                "term": {
+                    "authSource": "tunnelKey"
+                }
+            } as never
+        )
+        const result = await this.client.search(request) as any;
+        let retVal: ESAgg = {
+            total: result.hits.total.value,
+            aggs: result.aggregations?.insertDate?.buckets?.map((x: any) => {
+                return {
+                    key: x.key, value: x.doc_count,
+                    sub: x.status?.buckets?.map((y: any) => {
+                        return {
+                            key: y.key, value: y.doc_count
+                        }
+                    })
+                }
+            }) || []
+        }
+        return retVal;
+    }
+
+
+    async getSummaryUserLoginTryHours(sreq: SearchSummaryUserRequest) {
+
+        const { start, end } = this.getSummaryDates(sreq);
+
+
+        const dates = this.indexCalculator(new Date(start), new Date(end));
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
+        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        const srequest = this.getSummaryQuery('login try', start, end, 'status', 'hour');
+        console.log(JSON.stringify(srequest));
+        let request = {
+            ignore_unavailable: true,
+            index: cindexes,
+            body: srequest
+        };
+        request.body.query.bool.must.push({
+            "term": {
+                "username": sreq.username
+            } as any
+        })
+        request.body.query.bool.must_not.push(
+            {
+                "term": {
+                    "authSource": "tunnelKey"
+                }
+            } as never
+        )
+        const result = await this.client.search(request) as any;
+        let retVal: ESAgg = {
+            total: result.hits.total.value,
+            aggs: result.aggregations?.insertDate?.buckets?.map((x: any) => {
+                return {
+                    key: x.key, value: x.doc_count,
+                    sub: x.status?.buckets?.map((y: any) => {
+                        return {
+                            key: y.key, value: y.doc_count
+                        }
+                    })
+                }
+            }) || []
+        }
+        return retVal;
+    }
+
 }
 
 

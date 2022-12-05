@@ -617,6 +617,83 @@ describe('esService ', async () => {
     }).timeout(120000);
 
 
+    it('getSummaryUserLoginTry', async () => {
+        /*  const host = 'http://192.168.88.51:9200';
+         const user = 'elastic';
+         const pass = 'ux4eyrkbr47z6sckyf9zmavvgzxgvrzebsh082dumfk59j3b5ti9fvy95s7sybmx'; */
+        const es = new ESService(host, user, pass);
+        //let items2 = await es.getSummaryLoginTry({});
+        const { activity1, activity2, activity3, activity4 } = createSampleData4();
+        activity1.insertDate = dayBefore(24, new Date()).toISOString();
+        activity2.insertDate = dayBefore(24 * 2, new Date()).toISOString();
+        activity3.insertDate = dayBefore(24 * 3, new Date()).toISOString();
+        activity4.insertDate = dayBefore(24 * 4, new Date()).toISOString();
+
+        const data = await es.activityCreateIndexIfNotExits(activity1);
+        await es.activitySave([data]);
+        const data2 = await es.activityCreateIndexIfNotExits(activity2);
+        await es.activitySave([data2]);
+        const data3 = await es.activityCreateIndexIfNotExits(activity3);
+        await es.activitySave([data3]);
+        const data4 = await es.activityCreateIndexIfNotExits(activity4);
+        await es.activitySave([data4]);
+        let test = 60000;//wait for es to flush
+        while (test) {
+            //check 
+            const items = await es.searchActivityLogs({});
+            if (items.total)
+                break;
+            test -= 5000;
+            await Util.sleep(5000);
+        }
+
+        let items = await es.getSummaryUserLoginTry({ username: "hamza@hamzakilic.com" });
+        expect(items.total).to.equal(2);
+        expect(items.aggs.length).to.equal(7);
+        expect(items.aggs[2].sub?.length).to.equal(1);
+
+    }).timeout(120000);
+
+
+    it('getSummaryUserLoginTryHours', async () => {
+        /*  const host = 'http://192.168.88.51:9200';
+         const user = 'elastic';
+         const pass = 'ux4eyrkbr47z6sckyf9zmavvgzxgvrzebsh082dumfk59j3b5ti9fvy95s7sybmx'; */
+        const es = new ESService(host, user, pass);
+        //let items2 = await es.getSummaryLoginTry({});
+        const { activity1, activity2, activity3, activity4 } = createSampleData4();
+        activity1.insertDate = dayBefore(24, new Date()).toISOString();
+        activity2.insertDate = dayBefore(24 * 2, new Date()).toISOString();
+        activity3.insertDate = dayBefore(24 * 3, new Date()).toISOString();
+        activity4.insertDate = dayBefore(24 * 4, new Date()).toISOString();
+
+        const data = await es.activityCreateIndexIfNotExits(activity1);
+        await es.activitySave([data]);
+        const data2 = await es.activityCreateIndexIfNotExits(activity2);
+        await es.activitySave([data2]);
+        const data3 = await es.activityCreateIndexIfNotExits(activity3);
+        await es.activitySave([data3]);
+        const data4 = await es.activityCreateIndexIfNotExits(activity4);
+        await es.activitySave([data4]);
+        let test = 60000;//wait for es to flush
+        while (test) {
+            //check 
+            const items = await es.searchActivityLogs({});
+            if (items.total)
+                break;
+            test -= 5000;
+            await Util.sleep(5000);
+        }
+
+        let items = await es.getSummaryUserLoginTryHours({ username: "hamza@hamzakilic.com" });
+        expect(items.total).to.equal(2);
+        expect(items.aggs.length > 6 * 24).to.be.true;
+
+
+    }).timeout(120000);
+
+
+
 
 
 })
