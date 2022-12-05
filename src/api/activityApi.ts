@@ -9,7 +9,7 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
-import { authorizeAsAdmin } from "./commonApi";
+import { authorizeAsAdmin, authorizeAsAdminOrReporter } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
 import { SearchActivityLogsRequest } from "../service/esService";
@@ -21,7 +21,7 @@ export const routerActivityAuthenticated = express.Router();
 routerActivityAuthenticated.get('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
+    asyncHandler(authorizeAsAdminOrReporter),
     asyncHandler(async (req: any, res: any, next: any) => {
         const query = req.query as SearchActivityLogsRequest;
         logger.info(`getting activity logs`);

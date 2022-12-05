@@ -220,6 +220,13 @@ export class ConfigService {
             standartUser.isVerified = true;
             standartUser.roleIds = ['User'];
             this.config.users.push(standartUser);
+
+            const reporterUser = HelperService.createUser('local-local', 'hamzareporter@hamzakilic.com', 'hamzareporter', 'Deneme123');
+            reporterUser.isLocked = false;
+            reporterUser.isVerified = true;
+            reporterUser.roleIds = ['Reporter'];
+            this.config.users.push(reporterUser);
+
             this.config.groups.push({
                 id: Util.randomNumberString(16),
                 name: 'north',

@@ -9,7 +9,7 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
-import { authorizeAsAdmin } from "./commonApi";
+import { authorizeAsAdmin, authorizeAsAdminOrReporter } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
 import { SearchActivityLogsRequest, SearchSummaryRequest } from "../service/esService";
@@ -21,7 +21,7 @@ export const routerSummaryAuthenticated = express.Router();
 routerSummaryAuthenticated.get('/config',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
+    asyncHandler(authorizeAsAdminOrReporter),
     asyncHandler(async (req: any, res: any, next: any) => {
         const query = req.query as SearchActivityLogsRequest;
         logger.info(`getting summary config`);
@@ -38,7 +38,7 @@ routerSummaryAuthenticated.get('/config',
 routerSummaryAuthenticated.get('/active',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
+    asyncHandler(authorizeAsAdminOrReporter),
     asyncHandler(async (req: any, res: any, next: any) => {
         const query = req.query as SearchActivityLogsRequest;
         logger.info(`getting summary config`);
@@ -55,7 +55,7 @@ routerSummaryAuthenticated.get('/active',
 routerSummaryAuthenticated.get('/logintry',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
+    asyncHandler(authorizeAsAdminOrReporter),
     asyncHandler(async (req: any, res: any, next: any) => {
         const query = req.query as SearchSummaryRequest;
         logger.info(`getting login try`);
@@ -70,7 +70,7 @@ routerSummaryAuthenticated.get('/logintry',
 routerSummaryAuthenticated.get('/createtunnel',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
+    asyncHandler(authorizeAsAdminOrReporter),
     asyncHandler(async (req: any, res: any, next: any) => {
         const query = req.query as SearchSummaryRequest;
         logger.info(`getting create tunnel`);
@@ -84,7 +84,7 @@ routerSummaryAuthenticated.get('/createtunnel',
 routerSummaryAuthenticated.get('/2facheck',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
+    asyncHandler(authorizeAsAdminOrReporter),
     asyncHandler(async (req: any, res: any, next: any) => {
         const query = req.query as SearchSummaryRequest;
         logger.info(`getting 2fa check`);
@@ -98,7 +98,7 @@ routerSummaryAuthenticated.get('/2facheck',
 routerSummaryAuthenticated.get('/userloginsuccess',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
+    asyncHandler(authorizeAsAdminOrReporter),
     asyncHandler(async (req: any, res: any, next: any) => {
         const query = req.query as SearchSummaryRequest;
         logger.info(`getting 2fa check`);
@@ -114,7 +114,7 @@ routerSummaryAuthenticated.get('/userloginsuccess',
 routerSummaryAuthenticated.get('/userloginfailed',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
+    asyncHandler(authorizeAsAdminOrReporter),
     asyncHandler(async (req: any, res: any, next: any) => {
         const query = req.query as SearchSummaryRequest;
         logger.info(`getting 2fa check`);
