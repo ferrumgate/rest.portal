@@ -76,6 +76,7 @@ export interface SearchActivityLogsRequest {
 export interface SearchSummaryRequest {
     startDate?: string;
     endDate?: string;
+    timeZone?: string;
 
 }
 export interface SearchSummaryUserRequest extends SearchSummaryRequest {
@@ -624,7 +625,7 @@ export class ESService {
 
     }
 
-    private getSummaryQuery(type: string, start: string, end: string, aggField: string, interval = 'day', offset = '0') {
+    private getSummaryQuery(type: string, start: string, end: string, aggField: string, interval: string, timezone: string) {
         return {
             "size": 0,
             "sort": {
@@ -656,6 +657,7 @@ export class ESService {
                         "field": "insertDate",
                         "calendar_interval": interval,
                         "min_doc_count": 0,
+                        "time_zone": timezone,
                         "extended_bounds": { "min": start, "max": end }
                     },
                     "aggs": {
@@ -691,7 +693,7 @@ export class ESService {
         const dates = this.indexCalculator(new Date(start), new Date(end));
         const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
         const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
-        const srequest = this.getSummaryQuery('login try', start, end, 'status');
+        const srequest = this.getSummaryQuery('login try', start, end, 'status', 'day', sreq.timeZone || '+00:00');
         console.log(JSON.stringify(srequest));
         let request = {
             ignore_unavailable: true,
@@ -732,7 +734,7 @@ export class ESService {
         const dates = this.indexCalculator(new Date(start), new Date(end));
         const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
         const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
-        const srequest = this.getSummaryQuery('2fa check', start, end, 'status');
+        const srequest = this.getSummaryQuery('2fa check', start, end, 'status', 'day', sreq.timeZone || '+00:00');
         console.log(JSON.stringify(srequest));
         let request = {
             ignore_unavailable: true,
@@ -791,7 +793,7 @@ export class ESService {
                 "username": {
                     "terms": {
                         "field": "username",
-                        "size": 10,
+                        "size": size,
                         "order": {
                             "_count": "desc"
                         }
@@ -886,7 +888,7 @@ export class ESService {
         const dates = this.indexCalculator(new Date(start), new Date(end));
         const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
         const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
-        const srequest = this.getSummaryQuery('create tunnel', start, end, 'tunType');
+        const srequest = this.getSummaryQuery('create tunnel', start, end, 'tunType', 'day', sreq.timeZone || '+00:00');
         console.log(JSON.stringify(srequest));
         let request = {
             ignore_unavailable: true,
@@ -918,7 +920,7 @@ export class ESService {
         const dates = this.indexCalculator(new Date(start), new Date(end));
         const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
         const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
-        const srequest = this.getSummaryQuery('login try', start, end, 'status');
+        const srequest = this.getSummaryQuery('login try', start, end, 'status', 'day', sreq.timeZone || '+00:00');
         console.log(JSON.stringify(srequest));
         let request = {
             ignore_unavailable: true,
@@ -963,7 +965,7 @@ export class ESService {
         const dates = this.indexCalculator(new Date(start), new Date(end));
         const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
         const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
-        const srequest = this.getSummaryQuery('login try', start, end, 'status', 'hour');
+        const srequest = this.getSummaryQuery('login try', start, end, 'status', 'hour', sreq.timeZone || '+00:00');
         console.log(JSON.stringify(srequest));
         let request = {
             ignore_unavailable: true,
