@@ -12,6 +12,7 @@ import { config } from "process";
 import { authorizeAsAdmin } from "./commonApi";
 import { AuthSession } from "../model/authSession";
 import { UserNetworkListResponse } from "../service/policyService";
+import { HelperService } from "../service/helperService";
 
 
 
@@ -207,6 +208,129 @@ routerUserAuthenticated.get('/current/network',
         return res.status(200).json({ items: results });
 
     }))
+
+
+/// current user new qr code
+
+routerUserAuthenticated.get('/current/2fa/rekey',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`getting current user 2fa`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const redisService = appService.redisService;
+        const t2FAService = appService.twoFAService;
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const user = await configService.getUserById(currentUser.id);
+        HelperService.isValidUser(user);
+        const key = t2FAService.generateSecret();
+        const rkey = Util.randomNumberString(16);
+        await redisService.set(`/2fa/id/${rkey}`, key);
+        await redisService.expire(`/2fa/id/${rkey}`, 30 * 60 * 1000);
+
+        return res.status(200).json({ key: rkey, t2FAKey: key });
+
+    }))
+
+// get current user 2fa settings
+routerUserAuthenticated.get('/current/2fa',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const refresh = req.query.refresh;
+        logger.info(`getting current user 2fa`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const t2FAService = appService.twoFAService;
+        const currentUser = req.currentUser as User;
+        const redisService = appService.redisService;
+        const currentSession = req.currentSession as AuthSession;
+
+        const user = await configService.getUserById(currentUser.id);
+        HelperService.isValidUser(user);
+        if (!user)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrUserNotFound, 'not found');
+        let secret = user.twoFASecret || t2FAService.generateSecret();
+
+        const rkey = Util.randomNumberString(16);
+        await redisService.set(`/2fa/id/${rkey}`, secret);
+        await redisService.expire(`/2fa/id/${rkey}`, 30 * 60 * 1000);
+
+        return res.status(200).json({ is2FA: user?.is2FA, key: rkey, t2FAKey: secret });
+
+    }))
+/// set new user 2fa settings
+
+routerUserAuthenticated.put('/current/2fa',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const request = req.body as { is2FA: boolean, key?: string, token?: string }
+        logger.info(`saving current user 2fa settings`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const redisService = appService.redisService;
+        const t2FAService = appService.twoFAService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        const currentUser = req.currentUser as User;
+
+        const currentSession = req.currentSession as AuthSession;
+
+        const user = await configService.getUserById(currentUser.id);
+        HelperService.isValidUser(user);
+        if (!user)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrUserNotFound, 'not found');
+        const userSensitiveData = await configService.getUserSensitiveData(currentUser.id);
+
+        let isChanged = false;
+        if (!request.is2FA) {
+            if (user.is2FA != request.is2FA) {
+                user.is2FA = request.is2FA;
+                user.twoFASecret = t2FAService.generateSecret();//change it for security
+                isChanged = true;
+            }
+        } else {
+            await inputService.checkNotEmpty(request.key);
+            await inputService.checkNotEmpty(request.token);
+            const secret = await redisService.get(`/2fa/id/${request.key}`, false) as string;
+            await inputService.checkNotEmpty(secret);
+            t2FAService.verifyToken(secret, request.token || '');
+            if (userSensitiveData.twoFASecret != secret || !user.is2FA) {
+                user.is2FA = true;
+                user.twoFASecret = secret;
+                isChanged = true;
+            }
+
+
+
+        }
+        if (isChanged) {
+            const { before, after } = await configService.saveUser(user);
+            //we try to show a little data
+            before.twoFASecret2 = before.twoFASecret?.substring(0, 5);
+            after.twoFASecret2 = after.twoFASecret?.substring(0, 5);
+            await auditService.logSaveUser(currentSession, currentUser, before, after);
+        }
+
+        return res.status(200).json({});
+
+    }))
+
+
 
 
 

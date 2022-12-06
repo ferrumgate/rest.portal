@@ -73,46 +73,46 @@ export class ErrorCodes {
     static ErrNotInLdapGroups: string = 'ErrNotInLdapGroups';
     static ErrKeyLengthSmall: string = 'ErrKeyLengthSmall';
 
+
 }
 
 
 export class ErrorCodesInternal extends ErrorCodes {
-    static ErrTunnelNotFoundOrNotValid: string;
-    static ErrTunnelNotFound: string;
-    static ErrTunnelNotValid: string;
-    static ErrClientNetworkNotValid: string;
-    static ErrIpPoolIsOver: string;
-    static ErrUserNotFound: string;
-    static ErrServiceNotFound: string;
-    static ErrServiceNotValid: string;
-    static ErrNetworkNotValid: string;
-    static ErrNoRuleMatch: string;
-    static ErrRuleDenyMatch: string;
-    static ErrGatewayNotFound: string;
-    static ErrGatewayNotValid: string;
-    static ErrSessionNotFound: string;
-    static ErrUserSessionNotFoundInvalid: string;
-    static ErrSessionInvalid: string;
-    static ErrInputNotANumber: string;
-    static ErrInputNotExists: string;
-    static ErrInputEmpty: string;
-    static ErrInputArrayEmpty: string;
-    static ErrInputExists: string;
-    static ErrTokenInvalid: string;
-    static ErrEmailSend: string;
-    static ErrKeyNotFound: string;
-    static ErrServiceCidrNotValid: string;
-    static ErrSystemServiceDelete: string;
-
-    static ErrAuthnRuleNotFound: string;
-    static ErrAuthzRuleNotFound: string;
-    static ErrAuthzPolicyNotFound: string;
-    static ErrAuthnPolicyNotFound: string;
-    static ErrGroupNotFound: string;
-    static ErrAuthMethodNotFound: string;
-    static ErrAuthMethodNoSuccess: string;
-    static ErrAdminUserNotFound: string;
-    static ErrUsernameOrPasswordInvalid: string;
-    static ErrRateLimitReached: string;
+    static ErrTunnelNotFoundOrNotValid: string = "ErrTunnelNotFoundOrNotValid";
+    static ErrTunnelNotFound: string = "ErrTunnelNotFound";
+    static ErrTunnelNotValid: string = "ErrTunnelNotValid";
+    static ErrClientNetworkNotValid: string = "ErrClientNetworkNotValid";
+    static ErrIpPoolIsOver: string = "ErrIpPoolIsOver";
+    static ErrUserNotFound: string = "ErrUserNotFound";
+    static ErrServiceNotFound: string = "ErrServiceNotFound";
+    static ErrServiceNotValid: string = "ErrServiceNotValid";
+    static ErrNetworkNotValid: string = "ErrNetworkNotValid";
+    static ErrNoRuleMatch: string = "ErrNoRuleMatch";
+    static ErrRuleDenyMatch: string = "ErrRuleDenyMatch";
+    static ErrGatewayNotFound: string = "ErrGatewayNotFound";
+    static ErrGatewayNotValid: string = "ErrGatewayNotValid";
+    static ErrSessionNotFound: string = "ErrSessionNotFound";
+    static ErrUserSessionNotFoundInvalid: string = "ErrUserSessionNotFoundInvalid";
+    static ErrSessionInvalid: string = "ErrSessionInvalid";
+    static ErrInputNotANumber: string = "ErrInputNotANumber";
+    static ErrInputNotExists: string = "ErrInputNotExists";
+    static ErrInputEmpty: string = "ErrInputEmpty";
+    static ErrInputArrayEmpty: string = "ErrInputArrayEmpty";
+    static ErrInputExists: string = "ErrInputExists";
+    static ErrTokenInvalid: string = "ErrTokenInvalid";
+    static ErrEmailSend: string = "ErrEmailSend";
+    static ErrKeyNotFound: string = "ErrKeyNotFound";
+    static ErrServiceCidrNotValid: string = "ErrServiceCidrNotValid";
+    static ErrSystemServiceDelete: string = "ErrSystemServiceDelete";
+    static ErrAuthnRuleNotFound: string = "ErrAuthnRuleNotFound";
+    static ErrAuthzRuleNotFound: string = "ErrAuthzRuleNotFound";
+    static ErrAuthzPolicyNotFound: string = "ErrAuthzPolicyNotFound";
+    static ErrAuthnPolicyNotFound: string = "ErrAuthnPolicyNotFound";
+    static ErrGroupNotFound: string = "ErrGroupNotFound";
+    static ErrAuthMethodNotFound: string = "ErrAuthMethodNotFound";
+    static ErrAuthMethodNoSuccess: string = "ErrAuthMethodNoSuccess";
+    static ErrAdminUserNotFound: string = "ErrAdminUserNotFound";
+    static ErrUsernameOrPasswordInvalid: string = "ErrUsernameOrPasswordInvalid";
+    static ErrRateLimitReached: string = "ErrRateLimitReached";
 
 }

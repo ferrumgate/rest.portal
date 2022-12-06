@@ -300,7 +300,7 @@ export class ConfigService {
 
             //authiraziton policy
             this.config.authorizationPolicy.rules.push({
-                id: Util.randomNumberString(),
+                id: Util.randomNumberString(16),
                 name: 'tst1',
                 isEnabled: true,
                 networkId: net.id,
@@ -312,7 +312,7 @@ export class ConfigService {
             //
             this.config.authenticationPolicy.rules.push({
 
-                id: Util.randomNumberString(),
+                id: Util.randomNumberString(16),
                 name: 'abc rule',
                 networkId: net.id,
                 userOrgroupIds: [standartUser.id],
@@ -324,7 +324,7 @@ export class ConfigService {
 
             this.config.authenticationPolicy.rules.push({
 
-                id: Util.randomNumberString(),
+                id: Util.randomNumberString(16),
                 name: 'abc2',
                 networkId: net.id,
                 userOrgroupIds: [adminUser.id],
@@ -335,7 +335,7 @@ export class ConfigService {
             })
             this.config.authenticationPolicy.rules.push({
 
-                id: Util.randomNumberString(),
+                id: Util.randomNumberString(16),
                 name: 'def2',
                 networkId: net.id,
                 userOrgroupIds: [adminUser.id],

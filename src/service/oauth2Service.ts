@@ -5,7 +5,7 @@ import { logger } from '../common';
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../restfullException';
 import { HelperService } from './helperService';
 import { SessionService } from './sessionService';
-
+import fs from 'fs';
 
 
 //documentation
@@ -95,11 +95,15 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
         logger.info(`getAccessToken ${accessToken.substring(0, 6)}`)
         let decoded = undefined;
         const publicssl = (await this.config.getJWTSSLCertificate()).publicKey || '';
+        //fs.writeFileSync('/tmp/access' + this.counter, accessToken);
+        //fs.writeFileSync('/tmp/pub' + this.counter, publicssl);
+        //this.counter++;
         try {
             decoded = JWT.verify(accessToken, publicssl, config.JWT_VERIFY_OPTIONS) as any;
 
         } catch (err) {
-            logger.warn(`jwt verification failed ${accessToken}`);
+            logger.warn(`jwt verification failed ${accessToken?.substring(0, 6)}`);
+
             throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed");
 
         }

@@ -384,14 +384,14 @@ app.start = async function () {
     const configService = appService.configService;
 
     const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.com");
-    configService.setJWTSSLCertificate({
+    await configService.setJWTSSLCertificate({
         privateKey: privateKey,
         publicKey: publicKey,
     });
     //create ca ssl certificate if not exists;
     if (!(await configService.getCASSLCertificate()).privateKey) {
         const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.local");
-        configService.setSSLCertificate({
+        await configService.setSSLCertificate({
             privateKey: privateKey,
             publicKey: publicKey,
         });
@@ -399,7 +399,7 @@ app.start = async function () {
     //create ssl certificates if not exists
     if (!(await configService.getSSLCertificate()).privateKey) {
         const { privateKey, publicKey } = await Util.createSelfSignedCrt("secure.ferrumgate.local");
-        configService.setSSLCertificate({
+        await configService.setSSLCertificate({
             privateKey: privateKey,
             publicKey: publicKey,
         });
