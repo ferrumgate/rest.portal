@@ -8,9 +8,11 @@ import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Group } from '../src/model/group';
 
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+chai.use(chaiExclude);
 
 
 function createSampleData() {
@@ -130,7 +132,7 @@ describe('groupApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(group2);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(group2);
 
     }).timeout(50000);
 
@@ -191,7 +193,7 @@ describe('groupApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.items[0]).to.deep.equal(group1);
+        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(group1);
 
     }).timeout(50000);
 

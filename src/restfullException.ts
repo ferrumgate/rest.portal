@@ -64,7 +64,7 @@ export class ErrorCodes {
     static ErrDomainNotValid: string = 'ErrDomainNotValid';
     static ErrEmptyNotValid: string = 'ErrEmptyNotValid';
     static ErrNotExists: string = 'ErrNotExists';
-    static ErrExists: string = 'ErrNotExists';
+    static ErrExists: string = 'ErrExists';
     static ErrAllreadyExits: string = 'ErrAllreadyExits';
     static ErrDataVerifyFailed: string = 'ErrDataVerifyFailed';
     static ErrDisabledSource: string = 'ErrDisabledSource';
@@ -72,6 +72,7 @@ export class ErrorCodes {
     static ErrNetworkNotFound: string = 'ErrNetworkNotFound';
     static ErrNotInLdapGroups: string = 'ErrNotInLdapGroups';
     static ErrKeyLengthSmall: string = 'ErrKeyLengthSmall';
+    static ErrInputNullOrUndefined: string = "ErrInputNullOrUndefined";
 
 
 }
@@ -114,5 +115,6 @@ export class ErrorCodesInternal extends ErrorCodes {
     static ErrAdminUserNotFound: string = "ErrAdminUserNotFound";
     static ErrUsernameOrPasswordInvalid: string = "ErrUsernameOrPasswordInvalid";
     static ErrRateLimitReached: string = "ErrRateLimitReached";
+    static ErrOnlyAuthLocalIsValid: string = "ErrOnlyAuthLocalIsValid";
 
 }

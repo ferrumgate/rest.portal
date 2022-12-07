@@ -423,7 +423,9 @@ describe('userApiAuthenticated', async () => {
                 is2FA: false,
                 ips: []
             },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
 
         }
@@ -456,11 +458,12 @@ describe('userApiAuthenticated', async () => {
             username: 'hamza5@ferrumgate.com',
             id: 'someid5',
             name: 'hamza5',
-            source: 'linkedin',
+            source: 'local-local',
             roleIds: ['User'],
             groupIds: ['test2'],
             isLocked: false, isVerified: true, is2FA: false,
             isEmailVerified: true,
+
             password: Util.bcryptHash('somepass'),
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
@@ -585,6 +588,39 @@ describe('userApiAuthenticated', async () => {
                 });
         })
         expect(response.status).to.equal(200);
+
+    }).timeout(50000);
+
+
+
+    it('PUT /user/current/pass will return 200', async () => {
+        //prepare data
+        const { user1 } = createSampleData22();
+        user1.password = Util.bcryptHash('Test123456');
+        await appService.configService.saveUser(user1);
+
+        const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
+
+        let firstpass = user1.password;
+        let token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put(`/user/current/pass`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ oldPass: 'Test123456', newPass: 'Test12345678' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        //check if password changed
+        expect(appService.configService.config.users.find(x => x.id == user1.id)?.password).not.equal(firstpass);
+
+
 
     }).timeout(50000);
 

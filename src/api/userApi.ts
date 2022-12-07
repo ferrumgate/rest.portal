@@ -214,7 +214,7 @@ routerUserAuthenticated.get('/current/network',
 
 routerUserAuthenticated.get('/current/2fa/rekey',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         logger.info(`getting current user 2fa`);
@@ -242,7 +242,7 @@ routerUserAuthenticated.get('/current/2fa/rekey',
 // get current user 2fa settings
 routerUserAuthenticated.get('/current/2fa',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
     asyncHandler(async (req: any, res: any, next: any) => {
         const refresh = req.query.refresh;
         logger.info(`getting current user 2fa`);
@@ -269,11 +269,11 @@ routerUserAuthenticated.get('/current/2fa',
         return res.status(200).json({ is2FA: user?.is2FA, key: rkey, t2FAKey: secret });
 
     }))
-/// set new user 2fa settings
+/// set current user 2fa settings
 
 routerUserAuthenticated.put('/current/2fa',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
     asyncHandler(async (req: any, res: any, next: any) => {
         const request = req.body as { is2FA: boolean, key?: string, token?: string }
         logger.info(`saving current user 2fa settings`);
@@ -289,7 +289,7 @@ routerUserAuthenticated.put('/current/2fa',
         const currentUser = req.currentUser as User;
 
         const currentSession = req.currentSession as AuthSession;
-
+        await inputService.checkNotNullOrUndefined(req.is2FA);
         const user = await configService.getUserById(currentUser.id);
         HelperService.isValidUser(user);
         if (!user)
@@ -331,6 +331,57 @@ routerUserAuthenticated.put('/current/2fa',
     }))
 
 
+/// set current user password
+
+routerUserAuthenticated.put('/current/pass',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const request = req.body as { oldPass: string, newPass: string }
+        logger.info(`saving current user password settings`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const redisService = appService.redisService;
+        const t2FAService = appService.twoFAService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        const currentUser = req.currentUser as User;
+
+        const currentSession = req.currentSession as AuthSession;
+        await inputService.checkNotEmpty(request.oldPass);
+        await inputService.checkPasswordPolicy(request.newPass);
+
+        const user = await configService.getUserByIdAndPass(currentUser.id, request.oldPass);
+        if (!user)
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrUserNotFound, 'not found');
+        if (!user.source.startsWith('local'))
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrOnlyAuthLocalIsValid, 'only local users');
+        HelperService.isValidUser(user);
+
+        let isChanged = false;
+        if (request.oldPass != request.newPass) {
+            isChanged = true;
+            user.password = Util.bcryptHash(request.newPass);
+            await configService.saveUser(user);
+
+        }
+
+        if (isChanged) {
+            const { before, after } = await configService.saveUser(user);
+            //we try to show a little data
+            before.password2 = 'before';
+            after.password2 = 'after';
+            await auditService.logSaveUser(currentSession, currentUser, before, after);
+        }
+
+        return res.status(200).json({});
+
+    }))
+
+
 
 
 
@@ -351,11 +402,11 @@ routerUserAuthenticated.get('/current',
                 name: user.name,
                 username: user.username,
                 is2FA: user.is2FA,
-                roles: roles
+                roles: roles,
+                source: user.source
             });
     })
 );
-
 
 
 

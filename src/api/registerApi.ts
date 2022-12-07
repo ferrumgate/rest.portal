@@ -57,7 +57,7 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     logger.info(`someone is not exits on db with email ${userInput.username}`);
     let userSave: User = HelperService.createUser('local-local',
         userInput.username,
-        userInput.name || userInput.username.substr(0, userInput.username.indexOf('@')),
+        userInput.name || userInput.username.substring(0, userInput.username.indexOf('@')),
         userInput.password);
 
 

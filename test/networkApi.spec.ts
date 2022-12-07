@@ -8,9 +8,11 @@ import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Network } from '../src/model/network';
 
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+chai.use(chaiExclude);
 
 
 

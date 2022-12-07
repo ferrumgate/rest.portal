@@ -116,5 +116,9 @@ export class InputService {
         if (exchangeKey.length < len)
             throw new RestfullException(400, ErrorCodes.ErrKeyLengthSmall, ErrorCodes.ErrKeyLengthSmall, 'length is invalid');
     }
+    checkNotNullOrUndefined(val?: any) {
+        if (val == null || val == undefined)
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrInputNullOrUndefined, 'input is invalid');
+    }
 
 }

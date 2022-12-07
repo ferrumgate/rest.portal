@@ -10,9 +10,11 @@ import { Service } from '../src/model/service';
 import { Network } from '../src/model/network';
 import { getEmptyServiceIp } from '../src/api/serviceApi';
 
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+chai.use(chaiExclude);
 
 
 function createSampleData() {
@@ -145,7 +147,7 @@ describe('serviceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(service2);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(service2);
 
     }).timeout(50000);
 
@@ -205,7 +207,7 @@ describe('serviceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.items[0]).to.deep.equal(service1);
+        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
 
     }).timeout(50000);
 

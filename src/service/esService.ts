@@ -513,6 +513,9 @@ export class ESService {
                             },
                             browserVersion: {
                                 type: "keyword"
+                            },
+                            country: {
+                                type: "keyword"
                             }
 
 

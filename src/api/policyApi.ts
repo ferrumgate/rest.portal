@@ -86,7 +86,7 @@ routerAuthenticationPolicyAuthenticated.delete('/rule/:id',
         if (!rule) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrAuthnRuleNotFound, 'no rule');
 
         const { before } = await configService.deleteAuthenticationPolicyRule(rule.id);
-        await configService.updateAuthenticationPolicyUpdateTime();
+        //await configService.updateAuthenticationPolicyUpdateTime();
         await auditService.logDeleteAuthenticationPolicyRule(currentSession, currentUser, before);
 
         return res.status(200).json({});
@@ -120,7 +120,7 @@ routerAuthenticationPolicyAuthenticated.put('/rule/pos/:id',
         const previousNumber = Number(input.previous);
         const currentNumber = Number(input.current);
         const { item, iBefore, iAfter } = await configService.updateAuthenticationRulePos(rule.id, previousNumber, currentNumber);
-        await configService.updateAuthenticationPolicyUpdateTime();
+        //await configService.updateAuthenticationPolicyUpdateTime();
         await auditService.logUpdateAuthenticationRulePos(currentSession, currentUser, item, iBefore, iAfter);
 
         return res.status(200).json(rule);
@@ -156,7 +156,7 @@ routerAuthenticationPolicyAuthenticated.put('/rule',
         const safe = cloneAuthenticationRule(input);
         //copy original one
         const { before, after } = await configService.saveAuthenticationPolicyRule(safe);
-        await configService.updateAuthenticationPolicyUpdateTime();
+        //await configService.updateAuthenticationPolicyUpdateTime();
         await auditService.logSaveAuthenticationPolicyRule(currentSession, currentUser, before, after);
 
         return res.status(200).json(safe);
@@ -189,7 +189,7 @@ routerAuthenticationPolicyAuthenticated.post('/rule',
         const safe = cloneAuthenticationRule(input);
         //copy original one
         const { before, after } = await configService.saveAuthenticationPolicyRule(safe);
-        await configService.updateAuthenticationPolicyUpdateTime();
+        //await configService.updateAuthenticationPolicyUpdateTime();
         await auditService.logSaveAuthenticationPolicyRule(currentSession, currentUser, before, after);
 
         return res.status(200).json(safe);
@@ -261,7 +261,7 @@ routerAuthorizationPolicyAuthenticated.delete('/rule/:id',
         if (!rule) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrAuthnRuleNotFound, 'no rule');
 
         const { before } = await configService.deleteAuthorizationPolicyRule(rule.id);
-        await configService.updateAuthorizationPolicyUpdateTime();
+        //await configService.updateAuthorizationPolicyUpdateTime();
         await auditService.logDeleteAuthorizationPolicyRule(currentSession, currentUser, before);
 
         return res.status(200).json({});
@@ -298,7 +298,7 @@ routerAuthorizationPolicyAuthenticated.put('/rule',
         const safe = cloneAuthorizationRule(input);
         //copy original one
         const { before, after } = await configService.saveAuthorizationPolicyRule(safe);
-        await configService.updateAuthorizationPolicyUpdateTime();
+        //await configService.updateAuthorizationPolicyUpdateTime();
         await auditService.logSaveAuthorizationPolicyRule(currentSession, currentUser, before, after);
 
         return res.status(200).json(safe);
@@ -331,7 +331,7 @@ routerAuthorizationPolicyAuthenticated.post('/rule',
         const safe = cloneAuthorizationRule(input);
         //copy original one
         const { before, after } = await configService.saveAuthorizationPolicyRule(safe);
-        await configService.updateAuthorizationPolicyUpdateTime();
+        //await configService.updateAuthorizationPolicyUpdateTime();
         await auditService.saveAuthorizationPolicyRule(currentSession, currentUser, before, after);
 
         return res.status(200).json(safe);

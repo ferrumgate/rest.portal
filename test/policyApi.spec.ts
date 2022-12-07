@@ -9,9 +9,11 @@ import { Util } from '../src/util';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
 
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+chai.use(chaiExclude);
 
 
 function createSampleDataAuthenticaton() {
@@ -24,7 +26,9 @@ function createSampleDataAuthenticaton() {
         networkId: 'networkId',
         userOrgroupIds: ['somegroupid'],
         profile: {},
-        isEnabled: true
+        isEnabled: true,
+        updateDate: new Date().toISOString(),
+        insertDate: new Date().toISOString()
 
 
     }
@@ -36,7 +40,9 @@ function createSampleDataAuthenticaton() {
         networkId: 'networkId',
         userOrgroupIds: ['somegroupid'],
         profile: {},
-        isEnabled: true
+        isEnabled: true,
+        updateDate: new Date().toISOString(),
+        insertDate: new Date().toISOString()
 
     }
 
@@ -47,7 +53,9 @@ function createSampleDataAuthenticaton() {
         networkId: 'networkId',
         userOrgroupIds: ['somegroupid'],
         profile: {},
-        isEnabled: true
+        isEnabled: true,
+        updateDate: new Date().toISOString(),
+        insertDate: new Date().toISOString()
 
     }
 
@@ -142,9 +150,9 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.rules[0]).to.deep.equal(rule1);
-        expect(response.body.rules[1]).to.deep.equal(rule2);
-        expect(response.body.rules[2]).to.deep.equal(rule3);
+        expect(response.body.rules[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule1);
+        expect(response.body.rules[1]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
+        expect(response.body.rules[2]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule3);
 
     }).timeout(50000);
 
@@ -173,7 +181,7 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(rule2);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
 
 
     }).timeout(50000);
@@ -273,7 +281,7 @@ describe('policy', async () => {
 
         //
         const rule = await appService.configService.getAuthenticationPolicyRule(rule2.id);
-        expect(rule).to.deep.equal(rule2);
+        expect(rule).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
 
     }).timeout(50000);
 
@@ -344,9 +352,9 @@ describe('policy', async () => {
 
         //
         const policy = await appService.configService.getAuthenticationPolicy();
-        expect(policy.rules[0]).to.deep.equal(rule2);
-        expect(policy.rules[1]).to.deep.equal(rule3);
-        expect(policy.rules[2]).to.deep.equal(rule1);
+        expect(policy.rules[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
+        expect(policy.rules[1]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule3);
+        expect(policy.rules[2]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule1);
 
     }).timeout(50000);
 
@@ -368,7 +376,9 @@ describe('policy', async () => {
                 is2FA: false,
             },
             serviceId: 's1',
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
 
         }
@@ -383,7 +393,9 @@ describe('policy', async () => {
                 is2FA: false,
             },
             serviceId: 's1',
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
 
@@ -396,7 +408,9 @@ describe('policy', async () => {
                 is2FA: false,
             },
             serviceId: 's1',
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
 
@@ -473,9 +487,9 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.rules[0]).to.deep.equal(rule1);
-        expect(response.body.rules[1]).to.deep.equal(rule2);
-        expect(response.body.rules[2]).to.deep.equal(rule3);
+        expect(response.body.rules[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule1);
+        expect(response.body.rules[1]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
+        expect(response.body.rules[2]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule3);
 
     }).timeout(50000);
 
@@ -504,7 +518,7 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(rule2);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
 
 
     }).timeout(50000);
@@ -604,7 +618,7 @@ describe('policy', async () => {
 
         //
         const rule = await appService.configService.getAuthorizationPolicyRule(rule2.id);
-        expect(rule).to.deep.equal(rule2);
+        expect(rule).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
 
     }).timeout(50000);
 

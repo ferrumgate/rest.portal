@@ -8,10 +8,11 @@ import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Gateway } from '../src/model/network';
 
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
+chai.use(chaiExclude);
 
 
 /**
@@ -251,7 +252,7 @@ describe('gatewayApi', async () => {
         })
         expect(response.status).to.equal(200);
         const itemDb = await appService.configService.getGateway(gateway.id);
-        expect(itemDb).to.deep.equal(gateway);
+        expect(itemDb).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
 
     }).timeout(50000);
 
