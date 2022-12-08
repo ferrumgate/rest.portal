@@ -101,7 +101,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getGatewayById('someid', '231a0932')
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.deep.equal(gateway);
+        expect(result.result).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
 
     }).timeout(5000);
 
@@ -122,7 +122,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getNetworkByGatewayId('someid', '231a0932')
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.deep.equal(network);
+        expect(result.result).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
 
     }).timeout(5000);
 
@@ -144,7 +144,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getService('someid', service.id)
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.deep.equal(service);
+        expect(result.result).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
 
     }).timeout(5000);
 
@@ -165,7 +165,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getServicesByGatewayId('someid', gateway.id);
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result[0]).to.deep.equal(service);
+        expect(result.result[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
 
     }).timeout(5000);
 

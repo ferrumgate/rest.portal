@@ -110,11 +110,10 @@ export class ConfigService {
             gateways: [],
 
             authenticationPolicy: {
-                id: Util.randomNumberString(16), rules: [
-
-                ], insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
+                rules: [
+                ],
             },
-            authorizationPolicy: { id: Util.randomNumberString(16), rules: [], insertDate: new Date().toISOString(), updateDate: new Date().toISOString() }
+            authorizationPolicy: { rules: [] }
 
 
         }
@@ -605,13 +604,15 @@ export class ConfigService {
         rulesAuthnChanged.forEach(x => {
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
         })
-        if (rulesAuthnChanged.length)
+        if (rulesAuthnChanged.length) {
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
+        }
         rulesAuthzChanged.forEach(x => {
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
         })
-        if (rulesAuthzChanged.length)
+        if (rulesAuthzChanged.length) {
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
+        }
 
         this.emitEvent({ type: 'deleted', path: '/users', data: this.createTrackEvent(user) })
 
@@ -1437,7 +1438,7 @@ export class ConfigService {
             ruleIndex = this.config.authenticationPolicy.rules.length - 1;
             this.emitEvent({ type: 'saved', path: '/authenticationPolicy/rules', data: this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex]) })
         }
-        this.config.authenticationPolicy.updateDate = new Date().toISOString();
+
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
         await this.saveConfigToFile();
         return this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex])
@@ -1462,7 +1463,6 @@ export class ConfigService {
         const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
         if (ruleIndex >= 0 && rule) {
             this.config.authenticationPolicy.rules.splice(ruleIndex, 1);
-            this.config.authenticationPolicy.updateDate = new Date().toISOString();
             this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(rule) })
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
             await this.saveConfigToFile();
@@ -1483,7 +1483,6 @@ export class ConfigService {
 
         this.config.authenticationPolicy.rules.splice(previous, 1);
         this.config.authenticationPolicy.rules.splice(index, 0, currentRule);
-        this.config.authenticationPolicy.updateDate = new Date().toISOString();
         //TODO how to manage
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
@@ -1507,7 +1506,7 @@ export class ConfigService {
             ruleIndex = this.config.authenticationPolicy.rules.length - 1;
             this.emitEvent({ type: 'saved', path: '/authorizationPolicy/rules', data: this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]) })
         }
-        this.config.authorizationPolicy.updateDate = new Date().toISOString();
+
         this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
         await this.saveConfigToFile();
         return this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]);
@@ -1532,7 +1531,6 @@ export class ConfigService {
         const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
         if (ruleIndex >= 0 && rule) {
             this.config.authorizationPolicy.rules.splice(ruleIndex, 1);
-            this.config.authorizationPolicy.updateDate = new Date().toISOString();
             this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(rule) })
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
             await this.saveConfigToFile();

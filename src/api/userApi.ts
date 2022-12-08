@@ -289,7 +289,7 @@ routerUserAuthenticated.put('/current/2fa',
         const currentUser = req.currentUser as User;
 
         const currentSession = req.currentSession as AuthSession;
-        await inputService.checkNotNullOrUndefined(req.is2FA);
+        await inputService.checkNotNullOrUndefined(request.is2FA);
         const user = await configService.getUserById(currentUser.id);
         HelperService.isValidUser(user);
         if (!user)

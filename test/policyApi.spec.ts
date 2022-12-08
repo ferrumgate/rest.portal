@@ -277,7 +277,7 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(rule2);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
 
         //
         const rule = await appService.configService.getAuthenticationPolicyRule(rule2.id);
@@ -314,7 +314,7 @@ describe('policy', async () => {
         })
         expect(response.status).to.equal(200);
         rule1.id = response.body.id;
-        expect(response.body).to.deep.equal(rule1);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule1);
 
 
 
@@ -614,7 +614,7 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(rule2);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
 
         //
         const rule = await appService.configService.getAuthorizationPolicyRule(rule2.id);
@@ -651,7 +651,7 @@ describe('policy', async () => {
         })
         expect(response.status).to.equal(200);
         rule1.id = response.body.id;
-        expect(response.body).to.deep.equal(rule1);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule1);
 
 
 

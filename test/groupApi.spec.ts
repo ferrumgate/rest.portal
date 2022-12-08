@@ -256,7 +256,7 @@ describe('groupApi', async () => {
             itemDb.insertDate = group3.insertDate;
             itemDb.updateDate = group3.updateDate;
         }
-        expect(itemDb).to.deep.equal(group3);
+        expect(itemDb).to.excluding(['insertDate', 'updateDate']).deep.equal(group3);
 
     }).timeout(50000);
 
@@ -291,7 +291,7 @@ describe('groupApi', async () => {
         group1.insertDate = response.body.insertDate;
         group1.updateDate = response.body.updateDate;
 
-        expect(response.body).to.deep.equal(group1);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(group1);
 
     }).timeout(50000);
 

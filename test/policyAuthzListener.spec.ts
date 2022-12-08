@@ -150,7 +150,7 @@ describe('policyAuthzListener', () => {
         fs.writeFileSync(filename, 'gatewayId=1234');
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
-        const policy = new PolicyAuthzListener(policyService, systemWatcher, filename);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher);
         await policy.start();
         await Util.sleep(2000);
         await simpleRedis.publish('/policy/service', 'alive/ab/cd/ef');
@@ -173,7 +173,7 @@ describe('policyAuthzListener', () => {
         const tunnel2 = createTunnel(1234, 'abcde');
         systemWatcher.tunnels.set(tunnel1.id || '0', tunnel1);
         systemWatcher.tunnels.set(tunnel2.id || '0', tunnel2);
-        const policy = new PolicyAuthzListener(policyService, systemWatcher, filename);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher);
 
         class Room2 extends PolicyRoomService {
             isPushed = 0;
@@ -198,7 +198,7 @@ describe('policyAuthzListener', () => {
         const tunnel2 = createTunnel(1234, 'abcde');
         //systemWatcher.tunnels.set(tunnel1.id || '0', tunnel1);
         //systemWatcher.tunnels.set(tunnel2.id || '0', tunnel2);
-        const policy = new PolicyAuthzListener(policyService, systemWatcher, filename);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher);
 
         await policy.replicate('abcd', '1234', 'wsdwd');
         expect(await policy.getRoom('abcd', '1234', 'wsdwd')).exist;
@@ -231,7 +231,7 @@ describe('policyAuthzListener', () => {
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
 
-        const policy = new PolicyAuthzListener(policyService, systemWatcher, filename);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher);
 
         //check reset command
         class Room2 extends PolicyRoomService {

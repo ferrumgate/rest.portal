@@ -271,7 +271,7 @@ describe('serviceApi', async () => {
             itemDb.insertDate = service2.insertDate;
             itemDb.updateDate = service2.updateDate;
         }
-        expect(itemDb).to.deep.equal(service2);
+        expect(itemDb).to.excluding(['insertDate', 'updateDate']).deep.equal(service2);
 
     }).timeout(50000);
 
@@ -308,7 +308,7 @@ describe('serviceApi', async () => {
         service2.assignedIp = response.body.assignedIp;
         service2.insertDate = response.body.insertDate;
         service2.updateDate = response.body.updateDate;
-        expect(response.body).to.deep.equal(service2);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(service2);
 
     }).timeout(50000);
 

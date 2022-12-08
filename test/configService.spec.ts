@@ -546,7 +546,7 @@ describe('configService', async () => {
         await configService.addAuthSettingOAuth(oauth);
 
         const returned = await configService.getAuthSettingOAuth();
-        expect(returned.providers[0]).to.deep.equal(oauth);
+        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
         //delete
         await configService.deleteAuthSettingOAuth(oauth.id);
         const returned2 = await configService.getAuthSettingOAuth();
@@ -585,7 +585,7 @@ describe('configService', async () => {
         await configService.setAuthSettingsLocal(local);
 
         const returned = await configService.getAuthSettingsLocal();
-        expect(returned).to.deep.equal(local);
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
 
 
     });
@@ -609,7 +609,7 @@ describe('configService', async () => {
         await configService.saveGroup(group);
 
         const returned = await configService.getGroup(group.id);
-        expect(returned).to.deep.equal(group);
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
 
 
     });
@@ -684,7 +684,7 @@ describe('configService', async () => {
 
         const returned = await configService.getGroupsAll();
         expect(returned.length).to.be.equal(2);
-        expect(returned[0]).to.deep.equal(group);
+        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
 
     });
 
@@ -781,7 +781,7 @@ describe('configService', async () => {
         await configService.saveService(service);
 
         const returned = await configService.getService(service.id);
-        expect(returned).to.deep.equal(service);
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
 
 
     });
@@ -929,7 +929,7 @@ describe('configService', async () => {
 
         const returned = await configService.getServicesBy();
         expect(returned.length).to.be.equal(2);
-        expect(returned[0]).to.deep.equal(service1);
+        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
 
     });
 

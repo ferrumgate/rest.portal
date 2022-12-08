@@ -173,7 +173,7 @@ export class PolicyAuthzListener {
     private isStarted = false;
 
     constructor(private policyService: PolicyService,
-        private systemWatcher: SystemWatcherService, configFile?: string) {
+        private systemWatcher: SystemWatcherService) {
         this.gatewayId = process.env.GATEWAY_ID || '';
         this.cache = new NodeCache({ checkperiod: 60, deleteOnExpire: true, useClones: false, stdTTL: 60 });
         this.redisGlobal = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
