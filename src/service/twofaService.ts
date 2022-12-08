@@ -16,7 +16,7 @@ export class TwoFAService {
     verifyToken(secret: string, verify: string) {
         const result = twofactor.verifyToken(secret, verify);
         if (result?.delta == 0) return true;
-        throw new RestfullException(400, ErrorCodes.Err2FAVerifyFailed, '2fa not verified');
+        throw new RestfullException(400, ErrorCodes.Err2FAVerifyFailed, ErrorCodes.Err2FAVerifyFailed, '2fa not verified');
     }
 
 

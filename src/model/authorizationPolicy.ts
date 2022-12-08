@@ -8,6 +8,8 @@ export interface AuthorizationRule {
     serviceId: string;
     profile: AuthorizationProfile;
     isEnabled: boolean;
+    insertDate: string;
+    updateDate: string;
 
 }
 
@@ -19,7 +21,9 @@ export function cloneAuthorizationRule(val: AuthorizationRule): AuthorizationRul
         userOrgroupIds: val.userOrgroupIds ? Array.from(val.userOrgroupIds) : [],
         serviceId: val.serviceId,
         isEnabled: val.isEnabled,
-        profile: cloneAuthorizationProfile(val.profile)
+        profile: cloneAuthorizationProfile(val.profile),
+        insertDate: val.insertDate,
+        updateDate: val.updateDate
     }
 }
 

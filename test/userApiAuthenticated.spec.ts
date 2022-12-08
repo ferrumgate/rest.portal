@@ -24,22 +24,28 @@ describe('userApiAuthenticated', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
     const sessionService = appService.sessionService;
-    const user: User = {
-        username: 'hamza@ferrumgate.com',
+    function getSampleUser() {
 
-        id: 'someid',
-        name: 'hamza',
-        source: 'local',
-        roleIds: ['Admin'],
-        groupIds: ['test1'],
-        isLocked: false, isVerified: true,
-        password: Util.bcryptHash('somepass'),
-        insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
 
+        const user: User = {
+            username: 'hamza@ferrumgate.com',
+
+            id: 'someid',
+            name: 'hamza',
+            source: 'local',
+            roleIds: ['Admin'],
+            groupIds: ['test1'],
+            isLocked: false, isVerified: true,
+            password: Util.bcryptHash('somepass'),
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        return user;
     }
     before(async () => {
-        await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
+        const random = Util.randomNumberString();
+        await appService.configService.setConfigPath(`/tmp/rest.portal.config${random}.yaml`);
         await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
     })
 
@@ -55,9 +61,10 @@ describe('userApiAuthenticated', async () => {
 
     it('GET /user/current will return 200', async () => {
         //prepare data
+        const user = getSampleUser();
         const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user.id, sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -81,9 +88,11 @@ describe('userApiAuthenticated', async () => {
 
     it('GET /user/:id will return 200', async () => {
         //prepare data
+        const user = getSampleUser();
         const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
         await appService.configService.saveUser(user);
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -190,10 +199,11 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveUser(user3);
         await appService.configService.saveUser(user4);
         await appService.configService.saveUser(user5);
+
         const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
 
-
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid1', sid: session.id }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user1.id, sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -228,7 +238,7 @@ describe('userApiAuthenticated', async () => {
         const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
 
 
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid1', sid: session.id }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -262,7 +272,7 @@ describe('userApiAuthenticated', async () => {
         const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
 
 
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid1', sid: session.id }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -284,6 +294,7 @@ describe('userApiAuthenticated', async () => {
 
     it('PUT /user will return 200', async () => {
         //prepare data
+        const user = getSampleUser();
         await appService.configService.saveUser(user);
         const group: Group = {
             id: 'group1', name: 'group1', isEnabled: true, labels: [],
@@ -315,7 +326,8 @@ describe('userApiAuthenticated', async () => {
 
         const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
 
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -356,6 +368,7 @@ describe('userApiAuthenticated', async () => {
 
     it('PUT /user/current/network will return 200', async () => {
         //prepare data
+        const user = getSampleUser();
         await appService.configService.saveUser(user);
 
         const group: Group = {
@@ -368,7 +381,8 @@ describe('userApiAuthenticated', async () => {
 
         const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
 
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
 
 
         appService.configService.config.authenticationPolicy.rules = [];
@@ -409,7 +423,9 @@ describe('userApiAuthenticated', async () => {
                 is2FA: false,
                 ips: []
             },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
 
         }
@@ -436,7 +452,177 @@ describe('userApiAuthenticated', async () => {
 
     }).timeout(50000);
 
+    function createSampleData22() {
 
+        const user2fa: User = {
+            username: 'hamza5@ferrumgate.com',
+            id: 'someid5',
+            name: 'hamza5',
+            source: 'local-local',
+            roleIds: ['User'],
+            groupIds: ['test2'],
+            isLocked: false, isVerified: true, is2FA: false,
+            isEmailVerified: true,
+
+            password: Util.bcryptHash('somepass'),
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        return { user1: user2fa }
+    }
+
+
+    it('GET /user/current/2fa/rekey will return 200', async () => {
+        //prepare data
+        const { user1 } = createSampleData22();
+        await appService.configService.saveUser(user1);
+
+        const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
+
+
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/user/current/2fa/rekey`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body.key).exist;
+        expect(response.body.t2FAKey).exist;
+
+
+    }).timeout(50000);
+
+    it('GET /user/current/2fa will return 200', async () => {
+        //prepare data
+        const { user1 } = createSampleData22();
+        await appService.configService.saveUser(user1);
+
+        const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
+
+
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/user/current/2fa`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body.is2FA).to.be.false;
+        expect(response.body.key).exist;
+        expect(response.body.t2FAKey).exist;
+
+
+    }).timeout(50000);
+
+
+    it('PUT /user/current/2fa will return 200', async () => {
+        //prepare data
+        const { user1 } = createSampleData22();
+        await appService.configService.saveUser(user1);
+
+        const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
+
+
+        let token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
+        //dont change anything
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put(`/user/current/2fa`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ is2FA: false })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+
+
+        //change is enabled
+        token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/user/current/2fa`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        const rkey = response.body.key;
+        const t2faservice = appService.twoFAService;
+        const t2token = t2faservice.generateToken(response.body.t2FAKey);
+
+        token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put(`/user/current/2fa`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ is2FA: true, key: rkey, token: t2token })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+
+    }).timeout(50000);
+
+
+
+    it('PUT /user/current/pass will return 200', async () => {
+        //prepare data
+        const { user1 } = createSampleData22();
+        user1.password = Util.bcryptHash('Test123456');
+        await appService.configService.saveUser(user1);
+
+        const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
+
+        let firstpass = user1.password;
+        let token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put(`/user/current/pass`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ oldPass: 'Test123456', newPass: 'Test12345678' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        //check if password changed
+        expect(appService.configService.config.users.find(x => x.id == user1.id)?.password).not.equal(firstpass);
+
+
+
+    }).timeout(50000);
 
 })
 

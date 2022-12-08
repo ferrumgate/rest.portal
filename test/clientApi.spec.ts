@@ -138,7 +138,10 @@ describe('clientApi ', async () => {
 
 
     it('POST /client/tunnel', async () => {
-        await appService.configService.saveAuthenticationPolicyRule({ id: '123', action: 'allow', isEnabled: true, name: 'test', networkId: net.id, profile: {}, userOrgroupIds: [user.id] })
+        await appService.configService.saveAuthenticationPolicyRule({
+            id: '123', action: 'allow', isEnabled: true, name: 'test', networkId: net.id, profile: {}, userOrgroupIds: [user.id], updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+        })
         const session = await appService.sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         await redisService.hset(`/tunnel/id/kq0gxvko3j2v5tarpp9s8jsn5faxqd4knr0vplwhtiey3m2jo8k3dux2nvfem5sa`, {

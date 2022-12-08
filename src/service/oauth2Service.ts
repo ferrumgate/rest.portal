@@ -2,10 +2,10 @@ import OAuth2Server from 'oauth2-server';
 import { ConfigService } from './configService';
 import JWT from 'jsonwebtoken';
 import { logger } from '../common';
-import { ErrorCodes, RestfullException } from '../restfullException';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../restfullException';
 import { HelperService } from './helperService';
 import { SessionService } from './sessionService';
-
+import fs from 'fs';
 
 
 //documentation
@@ -66,19 +66,19 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
         let findUser = await this.config.getUserById(user.id).catch(err => {
             logger.fatal(JSON.stringify(err));
-            throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal error");
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodes.ErrInternalError, "internal error");
         })
 
         if (!findUser)
-            throw new RestfullException(401, ErrorCodes.ErrNotFound, 'unauthorized access');
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrUserNotFound, 'unauthorized access');
 
         let findSession = await this.session.getSession(user.sid).catch(err => {
             logger.fatal(JSON.stringify(err));
-            throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal error");
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrSessionNotFound, "internal error");
         })
 
         if (!findSession || findSession.userId != findUser.id)
-            throw new RestfullException(401, ErrorCodes.ErrNotFound, 'unauthorized access');
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrSessionInvalid, 'unauthorized access');
 
 
         user.id = findUser.id;
@@ -95,26 +95,30 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
         logger.info(`getAccessToken ${accessToken.substring(0, 6)}`)
         let decoded = undefined;
         const publicssl = (await this.config.getJWTSSLCertificate()).publicKey || '';
+        //fs.writeFileSync('/tmp/access' + this.counter, accessToken);
+        //fs.writeFileSync('/tmp/pub' + this.counter, publicssl);
+        //this.counter++;
         try {
             decoded = JWT.verify(accessToken, publicssl, config.JWT_VERIFY_OPTIONS) as any;
 
         } catch (err) {
-            logger.warn(`jwt verification failed ${accessToken}`);
-            throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed");
+            logger.warn(`jwt verification failed ${accessToken?.substring(0, 6)}`);
+
+            throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed");
 
         }
         if (decoded.expires <= new Date().getTime())
-            throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed");
+            throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed");
 
 
 
         if (decoded.type !== 'access')
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "unauthorized access");
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrTokenInvalid, "unauthorized access");
 
 
         let user = await this.config.getUserById(decoded.user.id).catch(err => {
             logger.fatal(JSON.stringify(err));
-            throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal error");
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodes.ErrInternalError, "internal error");
         })
 
         HelperService.isValidUser(user);
@@ -122,10 +126,10 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
         let session = await this.session.getSession(decoded.user.sid).catch(err => {
             logger.fatal(JSON.stringify(err));
-            throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal error");
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodes.ErrInternalError, "internal error");
         })
         if (!session || !user || session.userId != user.id)
-            throw new RestfullException(401, ErrorCodes.ErrNotFound, "unauthorized access");
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrUserSessionNotFoundInvalid, "unauthorized access");
 
 
 
@@ -167,26 +171,26 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
             decoded = JWT.verify(refreshToken, publicssl, config.JWT_VERIFY_OPTIONS) as any;
         } catch (err) {
             logger.warn(`jwt verification failed ${refreshToken}`);
-            throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed")
+            throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed")
         }
         if (decoded.expires <= new Date().getTime())
-            throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed")
+            throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, ErrorCodes.ErrJWTVerifyFailed, "jwt verification failed")
         if (decoded.type !== 'refresh')
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "unauthorized access");
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrTokenInvalid, "unauthorized access");
 
         let user = await this.config.getUserById(decoded.user.id).catch(err => {
             logger.fatal(JSON.stringify(err));
-            throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal server error");
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodes.ErrInternalError, "internal server error");
         })
 
         HelperService.isValidUser(user);
 
         let session = await this.session.getSession(decoded.user.sid).catch(err => {
             logger.fatal(JSON.stringify(err));
-            throw new RestfullException(500, ErrorCodes.ErrInternalError, "internal error");
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodes.ErrInternalError, "internal error");
         })
         if (!session || !user || session.userId != user.id)
-            throw new RestfullException(401, ErrorCodes.ErrNotFound, "unauthorized access");
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrUserSessionNotFoundInvalid, "unauthorized access");
 
         let token = {
             refreshTokenExpiresAt: new Date(decoded.expires),

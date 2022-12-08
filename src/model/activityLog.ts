@@ -10,7 +10,8 @@ export interface ActivityLog {
     ip: string;
     status: number;//200 success;
     statusMessage?: string;
-    statusMessage2?: string;
+    statusMessageDetail?: string;
+
 
     username?: string;
     userId?: string;

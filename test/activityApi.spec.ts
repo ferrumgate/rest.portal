@@ -61,11 +61,23 @@ describe('activityApi ', async () => {
                 password: Util.bcryptHash('ferrumgate'),
                 insertDate: new Date().toISOString(),
                 updateDate: new Date().toISOString()
+            },
+            {
+                username: 'reporter3',
+                groupIds: [],
+                id: 'reporter3',
+                name: 'reporter3',
+                source: 'local',
+                roleIds: ['Reporter'],
+                isLocked: false, isVerified: true,
+                password: Util.bcryptHash('ferrumgate'),
+                insertDate: new Date().toISOString(),
+                updateDate: new Date().toISOString()
             }
         ];
 
     })
-    it('only admin user can callit', async () => {
+    it('only admin or reporter user can callit', async () => {
         const session = await sessionService.createSession({ id: 'admin2' } as any, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin2', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -81,8 +93,9 @@ describe('activityApi ', async () => {
         })
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
+
+
 
     const host = 'https://192.168.88.250:9200';
     const user = 'elastic';
@@ -153,6 +166,25 @@ describe('activityApi ', async () => {
         })
         expect(response.status).to.equal(200);
         expect(response.body.total).to.equal(1);
+
+        //check reporter user
+
+        const session2 = await sessionService.createSession({ id: 'reporter3' } as any, false, '1.1.1.1', 'local');
+        const token2 = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'reporter3', sid: session2.id }, 'ferrum');
+
+        let response2: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/insight/activity')
+                .set(`Authorization`, `Bearer ${token2}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response2.status).to.equal(200);
+        expect(response2.body.total).to.equal(1);
 
 
     }).timeout(120000);

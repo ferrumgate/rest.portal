@@ -12,12 +12,11 @@ import { User } from '../src/model/user';
 import { Tunnel } from '../src/model/tunnel';
 import { Gateway, Network } from '../src/model/network';
 import { SessionService } from '../src/service/sessionService';
-
-
-
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+chai.use(chaiExclude);
 
 
 describe('sessionService', () => {

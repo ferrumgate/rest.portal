@@ -1,5 +1,5 @@
 import express from "express";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
@@ -12,6 +12,7 @@ import { config } from "process";
 import { authorizeAsAdmin } from "./commonApi";
 import { AuthSession } from "../model/authSession";
 import { UserNetworkListResponse } from "../service/policyService";
+import { HelperService } from "../service/helperService";
 
 
 
@@ -22,7 +23,7 @@ export const routerUserEmailConfirm = express.Router();
 routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     const key = req.query.key || req.body.key;
     if (!key)
-        throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs key argument");
+        throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs key argument");
 
     logger.info(`user confirm with key: ${key}`);
     const appService = req.appService as AppService;
@@ -32,7 +33,7 @@ routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: a
     const isSystemConfigured = await configService.getIsConfigured();
     if (!isSystemConfigured) {
         logger.warn(`system is not configured yet`);
-        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, "not configured yet");
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
     }
 
     //check key from redis
@@ -40,12 +41,12 @@ routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: a
     const userId = await redisService.get(rkey, false) as string;
     if (!userId) {
         logger.fatal(`user confirm key not found key: ${key}`);
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not found key");
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrKeyNotFound, "not found key");
     }
     const userDb = await configService.getUserById(userId);
     if (!userDb) {//check for safety
         logger.warn(`user confirm user id not found ${userId}`);
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "argument problem");
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, "argument problem");
     }
     //verify
     userDb.isVerified = true;
@@ -66,7 +67,7 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
     const email = req.body.username || req.query.username;
     if (!email) {
         logger.error(`forgot password email parameter absent`);
-        throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs username parameter");
+        throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs username parameter");
     }
 
     const appService = req.appService as AppService;
@@ -79,12 +80,12 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
     const isSystemConfigured = await configService.getIsConfigured();
     if (!isSystemConfigured) {
         logger.warn(`system is not configured yet`);
-        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, "not configured yet");
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
     }
     const authSettings = await configService.getAuthSettings();
     if (!authSettings.local.isForgotPassword) {
         logger.warn(`forgotpassword is not allowed`);
-        throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, "forgotpassword not enabled");
+        throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, ErrorCodes.ErrMethodNotAllowed, "forgotpassword not enabled");
     }
 
     logger.info(`forgot password with email ${email}`);
@@ -128,7 +129,7 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
     const key = req.body.key;
     if (!pass || !key) {
         logger.error(`reset password pass parameter absent or key absent`);
-        throw new RestfullException(400, ErrorCodes.ErrBadArgument, "needs pass parameter");
+        throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs pass parameter");
     }
 
 
@@ -145,7 +146,7 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
     const isSystemConfigured = await configService.getIsConfigured();
     if (!isSystemConfigured) {
         logger.warn(`system is not configured yet`);
-        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, "not configured yet");
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
     }
 
     inputService.checkPasswordPolicy(pass);
@@ -153,12 +154,12 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
     const userId = await redisService.get(rkey, false) as string;
     if (!userId) {
         logger.fatal(`reset password key not found with id: ${key}`);
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrKeyNotFound, "not authorized");
     }
     const user = await configService.getUserById(userId);
     if (!user) {
         logger.fatal(`reset password user not found with userId: ${userId}`);
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, "not authorized");
     }
     inputService.checkEmail(user.username);//username must be email, security barrier
 
@@ -209,6 +210,180 @@ routerUserAuthenticated.get('/current/network',
     }))
 
 
+/// current user new qr code
+
+routerUserAuthenticated.get('/current/2fa/rekey',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`getting current user 2fa`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const redisService = appService.redisService;
+        const t2FAService = appService.twoFAService;
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const user = await configService.getUserById(currentUser.id);
+        HelperService.isValidUser(user);
+        const key = t2FAService.generateSecret();
+        const rkey = Util.randomNumberString(16);
+        await redisService.set(`/2fa/id/${rkey}`, key);
+        await redisService.expire(`/2fa/id/${rkey}`, 30 * 60 * 1000);
+
+        return res.status(200).json({ key: rkey, t2FAKey: key });
+
+    }))
+
+// get current user 2fa settings
+routerUserAuthenticated.get('/current/2fa',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const refresh = req.query.refresh;
+        logger.info(`getting current user 2fa`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const t2FAService = appService.twoFAService;
+        const currentUser = req.currentUser as User;
+        const redisService = appService.redisService;
+        const currentSession = req.currentSession as AuthSession;
+
+        const user = await configService.getUserById(currentUser.id);
+        HelperService.isValidUser(user);
+        if (!user)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrUserNotFound, 'not found');
+        let secret = user.twoFASecret || t2FAService.generateSecret();
+
+        const rkey = Util.randomNumberString(16);
+        await redisService.set(`/2fa/id/${rkey}`, secret);
+        await redisService.expire(`/2fa/id/${rkey}`, 30 * 60 * 1000);
+
+        return res.status(200).json({ is2FA: user?.is2FA, key: rkey, t2FAKey: secret });
+
+    }))
+/// set current user 2fa settings
+
+routerUserAuthenticated.put('/current/2fa',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const request = req.body as { is2FA: boolean, key?: string, token?: string }
+        logger.info(`saving current user 2fa settings`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const redisService = appService.redisService;
+        const t2FAService = appService.twoFAService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        const currentUser = req.currentUser as User;
+
+        const currentSession = req.currentSession as AuthSession;
+        await inputService.checkNotNullOrUndefined(req.is2FA);
+        const user = await configService.getUserById(currentUser.id);
+        HelperService.isValidUser(user);
+        if (!user)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrUserNotFound, 'not found');
+        const userSensitiveData = await configService.getUserSensitiveData(currentUser.id);
+
+        let isChanged = false;
+        if (!request.is2FA) {
+            if (user.is2FA != request.is2FA) {
+                user.is2FA = request.is2FA;
+                user.twoFASecret = t2FAService.generateSecret();//change it for security
+                isChanged = true;
+            }
+        } else {
+            await inputService.checkNotEmpty(request.key);
+            await inputService.checkNotEmpty(request.token);
+            const secret = await redisService.get(`/2fa/id/${request.key}`, false) as string;
+            await inputService.checkNotEmpty(secret);
+            t2FAService.verifyToken(secret, request.token || '');
+            if (userSensitiveData.twoFASecret != secret || !user.is2FA) {
+                user.is2FA = true;
+                user.twoFASecret = secret;
+                isChanged = true;
+            }
+
+
+
+        }
+        if (isChanged) {
+            const { before, after } = await configService.saveUser(user);
+            //we try to show a little data
+            before.twoFASecret2 = before.twoFASecret?.substring(0, 5);
+            after.twoFASecret2 = after.twoFASecret?.substring(0, 5);
+            await auditService.logSaveUser(currentSession, currentUser, before, after);
+        }
+
+        return res.status(200).json({});
+
+    }))
+
+
+/// set current user password
+
+routerUserAuthenticated.put('/current/pass',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const request = req.body as { oldPass: string, newPass: string }
+        logger.info(`saving current user password settings`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const redisService = appService.redisService;
+        const t2FAService = appService.twoFAService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        const currentUser = req.currentUser as User;
+
+        const currentSession = req.currentSession as AuthSession;
+        await inputService.checkNotEmpty(request.oldPass);
+        await inputService.checkPasswordPolicy(request.newPass);
+
+        const user = await configService.getUserByIdAndPass(currentUser.id, request.oldPass);
+        if (!user)
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrUserNotFound, 'not found');
+        if (!user.source.startsWith('local'))
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrOnlyAuthLocalIsValid, 'only local users');
+        HelperService.isValidUser(user);
+
+        let isChanged = false;
+        if (request.oldPass != request.newPass) {
+            isChanged = true;
+            user.password = Util.bcryptHash(request.newPass);
+            await configService.saveUser(user);
+
+        }
+
+        if (isChanged) {
+            const { before, after } = await configService.saveUser(user);
+            //we try to show a little data
+            before.password2 = 'before';
+            after.password2 = 'after';
+            await auditService.logSaveUser(currentSession, currentUser, before, after);
+        }
+
+        return res.status(200).json({});
+
+    }))
+
+
+
+
 
 
 routerUserAuthenticated.get('/current',
@@ -227,11 +402,11 @@ routerUserAuthenticated.get('/current',
                 name: user.name,
                 username: user.username,
                 is2FA: user.is2FA,
-                roles: roles
+                roles: roles,
+                source: user.source
             });
     })
 );
-
 
 
 
@@ -243,14 +418,14 @@ routerUserAuthenticated.get('/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
 
         logger.info(`getting user with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
         const user = await configService.getUserById(id);
-        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no user');
+        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
 
         return res.status(200).json(user);
 
@@ -329,7 +504,7 @@ routerUserAuthenticated.delete('/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
@@ -339,11 +514,11 @@ routerUserAuthenticated.delete('/:id',
         const auditService = appService.auditService;
 
         const user = await configService.getUserById(id);
-        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no user');
+        if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
         //check if any other admin user exists
         const adminUsers = await configService.getUserByRoleIds([RBACDefault.roleAdmin.id]);
         if (adminUsers.length == 1)
-            throw new RestfullException(400, ErrorCodes.ErrNoAdminUserLeft, 'no admin user left');
+            throw new RestfullException(400, ErrorCodes.ErrNoAdminUserLeft, ErrorCodes.ErrNoAdminUserLeft, 'no admin user left');
         const { before } = await configService.deleteUser(user.id);
         await auditService.logDeleteUser(currentSession, currentUser, before);
 
@@ -372,7 +547,7 @@ routerUserAuthenticated.put('/',
 
         await inputService.checkNotEmpty(input.id);
         const userDb = await configService.getUser(input.id);
-        if (!userDb) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no user');
+        if (!userDb) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
 
         //await inputService.checkNotEmpty(input.name);
         //only set name. isLocked, is2FA, roleIds, groupIds
@@ -417,7 +592,7 @@ routerUserAuthenticated.put('/',
         //check if any other admin user exists
         const adminUsers = await configService.getUserByRoleIds([RBACDefault.roleAdmin.id]);
         if (adminUsers.length == 1 && adminUsers[0].id == userDb.id && !userDb.roleIds?.includes(RBACDefault.roleAdmin.id))
-            throw new RestfullException(400, ErrorCodes.ErrNoAdminUserLeft, 'no admin user left');
+            throw new RestfullException(400, ErrorCodes.ErrNoAdminUserLeft, ErrorCodes.ErrNoAdminUserLeft, 'no admin user left');
 
         if (isChanged) {
             const { before, after } = await configService.saveUser(userDb);

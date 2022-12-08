@@ -13,9 +13,11 @@ import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
 import { ConfigEvent } from '../src/model/config';
 
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+chai.use(chaiExclude);
 
 
 describe('configService', async () => {
@@ -709,7 +711,7 @@ describe('configService', async () => {
 
         const returned = await configService.getGroup(group.id)
 
-        expect(returned).to.deep.equal(group);
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
 
     });
 
@@ -958,7 +960,7 @@ describe('configService', async () => {
 
         const returned = await configService.getService(service1.id)
 
-        expect(returned).to.deep.equal(service1);
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
 
     });
 
@@ -1008,7 +1010,9 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         //add
@@ -1031,7 +1035,9 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         configService.config.authenticationPolicy.rules.push(rule);
@@ -1055,7 +1061,9 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         configService.config.authenticationPolicy.rules.push(rule);
@@ -1079,7 +1087,9 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         configService.config.authenticationPolicy.rules.push(rule);
@@ -1104,7 +1114,9 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         configService.config.authenticationPolicy.rules.push(rule1);
@@ -1116,7 +1128,9 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         configService.config.authenticationPolicy.rules.push(rule2);
@@ -1129,7 +1143,9 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         configService.config.authenticationPolicy.rules.push(rule3);
@@ -1187,7 +1203,9 @@ describe('configService', async () => {
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         //add
@@ -1211,7 +1229,9 @@ describe('configService', async () => {
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true, },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         //add
@@ -1235,7 +1255,9 @@ describe('configService', async () => {
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true, },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         //add
@@ -1261,7 +1283,9 @@ describe('configService', async () => {
             userOrgroupIds: ['somegroupid'],
             serviceId: 'some service',
             profile: { is2FA: true },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         //add
@@ -1306,7 +1330,9 @@ describe('configService', async () => {
             userOrgroupIds: [aUser.id],
             serviceId: 'some service',
             profile: { is2FA: true, },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         //add
@@ -1321,7 +1347,9 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: [aUser.id],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
 
@@ -1481,7 +1509,9 @@ describe('configService', async () => {
             userOrgroupIds: [aUser.id],
             serviceId: service1.id,
             profile: { is2FA: true, },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         //add
@@ -1496,7 +1526,9 @@ describe('configService', async () => {
             networkId: network.id,
             userOrgroupIds: [aUser.id],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
 
@@ -1638,7 +1670,9 @@ describe('configService', async () => {
             userOrgroupIds: [aGroup.id],
             serviceId: 'some service',
             profile: { is2FA: true, },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         //add
@@ -1653,7 +1687,9 @@ describe('configService', async () => {
             networkId: 'networkId',
             userOrgroupIds: [aGroup.id],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
 
@@ -1754,7 +1790,9 @@ describe('configService', async () => {
             userOrgroupIds: [aUser.id],
             serviceId: service1.id,
             profile: { is2FA: true, },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         //add

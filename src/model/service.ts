@@ -15,6 +15,7 @@ export interface Service {
     assignedIp: string;
     insertDate: string;
     updateDate: string;
+    isSystem?: boolean;
 
 }
 
@@ -31,6 +32,7 @@ export function cloneService(service: Service): Service {
         host: service.host,
         assignedIp: service.assignedIp,
         insertDate: service.insertDate,
-        updateDate: service.updateDate
+        updateDate: service.updateDate,
+        isSystem: service.isSystem
     }
 }

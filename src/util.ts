@@ -300,7 +300,7 @@ export const Util = {
 
     async createSelfSignedCrt(domain: string, folder?: string) {
         //openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${domain}.key -out ${domain}.crt -subj "/CN=${domain}/O=${domain}"
-        const tmpFolder = folder || `/tmp/${Util.randomNumberString()}`;
+        const tmpFolder = folder || `/tmp/${Util.randomNumberString(16)}`;
         if (!fs.existsSync(tmpFolder))
             await fsp.mkdir(tmpFolder, { recursive: true });
         await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${tmpFolder}/${domain}.key -out ${tmpFolder}/${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false);
@@ -311,7 +311,7 @@ export const Util = {
         return val;
     },
     async createCASignedCrt(domain: string, cerficate: { privateKey: string, publicKey: string }, folder?: string) {
-        const tmpFolder = folder || `/tmp/${Util.randomNumberString()}`;
+        const tmpFolder = folder || `/tmp/${Util.randomNumberString(16)}`;
         if (!fs.existsSync(tmpFolder))
             await fsp.mkdir(tmpFolder, { recursive: true });
         await fsp.writeFile(`${tmpFolder}/ca.key`, cerficate.privateKey, 'utf-8');

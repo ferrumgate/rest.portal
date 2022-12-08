@@ -2,7 +2,7 @@ import * as nodemailer from 'nodemailer'
 import SMTPPool from 'nodemailer/lib/smtp-pool';
 import { EmailSettings } from '../model/emailSettings';
 import { logger } from '../common';
-import { ErrorCodes, RestfullException } from '../restfullException';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../restfullException';
 
 
 
@@ -146,7 +146,7 @@ export class EmailService {
                     break;
                 default:
                     logger.fatal(`unknown email type`);
-                    throw new RestfullException(400, ErrorCodes.ErrBadArgument, "empty configuration");
+                    throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "empty configuration");
             }
 
         }
@@ -165,7 +165,7 @@ export class EmailService {
             this.sender?.transporter.sendMail(tmp, function (err: any, info: any) {
                 if (err) {
                     logger.error(err.stack);
-                    reject(new RestfullException(500, ErrorCodes.ErrInternalError, "email sending failed"))
+                    reject(new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrEmailSend, "email sending failed"))
                 } else {
                     logger.info(`email sended to: ${email.to} subject: ${email.subject}`);
                     resolve(info.messageId);
@@ -193,7 +193,7 @@ export class EmailService {
                 break;
             default:
                 logger.fatal(`unknown email type`);
-                throw new RestfullException(400, ErrorCodes.ErrBadArgument, "empty configuration");
+                throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "empty configuration");
         }
 
 
@@ -215,7 +215,7 @@ export class EmailService {
                     if (pureError)
                         reject(err)
                     else
-                        reject(new RestfullException(500, ErrorCodes.ErrInternalError, "email sending failed"))
+                        reject(new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrEmailSend, "email sending failed"))
                 } else {
                     logger.info(`email sended to: ${email.to} subject: ${email.subject}`);
                     resolve(info.messageId);

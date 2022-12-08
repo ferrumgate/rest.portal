@@ -9,7 +9,7 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
-import { authorize, authorizeAsAdmin } from "./commonApi";
+import { authorizeAsAdmin, authorizeAsAdminOrReporter } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
 
@@ -20,7 +20,7 @@ export const routerAuditAuthenticated = express.Router();
 routerAuditAuthenticated.get('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
+    asyncHandler(authorizeAsAdminOrReporter),
     asyncHandler(async (req: any, res: any, next: any) => {
         const startDate = req.query.startDate;
         const endDate = req.query.endDate;

@@ -7,7 +7,7 @@ import { logger } from '../../common';
 import { AppService } from '../../service/appService';
 import { User } from '../../model/user';
 import { Util } from '../../util';
-import { ErrorCodes, RestfullException } from '../../restfullException';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
 import { HelperService } from '../../service/helperService';
 import { RBACDefault } from '../../model/rbac';
 import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
@@ -30,11 +30,11 @@ export function localInit() {
                 const configService = appService.configService;
                 const redisService = appService.redisService;
                 if (!username || !password)
-                    throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
+                    throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrUsernameOrPasswordInvalid, "bad argument");
                 attachActivityUsername(req, username);
                 let user = await configService.getUserByUsernameAndPass(username, password);
                 if (!user)
-                    throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'bad user');
+                    throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrUserNotFound, 'bad user');
                 attachActivityUser(req, user);
                 //get user roles if local is disabled
                 const local = await configService.getAuthSettingsLocal();
@@ -45,7 +45,7 @@ export function localInit() {
                     const roleAdmin = roles.find(x => x.id == RBACDefault.roleAdmin.id)
 
                     if (!roleAdmin) {//not admin user,
-                        throw new RestfullException(401, ErrorCodes.ErrDisabledSource, "disabled source");
+                        throw new RestfullException(401, ErrorCodes.ErrDisabledSource, ErrorCodes.ErrDisabledSource, "disabled source");
                     }
                 }
                 //set user to request object

@@ -1,6 +1,6 @@
 import { User } from "../model/user";
 import { logger } from "../common";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { ConfigService } from "./configService";
 import { RedisService } from "./redisService";
 import { Util } from "../util";
@@ -40,7 +40,7 @@ export class TunnelService {
                 };
         }
         logger.fatal("tunnel track id pool is over");
-        throw new RestfullException(500, ErrorCodes.ErrTrackIdAssignFailed, 'track id pool is over');
+        throw new RestfullException(500, ErrorCodes.ErrTrackIdAssignFailed, ErrorCodes.ErrTrackIdAssignFailed, 'track id pool is over');
 
 
     }
@@ -50,7 +50,7 @@ export class TunnelService {
         const clientCidr = network.clientNetwork;
         if (!clientCidr.includes('/')) {
             logger.error("config client network is not valid");
-            throw new RestfullException(500, ErrorCodes.ErrInternalError, "client network is not valid");
+            throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrClientNetworkNotValid, "client network is not valid");
         }
         const parts = clientCidr.split('/');
         const range = Util.ipCidrToRange(parts[0], Number(parts[1]));
@@ -67,7 +67,7 @@ export class TunnelService {
         }
 
         logger.fatal("tunnel ip pool is over");
-        throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, 'ip pool is over');
+        throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, ErrorCodesInternal.ErrIpPoolIsOver, 'ip pool is over');
     }
     async getNetwork(tunnel: Tunnel) {
         const network = getNetworkByGatewayId(this.config, tunnel.gatewayId);
@@ -95,7 +95,7 @@ export class TunnelService {
         const tunnel = await this.getTunnel(tunnelKey);
         if (!tunnel || !tunnel.id || !tunnel.clientIp) {
             logger.error(`tunnel not found or some fields are absent => ${tunnel || ''}`);
-            throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
+            throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'secure tunnel failed');
         }
 
         //security check
@@ -112,8 +112,8 @@ export class TunnelService {
             //client will set this ip to its interface
             // then will confirm ok
             // and system will prepare additional network settings
-            await this.redisService.set(`/tunnel/ip/${ipstr}`, tunnelKey, { ttl: 5 * 60 * 1000 });
-            await this.redisService.set(`/tunnel/trackId/${trackId}`, tunnelKey, { ttl: 5 * 60 * 1000 });
+            await this.redisService.set(`/tunnel/ip/${ipstr}`, tunnelKey, { ttl: 7 * 60 * 1000 });
+            await this.redisService.set(`/tunnel/trackId/${trackId}`, tunnelKey, { ttl: 7 * 60 * 1000 });
 
 
 
@@ -149,7 +149,7 @@ export class TunnelService {
         const ipstr = Util.bigIntegerToIp(ip);
         this.lastUsedIps.set(network.id, ip);
         await this.redisService.hset(key, { assignedClientIp: ipstr });
-        await this.redisService.set(`/tunnel/ip/${ipstr}`, tunnelKey, { ttl: 5 * 60 * 1000 });
+        await this.redisService.set(`/tunnel/ip/${ipstr}`, tunnelKey, { ttl: 7 * 60 * 1000 });
         if (tmp)
             await this.redisService.delete(`/tunnel/ip/${tmp}`);
         await this.redisService.expire(`/gateway/${tunnel.gatewayId}/tun/${tunnel.tun}`, 5 * 60 * 1000);
@@ -170,7 +170,7 @@ export class TunnelService {
         await this.redisService.set(`/gateway/${tunnel.gatewayId}/tun/${tunnel.tun}`, tunnelKey, { ttl: 5 * 60 * 1000 });
         // add to a list
         await this.redisService.sadd(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id || '');
-        await this.redisService.expire(`/tunnel/configure/${tunnel.gatewayId}`, 3 * 60 * 1000);
+        await this.redisService.expire(`/tunnel/configure/${tunnel.gatewayId}`, 5 * 60 * 1000);
         // and publish to listener for configuring all network settings to the destination gateway
         await this.redisService.publish(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id);
     }
@@ -185,11 +185,11 @@ export class TunnelService {
         const tunnel = await this.redisService.hgetAll(key) as unknown as Tunnel;
         HelperService.isValidTunnel(tunnel);
         //3 important keys for system
-        await this.redisService.expire(key, 3 * 60 * 1000);
+        await this.redisService.expire(key, 5 * 60 * 1000);
         // at least 5 minutes, because we must not use same ip, a little bit more security 
-        await this.redisService.expire(`/tunnel/ip/${tunnel.assignedClientIp}`, 5 * 60 * 1000);
-        await this.redisService.expire(`/tunnel/trackId/${tunnel.trackId}`, 5 * 60 * 1000);
-        await this.redisService.expire(`/gateway/${tunnel.gatewayId}/tun/${tunnel.tun}`, 3 * 60 * 1000);
+        await this.redisService.expire(`/tunnel/ip/${tunnel.assignedClientIp}`, 7 * 60 * 1000);
+        await this.redisService.expire(`/tunnel/trackId/${tunnel.trackId}`, 7 * 60 * 1000);
+        await this.redisService.expire(`/gateway/${tunnel.gatewayId}/tun/${tunnel.tun}`, 5 * 60 * 1000);
 
     }
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
@@ -37,29 +37,29 @@ routerConfigureAuthenticated.post('/',
         const user = req.currentUser as User;
         if (user.username !== 'admin') {
             logger.error(`current user is not admin`)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodes.ErrDataVerifyFailed, "not authorized");
         }
         const roles = await configService.getUserRoles(user);
         if (!roles.find(x => x.id == RBACDefault.roleAdmin.id)) {
             logger.error(`current user role is not admin`)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, "not authorized");
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodes.ErrNotEnoughRight, "not authorized");
         }
 
         const isConfiguredBefore = await configService.getIsConfigured();
         if (isConfiguredBefore) {
             logger.error("system is allready configured");
-            throw new RestfullException(405, ErrorCodes.ErrAllreadyConfigured, "allready configured system");
+            throw new RestfullException(405, ErrorCodes.ErrAllreadyConfigured, ErrorCodes.ErrAllreadyConfigured, "allready configured system");
         }
 
         //check data
         const data = req.body as Configure;
         if (!data.email || !data.password || !data.domain || !data.url || !data.serviceNetwork || !data.clientNetwork) {
             logger.error("input data is not valid");
-            throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "bad argument");
         }
         if (!data.sshHost) {
             logger.error("input data is not valid");
-            throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "bad argument");
         }
 
         //check email and password 
@@ -76,12 +76,12 @@ routerConfigureAuthenticated.post('/',
         const adminUser = await configService.getUserByUsername('admin');
         if (!adminUser) {
             logger.fatal("no admin user for configure");
-            throw new RestfullException(412, ErrorCodes.ErrInternalError, "no admin user");
+            throw new RestfullException(412, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrAdminUserNotFound, "no admin user");
         }
         let aUserExistsWithThisEmail = await configService.getUserByUsername(data.email);
         if (aUserExistsWithThisEmail) {
             logger.fatal(`a user exists with ${data.email} allready exitsts at configure`);
-            throw new RestfullException(412, ErrorCodes.ErrAllreadyExits, "allready exists user");
+            throw new RestfullException(412, ErrorCodes.ErrAllreadyExits, ErrorCodes.ErrAllreadyExits, "allready exists user");
         }
         await configService.setIsConfigured(1);
         await configService.changeAdminUser(data.email, data.password);
@@ -91,7 +91,7 @@ routerConfigureAuthenticated.post('/',
         const defaultNetwork = await configService.getNetworkByName('default');
         if (!defaultNetwork) {
             logger.fatal(`no default network`);
-            throw new RestfullException(412, ErrorCodes.ErrInternalError, "no default network");
+            throw new RestfullException(412, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrNetworkNotFound, "no default network");
         }
 
         defaultNetwork.clientNetwork = data.clientNetwork;

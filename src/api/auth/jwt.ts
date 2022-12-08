@@ -25,14 +25,14 @@ export function jwtInit() {
 
                 let authorizationHeader = req.get('Authorization') as string;
                 if (!authorizationHeader)
-                    throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, 'jwt header not found');
+                    throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, ErrorCodes.ErrJWTVerifyFailed, 'jwt header not found');
                 if (authorizationHeader.indexOf("Bearer") < 0)
-                    throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, 'jwt header not found');
+                    throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, ErrorCodes.ErrJWTVerifyFailed, 'jwt header not found');
                 authorizationHeader = authorizationHeader.replace('Bearer', '').trim();
 
                 const token = await oauth2Service.getAccessToken(authorizationHeader);
                 if (!token)
-                    throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, 'jwt header not found');
+                    throw new RestfullException(401, ErrorCodes.ErrJWTVerifyFailed, ErrorCodes.ErrJWTVerifyFailed, 'jwt header not found');
 
                 const userId = token.user.id;
                 const sid = token.user.sid;

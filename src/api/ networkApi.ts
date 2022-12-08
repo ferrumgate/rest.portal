@@ -1,5 +1,5 @@
 import express from "express";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
@@ -9,7 +9,7 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
-import { authorize, authorizeAsAdmin } from "./commonApi";
+import { authorizeAsAdmin } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
 
@@ -27,14 +27,14 @@ routerNetworkAuthenticated.get('/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
 
         logger.info(`getting network with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
         const network = await configService.getNetwork(id);
-        if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no network');
+        if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNetworkNotFound, 'no network');
 
         //const gateways = await configService.getGatewaysByNetworkId(network.id);
 
@@ -79,7 +79,7 @@ routerNetworkAuthenticated.delete('/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
@@ -89,7 +89,7 @@ routerNetworkAuthenticated.delete('/:id',
         const auditService = appService.auditService;
 
         const network = await configService.getNetwork(id);
-        if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no network');
+        if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNetworkNotFound, 'no network');
 
         const { before } = await configService.deleteNetwork(network.id);
         await auditService.logDeleteNetwork(currentSession, currentUser, before);
@@ -116,7 +116,7 @@ routerNetworkAuthenticated.put('/',
 
         await inputService.checkNotEmpty(input.id);
         const network = await configService.getNetwork(input.id);
-        if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no network');
+        if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNetworkNotFound, 'no network');
 
         await inputService.checkCidr(input.clientNetwork);
         await inputService.checkCidr(input.serviceNetwork);

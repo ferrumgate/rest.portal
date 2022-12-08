@@ -1,6 +1,7 @@
 import Redis from "ioredis";
+import { saveActivityError } from "../api/auth/commonAuth";
 import { logger } from "../common";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { ConfigService } from "./configService";
 import { RedisService } from "./redisService";
 
@@ -16,6 +17,8 @@ export class RateLimitService {
 
     }
     async check(ip: string, what: string, max?: number) {
+
+
         let maxlimit = (max || this.baseLimit) * 10;
         const minute = new Date().getUTCMinutes();
         const key = `/ratelimit/${what}/${ip}/${minute}`;
@@ -28,8 +31,9 @@ export class RateLimitService {
         logger.info(`checking ratelimit for ${key} current:${value} max:${maxlimit}`);
         if (value > maxlimit) {
             logger.warn(`too many request from ${ip} for ${what}`)
-            throw new RestfullException(429, ErrorCodes.ErrTooManyRequests, 'too many requests');
+            throw new RestfullException(429, ErrorCodes.ErrTooManyRequests, ErrorCodesInternal.ErrRateLimitReached, `too many requests`);
         }
+
 
     }
 }

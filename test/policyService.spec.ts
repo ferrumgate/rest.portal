@@ -44,7 +44,9 @@ describe('policyService ', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
 
         }
@@ -75,7 +77,9 @@ describe('policyService ', async () => {
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
 
         }
@@ -112,7 +116,9 @@ describe('policyService ', async () => {
             profile: {
 
             },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
 
         }
@@ -215,7 +221,9 @@ describe('policyService ', async () => {
                 is2FA: true,
                 ips: [{ ip: '10.0.0.0/24' }]
             },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
         }
         configService.config.authenticationPolicy.rules = [rule];
 
@@ -398,7 +406,9 @@ describe('policyService ', async () => {
             profile: {
                 is2FA: true,
             },
-            isEnabled: false
+            isEnabled: false,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
         }
         configService.config.authorizationPolicy.rules = [rule];
@@ -469,7 +479,9 @@ describe('policyService ', async () => {
                 is2FA: true,
                 ips: []
             },
-            isEnabled: true
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
 
 
         }

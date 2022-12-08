@@ -27,7 +27,7 @@ export function apiKeyInit() {
                 const sessionService = appService.sessionService;
 
                 if (!apikey)
-                    throw new RestfullException(400, ErrorCodes.ErrBadArgument, "bad argument");
+                    throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "bad argument");
                 const user = await configService.getUserByApiKey(apikey);
 
                 attachActivityUser(req, user);

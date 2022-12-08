@@ -220,6 +220,13 @@ export class ConfigService {
             standartUser.isVerified = true;
             standartUser.roleIds = ['User'];
             this.config.users.push(standartUser);
+
+            const reporterUser = HelperService.createUser('local-local', 'hamzareporter@hamzakilic.com', 'hamzareporter', 'Deneme123');
+            reporterUser.isLocked = false;
+            reporterUser.isVerified = true;
+            reporterUser.roleIds = ['Reporter'];
+            this.config.users.push(reporterUser);
+
             this.config.groups.push({
                 id: Util.randomNumberString(16),
                 name: 'north',
@@ -269,7 +276,7 @@ export class ConfigService {
                 id: Util.randomNumberString(16),
                 name: 'mysql-dev', host: '10.0.0.12', protocol: 'raw', tcp: 3306,
                 assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
-                insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
+                insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), isSystem: true
             }
             this.config.services.push(service1);
 
@@ -293,48 +300,56 @@ export class ConfigService {
 
             //authiraziton policy
             this.config.authorizationPolicy.rules.push({
-                id: Util.randomNumberString(),
+                id: Util.randomNumberString(16),
                 name: 'tst1',
                 isEnabled: true,
                 networkId: net.id,
                 serviceId: service1.id,
                 userOrgroupIds: [standartUser.id],
-                profile: { is2FA: false }
+                profile: { is2FA: false },
+                updateDate: new Date().toISOString(),
+                insertDate: new Date().toISOString()
             })
 
             //
             this.config.authenticationPolicy.rules.push({
 
-                id: Util.randomNumberString(),
+                id: Util.randomNumberString(16),
                 name: 'abc rule',
                 networkId: net.id,
                 userOrgroupIds: [standartUser.id],
                 action: 'allow',
                 profile: { is2FA: true },
                 isEnabled: true,
+                updateDate: new Date().toISOString(),
+                insertDate: new Date().toISOString()
 
             })
 
             this.config.authenticationPolicy.rules.push({
 
-                id: Util.randomNumberString(),
+                id: Util.randomNumberString(16),
                 name: 'abc2',
                 networkId: net.id,
                 userOrgroupIds: [adminUser.id],
                 action: 'deny',
                 profile: { is2FA: true },
-                isEnabled: true
+                isEnabled: true,
+                updateDate: new Date().toISOString(),
+                insertDate: new Date().toISOString()
 
             })
             this.config.authenticationPolicy.rules.push({
 
-                id: Util.randomNumberString(),
+                id: Util.randomNumberString(16),
                 name: 'def2',
                 networkId: net.id,
                 userOrgroupIds: [adminUser.id],
                 action: 'deny',
                 profile: { is2FA: true },
-                isEnabled: true
+                isEnabled: true,
+                updateDate: new Date().toISOString(),
+                insertDate: new Date().toISOString()
 
             })
 
@@ -544,6 +559,20 @@ export class ConfigService {
         return undefined;
 
     }
+    async getUserByIdAndPass(id: string, pass: string): Promise<User | undefined> {
+        if (!id) return undefined;
+        if (!id.trim()) return undefined;
+        let user = this.config.users
+            .find(x => x.id == id);
+
+        if (user && Util.bcryptCompare(pass, user.password || '')) {
+            let cloned = Util.clone(user);
+            this.deleteUserSensitiveData(cloned);
+            return cloned;
+        }
+        return undefined;
+
+    }
     async getUserSensitiveData(id: string) {
         let user = Util.clone(this.config.users.find(x => x.id == id)) as User;
         return { twoFASecret: user?.twoFASecret };
@@ -608,6 +637,8 @@ export class ConfigService {
         let findedIndex = this.config.users.findIndex(x => x.username == user.username);
         let finded = this.config.users[findedIndex];
         if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
             this.config.users.push(cloned);
             findedIndex = this.config.users.length - 1;
 
@@ -623,7 +654,8 @@ export class ConfigService {
             Object.assign(finded, newone) */
             this.config.users[findedIndex] = {
                 ...finded,
-                ...cloned
+                ...cloned,
+                updateDate: new Date().toISOString()
             }
             this.emitEvent({ type: 'updated', path: '/users', data: this.createTrackEvent(finded, this.config.users[findedIndex]) })
 
@@ -1014,13 +1046,16 @@ export class ConfigService {
         let finded = this.config.networks[findedIndex];
         const cloned = Util.clone(network);
         if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
             this.config.networks.push(cloned);
             findedIndex = this.config.networks.length - 1;
             this.emitEvent({ type: 'saved', path: '/networks', data: this.createTrackEvent(finded, this.config.networks[findedIndex]) });
         } else {
             this.config.networks[findedIndex] = {
                 ...finded,
-                ...cloned
+                ...cloned,
+                updateDate: new Date().toISOString()
             }
             this.emitEvent({ type: 'updated', path: '/networks', data: this.createTrackEvent(finded, this.config.networks[findedIndex]) });
         }
@@ -1085,13 +1120,16 @@ export class ConfigService {
         let finded = findedIndex >= 0 ? this.config.gateways[findedIndex] : null;
         const cloned = Util.clone(gateway);
         if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
             this.config.gateways.push(cloned);
             findedIndex = this.config.gateways.length - 1;
             this.emitEvent({ type: 'saved', path: '/gateways', data: this.createTrackEvent(finded, this.config.gateways[findedIndex]) });
         } else {
             this.config.gateways[findedIndex] = {
                 ...finded,
-                ...cloned
+                ...cloned,
+                updateDate: new Date().toISOString()
             }
             this.emitEvent({ type: 'saved', path: '/gateways', data: this.createTrackEvent(finded, this.config.gateways[findedIndex]) });
         }
@@ -1236,13 +1274,16 @@ export class ConfigService {
         let finded = findedIndex >= 0 ? this.config.groups[findedIndex] : null;
         const cloned = Util.clone(group);
         if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
             this.config.groups.push(cloned);
             findedIndex = this.config.groups.length - 1;
             this.emitEvent({ type: 'saved', path: '/groups', data: this.createTrackEvent(finded, this.config.groups[findedIndex]) })
         } else {
             this.config.groups[findedIndex] = {
                 ...finded,
-                ...cloned
+                ...cloned,
+                updateDate: new Date().toISOString()
             }
             this.emitEvent({ type: 'updated', path: '/groups', data: this.createTrackEvent(finded, this.config.groups[findedIndex]) })
         }
@@ -1358,13 +1399,16 @@ export class ConfigService {
         let finded = findedIndex >= 0 ? this.config.services[findedIndex] : null;
         const cloned = Util.clone(service);
         if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
             this.config.services.push(cloned);
             findedIndex = this.config.services.length - 1;
             this.emitEvent({ type: 'saved', path: '/services', data: this.createTrackEvent(finded, this.config.services[findedIndex]) })
         } else {
             this.config.services[findedIndex] = {
                 ...finded,
-                ...cloned
+                ...cloned,
+                updateDate: new Date().toISOString()
             }
             this.emitEvent({ type: 'updated', path: '/services', data: this.createTrackEvent(finded, this.config.services[findedIndex]) })
         }
@@ -1382,13 +1426,18 @@ export class ConfigService {
         let previous = this.config.authenticationPolicy.rules[ruleIndex];
 
         if (ruleIndex >= 0) {
+            cloned.updateDate = new Date().toISOString();
             this.config.authenticationPolicy.rules[ruleIndex] = cloned;
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex]) })
         } else {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
+
             this.config.authenticationPolicy.rules.push(cloned);
             ruleIndex = this.config.authenticationPolicy.rules.length - 1;
             this.emitEvent({ type: 'saved', path: '/authenticationPolicy/rules', data: this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex]) })
         }
+        this.config.authenticationPolicy.updateDate = new Date().toISOString();
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
         await this.saveConfigToFile();
         return this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex])
@@ -1413,16 +1462,17 @@ export class ConfigService {
         const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
         if (ruleIndex >= 0 && rule) {
             this.config.authenticationPolicy.rules.splice(ruleIndex, 1);
+            this.config.authenticationPolicy.updateDate = new Date().toISOString();
             this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(rule) })
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
             await this.saveConfigToFile();
         }
         return this.createTrackEvent(rule);
     }
-    async updateAuthenticationPolicyUpdateTime() {
+    /* async updateAuthenticationPolicyUpdateTime() {
         this.config.authenticationPolicy.updateDate = new Date().toISOString();
         await this.saveConfigToFile();
-    }
+    } */
     async updateAuthenticationRulePos(id: string, previous: number, index: number) {
         const currentRule = this.config.authenticationPolicy.rules[previous];
         if (currentRule.id != id)
@@ -1433,6 +1483,7 @@ export class ConfigService {
 
         this.config.authenticationPolicy.rules.splice(previous, 1);
         this.config.authenticationPolicy.rules.splice(index, 0, currentRule);
+        this.config.authenticationPolicy.updateDate = new Date().toISOString();
         //TODO how to manage
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
@@ -1446,13 +1497,17 @@ export class ConfigService {
         let ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == arule.id);
         const previous = this.config.authorizationPolicy.rules[ruleIndex];
         if (ruleIndex >= 0) {
+            cloned.updateDate = new Date().toISOString();
             this.config.authorizationPolicy.rules[ruleIndex] = cloned;
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]) })
         } else {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
             this.config.authorizationPolicy.rules.push(cloned);
             ruleIndex = this.config.authenticationPolicy.rules.length - 1;
             this.emitEvent({ type: 'saved', path: '/authorizationPolicy/rules', data: this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]) })
         }
+        this.config.authorizationPolicy.updateDate = new Date().toISOString();
         this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
         await this.saveConfigToFile();
         return this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]);
@@ -1477,16 +1532,17 @@ export class ConfigService {
         const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
         if (ruleIndex >= 0 && rule) {
             this.config.authorizationPolicy.rules.splice(ruleIndex, 1);
+            this.config.authorizationPolicy.updateDate = new Date().toISOString();
             this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(rule) })
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
             await this.saveConfigToFile();
         }
         return this.createTrackEvent(rule);
     }
-    async updateAuthorizationPolicyUpdateTime() {
-        this.config.authorizationPolicy.updateDate = new Date().toISOString();
-        await this.saveConfigToFile();
-    }
+    /*   async updateAuthorizationPolicyUpdateTime() {
+          this.config.authorizationPolicy.updateDate = new Date().toISOString();
+          await this.saveConfigToFile();
+      } */
 
 
 

@@ -83,17 +83,16 @@ export class ActivityLogToES {
                 let pushItems = [];
                 let unknownItemsCount = 0;
                 for (const item of items) {
+                    this.lastPos = item.xreadPos;
                     try {
                         if (item.type == 'b64') {
                             const message = Buffer.from(item.data, 'base64').toString();
                             const log = JSON.parse(message) as ActivityLog;
-                            this.lastPos = item.xreadPos;
 
                             const nitem = await this.es.activityCreateIndexIfNotExits(log)
                             pushItems.push(nitem);
                         } else {
                             logger.warn(`unknown type for activity log ${item.type}, skipping`);
-                            this.lastPos = item.xreadPos;
                             unknownItemsCount++;
 
                         }

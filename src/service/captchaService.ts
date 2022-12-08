@@ -27,7 +27,7 @@ export class CaptchaService {
         const response = await Axios.get(verificationURL, options);
         const body = response.data
         if (body.success !== undefined && !body.success) {
-            throw new RestfullException(400, ErrorCodes.ErrCaptchaVerifyFailed, 'captcha verify failed');
+            throw new RestfullException(400, ErrorCodes.ErrCaptchaVerifyFailed, ErrorCodes.ErrCaptchaVerifyFailed, 'captcha verify failed');
         }
     }
 }

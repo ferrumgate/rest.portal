@@ -37,7 +37,7 @@ export function oauthGoogleInit(google: BaseOAuth, url: string) {
                 const redisService = appService.redisService;
                 const source = `${google.baseType}-${google.type}`;
                 if (!google.isEnabled)
-                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, 'disabled source');
+                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, ErrorCodes.ErrDisabledSource, 'disabled source');
                 let user = await configService.getUserByUsername(email);
                 if (!user) {
                     let userSave: User = HelperService.createUser(source, email, uname, '');

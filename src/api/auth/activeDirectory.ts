@@ -65,7 +65,7 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
                 if (!ldap.isEnabled)// check extra
                 {
                     logger.error(`ldap is disabled`);
-                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, 'disabled source');
+                    throw new RestfullException(401, ErrorCodes.ErrDisabledSource, ErrorCodes.ErrDisabledSource, 'disabled source');
                 }
 
                 await inputService.checkIfExists(username);
@@ -79,7 +79,7 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
                     if (!foundedGroups.length) {
                         {
                             logger.error(`user group ${groupList.join(',')} not in ${ldap.allowedGroups.join(',')}`);
-                            throw new RestfullException(401, ErrorCodes.ErrNotInLdapGroups, "user invalid");
+                            throw new RestfullException(401, ErrorCodes.ErrNotInLdapGroups, ErrorCodes.ErrNotInLdapGroups, "user invalid");
                         }
                     }
                 }

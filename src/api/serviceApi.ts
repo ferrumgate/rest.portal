@@ -1,5 +1,5 @@
 import express from "express";
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AppService } from "../service/appService";
 import { User } from "../model/user";
@@ -9,7 +9,7 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
-import { authorize, authorizeAsAdmin } from "./commonApi";
+import { authorizeAsAdmin } from "./commonApi";
 import { cloneService, Service } from "../model/service";
 import { Network } from "../model/network";
 import { AuditService } from "../service/auditService";
@@ -28,14 +28,14 @@ routerServiceAuthenticated.get('/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
 
         logger.info(`getting service with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
         const service = await configService.getService(id);
-        if (!service) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no service');
+        if (!service) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrServiceNotFound, 'no service');
 
 
         return res.status(200).json(service);
@@ -68,7 +68,7 @@ routerServiceAuthenticated.delete('/:id',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, "id is absent");
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
@@ -77,7 +77,10 @@ routerServiceAuthenticated.delete('/:id',
         const configService = appService.configService;
         const auditService = appService.auditService;
         const service = await configService.getService(id);
-        if (!service) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no service');
+        if (!service) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrServiceNotFound, 'no service');
+
+        if (service.isSystem)
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrSystemServiceDelete, "you cannot delete system services");
 
         const { before } = await configService.deleteService(service.id);
         await auditService.logDeleteService(currentSession, currentUser, before);
@@ -104,18 +107,18 @@ routerServiceAuthenticated.put('/',
 
         await inputService.checkNotEmpty(input.id);
         const service = await configService.getService(input.id);
-        if (!service) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'no service');
+        if (!service) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrServiceNotFound, 'no service');
 
 
         input.name = input.name || 'service';
         input.labels = input.labels || [];
         if (!input.tcp && !input.udp) {
-            throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'input is invalid');
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'input is invalid');
         }
         await inputService.checkIfExists(input.networkId);
         const network = await configService.getNetwork(input.networkId);
         if (!network) {
-            throw new RestfullException(400, ErrorCodes.ErrNetworkNotFound, 'no network found');
+            throw new RestfullException(400, ErrorCodes.ErrNetworkNotFound, ErrorCodesInternal.ErrNetworkNotFound, 'no network found');
         }
         await inputService.checkIfExists(input.protocol);
         await inputService.checkNotEmpty(input.host);
@@ -152,12 +155,12 @@ routerServiceAuthenticated.post('/',
         input.name = input.name || 'service';
         input.labels = input.labels || [];
         if (!input.tcp && !input.udp) {
-            throw new RestfullException(400, ErrorCodes.ErrBadArgument, 'input is invalid');
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'input is invalid');
         }
         await inputService.checkIfExists(input.networkId);
         const network = await configService.getNetwork(input.networkId);
         if (!network) {
-            throw new RestfullException(400, ErrorCodes.ErrNetworkNotFound, 'no network found');
+            throw new RestfullException(400, ErrorCodes.ErrNetworkNotFound, ErrorCodesInternal.ErrNetworkNotFound, 'no network found');
         }
         await inputService.checkIfExists(input.protocol);
         await inputService.checkNotEmpty(input.host);
@@ -181,7 +184,7 @@ export function getEmptyServiceIp(network: Network, usedIpList: string[]): strin
     const serviceCidr = network.serviceNetwork;
     if (!serviceCidr.includes('/')) {
         logger.error("config service network is not valid");
-        throw new RestfullException(500, ErrorCodes.ErrInternalError, "service network is not valid");
+        throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrServiceCidrNotValid, "service network is not valid");
     }
     const parts = serviceCidr.split('/');
     const range = Util.ipCidrToRange(parts[0], Number(parts[1]));
@@ -198,7 +201,7 @@ export function getEmptyServiceIp(network: Network, usedIpList: string[]): strin
     }
 
     logger.fatal("service ip pool is over");
-    throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, 'ip pool is over');
+    throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, ErrorCodesInternal.ErrIpPoolIsOver, 'ip pool is over');
 
 }
 

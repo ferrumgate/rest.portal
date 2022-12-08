@@ -224,7 +224,7 @@ function getEmailSettingFrom(input: EmailSettings): EmailSettings {
         isSecure: input.isSecure
 
     }
-    throw new RestfullException(400, ErrorCodes.ErrBadArgument, "no way to convert email settings")
+    throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "no way to convert email settings")
 }
 routerConfigAuthenticated.put('/email',
     asyncHandler(passportInit),

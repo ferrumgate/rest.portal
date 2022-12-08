@@ -20,7 +20,7 @@ export function tunnelKeyInit() {
                 attachActivitySource(req, name);
                 let tunnelKey = req.get('TunnelKey') as string;
                 if (!tunnelKey)
-                    throw new RestfullException(401, ErrorCodes.ErrTunnelKeyIsNotValid, 'tunnel key header not found');
+                    throw new RestfullException(401, ErrorCodes.ErrTunnelKeyIsNotValid, ErrorCodes.ErrTunnelKeyIsNotValid, 'tunnel key header not found');
                 attachActivityUsername(req, tunnelKey);
                 logger.info(`passport with tunnelKey: ${tunnelKey}`);
                 const appService = req.appService as AppService;

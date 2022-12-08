@@ -1,7 +1,7 @@
 import { User } from "../model/user";
 import { Util } from "../util";
 import *  as twofactor from 'node-2fa';
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { RBACDefault } from "../model/rbac";
 import { Tunnel } from "../model/tunnel";
 import { AuthSession } from "../model/authSession";
@@ -31,19 +31,19 @@ export class HelperService {
 
     static isValidUser(user: User | undefined) {
         if (!user)
-            throw new RestfullException(401, ErrorCodes.ErrNotFound, 'not found');
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrUserNotFound, 'not found');
         if (!user.isVerified)
-            throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
+            throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
         if (user.isLocked)
-            throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
+            throw new RestfullException(401, ErrorCodes.ErrUserLockedOrNotVerified, ErrorCodes.ErrUserLockedOrNotVerified, "locked or not verified user");
 
     }
     static isFromSource(user: User | undefined, source: string) {
         if (!user)
-            throw new RestfullException(401, ErrorCodes.ErrNotFound, 'not found');
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrUserNotFound, 'not found');
 
         if (user.source != source)
-            throw new RestfullException(401, ErrorCodes.ErrUserSourceConflict, "user source not verified");
+            throw new RestfullException(401, ErrorCodes.ErrUserSourceConflict, ErrorCodes.ErrUserSourceConflict, "user source not verified");
     }
 
 
@@ -55,11 +55,11 @@ export class HelperService {
     static isValidTunnel(tun: Tunnel | undefined) {
         const result = HelperService.isValidTunnelNoException(tun);
         if (result == 'not found')
-            throw new RestfullException(401, ErrorCodes.ErrNotFound, result);
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrTunnelNotFound, result);
         else if (result == 'not authenticated')
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, result);
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrTunnelNotValid, result);
         else if (result)
-            throw new RestfullException(401, ErrorCodes.ErrBadArgument, result);
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrTunnelNotValid, result);
 
     }
 
@@ -90,6 +90,6 @@ export class HelperService {
     }
     static isValidSession(session: AuthSession) {
         if (!session)
-            throw new RestfullException(401, ErrorCodes.ErrNotFound, 'no session');
+            throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrSessionNotFound, 'no session');
     }
 } 

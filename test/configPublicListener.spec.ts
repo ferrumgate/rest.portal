@@ -9,10 +9,12 @@ import { Gateway } from '../src/model/network';
 import { ConfigPublicRoom, ConfigPublicListener, ConfigRequest, ConfigResponse } from '../src/service/system/configPublicListener';
 import { Service } from '../src/model/service';
 
-
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+chai.use(chaiExclude);
+
 
 
 async function createSampleData(): Promise<any> {

@@ -1,4 +1,4 @@
-import { ErrorCodes, RestfullException } from "../restfullException";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { User } from "../model/user";
 import { ConfigService } from "./configService";
 import { TunnelService } from "./tunnelService";
@@ -78,31 +78,31 @@ export class PolicyService {
         if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.gatewayId) {
             this.errorNumber = 1;
 
-            throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
+            throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'secure tunnel failed');
         }
 
         const gateway = await this.configService.getGateway(tunnel.gatewayId);
         if (!gateway) {
             this.errorNumber = 2;
 
-            throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no gateway');
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrGatewayNotFound, 'no gateway');
         }
         if (!gateway.isEnabled) {
             this.errorNumber = 3;
 
-            throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no gateway');
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrGatewayNotValid, 'no gateway');
         }
         const network = await this.configService.getNetwork(gateway.networkId || '');
         if (!network) {
             this.errorNumber = 4;
 
-            throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotFound, 'no network');
         }
 
         if (!network.isEnabled) {
             this.errorNumber = 5;
 
-            throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotValid, 'no network');
         }
         const policy = await this.configService.getAuthenticationPolicy();
         const rules = await policy.rules.filter(x => x.networkId == network.id);
@@ -118,7 +118,7 @@ export class PolicyService {
                 }
                 else {
                     this.errorNumber = 10;
-                    throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
+                    throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrRuleDenyMatch, 'not authenticated');
                 }
 
             }
@@ -127,7 +127,7 @@ export class PolicyService {
         //no rule match
         this.errorNumber = 100;
 
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrNoRuleMatch, 'not authenticated');
     }
 
     /**
@@ -198,14 +198,14 @@ export class PolicyService {
 
             this.authorizeErrorNumber = 1;
             if (!throwError) return { error: this.authorizeErrorNumber };
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'key not found');
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'key not found');
         }
         const tunnel = tun || await this.tunnelService.getTunnel(tunnelKey);
         if (!tunnel) {
 
             this.authorizeErrorNumber = 2;
             if (!throwError) return { error: this.authorizeErrorNumber };
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, 'tunnel found');
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'tunnel found');
         }
 
 
@@ -213,14 +213,14 @@ export class PolicyService {
             this.authorizeErrorNumber = 3;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
-            throw new RestfullException(401, ErrorCodes.ErrSecureTunnelFailed, 'secure tunnel failed');
+            throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'secure tunnel failed');
         }
         const user = await this.configService.getUserById(tunnel.userId || '')
         if (!user) {
 
             this.authorizeErrorNumber = 4;
             if (!throwError) return { error: this.authorizeErrorNumber };
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not found');
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrUserNotFound, 'not found');
         }
         try {
             await HelperService.isValidUser(user);
@@ -237,13 +237,13 @@ export class PolicyService {
             this.authorizeErrorNumber = 5;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
-            throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no service');
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrServiceNotFound, 'no service');
         }
         if (!service.isEnabled) {
             this.authorizeErrorNumber = 6;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
-            throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'service is not enabled');
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrServiceNotValid, 'service is not enabled');
         }
 
 
@@ -252,14 +252,14 @@ export class PolicyService {
             this.authorizeErrorNumber = 7;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
-            throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotFound, 'no network');
         }
 
         if (!network.isEnabled) {
             this.authorizeErrorNumber = 8;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
-            throw new RestfullException(401, ErrorCodes.ErrBadArgument, 'no network');
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotValid, 'no network');
         }
         const policy = await this.configService.getAuthorizationPolicy();
         const rules = await policy.rules.filter(x => x.serviceId == service.id);
@@ -283,7 +283,7 @@ export class PolicyService {
 
 
         if (!throwError) return { error: this.authorizeErrorNumber };
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, 'not authenticated');
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrNoRuleMatch, 'not authenticated');
 
 
     }

@@ -159,7 +159,7 @@ routerClientTunnelAuthenticated.get('/alive',
             logger.info(`i am alive tunnel: ${tunnel.id}`);
             await tunnelService.alive(tunnel.id || '');
 
-            await saveActivity(req, 'tunnel alive');
+            //await saveActivity(req, 'tunnel alive');
 
             return res.status(200).json({});
         } catch (err) {

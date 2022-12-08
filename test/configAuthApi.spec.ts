@@ -8,9 +8,11 @@ import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth, BaseSaml } from '../src/model/authSettings';
 
+import chaiExclude from 'chai-exclude';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+chai.use(chaiExclude);
 
 
 function createSampleSaml1(): BaseSaml {

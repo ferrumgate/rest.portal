@@ -82,12 +82,12 @@ export class AuditLogToES {
                 const items = await this.redis.xread(this.auditStreamKey, 10000, this.lastPos, 5000);
                 logger.info(`audit logs getted size: ${items.length}`);
                 let pushItems = [];
+
                 for (const item of items) {
                     try {
+                        this.lastPos = item.xreadPos;
                         const message = Util.decrypt(this.encKey, item.data);
                         const log = JSON.parse(message) as AuditLog;
-                        this.lastPos = item.xreadPos;
-
                         const nitem = await this.es.auditCreateIndexIfNotExits(log)
                         pushItems.push(nitem);
 
@@ -98,9 +98,11 @@ export class AuditLogToES {
                 }
                 if (pushItems.length) {
                     await this.es.auditSave(pushItems);
-                    await this.redis.set('/audit/logs/pos', this.lastPos);
+
                     logger.info(`audit logs written to es size: ${pushItems.length}`)
                 }
+                if (items.length)
+                    await this.redis.set('/audit/logs/pos', this.lastPos);
                 if (!items.length)
                     break;
             }

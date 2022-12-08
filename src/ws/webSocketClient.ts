@@ -20,7 +20,7 @@ export class WebSocketClient extends events.EventEmitter {
         super();
         this.isAlive = true;
         this._remoteAddress = remoteAddress;
-        this.id = Util.randomNumberString();
+        this.id = Util.randomNumberString(16);
         socket.on('close', async (socket: ws, code: number, reason: string) => {
             logger.info(`client disconnected from ${this._remoteAddress} with id:${this.id} code:${code} reason:${reason}`);
             await this.onClose();
