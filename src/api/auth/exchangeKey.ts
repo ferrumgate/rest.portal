@@ -39,7 +39,7 @@ export function exchangeKeyInit() {
                 //key decrypted, check if too much try occured, client checks every 2 seconds
                 try {
                     needToSaveActivityError = false;
-                    await appService.rateLimit.check(req.clientIp, `/exchange/id/${exchangeKey}`, 5);
+                    await appService.rateLimit.check(req.clientIp, `exchange/id/${exchangeKey}`, 5);
                 } catch (ignored) {
                     //too much tried
                     needToSaveActivityError = true;
