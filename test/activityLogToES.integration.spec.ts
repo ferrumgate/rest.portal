@@ -12,6 +12,8 @@ import { ConfigService } from '../src/service/configService';
 import { ActivityLog } from '../src/model/activityLog';
 import { ActivityService } from '../src/service/activityService';
 import { ActivityLogToES } from '../src/service/system/activityLogToES';
+import { RedisWatcher } from '../src/service/system/redisWatcher';
+import { watch } from 'fs';
 
 
 
@@ -71,7 +73,9 @@ describe('activityLogToES ', async () => {
         await activityService.save(log2);
 
         await es.reset();
-        const activityLog = new Mock(configService);
+        const watcher = new RedisWatcher();
+        await watcher.start();
+        const activityLog = new Mock(configService, redis, watcher);
         await activityLog.start();
         await activityLog.stop();
         await Util.sleep(5000);

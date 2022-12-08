@@ -10,6 +10,7 @@ import { ConfigPublicRoom, ConfigPublicListener, ConfigRequest, ConfigResponse }
 import { Service } from '../src/model/service';
 
 import chaiExclude from 'chai-exclude';
+import { RedisWatcher } from '../src/service/system/redisWatcher';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -220,19 +221,14 @@ describe('configPublicListener ', async () => {
         await simpleRedis.flushAll();
     })
 
-    it('checkRedisRole', async () => {
-        //const simpleRedis = new RedisService('localhost:6379');
-        const { gateway, gateway2, network, service, configService } = await createSampleData();
-        const listener = new ConfigPublicListener(configService);
 
-        expect(listener.isRedisMaster).to.be.false;
-        await listener.checkRedisRole();
-        expect(listener.isRedisMaster).to.be.true;
-    })
     it('executeMessage', async () => {
 
         const { gateway, gateway2, network, service, configService } = await createSampleData();
-        const listener = new ConfigPublicListener(configService);
+        const watcher = new RedisWatcher('localhost:6379');
+        await watcher.start();
+        const listener = new ConfigPublicListener(configService, new RedisService('localhost:6379'),
+            watcher);
         const msg: ConfigRequest = {
             id: 'adfaf', func: 'getServiceId', gatewayId: 'somehost', params: []
         }

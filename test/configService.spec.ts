@@ -391,7 +391,7 @@ describe('configService', async () => {
 
         await configService.saveNetwork(network);
         const networkDb = await configService.getNetwork(network.id);
-        expect(networkDb).to.deep.include(network);
+        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
         const networkDb2 = await configService.getNetworkByName('default2');
         expect(networkDb2).to.deep.include(network);
 

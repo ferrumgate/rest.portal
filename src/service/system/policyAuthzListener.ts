@@ -47,7 +47,7 @@ export class PolicyRoomService {
         this.serviceId = _serviceId;
         this.instanceId = _instanceId;
 
-        this.redis = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
+        this.redis = new RedisService(process.env.REDIS_SLAVE_HOST || "localhost:6379", process.env.REDIS_SLAVE_PASS);
         this.redisStreamKey = `/policy/service/${this.gatewayId}/${this.serviceId}/${this.instanceId}`;
 
     }
