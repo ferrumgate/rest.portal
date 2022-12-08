@@ -57,13 +57,13 @@ export class SystemWatcherService extends EventEmitter {
 
             this.isWorking = true;
             this.isFilling = true;
-            logger.info("starting watching");
+            logger.info("system watcher starting watching");
             this.redisSlave = this.createRedis();
             this.redisSlaveFiller = this.createRedis();
             const cliendId = await this.redisSlave.cliendId();
             await this.redisSlave.trackBroadCast(cliendId, ['/tunnel/id/']);
             await this.redisSlave.onMessage((channel: string, msg: string) => {
-                logger.debug("redis broadcast msg received");
+                logger.debug("system watcher redis broadcast msg received");
                 this.onMessage(channel, msg);
 
             });
@@ -73,7 +73,7 @@ export class SystemWatcherService extends EventEmitter {
             this.waitListTimer = setIntervalAsync(async () => {
                 try {
                     if (this.isStoping)
-                        throw new Error('stoping watching')
+                        throw new Error('system watcher stoping watching')
                     await this.executeWaitList();
                 } catch (err) {
                     logger.error(err);
@@ -102,7 +102,7 @@ export class SystemWatcherService extends EventEmitter {
         let page = 0;
         let pos = '0';
         while (true && !this.isStoping) {
-            logger.info(`getting tunnel page ${page}`);
+            logger.info(`system watcher getting tunnel page ${page}`);
 
 
             const [cursor, results] = await this.redisSlaveFiller.scan('/tunnel/id/*', pos, 10000, 'hash');
@@ -211,7 +211,7 @@ export class SystemWatcherService extends EventEmitter {
     }
 
     async onRedisConnectionClosed() {
-        logger.error("redis connection closed");
+        logger.error("system watcher redis connection closed");
         await this.reset();
     }
 
