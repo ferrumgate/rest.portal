@@ -12,14 +12,8 @@ export class EventService {
     /**
      *
      */
-    trimInterval: any;
-    lastCommandNumber = 0;
-    public encKey;
+
     constructor(private configService: ConfigService, private redisService: RedisService) {
-        this.encKey = this.configService.getEncKey();
-        this.trimInterval = setIntervalAsync(async () => {
-            await this.trimReplication();
-        }, 1 * 60 * 60 * 1000)
 
         this.configService.events.on('changed', async (data: ConfigEvent) => {
             try {
@@ -37,30 +31,11 @@ export class EventService {
                 logger.error(err);
             }
 
-            try {
-                const json = JSON.stringify(data);
-                const enc = Util.encrypt(this.encKey, json);
-                //const b64 = Buffer.from(json).toString('base64');
-                this.lastCommandNumber++;
-                await this.redisService.xadd(`/replication/config`, { data: enc }, `${new Date().getTime()}-${this.lastCommandNumber}`);
-
-            } catch (err) {
-                logger.error(err);
-            }
         })
 
     }
-    async trimReplication() {
-        try {
-            await this.redisService.xtrim('/replication/config', (new Date().getTime() - 1 * 60 * 60 * 1000).toString());
 
-        } catch (err) {
-            logger.error(err);
-        }
-    }
     async stop() {
-        if (this.trimInterval)
-            clearIntervalAsync(this.trimInterval);
-        this.trimInterval = null;
+
     }
 }

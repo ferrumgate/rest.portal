@@ -7,6 +7,7 @@ import { Util } from "../util";
 import { Tunnel } from "../model/tunnel";
 import { HelperService } from "./helperService";
 import { getNetworkByGatewayId } from "../api/commonApi";
+import { AuthSession } from "../model/authSession";
 
 
 /**
@@ -90,7 +91,7 @@ export class TunnelService {
     async getTunnelKeyFromTrackId(trackId: string | number) {
         return await this.redisService.get(`/tunnel/trackId/${trackId.toString()}`, false) as string | undefined;
     }
-    async createTunnel(user: User, tunnelKey: string) {
+    async createTunnel(user: User, tunnelKey: string, session: AuthSession) {
         const key = `/tunnel/id/${tunnelKey}`;
         const tunnel = await this.getTunnel(tunnelKey);
         if (!tunnel || !tunnel.id || !tunnel.clientIp) {
@@ -106,7 +107,7 @@ export class TunnelService {
             const ipstr = Util.bigIntegerToIp(ip);
             this.lastUsedIps.set(network.id, ip);
             this.lastUsedTrackId = trackId;
-            await this.redisService.hset(key, { assignedClientIp: ipstr, trackId: trackId, userId: user.id });
+            await this.redisService.hset(key, { assignedClientIp: ipstr, trackId: trackId, userId: user.id, sessionId: session.id, is2FA: session.is2FA });
             //await redisService.sadd(this.clientNetworkUsedList, Util.bigIntegerToIp(ip));
             //all client checking will be over this ip
             //client will set this ip to its interface

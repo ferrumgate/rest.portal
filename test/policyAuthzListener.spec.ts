@@ -150,7 +150,7 @@ describe('policyAuthzListener', () => {
         fs.writeFileSync(filename, 'gatewayId=1234');
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
-        const policy = new PolicyAuthzListener(policyService, systemWatcher);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher, configService);
         await policy.start();
         await Util.sleep(2000);
         await simpleRedis.publish('/policy/service', 'alive/ab/cd/ef');
@@ -173,7 +173,7 @@ describe('policyAuthzListener', () => {
         const tunnel2 = createTunnel(1234, 'abcde');
         systemWatcher.tunnels.set(tunnel1.id || '0', tunnel1);
         systemWatcher.tunnels.set(tunnel2.id || '0', tunnel2);
-        const policy = new PolicyAuthzListener(policyService, systemWatcher);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher, configService);
 
         class Room2 extends PolicyRoomService {
             isPushed = 0;
@@ -198,7 +198,7 @@ describe('policyAuthzListener', () => {
         const tunnel2 = createTunnel(1234, 'abcde');
         //systemWatcher.tunnels.set(tunnel1.id || '0', tunnel1);
         //systemWatcher.tunnels.set(tunnel2.id || '0', tunnel2);
-        const policy = new PolicyAuthzListener(policyService, systemWatcher);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher, configService);
 
         await policy.replicate('abcd', '1234', 'wsdwd');
         expect(await policy.getRoom('abcd', '1234', 'wsdwd')).exist;
@@ -218,9 +218,6 @@ describe('policyAuthzListener', () => {
         await policy.replicate(room.gatewayId, room.serviceId, room.instanceId);
         expect(room.isPushedReset).to.equal(1);
 
-
-
-
     }).timeout(200000)
 
 
@@ -231,7 +228,7 @@ describe('policyAuthzListener', () => {
         const { simpleRedis, configService, policyService } = createNeeds();
         const systemWatcher = new SystemWatcherService();
 
-        const policy = new PolicyAuthzListener(policyService, systemWatcher);
+        const policy = new PolicyAuthzListener(policyService, systemWatcher, configService);
 
         //check reset command
         class Room2 extends PolicyRoomService {
@@ -289,10 +286,54 @@ describe('policyAuthzListener', () => {
     }).timeout(200000)
 
 
+    it('onConfigChanged', async () => {
+        const filename = `/tmp/${Util.randomNumberString()}config`;
+        fs.writeFileSync(filename, 'gatewayId=1234');
+        const { simpleRedis, configService, policyService } = createNeeds();
+        const systemWatcher = new SystemWatcherService();
+        const tunnel1 = createTunnel(1234, 'abcd');
+        const tunnel2 = createTunnel(1234, 'abcde');
+        //systemWatcher.tunnels.set(tunnel1.id || '0', tunnel1);
+        //systemWatcher.tunnels.set(tunnel2.id || '0', tunnel2);
+        class PolicyAuthzListenerEx extends PolicyAuthzListener {
+            isReplicated = false;
+            serviceIdList: string[] = [];
+            override async replicate(gatewayId?: string | undefined, serviceId?: string | undefined, instanceId?: string | undefined) {
+                this.isReplicated = true;
+                this.serviceIdList.push(serviceId || '');
+
+            }
+        }
+        const policy = new PolicyAuthzListenerEx(policyService, systemWatcher, configService);
+        class Room2 extends PolicyRoomService {
+            isPushed = 0;
+            isPushedReset = 0;
+            async push(trackId: number, result: PolicyAuthzResult): Promise<void> {
+                this.isPushed++;
+            }
+            async pushReset(): Promise<void> {
+                this.isPushedReset++;
+            }
+        }
+        const room1 = new Room2('abcd', '1234', 'askdjfa');
+        await policy.addRoom(room1);
+        const room2 = new Room2('abcd', '12345', 'askdjfa');
+        await policy.addRoom(room2);
+        configService.events.emit("configChanged", { path: '/authorizationPolicy/rules', data: { before: { serviceId: '1234' } } })
+        await Util.sleep(1000);
+        expect(policy.isReplicated = true);
+        expect(policy.serviceIdList.includes('1234'));
+        policy.isReplicated = false;
+        policy.serviceIdList.splice(0);
+
+        configService.events.emit("configChanged", { path: '/authorizationPolicy/rules', data: {} })
+        await Util.sleep(1000);
+        expect(policy.isReplicated = true);
+        expect(policy.serviceIdList.length).to.equal(2);
 
 
 
-
+    }).timeout(200000)
 
 
 })

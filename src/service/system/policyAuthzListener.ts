@@ -11,6 +11,8 @@ import { channel } from "diagnostics_channel";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 import fsp from 'fs/promises';
 import { Util } from "../../util";
+import { ConfigReplicator } from "./configReplicator";
+import { ConfigEvent } from "../../model/config";
 
 
 //below are how commands work
@@ -173,7 +175,9 @@ export class PolicyAuthzListener {
     private isStarted = false;
 
     constructor(private policyService: PolicyService,
-        private systemWatcher: SystemWatcherService) {
+        private systemWatcher: SystemWatcherService,
+        private configService: ConfigService
+    ) {
         this.gatewayId = process.env.GATEWAY_ID || '';
         this.cache = new NodeCache({ checkperiod: 60, deleteOnExpire: true, useClones: false, stdTTL: 60 });
         this.redisGlobal = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
@@ -185,6 +189,9 @@ export class PolicyAuthzListener {
         });
 
         this.gatewayId = process.env.GATEWAY_ID || 'unknown'
+        this.configService.events.on('configChanged', async (data: ConfigEvent) => {
+            await this.onConfigChanged(data);
+        })
 
     }
     async setGatewayId(gatewayId: string) {
@@ -362,6 +369,34 @@ export class PolicyAuthzListener {
     }
     private onMessage = async (channel: string, message: string) => {
         await this.onServiceMessage(channel, message);
+    }
+
+    async onConfigChanged(ev: ConfigEvent) {
+        try {
+            logger.info(`policy authz config changed event received ${ev.type}:${ev.path}`);
+            if (ev.path == '/authorizationPolicy/rules') {
+                logger.info("policy authz config authorization policy rule changed");
+                const serviceIdList = new Set();
+
+                if (ev.data?.before?.serviceId)
+                    serviceIdList.add(ev.data?.before?.serviceId);
+
+                if (ev.data?.after?.serviceId)
+                    serviceIdList.add(ev.data?.after?.serviceId);
+
+                for (const iterator of this.roomList) {
+
+                    const room = iterator[1];
+                    if (serviceIdList.has(room.serviceId) || !serviceIdList.size) {//only reset related service
+                        logger.info(`policy authz replicate start  again serviceId: ${room.serviceId}`)
+                        await this.replicate(room.gatewayId, room.serviceId, room.instanceId);
+                    }
+                }
+            }
+
+        } catch (err) {
+            logger.error(err);
+        }
     }
 
     async startListening() {

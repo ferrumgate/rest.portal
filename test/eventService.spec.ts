@@ -17,7 +17,7 @@ const expect = chai.expect;
 
 
 
-describe.skip('eventService', async () => {
+describe('eventService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', filename);
     const redisService = new RedisService();

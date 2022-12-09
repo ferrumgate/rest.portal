@@ -482,7 +482,7 @@ describe('configService', async () => {
 
         await configService.saveGateway(gateway);
         const gatewayDb = await configService.getGateway(gateway.id);
-        expect(gatewayDb).to.deep.include(gateway);
+        expect(gatewayDb).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
 
     });
     it('deleteGateway', async () => {
