@@ -40,6 +40,7 @@ function createSampleData() {
         assignedIp: '10.0.0.1',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
+        count: 1
 
 
     }
@@ -55,6 +56,7 @@ function createSampleData() {
         assignedIp: '10.0.0.1',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
+        count: 1
 
     }
     const user1: User = {

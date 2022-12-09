@@ -275,7 +275,7 @@ export class ConfigService {
                 id: Util.randomNumberString(16),
                 name: 'mysql-dev', host: '10.0.0.12', protocol: 'raw', tcp: 3306,
                 assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
-                insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), isSystem: true
+                insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), isSystem: true, count: 1
             }
             this.config.services.push(service1);
 
@@ -283,7 +283,7 @@ export class ConfigService {
                 id: Util.randomNumberString(16),
                 name: 'ssh-dev', host: '10.0.0.12', protocol: 'raw', tcp: 22,
                 assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
-                insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
+                insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), count: 1
             }
 
             this.config.services.push(service2);
@@ -291,7 +291,7 @@ export class ConfigService {
             const service3 = {
                 id: Util.randomNumberString(16),
                 name: 'mysql-prod', host: '10.0.0.12', protocol: 'raw', tcp: 22,
-                assignedIp: '10.3.4.4', isEnabled: true, networkId: defaultNetwork.id, labels: [],
+                assignedIp: '10.3.4.4', isEnabled: true, networkId: defaultNetwork.id, labels: [], count: 1,
                 insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
             }
             this.config.services.push(service3);

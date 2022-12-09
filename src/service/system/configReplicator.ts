@@ -28,11 +28,6 @@ export class ConfigReplicator {
         private redisService: RedisService,
         private redisStreamService: RedisService) {
         this.encKey = this.configService.getEncKey();
-
-
-
-
-
     }
 
 
@@ -116,14 +111,14 @@ export class ConfigReplicator {
                     return;
                 }
                 logger.info(`config replicator config changed event ${data.type}: ${data.path}`);
-                if (!this.isFullReplicationFinished)//if not full replication succeeded
+                /* if (!this.isFullReplicationFinished)//if not full replication succeeded
                     await this.replicationWrite();
                 const json = JSON.stringify(data);
                 const enc = Util.encrypt(this.encKey, json);
                 //const b64 = Buffer.from(json).toString('base64');
                 this.lastReplicationWriteNumber++;
-                await this.redisService.xadd(`/replication/config`, { data: enc }, `${new Date().getTime()}-${this.lastReplicationWriteNumber}`);
-                this.configService.events.emit('configChanged', data);
+                await this.redisService.xadd(`/replication/config`, { data: enc }, `${new Date().getTime()}-${this.lastReplicationWriteNumber}`); */
+                //this.configService.events.emit('configChanged', data);
 
             } catch (err) {
                 logger.error(err);
@@ -131,14 +126,14 @@ export class ConfigReplicator {
         })
 
 
-        await this.replicationTrim();
-        this.trimInterval = setIntervalAsync(async () => {
-            await this.replicationTrim();
-        }, 1 * 60 * 60 * 1000);
-        await this.replicationWrite();
-        this.fullReplicationInterval = setIntervalAsync(async () => {
-            await this.replicationWrite();
-        }, 15 * 1000);
+        /*  await this.replicationTrim();
+         this.trimInterval = setIntervalAsync(async () => {
+             await this.replicationTrim();
+         }, 1 * 60 * 60 * 1000);
+         await this.replicationWrite();
+         this.fullReplicationInterval = setIntervalAsync(async () => {
+             await this.replicationWrite();
+         }, 15 * 1000); */
     }
     async stop() {
 

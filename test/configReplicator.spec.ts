@@ -31,65 +31,65 @@ describe('configReplicator', async () => {
     beforeEach(async () => {
         await redisService.flushAll();
     })
-    it('event changed', async () => {
-        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
-        const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt',
-            filename);
-        const redisWatcher = new RedisWatcher();
-        await redisWatcher.start();
-        const replicator = new ConfigReplicator(configService, redisWatcher, new RedisService(), new RedisService())
-        await replicator.start()
-
-        configService.emitEvent({ type: 'saved', path: '/users', data: { id: 'asd' } })
-        let isCalled = false;
-        configService.events.on('configChanged', () => {
-            isCalled = true;
-        })
-        await Util.sleep(1000);
-        const items = await redisService.xread(`/replication/config`, 100, '0', 1000);
-        expect(items.length).to.equal(2);
-        expect(isCalled).to.be.true;
-
-        await redisWatcher.stop();
-
-
-    }).timeout(5000);
-
-    it('replicationWrite', async () => {
-        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
-        const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt',
-            filename);
-        const redisWatcher = new RedisWatcher();
-        await redisWatcher.start();
-        const replicator = new ConfigReplicator(configService, redisWatcher, new RedisService(), new RedisService())
-        await replicator.start()
-
-        await replicator.replicationWrite();
-        await Util.sleep(1000);
-        const items = await redisService.xread(`/replication/config`, 100, '0', 1000);
-        expect(items.length).to.equal(1);
-        await redisWatcher.stop();
-
-    }).timeout(5000);
-
-    it('replicationTrim', async () => {
-        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
-        const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt',
-            filename);
-        const redisWatcher = new RedisWatcher();
-        await redisWatcher.start();
-        const replicator = new ConfigReplicator(configService, redisWatcher, new RedisService(), new RedisService())
-        await replicator.start()
-
-        await replicator.replicationWrite();
-        await Util.sleep(1000);
-        await replicator.replicationTrim(new Date().getTime().toString());
-        await Util.sleep(1000);
-        const items = await redisService.xread(`/replication/config`, 100, '0', 1000);
-        expect(items.length).to.equal(0);
-        await redisWatcher.stop();
-
-    }).timeout(5000);
+    /*  it('event changed', async () => {
+         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+         const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt',
+             filename);
+         const redisWatcher = new RedisWatcher();
+         await redisWatcher.start();
+         const replicator = new ConfigReplicator(configService, redisWatcher, new RedisService(), new RedisService())
+         await replicator.start()
+ 
+         configService.emitEvent({ type: 'saved', path: '/users', data: { id: 'asd' } })
+         let isCalled = false;
+         configService.events.on('configChanged', () => {
+             isCalled = true;
+         })
+         await Util.sleep(1000);
+         const items = await redisService.xread(`/replication/config`, 100, '0', 1000);
+         expect(items.length).to.equal(2);
+         expect(isCalled).to.be.true;
+ 
+         await redisWatcher.stop();
+ 
+ 
+     }).timeout(5000);
+ 
+     it('replicationWrite', async () => {
+         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+         const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt',
+             filename);
+         const redisWatcher = new RedisWatcher();
+         await redisWatcher.start();
+         const replicator = new ConfigReplicator(configService, redisWatcher, new RedisService(), new RedisService())
+         await replicator.start()
+ 
+         await replicator.replicationWrite();
+         await Util.sleep(1000);
+         const items = await redisService.xread(`/replication/config`, 100, '0', 1000);
+         expect(items.length).to.equal(1);
+         await redisWatcher.stop();
+ 
+     }).timeout(5000);
+ 
+     it('replicationTrim', async () => {
+         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+         const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt',
+             filename);
+         const redisWatcher = new RedisWatcher();
+         await redisWatcher.start();
+         const replicator = new ConfigReplicator(configService, redisWatcher, new RedisService(), new RedisService())
+         await replicator.start()
+ 
+         await replicator.replicationWrite();
+         await Util.sleep(1000);
+         await replicator.replicationTrim(new Date().getTime().toString());
+         await Util.sleep(1000);
+         const items = await redisService.xread(`/replication/config`, 100, '0', 1000);
+         expect(items.length).to.equal(0);
+         await redisWatcher.stop();
+ 
+     }).timeout(5000); */
 
     /* function createUser(source: string, username: string, name: string, password?: string) {
         const user: User = {

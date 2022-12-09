@@ -189,7 +189,7 @@ export class PolicyAuthzListener {
         });
 
         this.gatewayId = process.env.GATEWAY_ID || 'unknown'
-        this.configService.events.on('configChanged', async (data: ConfigEvent) => {
+        this.configService.events.on('changed', async (data: ConfigEvent) => {
             await this.onConfigChanged(data);
         })
 

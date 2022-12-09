@@ -775,6 +775,7 @@ describe('configService', async () => {
             tcp: 3306, assignedIp: '1.3',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -802,6 +803,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -818,6 +820,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -862,6 +865,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -878,6 +882,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -906,6 +911,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -922,6 +928,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -949,6 +956,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -981,6 +989,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -1479,6 +1488,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
 
@@ -1761,6 +1771,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
 

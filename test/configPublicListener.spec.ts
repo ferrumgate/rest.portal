@@ -66,6 +66,7 @@ async function createSampleData(): Promise<any> {
         tcp: 3306, assignedIp: '1.3',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
+        count: 1
 
     }
     //add
