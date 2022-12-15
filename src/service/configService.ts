@@ -672,6 +672,7 @@ export class ConfigService {
             return;
         const prev = Util.clone(finded);
         finded.username = email;
+        finded.name = email;
         finded.password = Util.bcryptHash(password);
         finded.updateDate = new Date().toISOString();
         this.emitEvent({ type: 'updated', path: '/users', data: this.createTrackEvent(prev, finded) })
