@@ -73,6 +73,7 @@ export class ErrorCodes {
     static ErrNotInLdapGroups: string = 'ErrNotInLdapGroups';
     static ErrKeyLengthSmall: string = 'ErrKeyLengthSmall';
     static ErrInputNullOrUndefined: string = "ErrInputNullOrUndefined";
+    static ErrLimitedModeIsWorking: string = 'ErrLimitedModeIsWorking';
 
 
 }

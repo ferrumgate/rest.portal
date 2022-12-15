@@ -63,5 +63,31 @@ export function globalErrorHandler(err: any, req: any, res: any, nex: any) {
 };
 
 
+/**
+ * @summary in demo mode only read functions allowed
+ * @param req 
+ * @param res 
+ * @param next 
+ * @param args 
+ */
+export const checkLimitedMode = async (req: any, res: any, next: any, ...args: any) => {
+
+    if (process.env.LIMITED_MODE == 'true') {
+        if (!args[0] || !args[0].length)
+            throw new RestfullException(400, ErrorCodes.ErrLimitedModeIsWorking, ErrorCodes.ErrLimitedModeIsWorking, 'limited mode is working');
+        const list = args[0] as string[]
+        const lowered = list.map(x => x.toLowerCase().trim());
+        const method = req.method.toLowerCase().trim();
+        const methodFinded = lowered.find(x => x == method);
+        if (methodFinded)
+            throw new RestfullException(400, ErrorCodes.ErrLimitedModeIsWorking, ErrorCodes.ErrLimitedModeIsWorking, 'read only mode is working');
+        else next();
+
+    } else
+        next();
+
+};
+
+
 
 

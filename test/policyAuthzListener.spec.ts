@@ -319,16 +319,16 @@ describe('policyAuthzListener', () => {
         await policy.addRoom(room1);
         const room2 = new Room2('abcd', '12345', 'askdjfa');
         await policy.addRoom(room2);
-        configService.events.emit("configChanged", { path: '/authorizationPolicy/rules', data: { before: { serviceId: '1234' } } })
+        configService.events.emit("changed", { path: '/authorizationPolicy/rules', data: { before: { serviceId: '1234' } } })
         await Util.sleep(1000);
-        expect(policy.isReplicated = true);
+        expect(policy.isReplicated).to.be.true;
         expect(policy.serviceIdList.includes('1234'));
         policy.isReplicated = false;
         policy.serviceIdList.splice(0);
 
-        configService.events.emit("configChanged", { path: '/authorizationPolicy/rules', data: {} })
-        await Util.sleep(1000);
-        expect(policy.isReplicated = true);
+        configService.events.emit("changed", { path: '/authorizationPolicy/rules', data: {} })
+        await Util.sleep(2000);
+        expect(policy.isReplicated).to.be.true;
         expect(policy.serviceIdList.length).to.equal(2);
 
 
