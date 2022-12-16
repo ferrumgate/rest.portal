@@ -1,7 +1,7 @@
 
 import { Util } from "../../util";
 import { logger } from "../../common";
-import { ESService } from "../esService";
+import { ESService, ESServiceLimited } from "../esService";
 import { RedisService } from "../redisService";
 
 import { ConfigService } from "../configService";
@@ -30,7 +30,10 @@ export class ActivityLogToES {
 
     }
     createESService() {
-        return new ESService(process.env.ES_HOST, process.env.ES_USER, process.env.ES_PASS);
+        if (process.env.LIMITED_MODE == 'true')
+            return new ESServiceLimited(process.env.ES_HOST, process.env.ES_USER, process.env.ES_PASS);
+        else
+            return new ESService(process.env.ES_HOST, process.env.ES_USER, process.env.ES_PASS);
     }
 
 

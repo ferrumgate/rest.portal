@@ -130,7 +130,6 @@ export class AppSystemService {
         await this.systemWatcherService.start();
         await this.policyAuthzChannel.start();
         await this.configPublicListener.start();
-        if (process.env.LIMITED_MODE == 'true') return;
         await this.auditLogToES.start();
         await this.activityLogToES.start();
     }
