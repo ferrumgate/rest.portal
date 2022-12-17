@@ -117,7 +117,7 @@ describe('networkApi', async () => {
         })
         expect(response.status).to.equal(200);
         expect(response.body).exist;
-        expect(response.body).to.deep.equal(network);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
 
     }).timeout(50000);
 
@@ -206,7 +206,7 @@ describe('networkApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body).exist;
         expect(response.body.items.length).to.equal(2);
-        expect(response.body.items[0]).to.deep.equal(network);
+        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
 
         //test ids
 
@@ -224,7 +224,7 @@ describe('networkApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body).exist;
         expect(response.body.items.length).to.equal(2);
-        expect(response.body.items[0]).to.deep.equal(network2);
+        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(network2);
 
     }).timeout(50000);
 
@@ -302,11 +302,11 @@ describe('networkApi', async () => {
 
         network.insertDate = response.body.insertDate;
         network.updateDate = response.body.updateDate;
-        expect(response.body).to.deep.equal(network);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
 
 
         const netdb = await appService.configService.getNetwork(network.id);
-        expect(netdb).to.deep.equal(network);
+        expect(netdb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
 
     }).timeout(50000);
 
@@ -348,7 +348,7 @@ describe('networkApi', async () => {
         network.id = response.body.id;
         network.insertDate = response.body.insertDate;
         network.updateDate = response.body.updateDate;
-        expect(response.body).to.deep.equal(network);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
         expect(response.body.id).exist;
 
 

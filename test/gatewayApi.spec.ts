@@ -112,7 +112,7 @@ describe('gatewayApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(gateway);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
 
     }).timeout(50000);
 
@@ -182,7 +182,7 @@ describe('gatewayApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.items[0]).to.deep.equal(gateway2);
+        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway2);
 
     }).timeout(50000);
 
@@ -289,7 +289,7 @@ describe('gatewayApi', async () => {
         expect(response.status).to.equal(200);
 
         gateway.id = response.body.id;
-        expect(response.body).to.deep.equal(gateway);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
 
     }).timeout(50000);
 

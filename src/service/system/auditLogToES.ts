@@ -1,11 +1,12 @@
 
 import { Util } from "../../util";
 import { logger } from "../../common";
-import { ESService } from "../esService";
+import { ESService, ESServiceLimited } from "../esService";
 import { RedisService } from "../redisService";
 import { AuditLog } from "../../model/auditLog";
 import { ConfigService } from "../configService";
 import { config } from "process";
+import { RedisWatcher } from "./redisWatcher";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -23,19 +24,21 @@ export class AuditLogToES {
     auditStreamKey = '/audit/logs';
     public encKey = '';
     es: ESService;
-    redis: RedisService;
-    constructor(private configService: ConfigService) {
+
+    constructor(private configService: ConfigService, private redis: RedisService,
+        private redisWatcher: RedisWatcher) {
         this.encKey = this.configService.getEncKey();
         this.es = this.createESService();
-        this.redis = this.createRedis();
+
     }
     createESService() {
-        return new ESService(process.env.ES_HOST, process.env.ES_USER, process.env.ES_PASS);
+        if (process.env.LIMITED_MODE == 'true')
+            return new ESServiceLimited(process.env.ES_HOST, process.env.ES_USER, process.env.ES_PASS);
+        else
+            return new ESService(process.env.ES_HOST, process.env.ES_USER, process.env.ES_PASS);
     }
 
-    createRedis() {
-        return new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
-    }
+
 
     async start() {
         await this.check();
@@ -48,25 +51,11 @@ export class AuditLogToES {
             clearIntervalAsync(this.timer);
         this.timer = null;
     }
-    async checkRedisIsMaster() {
-        const now = new Date().getTime();
-        //every 15 seconds
-        if ((this.lastRedisMasterCheck + 15 * 1000) < now) {
-            logger.info(`checking redis is master`);
-            const info = await this.redis.info();
-            if (info.includes("role:master")) {
-                this.isRedisMaster = true;
-                logger.info("redis is master");
-            } else {
-                this.isRedisMaster = false;
-            }
-            this.lastRedisMasterCheck = now;
-        }
-    }
+
     async check() {
         try {
-            await this.checkRedisIsMaster();
-            if (!this.isRedisMaster) {
+
+            if (!this.redisWatcher.isMaster) {
                 await Util.sleep(5000);
                 return;
             }

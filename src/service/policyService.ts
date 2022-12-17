@@ -191,7 +191,7 @@ export class PolicyService {
     authorizeErrorNumber = 0;
     async authorize(trackId: number, serviceId: string, throwError: boolean = true, tun?: Tunnel): Promise<PolicyAuthzResult> {
         //TODO make this so fast
-        logger.debug(`policy authorize calculate trackId: ${trackId} serviceId:${serviceId}`);
+        logger.debug(`policy authz calculate trackId: ${trackId} serviceId:${serviceId}`);
         this.authorizeErrorNumber = 0;
         const tunnelKey = tun ? `/tunnel/id/${tun.id}` : await this.tunnelService.getTunnelKeyFromTrackId(trackId);
         if (!tunnelKey) {
@@ -273,7 +273,7 @@ export class PolicyService {
             let f2 = await this.check2FA(rule, tunnel.is2FA || false);
             if (f1 && f2) {
 
-                logger.debug(`policy authorize calculate trackId: ${trackId} serviceId:${serviceId} rule matched: ${rule.id}`);
+                logger.debug(`policy authz calculate trackId: ${trackId} serviceId:${serviceId} rule matched: ${rule.id}`);
                 return { error: 0, index: i, rule: rule };
             }
 

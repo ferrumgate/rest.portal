@@ -443,6 +443,63 @@ describe('util ', () => {
 
     }).timeout(120000);
 
+    it('getCertificateInfo ', async () => {
+        const cahostname = `cahost`;
+        const ca = await Util.createSelfSignedCrt(cahostname);
+
+
+        const domain = `test.com`;
+        const output = await Util.createCASignedCrt(domain, ca);
+        const x = await Util.getCertificateInfo(output.publicKey, ca.publicKey);
+        expect(x.isValid).to.be.true;
+        expect(x.remainingMS > 0);
+
+
+        const cahostname2 = `cahost2`;
+        const ca2 = await Util.createSelfSignedCrt(cahostname2);
+        const x2 = await Util.getCertificateInfo(output.publicKey, ca2.publicKey);
+        expect(x2.isValid).to.be.false;
+        expect(x2.remainingMS > 0);
+
+
+
+
+    }).timeout(120000);
+
+
+    it('maskFileds ', async () => {
+        const test = {
+            id: '1',
+            test: 'adfa'
+        }
+
+        const result = Util.maskFields({ ...test }, ['id']);
+        expect(result.id).to.equal(test.id);
+        expect(result.test).not.equal(test.test);
+
+
+        const test2 = {
+            ...test,
+            bla: {
+                id: '3',
+                test: '4',
+                nu: 54
+
+            }
+
+        }
+        const result2 = Util.maskFields({ ...test2, bla: { ...test2.bla } });
+        expect(result2.id).not.equal(test2.id);
+        expect(result2.test).not.equal(test2.test);
+        expect(result2.bla.id).not.equal(test2.bla.id);
+        expect(result2.bla.test).not.equal(test2.bla.test);
+        expect(result2.bla.nu).to.equal(0);
+
+
+
+
+    }).timeout(120000);
+
 
 
 

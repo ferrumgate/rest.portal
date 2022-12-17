@@ -391,7 +391,7 @@ describe('configService', async () => {
 
         await configService.saveNetwork(network);
         const networkDb = await configService.getNetwork(network.id);
-        expect(networkDb).to.deep.include(network);
+        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
         const networkDb2 = await configService.getNetworkByName('default2');
         expect(networkDb2).to.deep.include(network);
 
@@ -482,7 +482,7 @@ describe('configService', async () => {
 
         await configService.saveGateway(gateway);
         const gatewayDb = await configService.getGateway(gateway.id);
-        expect(gatewayDb).to.deep.include(gateway);
+        expect(gatewayDb).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
 
     });
     it('deleteGateway', async () => {
@@ -546,7 +546,7 @@ describe('configService', async () => {
         await configService.addAuthSettingOAuth(oauth);
 
         const returned = await configService.getAuthSettingOAuth();
-        expect(returned.providers[0]).to.deep.equal(oauth);
+        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
         //delete
         await configService.deleteAuthSettingOAuth(oauth.id);
         const returned2 = await configService.getAuthSettingOAuth();
@@ -585,7 +585,7 @@ describe('configService', async () => {
         await configService.setAuthSettingsLocal(local);
 
         const returned = await configService.getAuthSettingsLocal();
-        expect(returned).to.deep.equal(local);
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
 
 
     });
@@ -609,7 +609,7 @@ describe('configService', async () => {
         await configService.saveGroup(group);
 
         const returned = await configService.getGroup(group.id);
-        expect(returned).to.deep.equal(group);
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
 
 
     });
@@ -684,7 +684,7 @@ describe('configService', async () => {
 
         const returned = await configService.getGroupsAll();
         expect(returned.length).to.be.equal(2);
-        expect(returned[0]).to.deep.equal(group);
+        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
 
     });
 
@@ -775,13 +775,14 @@ describe('configService', async () => {
             tcp: 3306, assignedIp: '1.3',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
         await configService.saveService(service);
 
         const returned = await configService.getService(service.id);
-        expect(returned).to.deep.equal(service);
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
 
 
     });
@@ -802,6 +803,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -818,6 +820,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -862,6 +865,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -878,6 +882,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -906,6 +911,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -922,6 +928,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -929,7 +936,7 @@ describe('configService', async () => {
 
         const returned = await configService.getServicesBy();
         expect(returned.length).to.be.equal(2);
-        expect(returned[0]).to.deep.equal(service1);
+        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
 
     });
 
@@ -949,6 +956,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -981,6 +989,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         //add
@@ -1479,6 +1488,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
 
@@ -1761,6 +1771,7 @@ describe('configService', async () => {
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
 

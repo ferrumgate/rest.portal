@@ -55,7 +55,7 @@ describe('gatewayService', async () => {
         const gw = new GatewayService(configService, redisService);
         const items = await gw.getAllAlive();
         expect(items.length).to.equal(1);
-        expect(items[0]).to.deep.equal(detail);
+        expect(items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(detail);
 
     }).timeout(5000);
     it('getAliveById', async () => {
@@ -81,7 +81,7 @@ describe('gatewayService', async () => {
         await redisService.hset(`/gateway/alive/id/${detail.id}`, detail);
         const gw = new GatewayService(configService, redisService);
         const item = await gw.getAliveById(detail.id)
-        expect(item).to.deep.equal(detail);
+        expect(item).to.excluding(['insertDate', 'updateDate']).deep.equal(detail);
 
         const item2 = await gw.getAliveById('unknownid');
         expect(item2).not.exist;

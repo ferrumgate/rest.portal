@@ -394,6 +394,33 @@ export const Util = {
         const n = Number(val)
         if (Number.isNaN(n)) return 0;
         return n;
+    },
+
+
+    maskFields(val: any, fields: string[] = []) {
+        if (val == undefined) return val;
+        if (val == null) return val;
+        if (typeof (val) == 'string') {
+            if (val)
+                return Util.randomNumberString(16);
+            return val;
+        }
+        if (typeof (val) == 'number')
+            return 0;
+        if (Array.isArray(val)) {
+            val = val.map(x => {
+                return this.maskFields(x, fields);
+            });
+            return val;
+        }
+        if (typeof (val) == 'object') {
+            Object.keys(val).forEach(x => {
+                if (!fields.includes(x)) {
+                    val[x] = Util.maskFields(val[x], fields);
+                }
+            })
+        }
+        return val;
     }
 
 

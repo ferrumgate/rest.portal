@@ -3,6 +3,7 @@ import { request } from 'http';
 import log4js from 'log4js';
 import { ErrorCodes, RestfullException } from './restfullException';
 import { RedisService } from './service/redisService';
+import { Util } from './util';
 
 
 log4js.configure({
@@ -59,6 +60,52 @@ export function globalErrorHandler(err: any, req: any, res: any, nex: any) {
     if (err.status && err.code)
         res.status(err.status).json({ status: err.status, code: err.code, message: err.message });
     else res.status(500).json({ status: 500, code: ErrorCodes.ErrInternalError, message: "internal server error" });
+
+};
+
+
+/**
+ * @summary in demo mode only read functions allowed
+ * @param req 
+ * @param res 
+ * @param next 
+ * @param args 
+ */
+export const checkLimitedMode = async (req: any, res: any, next: any, ...args: any) => {
+
+    if (process.env.LIMITED_MODE == 'true') {
+        if (!args[0] || !args[0].length)
+            throw new RestfullException(400, ErrorCodes.ErrLimitedModeIsWorking, ErrorCodes.ErrLimitedModeIsWorking, 'limited mode is working');
+        const list = args[0] as string[]
+        const lowered = list.map(x => x.toLowerCase().trim());
+        const method = req.method.toLowerCase().trim();
+        const methodFinded = lowered.find(x => x == method);
+        if (methodFinded)
+            throw new RestfullException(400, ErrorCodes.ErrLimitedModeIsWorking, ErrorCodes.ErrLimitedModeIsWorking, 'read only mode is working');
+        else next();
+
+    } else
+        next();
+
+};
+
+/**
+ * @summary in limited mode mask values
+ * @param req 
+ * @param res 
+ * @param next 
+ * @param args 
+ * @returns 
+ */
+export const maskLimitedMode = async (req: any, res: any, next: any, ...args: any) => {
+
+    if (process.env.LIMITED_MODE == 'true') {
+
+        req.respVal = Util.maskFields(req.respVal, args[0])
+        return res.status(200).json(req.respVal);
+
+    } else
+        return res.status(200).json(req.respVal);
 
 };
 

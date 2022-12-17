@@ -75,7 +75,7 @@ describe('auditService ', async () => {
         const data = Util.decrypt(auditService.encKey, item.data);
         expect(data).exist;
         const obj = JSON.parse(data);
-        expect(obj).to.deep.equal(audit);
+        expect(obj).deep.equal(audit);
         await auditService.stop();
 
 

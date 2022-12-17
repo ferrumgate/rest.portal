@@ -289,7 +289,7 @@ routerUserAuthenticated.put('/current/2fa',
         const currentUser = req.currentUser as User;
 
         const currentSession = req.currentSession as AuthSession;
-        await inputService.checkNotNullOrUndefined(req.is2FA);
+        await inputService.checkNotNullOrUndefined(request.is2FA);
         const user = await configService.getUserById(currentUser.id);
         HelperService.isValidUser(user);
         if (!user)
@@ -458,6 +458,7 @@ function convertToUserOptionToBoolean(val?: string): boolean | undefined {
 
 
 
+
 routerUserAuthenticated.get('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -494,6 +495,12 @@ routerUserAuthenticated.get('/',
                 } as any
             })
 
+        if (process.env.LIMITED_MODE == 'true') {//limited mode only current user
+            const user = req.currentUser as User;
+            items.items = items.items.filter(x => x.id == user.id);
+            items.total = items.items.length;
+        }
+
         return res.status(200).json({ items: items.items, total: items.total });
 
     }))
@@ -508,17 +515,20 @@ routerUserAuthenticated.delete('/:id',
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
-        logger.info(`delete group with id: ${id}`);
+        logger.info(`delete user with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const auditService = appService.auditService;
 
         const user = await configService.getUserById(id);
         if (!user) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
-        //check if any other admin user exists
-        const adminUsers = await configService.getUserByRoleIds([RBACDefault.roleAdmin.id]);
-        if (adminUsers.length == 1)
-            throw new RestfullException(400, ErrorCodes.ErrNoAdminUserLeft, ErrorCodes.ErrNoAdminUserLeft, 'no admin user left');
+        const userRole = await configService.getUserRoles(user);
+        if (userRole.find(x => x.id == RBACDefault.roleAdmin.id)) {
+            //check if any other admin user exists
+            const adminUsers = await configService.getUserByRoleIds([RBACDefault.roleAdmin.id]);
+            if (adminUsers.length == 1)
+                throw new RestfullException(400, ErrorCodes.ErrNoAdminUserLeft, ErrorCodes.ErrNoAdminUserLeft, 'no admin user left');
+        }
         const { before } = await configService.deleteUser(user.id);
         await auditService.logDeleteUser(currentSession, currentUser, before);
 
@@ -548,6 +558,13 @@ routerUserAuthenticated.put('/',
         await inputService.checkNotEmpty(input.id);
         const userDb = await configService.getUser(input.id);
         if (!userDb) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
+
+        if (process.env.LIMITED_MODE == 'true') {//limited mode only current user update itself
+            const user = req.currentUser as User;
+            if (user.id != userDb.id) {
+                throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
+            }
+        }
 
         //await inputService.checkNotEmpty(input.name);
         //only set name. isLocked, is2FA, roleIds, groupIds

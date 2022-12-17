@@ -50,7 +50,7 @@ routerServiceAuthenticated.get('/',
         const search = req.query.search;
         const ids = Util.convertToArray(req.query.ids);
         const networkIds = Util.convertToArray(req.query.networkIds);
-        logger.info(`query services with ${req.query}`);
+        logger.info(`query services with ${JSON.stringify(req.query)}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         let items: Service[] = [];

@@ -10,6 +10,7 @@ import { ConfigPublicRoom, ConfigPublicListener, ConfigRequest, ConfigResponse }
 import { Service } from '../src/model/service';
 
 import chaiExclude from 'chai-exclude';
+import { RedisWatcher } from '../src/service/system/redisWatcher';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -65,6 +66,7 @@ async function createSampleData(): Promise<any> {
         tcp: 3306, assignedIp: '1.3',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
+        count: 1
 
     }
     //add
@@ -101,7 +103,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getGatewayById('someid', '231a0932')
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.deep.equal(gateway);
+        expect(result.result).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
 
     }).timeout(5000);
 
@@ -122,7 +124,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getNetworkByGatewayId('someid', '231a0932')
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.deep.equal(network);
+        expect(result.result).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
 
     }).timeout(5000);
 
@@ -144,7 +146,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getService('someid', service.id)
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.deep.equal(service);
+        expect(result.result).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
 
     }).timeout(5000);
 
@@ -165,7 +167,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getServicesByGatewayId('someid', gateway.id);
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result[0]).to.deep.equal(service);
+        expect(result.result[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
 
     }).timeout(5000);
 
@@ -220,19 +222,14 @@ describe('configPublicListener ', async () => {
         await simpleRedis.flushAll();
     })
 
-    it('checkRedisRole', async () => {
-        //const simpleRedis = new RedisService('localhost:6379');
-        const { gateway, gateway2, network, service, configService } = await createSampleData();
-        const listener = new ConfigPublicListener(configService);
 
-        expect(listener.isRedisMaster).to.be.false;
-        await listener.checkRedisRole();
-        expect(listener.isRedisMaster).to.be.true;
-    })
     it('executeMessage', async () => {
 
         const { gateway, gateway2, network, service, configService } = await createSampleData();
-        const listener = new ConfigPublicListener(configService);
+        const watcher = new RedisWatcher('localhost:6379');
+        await watcher.start();
+        const listener = new ConfigPublicListener(configService, new RedisService('localhost:6379'),
+            watcher);
         const msg: ConfigRequest = {
             id: 'adfaf', func: 'getServiceId', gatewayId: 'somehost', params: []
         }

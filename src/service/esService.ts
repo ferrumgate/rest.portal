@@ -6,7 +6,7 @@ import { ActivityLog } from '../model/activityLog';
 //import dateformat from 'dateformat'
 import { AuditLog } from '../model/auditLog';
 import { ConfigService } from './configService';
-
+import fsp from 'fs/promises';
 export interface ESAuditLog extends AuditLog {
 
 }
@@ -146,6 +146,7 @@ export class ESService {
 
     ////audit 
     async auditCreateIndexIfNotExits(item: AuditLog): Promise<[ESAuditLog, string]> {
+
         let date = Date.now();
         // let index = 'ferrum-audit-' + dateformat(item.insertDate, 'yyyymmdd');
         let index = 'ferrumgate-audit';
@@ -230,8 +231,9 @@ export class ESService {
         return [esitem, index];
     }
 
-    async auditSave(items: [ESAuditLog, string][]): Promise<void> {
 
+
+    async auditSave(items: [ESAuditLog, string][]): Promise<void> {
         let result: any[] = [];
         let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
         mapped.forEach(x => {
@@ -240,8 +242,6 @@ export class ESService {
         await this.client.bulk({
             body: result
         })
-
-
     }
 
     addToQuery(item: string | undefined, field: string, dest: any[]) {
@@ -1004,6 +1004,34 @@ export class ESService {
         return retVal;
     }
 
+}
+
+
+export class ESServiceLimited extends ESService {
+
+    override async auditCreateIndexIfNotExits(item: AuditLog): Promise<[ESAuditLog, string]> {
+
+        return [{ ...item }, 'ferrumgate-audit'];
+
+    }
+    override async auditSave(items: [ESAuditLog, string][]): Promise<void> {
+
+        await fsp.appendFile(`/var/log/ferrumgate/audit-${this.dateFormat(new Date())}`, JSON.stringify(items.map(x => x[0])) + '\n');
+
+    }
+
+    override async activityCreateIndexIfNotExits(item: ActivityLog): Promise<[ESActivityLog, string]> {
+        let index = `ferrumgate-activity-${this.dateFormat(item.insertDate)}`;
+        let esitem: ESActivityLog =
+        {
+            ...item
+
+        };
+        return [esitem, index];
+    }
+    override async activitySave(items: [ESActivityLog, string][]): Promise<void> {
+        await fsp.appendFile(`/var/log/ferrumgate/activity-${this.dateFormat(new Date())}`, JSON.stringify(items.map(x => x[0])) + '\n');
+    }
 }
 
 

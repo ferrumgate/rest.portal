@@ -44,7 +44,7 @@ describe('activityService', async () => {
         const data = Buffer.from(item.data, 'base64').toString();
         expect(data).exist;
         const obj = JSON.parse(data);
-        expect(obj).to.deep.equal(log);
+        expect(obj).deep.equal(log);
         await service.stop();
 
 

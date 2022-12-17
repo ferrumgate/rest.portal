@@ -268,7 +268,7 @@ describe('configAuthApi ', async () => {
         })
 
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(local)
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(local)
 
 
     }).timeout(50000);
@@ -301,7 +301,7 @@ describe('configAuthApi ', async () => {
         delete (local as any).fakeProperty;
         response.body.insertDate = local.insertDate;
         response.body.updateDate = local.updateDate;
-        expect(response.body).to.deep.equal(local);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
 
 
     }).timeout(50000);
@@ -334,7 +334,7 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.items).exist;
 
-        expect(response.body.items[0]).to.deep.equal(oauth);
+        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
 
 
     }).timeout(50000);
@@ -368,7 +368,7 @@ describe('configAuthApi ', async () => {
         oauth2.id = response.body.id;
         response.body.insertDate = oauth2.insertDate;
         response.body.updateDate = oauth2.updateDate;
-        expect(response.body).to.deep.equal(oauth2);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth2);
 
 
     }).timeout(50000);
@@ -434,7 +434,7 @@ describe('configAuthApi ', async () => {
         delete oauthAny.fakeProperty;
         response.body.insertDate = oauth.insertDate;
         response.body.updateDate = oauth.updateDate;
-        expect(response.body).to.deep.equal(oauth);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
 
 
     }).timeout(50000);
@@ -548,7 +548,7 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.items).exist;
 
-        expect(response.body.items[0]).to.deep.equal(ldap);
+        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(ldap);
 
 
     }).timeout(50000);
@@ -581,7 +581,7 @@ describe('configAuthApi ', async () => {
         ldap.id = response.body.id;
         response.body.insertDate = ldap.insertDate;
         response.body.updateDate = ldap.updateDate;
-        expect(response.body).to.deep.equal(ldap);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(ldap);
 
 
     }).timeout(50000);
@@ -646,7 +646,7 @@ describe('configAuthApi ', async () => {
         delete ldapAny.fakeProperty;
         response.body.insertDate = ldap.insertDate;
         response.body.updateDate = ldap.updateDate;
-        expect(response.body).to.deep.equal(ldap);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(ldap);
 
 
     }).timeout(50000);
@@ -767,7 +767,7 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.items).exist;
 
-        expect(response.body.items[0]).to.deep.equal(saml);
+        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(saml);
 
 
     }).timeout(50000);
@@ -800,7 +800,7 @@ describe('configAuthApi ', async () => {
         saml.id = response.body.id;
         response.body.insertDate = saml.insertDate;
         response.body.updateDate = saml.updateDate;
-        expect(response.body).to.deep.equal(saml);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(saml);
 
 
     }).timeout(50000);
@@ -866,7 +866,7 @@ describe('configAuthApi ', async () => {
         response.body.insertDate = saml.insertDate;
         response.body.updateDate = saml.updateDate;
 
-        expect(response.body).to.deep.equal(saml);
+        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(saml);
 
 
     }).timeout(50000);

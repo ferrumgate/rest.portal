@@ -10,6 +10,7 @@ export interface Service {
     udp?: number;
     protocol?: string;
     host: string;
+    count: number;
     networkId: string;
     isEnabled: boolean;
     assignedIp: string;
@@ -33,6 +34,7 @@ export function cloneService(service: Service): Service {
         assignedIp: service.assignedIp,
         insertDate: service.insertDate,
         updateDate: service.updateDate,
-        isSystem: service.isSystem
+        isSystem: service.isSystem,
+        count: service.count
     }
 }

@@ -11,6 +11,7 @@ import { Util } from '../src/util';
 import { User } from '../src/model/user';
 import { Tunnel } from '../src/model/tunnel';
 import { Gateway, Network } from '../src/model/network';
+import { AuthSession } from '../src/model/authSession';
 
 
 
@@ -148,11 +149,11 @@ describe('tunnelService', () => {
 
         const tunnel = new TunnelService(configService2, simpleRedis);
         const user: User = { id: 'adfaf' } as User;
-
+        const session: AuthSession = { id: 'someid', insertDate: new Date().toISOString(), is2FA: false, userId: user.id, ip: '1.2.3.4', lastSeen: new Date().toISOString(), source: 'local-lcao', username: user.name };
         //
         let isError = false;
         try {
-            await tunnel.createTunnel(user, 'randomtunnelid');
+            await tunnel.createTunnel(user, 'randomtunnelid', session);
         } catch (err) { isError = true; };
         expect(isError).to.be.true;
 
@@ -192,9 +193,9 @@ describe('tunnelService', () => {
             clientIp: '192.168.1.100', tun: 'ferrumaweds', gatewayId: 'w20kaaoe', trackId: '12'
         })
         //
+        const ses: AuthSession = { id: 'someid', insertDate: new Date().toISOString(), is2FA: false, userId: user.id, ip: '1.2.3.4', lastSeen: new Date().toISOString(), source: 'local-lcao', username: user.name };
 
-
-        await tunnel.createTunnel(user, 'randomtunnelid');
+        await tunnel.createTunnel(user, 'randomtunnelid', ses);
         //check every redis data 
         const ipExits = await simpleRedis.containsKey(`/tunnel/ip/192.168.0.1`);
         expect(ipExits).to.be.true;
@@ -247,9 +248,9 @@ describe('tunnelService', () => {
         const user: User = { id: 'adfaf' } as User;
         await simpleRedis.hset(`/tunnel/id/randomtunnelid`, { id: 'randomtunnelid', trackId: '12', clientIp: '192.168.1.100', tun: 'tun0', gatewayId: '1234' })
         //
+        const session: AuthSession = { id: 'someid', insertDate: new Date().toISOString(), is2FA: false, userId: user.id, ip: '1.2.3.4', lastSeen: new Date().toISOString(), source: 'local-lcao', username: user.name };
 
-
-        await tunnel.createTunnel(user, 'randomtunnelid');
+        await tunnel.createTunnel(user, 'randomtunnelid', session);
         await tunnel.renewIp('randomtunnelid');
 
         let exists = await simpleRedis.containsKey('/tunnel/ip/192.168.0.1');
@@ -298,8 +299,8 @@ describe('tunnelService', () => {
             { id: 'randomtunnelid', clientIp: '192.168.1.100', tun: 'tun0', gatewayId: '12345', trackId: '12' })
         //
 
-
-        await tunnel.createTunnel(user, 'randomtunnelid');
+        const session: AuthSession = { id: 'someid', insertDate: new Date().toISOString(), is2FA: false, userId: user.id, ip: '1.2.3.4', lastSeen: new Date().toISOString(), source: 'local-lcao', username: user.name };
+        await tunnel.createTunnel(user, 'randomtunnelid', session);
         await tunnel.confirm('randomtunnelid');
         //check every redis data 
         const hostExits = await simpleRedis.containsKey(`/gateway/12345/tun/tun0`);

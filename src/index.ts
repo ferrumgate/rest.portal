@@ -3,7 +3,7 @@ import { routerAuth } from "./api/authApi";
 import { routerConfig, routerConfigAuthenticated } from "./api/configApi";
 import { routerRegister } from "./api/registerApi";
 import { routerUserAuthenticated, routerUserEmailConfirm, routerUserForgotPassword, routerUserResetPassword } from "./api/userApi";
-import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "./common";
+import { asyncHandler, asyncHandlerWithArgs, checkLimitedMode, globalErrorHandler, logger } from "./common";
 import { ErrorCodes, RestfullException } from "./restfullException";
 import { AppService, AppSystemService } from "./service/appService";
 import { Util } from "./util";
@@ -120,6 +120,11 @@ const noAuthentication = async (req: any, res: any, next: any) => {
     next();
 };
 
+
+
+
+
+
 //metrics
 //app.use(metricsMiddleware);
 //middlewares
@@ -156,6 +161,7 @@ app.use("(\/api)?/test",
     asyncHandler(setAppService),
     asyncHandler(findClientIp),
     asyncHandlerWithArgs(rateLimit, 'test', 2),
+    asyncHandlerWithArgs(checkLimitedMode, 'DELETE', 'PUT'),
     asyncHandler(async (req: any, res: any, next: any) => {
         assert(req.appService);
         res.status(200).json({ result: "ok", clientIp: req.clientIp });
@@ -169,6 +175,7 @@ app.use('(\/api)?/register',
     asyncHandlerWithArgs(rateLimit, 'registerHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'registerDaily', 10000),
     asyncHandlerWithArgs(checkCaptcha, 'registerCaptcha', 5),
+    asyncHandlerWithArgs(checkLimitedMode),
     asyncHandler(noAuthentication),
     routerRegister);
 
@@ -180,6 +187,7 @@ app.use('(\/api)?/user/confirmemail',
     asyncHandlerWithArgs(rateLimit, 'userConfirmHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'userConfirmDaily', 10000),
     asyncHandlerWithArgs(checkCaptcha, 'userConfirmCaptcha', 5),
+    asyncHandlerWithArgs(checkLimitedMode),
     asyncHandler(noAuthentication),
     routerUserEmailConfirm);
 
@@ -191,6 +199,7 @@ app.use('(\/api)?/user/forgotpass',
     asyncHandlerWithArgs(rateLimit, 'userForgotPassHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'userForgotPassDaily', 10000),
     asyncHandlerWithArgs(checkCaptcha, 'userForgotPassCaptcha', 5),
+    asyncHandlerWithArgs(checkLimitedMode),
     asyncHandler(noAuthentication),
     routerUserForgotPassword);
 
@@ -201,6 +210,7 @@ app.use('(\/api)?/user/resetpass',
     asyncHandlerWithArgs(rateLimit, 'userResetPassHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'userResetPassDaily', 10000),
     asyncHandlerWithArgs(checkCaptcha, 'userResetPassCaptcha', 5),
+    asyncHandlerWithArgs(checkLimitedMode),
     asyncHandler(noAuthentication),
     routerUserResetPassword);
 
@@ -212,6 +222,7 @@ app.use('(\/api)?/user',
     asyncHandlerWithArgs(rateLimit, 'userHourly', 10000),
     asyncHandlerWithArgs(rateLimit, 'userDaily', 50000),
     asyncHandlerWithArgs(checkCaptcha, 'userCaptcha', 500),
+    asyncHandlerWithArgs(checkLimitedMode, 'DELETE', 'POST'),
     routerUserAuthenticated);
 
 
@@ -243,6 +254,7 @@ app.use('(\/api)?/config/auth',
     asyncHandlerWithArgs(rateLimit, 'configHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'configDaily', 10000),
     asyncHandlerWithArgs(checkCaptcha, 'config', 50),
+    asyncHandlerWithArgs(checkLimitedMode, 'GET', 'POST', 'PUT', 'DELETE'),
     asyncHandler(noAuthentication),
     routerConfigAuthAuthenticated);
 
@@ -254,6 +266,7 @@ app.use('(\/api)?/config',
     asyncHandlerWithArgs(rateLimit, 'configHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'configDaily', 10000),
     asyncHandlerWithArgs(checkCaptcha, 'config', 50),
+    asyncHandlerWithArgs(checkLimitedMode, 'GET', 'POST', 'PUT', 'DELETE'),
     asyncHandler(noAuthentication),
     routerConfigAuthenticated);
 
@@ -289,6 +302,7 @@ app.use('(\/api)?/network',
     asyncHandlerWithArgs(rateLimit, 'networkHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'networkDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'networkCaptcha', 50),
+    asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
     routerNetworkAuthenticated);
 
 
@@ -299,6 +313,7 @@ app.use('(\/api)?/gateway',
     asyncHandlerWithArgs(rateLimit, 'gatewayHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'gatewayDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'gatewayCaptcha', 50),
+    asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
     routerGatewayAuthenticated);
 
 app.use('(\/api)?/group',
@@ -308,6 +323,7 @@ app.use('(\/api)?/group',
     asyncHandlerWithArgs(rateLimit, 'groupHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'groupDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'groupCaptcha', 50),
+    asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
     routerGroupAuthenticated);
 
 
@@ -318,6 +334,7 @@ app.use('(\/api)?/service',
     asyncHandlerWithArgs(rateLimit, 'serviceHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'serviceDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'serviceCaptcha', 50),
+    asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
     routerServiceAuthenticated);
 
 
@@ -328,6 +345,7 @@ app.use('(\/api)?/policy/authn',
     asyncHandlerWithArgs(rateLimit, 'policyAuthnHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'policyAuthnDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'policyAuthnCaptcha', 50),
+    asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
     routerAuthenticationPolicyAuthenticated);
 
 
@@ -338,6 +356,7 @@ app.use('(\/api)?/policy/authz',
     asyncHandlerWithArgs(rateLimit, 'policyAuthzHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'policyAuthzDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'policyAuthzCaptcha', 50),
+    asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
     routerAuthorizationPolicyAuthenticated);
 
 app.use('(\/api)?/log/audit',
@@ -347,6 +366,7 @@ app.use('(\/api)?/log/audit',
     asyncHandlerWithArgs(rateLimit, 'logsAuditHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'logsAuditDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'logsAuditCaptcha', 50),
+    asyncHandlerWithArgs(checkLimitedMode),
     routerAuditAuthenticated);
 
 app.use('(\/api)?/insight/activity',
@@ -356,6 +376,7 @@ app.use('(\/api)?/insight/activity',
     asyncHandlerWithArgs(rateLimit, 'insightActivityHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'insightActivityDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'insightActivityCaptcha', 50),
+    asyncHandlerWithArgs(checkLimitedMode),
     routerActivityAuthenticated);
 
 
@@ -366,6 +387,7 @@ app.use('(\/api)?/summary',
     asyncHandlerWithArgs(rateLimit, 'summaryHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'summaryDaily', 5000),
     asyncHandlerWithArgs(checkCaptcha, 'summaryCaptcha', 50),
+    asyncHandlerWithArgs(checkLimitedMode),
     routerSummaryAuthenticated);
 
 

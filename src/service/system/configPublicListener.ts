@@ -7,6 +7,7 @@ import { GatewayService } from "../gatewayService";
 import NodeCache from "node-cache";
 import { pipeline } from "stream";
 import { timeStamp } from "console";
+import { RedisWatcher } from "./redisWatcher";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 export interface ConfigRequest {
@@ -205,14 +206,15 @@ export class ConfigPublicListener {
     /**
      *
      */
-    intervalCheckRedis: any = null;
-    intervalPublish: any = null;
-    redisSlave: RedisService | null = null;
-    redisSlaveSub: RedisService | null = null;
-    isRedisMaster = false;
+
+
+
     roomList: Map<string, ConfigPublicRoom> = new Map();
     cache: NodeCache;
-    constructor(private configService: ConfigService) {
+
+    constructor(private configService: ConfigService,
+        private redis: RedisService,
+        private redisWatcher: RedisWatcher) {
 
         this.cache = new NodeCache({ checkperiod: 600, deleteOnExpire: true, useClones: false, stdTTL: 600 });
 
@@ -221,81 +223,40 @@ export class ConfigPublicListener {
             this.roomList.delete(key);
         });
 
-    }
-    createRedis() {
-        return new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
+
     }
 
     async start() {
-        await this.checkRedisRole();
 
-        this.intervalCheckRedis = setIntervalAsync(async () => {
-
-            await this.checkRedisRole();
-
-        }, 15 * 1000);
+        await this.startListening();
     }
     async stop() {
-        if (this.intervalCheckRedis)
-            clearIntervalAsync(this.intervalCheckRedis);
-        this.intervalCheckRedis = null;
-        if (this.intervalPublish)
-            clearIntervalAsync(this.intervalPublish);
-        this.intervalPublish = null;
+
+        await this.stopListening();
 
     }
-    async checkRedisRole() {
-        let previous = this.isRedisMaster;
-        try {
 
-            if (!this.redisSlave)
-                this.redisSlave = this.createRedis();
-            if (!this.redisSlaveSub)
-                this.redisSlaveSub = this.createRedis();
-            const info = await this.redisSlave.info();
-            if (info.includes("role:master")) {
-                this.isRedisMaster = true;
-                logger.info("config public redis is master");
-            } else {
-                logger.info(`config public redis is slave`);
-            }
-            if (previous != this.isRedisMaster) {
-                if (this.isRedisMaster) {
-                    await this.startListening();
-                } else
-                    await this.stopListening();
-            }
-        } catch (err) {
-            logger.error(err);
-            this.isRedisMaster = previous;
-            if (this.redisSlave)
-                await this.redisSlave?.disconnect();
-            this.redisSlave = null;
-            if (this.redisSlaveSub)
-                await this.redisSlaveSub?.disconnect();
-            this.redisSlaveSub = null;
-        }
-    }
     async startListening() {
         logger.info('config public starting listener');
-        if (this.redisSlaveSub) {
-            this.redisSlaveSub.onMessage(async (channel: string, msg: string) => {
+        if (this.redis) {
+            this.redis.onMessage(async (channel: string, msg: string) => {
                 await this.executeMessage(channel, msg);
             })
-            await this.redisSlaveSub.subscribe(`/query/config`);
+            await this.redis.subscribe(`/query/config`);
         }
     }
     async stopListening() {
         logger.info('config public stoping listener');
-        this.isRedisMaster = false;
-        if (this.redisSlaveSub)
-            await this.redisSlaveSub.disconnect();
-        this.redisSlaveSub = null;
+        if (this.redis)
+            await this.redis.disconnect();
+
     }
 
     async executeMessage(channel: string, msg: string) {
         try {
-
+            if (!this.redisWatcher.isMaster) {
+                return;
+            }
             const query = JSON.parse(Buffer.from(msg, 'base64').toString()) as ConfigRequest;
             logger.info(`config public config query received from gateway:${query.gatewayId} func:${query.func}`)
             if (query.gatewayId) {
