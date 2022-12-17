@@ -222,7 +222,7 @@ app.use('(\/api)?/user',
     asyncHandlerWithArgs(rateLimit, 'userHourly', 10000),
     asyncHandlerWithArgs(rateLimit, 'userDaily', 50000),
     asyncHandlerWithArgs(checkCaptcha, 'userCaptcha', 500),
-    asyncHandlerWithArgs(checkLimitedMode, 'PUT', 'DELETE', 'POST'),
+    asyncHandlerWithArgs(checkLimitedMode, 'DELETE', 'POST'),
     routerUserAuthenticated);
 
 
@@ -254,7 +254,7 @@ app.use('(\/api)?/config/auth',
     asyncHandlerWithArgs(rateLimit, 'configHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'configDaily', 10000),
     asyncHandlerWithArgs(checkCaptcha, 'config', 50),
-    asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
+    asyncHandlerWithArgs(checkLimitedMode, 'GET', 'POST', 'PUT', 'DELETE'),
     asyncHandler(noAuthentication),
     routerConfigAuthAuthenticated);
 
@@ -266,7 +266,7 @@ app.use('(\/api)?/config',
     asyncHandlerWithArgs(rateLimit, 'configHourly', 1000),
     asyncHandlerWithArgs(rateLimit, 'configDaily', 10000),
     asyncHandlerWithArgs(checkCaptcha, 'config', 50),
-    asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
+    asyncHandlerWithArgs(checkLimitedMode, 'GET', 'POST', 'PUT', 'DELETE'),
     asyncHandler(noAuthentication),
     routerConfigAuthenticated);
 

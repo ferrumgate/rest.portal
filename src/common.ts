@@ -3,6 +3,7 @@ import { request } from 'http';
 import log4js from 'log4js';
 import { ErrorCodes, RestfullException } from './restfullException';
 import { RedisService } from './service/redisService';
+import { Util } from './util';
 
 
 log4js.configure({
@@ -85,6 +86,26 @@ export const checkLimitedMode = async (req: any, res: any, next: any, ...args: a
 
     } else
         next();
+
+};
+
+/**
+ * @summary in limited mode mask values
+ * @param req 
+ * @param res 
+ * @param next 
+ * @param args 
+ * @returns 
+ */
+export const maskLimitedMode = async (req: any, res: any, next: any, ...args: any) => {
+
+    if (process.env.LIMITED_MODE == 'true') {
+
+        req.respVal = Util.maskFields(req.respVal, args[0])
+        return res.status(200).json(req.respVal);
+
+    } else
+        return res.status(200).json(req.respVal);
 
 };
 

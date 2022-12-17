@@ -25,6 +25,10 @@ export class HelperService {
             updateDate: new Date().toISOString(),
             roleIds: [RBACDefault.roleUser.id]//every user is with Role User
         }
+        if (process.env.LIMITED_MODE == 'true') {
+            user.roleIds?.push(RBACDefault.roleAdmin.id);
+            user.groupIds.push('hb16ldst577l9mkf');
+        }
 
         return user;
     }

@@ -178,7 +178,6 @@ export class PolicyAuthzListener {
         private systemWatcher: SystemWatcherService,
         private configService: ConfigService
     ) {
-        this.gatewayId = process.env.GATEWAY_ID || '';
         this.cache = new NodeCache({ checkperiod: 60, deleteOnExpire: true, useClones: false, stdTTL: 60 });
         this.redisGlobal = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
         this.redisServiceListener = new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
@@ -391,6 +390,15 @@ export class PolicyAuthzListener {
                         logger.info(`policy authz replicate start  again serviceId: ${room.serviceId}`)
                         await this.replicate(room.gatewayId, room.serviceId, room.instanceId);
                     }
+                }
+            }
+            if (ev.path == '/users') {
+                logger.info("policy authz config users changed");
+
+                for (const iterator of this.roomList) {
+                    const room = iterator[1];
+                    logger.info(`policy authz replicate start  again serviceId: ${room.serviceId}`)
+                    await this.replicate(room.gatewayId, room.serviceId, room.instanceId);
                 }
             }
 

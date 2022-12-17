@@ -353,10 +353,26 @@ export class ConfigService {
             })
 
         }
+
+
         //dont delete below line
         //for testing end
         // end point for delete
         this.loadConfigFromFile();
+        if (process.env.LIMITED_MODE == 'true') {
+            if (!this.config.groups.find(x => x.id == 'hb16ldst577l9mkf'))
+                this.config.groups.push({
+                    id: 'hb16ldst577l9mkf',
+                    name: 'admin',
+                    isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
+                })
+            if (!this.config.groups.find(x => x.id == 'pl0m0xh6az722y0t'))
+                this.config.groups.push({
+                    id: `pl0m0xh6az722y0t`,
+                    name: 'remote',
+                    isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
+                })
+        }
 
         this.lastUpdateTime = new Date().toISOString();
 
