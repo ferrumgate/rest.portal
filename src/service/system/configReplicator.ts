@@ -30,6 +30,53 @@ export class ConfigReplicator {
         this.encKey = this.configService.getEncKey();
     }
 
+    async start() {
+
+
+
+        this.configService.events.on('changed', async (data: ConfigEvent) => {
+
+            try {
+                if (!this.redisWatcher.isMaster) {
+                    logger.warn('redis is not master yet');
+                    return;
+                }
+                logger.info(`config replicator config changed event ${data.type}: ${data.path}`);
+                /* if (!this.isFullReplicationFinished)//if not full replication succeeded
+                    await this.replicationWrite();
+                const json = JSON.stringify(data);
+                const enc = Util.encrypt(this.encKey, json);
+                //const b64 = Buffer.from(json).toString('base64');
+                this.lastReplicationWriteNumber++;
+                await this.redisService.xadd(`/replication/config`, { data: enc }, `${new Date().getTime()}-${this.lastReplicationWriteNumber}`); */
+                //this.configService.events.emit('configChanged', data);
+
+            } catch (err) {
+                logger.error(err);
+            }
+        })
+
+
+        /*  await this.replicationTrim();
+         this.trimInterval = setIntervalAsync(async () => {
+             await this.replicationTrim();
+         }, 1 * 60 * 60 * 1000);
+         await this.replicationWrite();
+         this.fullReplicationInterval = setIntervalAsync(async () => {
+             await this.replicationWrite();
+         }, 15 * 1000); */
+    }
+    async stop() {
+
+        if (this.trimInterval)
+            clearIntervalAsync(this.trimInterval);
+        this.trimInterval = null;
+        if (this.fullReplicationInterval)
+            clearIntervalAsync(this.fullReplicationInterval)
+        this.fullReplicationInterval = null;
+
+    }
+
 
     async replicationWrite() {
         try {
@@ -100,49 +147,5 @@ export class ConfigReplicator {
         }
 
     }
-    async start() {
 
-
-        this.configService.events.on('changed', async (data: ConfigEvent) => {
-
-            try {
-                if (!this.redisWatcher.isMaster) {
-                    logger.warn('redis is not master yet');
-                    return;
-                }
-                logger.info(`config replicator config changed event ${data.type}: ${data.path}`);
-                /* if (!this.isFullReplicationFinished)//if not full replication succeeded
-                    await this.replicationWrite();
-                const json = JSON.stringify(data);
-                const enc = Util.encrypt(this.encKey, json);
-                //const b64 = Buffer.from(json).toString('base64');
-                this.lastReplicationWriteNumber++;
-                await this.redisService.xadd(`/replication/config`, { data: enc }, `${new Date().getTime()}-${this.lastReplicationWriteNumber}`); */
-                //this.configService.events.emit('configChanged', data);
-
-            } catch (err) {
-                logger.error(err);
-            }
-        })
-
-
-        /*  await this.replicationTrim();
-         this.trimInterval = setIntervalAsync(async () => {
-             await this.replicationTrim();
-         }, 1 * 60 * 60 * 1000);
-         await this.replicationWrite();
-         this.fullReplicationInterval = setIntervalAsync(async () => {
-             await this.replicationWrite();
-         }, 15 * 1000); */
-    }
-    async stop() {
-
-        if (this.trimInterval)
-            clearIntervalAsync(this.trimInterval);
-        this.trimInterval = null;
-        if (this.fullReplicationInterval)
-            clearIntervalAsync(this.fullReplicationInterval)
-        this.fullReplicationInterval = null;
-
-    }
 }
