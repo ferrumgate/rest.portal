@@ -68,7 +68,6 @@ export class SessionService {
     }
     async setSession(id: string, obj: any) {
         const sidkey = `/session/id/${id}`;
-
         await this.redisService.hset(sidkey, obj);
     }
     async setExpire(id: string) {

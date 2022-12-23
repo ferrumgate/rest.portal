@@ -65,6 +65,25 @@ describe('redisService', () => {
 
     }).timeout(10000)
 
+
+    it('test transaction with error', async () => {
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let pipe = await simpleRedis.multi()
+        await pipe.set('deneme2', 'deneme2', { ttl: '60000' });
+        await pipe.get('deneme2')
+
+        await simpleRedis.set('abc', 'bed');
+        let pipe2 = await simpleRedis.multi();
+        await pipe2.set('deneme2', 'deneme3', { ttl: '60000' });
+        await pipe2.exec();
+
+        const result = await simpleRedis.get('deneme2', false);
+
+
+
+    }).timeout(10000)
+
     it('test transaction that will be null and set other', async () => {
         const simpleRedis = new RedisService('localhost:6379');
 
@@ -154,6 +173,8 @@ describe('redisService', () => {
 
 
     }).timeout(10000)
+
+
 
 
     it('redis hget hset hgetAll', async () => {

@@ -28,6 +28,7 @@ export interface ConfigAuditEvent {
 }
 
 export interface Config {
+    version: number;
     /**
      * @summary is default configuration reconfigured
      */
@@ -47,7 +48,6 @@ export interface Config {
     sslCertificate: SSLCertificate,
     caSSLCertificate: SSLCertificate,
     //sshCertificate: SSHCertificate,
-    encKey: string;
 
     users: User[];
     groups: Group[];

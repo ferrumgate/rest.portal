@@ -261,10 +261,10 @@ routerAuth.post('/accesstoken',
             await redisService.delete(key);
 
             if (request.exchangeKey) {
-                const exKey = Util.decrypt(configService.getEncKey2(), request.exchangeKey);
+                const exKey = Util.decrypt(configService.getEncKey(), request.exchangeKey);
                 const key = `/exchange/id/${exKey}`
-                await redisService.set(key, authSession.id);
-                await redisService.expire(key, 60000);// 1 minute exchange key
+                await redisService.set(key, authSession.id, { ttl: 60 * 1000 });//1 minute exchange key
+
             }
 
             await saveActivity(req, 'access token', (log) => {
@@ -362,7 +362,7 @@ routerAuth.get('/exchangetoken',
             const oauth2Service = appService.oauth2Service;
             const sessionService = appService.sessionService;
             logger.info(`get exchange token`);
-            const str = Util.encrypt(configService.getEncKey2(), Util.randomNumberString(128));
+            const str = Util.encrypt(configService.getEncKey(), Util.randomNumberString(128));
             return res.status(200).json({ token: str });
         } catch (err) {
             await saveActivityError(req, 'exchange token', err);

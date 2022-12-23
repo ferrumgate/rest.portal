@@ -232,8 +232,8 @@ routerUserAuthenticated.get('/current/2fa/rekey',
         HelperService.isValidUser(user);
         const key = t2FAService.generateSecret();
         const rkey = Util.randomNumberString(16);
-        await redisService.set(`/2fa/id/${rkey}`, key);
-        await redisService.expire(`/2fa/id/${rkey}`, 30 * 60 * 1000);
+        await redisService.set(`/2fa/id/${rkey}`, key, { ttl: 30 * 60 * 1000 });
+
 
         return res.status(200).json({ key: rkey, t2FAKey: key });
 
@@ -263,8 +263,8 @@ routerUserAuthenticated.get('/current/2fa',
         let secret = user.twoFASecret || t2FAService.generateSecret();
 
         const rkey = Util.randomNumberString(16);
-        await redisService.set(`/2fa/id/${rkey}`, secret);
-        await redisService.expire(`/2fa/id/${rkey}`, 30 * 60 * 1000);
+        await redisService.set(`/2fa/id/${rkey}`, secret, { ttl: 30 * 60 * 1000 });
+
 
         return res.status(200).json({ is2FA: user?.is2FA, key: rkey, t2FAKey: secret });
 

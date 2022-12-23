@@ -3,7 +3,7 @@ import { User } from "../model/user";
 import { ConfigService } from "./configService";
 import { TunnelService } from "./tunnelService";
 import { AuditService } from "./auditService";
-import { RedisService } from "./redisService";
+import { RedisService } from "../service/redisService";
 import { Tunnel } from "../model/tunnel";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";

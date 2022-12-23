@@ -41,10 +41,7 @@ export class ConfigService {
         if (!encryptKey)
             throw new Error('needs and encyption key with lenght 32');
         //default user
-        const adminUser = HelperService.createUser('local-local', 'admin', 'default admin', 'ferrumgate');
-        adminUser.isVerified = true;
-        adminUser.roleIds = ['Admin'];
-
+        const adminUser = this.createAdminUser();
 
         //default network
         const defaultNetwork: Network = {
@@ -62,7 +59,7 @@ export class ConfigService {
         if (configFile)
             this.configfile = configFile;
         this.config = {
-            encKey: Util.randomNumberString(32),
+            version: 0,
             isConfigured: 0,
             users: [
                 adminUser
@@ -377,12 +374,17 @@ export class ConfigService {
         this.lastUpdateTime = new Date().toISOString();
 
     }
+
+    protected createAdminUser() {
+        let adminUser = HelperService.createUser('local-local', 'admin', 'default admin', 'ferrumgate');
+        adminUser.isVerified = true;
+        adminUser.roleIds = ['Admin'];
+        return adminUser;
+    }
     getEncKey() {
         return this.secretKey;
     }
-    getEncKey2() {
-        return this.config.encKey;
-    }
+
     resetUpdateTime() {
         this.lastUpdateTime = new Date(1900, 1, 1).toISOString();
     }
@@ -397,23 +399,23 @@ export class ConfigService {
         return event;
     }
 
-    private writeAsset(name: string, image: string) {
-        const type = image.substring(image.indexOf('/') + 1, image.indexOf(';'));
-        const base64Image = image.split(';base64,').pop();
-        let path = `./dassets/img`;
-        fs.mkdirSync(path, { recursive: true });
-        if (type && base64Image) {
-            path = `${path}/${name}.${type}`;
-            fs.writeFileSync(path, base64Image, { encoding: 'base64' });
-        }
-        return path;
-    }
-    saveAssets() {
-        if (this.config.logo.default) {
-            this.config.logo.defaultPath = this.writeAsset('logo', this.config.logo.default);
-
-        }
-    }
+    /* private writeAsset(name: string, image: string) {
+         const type = image.substring(image.indexOf('/') + 1, image.indexOf(';'));
+         const base64Image = image.split(';base64,').pop();
+         let path = `./dassets/img`;
+         fs.mkdirSync(path, { recursive: true });
+         if (type && base64Image) {
+             path = `${path}/${name}.${type}`;
+             fs.writeFileSync(path, base64Image, { encoding: 'base64' });
+         }
+         return path;
+     }
+     saveAssets() {
+         if (this.config.logo.default) {
+             this.config.logo.defaultPath = this.writeAsset('logo', this.config.logo.default);
+ 
+         }
+     } */
 
     loadConfigFromFile() {
         logger.info(`loading configuration from ${this.configfile}`);
@@ -426,7 +428,7 @@ export class ConfigService {
                 this.config = yaml.parse(decrpted);
             }
         }
-        this.saveAssets();
+        //this.saveAssets();
     }
     saveConfigToFile() {
         const str = yaml.stringify(this.config);
@@ -649,7 +651,6 @@ export class ConfigService {
 
     async saveUser(user: User) {
         let cloned = Util.clone(user);
-
 
         let findedIndex = this.config.users.findIndex(x => x.username == user.username);
         let finded = this.config.users[findedIndex];

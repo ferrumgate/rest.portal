@@ -210,6 +210,17 @@ export class RedisService {
             await this.redis.set(key, valueStr)
         else
             await this.redis.set(key, valueStr, 'PX', options.ttl);
+    }
+    async setnx(key: string, value: any, ttl?: number): Promise<void> {
+
+        let valueStr = value;
+        if (typeof value !== 'string' && typeof value !== 'number') {
+            valueStr = JSON.stringify(value);
+        }
+        if (!ttl)
+            await this.redis.setnx(key, valueStr)
+        else
+            await this.redis.set(key, valueStr, 'PX', ttl, 'NX');
 
     }
     async get<T>(key: string, parse = true): Promise<T | null | undefined> {
@@ -432,6 +443,20 @@ export class RedisService {
     }
     async smembers(key: string) {
         return await this.redis.smembers(key);
+    }
+
+    async getAllKeys(search: string, type?: string) {
+        let pos = "0";
+        let keyList: string[] = [];
+        while (true) {
+
+            const [cursor, elements] = await this.scan(search, pos, 10000, type);
+            keyList = keyList.concat(elements);
+            if (!cursor || cursor == '0')
+                break;
+            pos = cursor;
+        }
+        return keyList;
     }
 
 

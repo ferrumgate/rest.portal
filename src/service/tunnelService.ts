@@ -2,7 +2,7 @@ import { User } from "../model/user";
 import { logger } from "../common";
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { ConfigService } from "./configService";
-import { RedisService } from "./redisService";
+import { RedisService } from "../service/redisService";
 import { Util } from "../util";
 import { Tunnel } from "../model/tunnel";
 import { HelperService } from "./helperService";
@@ -195,15 +195,6 @@ export class TunnelService {
     }
 
     async getTunnelKeys() {
-        let pos = "0";
-        let tunnelKeyList: string[] = [];
-        while (true) {
-            const [cursor, elements] = await this.redisService.scan("/tunnel/id/*", pos, 10000, "hash");
-            tunnelKeyList = tunnelKeyList.concat(elements);
-            if (!cursor || cursor == '0')
-                break;
-            pos = cursor;
-        }
-        return tunnelKeyList;
+        return await this.redisService.getAllKeys('/tunnel/id/*', 'hash');
     }
 }
