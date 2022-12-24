@@ -25,7 +25,7 @@ import { ActivityService } from "./activityService";
 import { ActivityLogToES } from "./system/activityLogToES";
 import { SummaryService } from "./summaryService";
 import { RedisWatcher } from "./system/redisWatcher";
-import { ConfigReplicator } from "./system/configReplicator";
+
 
 
 /**
@@ -104,17 +104,16 @@ export class AppSystemService {
     public configPublicListener: ConfigPublicListener;
     public auditLogToES: AuditLogToES;
     public activityLogToES: ActivityLogToES;
-    public configReplicator: ConfigReplicator;
+
 
     /**
      *
      */
     constructor(app: AppService, redisSlaveWatcher?: RedisWatcher, systemWatcher?: SystemWatcherService,
         policyAuthzChannel?: PolicyAuthzListener, configPublic?: ConfigPublicListener,
-        auditLogES?: AuditLogToES, activityLogToES?: ActivityLogToES, configReplicator?: ConfigReplicator) {
+        auditLogES?: AuditLogToES, activityLogToES?: ActivityLogToES) {
         this.redisSlaveWatcher = redisSlaveWatcher || new RedisWatcher(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS);
         this.systemWatcherService = systemWatcher || new SystemWatcherService();
-        this.configReplicator = configReplicator || new ConfigReplicator(app.configService, this.redisSlaveWatcher, this.createRedisSlave(), this.createRedisSlave())
         this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(app.policyService, this.systemWatcherService, app.configService);
         this.configPublicListener = configPublic || new ConfigPublicListener(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
         this.auditLogToES = auditLogES || new AuditLogToES(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
@@ -126,7 +125,6 @@ export class AppSystemService {
     }
     async start() {
         await this.redisSlaveWatcher.start();
-        await this.configReplicator.start();
         await this.systemWatcherService.start();
         await this.policyAuthzChannel.start();
         await this.configPublicListener.start();
@@ -135,7 +133,6 @@ export class AppSystemService {
     }
     async stop() {
         await this.redisSlaveWatcher.stop();
-        await this.configReplicator.stop();
         await this.systemWatcherService.stop();
         await this.policyAuthzChannel.stop();
         await this.configPublicListener.stop();

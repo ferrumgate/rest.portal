@@ -30,7 +30,6 @@ describe('redLockService ', async () => {
         locker.events.on('acquired', () => isLocked = true);
         locker.events.on('released', () => isReleased = true);
         await locker.lock('/lock/test', 2000, 1000);
-        await Util.sleep(5000);
 
         expect(isLocked).to.be.true;
         await locker.release();
@@ -48,7 +47,6 @@ describe('redLockService ', async () => {
         locker.events.on('acquired', () => isLocked = true);
         locker.events.on('released', () => isReleased = true);
         await locker.lock('/lock/test', 2000, 1000);
-        await Util.sleep(5000);
         expect(isLocked).to.be.true;
 
 
@@ -67,4 +65,36 @@ describe('redLockService ', async () => {
 
 
     }).timeout(15000);
+
+
+    it('tryLock multi check', async () => {
+        let isLocked = false;
+        let isError = false;
+
+        const locker = new RedLockService(redis);
+
+        try {
+            await locker.tryLock('/lock/test2', 3000, true);
+            await locker.lock('/lock/test2', 5000, 1000);
+        } catch (err) {
+            isError = true;
+        }
+        expect(isError).to.be.false;
+        expect(locker.isLocked).to.be.true;
+
+        const locker2 = new RedLockService(redis);
+        isError = false;
+        try {
+            await locker2.tryLock('/lock/test2', 1000, true);
+        } catch (err) {
+            isError = true;
+        }
+
+        expect(isError).to.be.true;
+        await locker.release();
+        await locker2.release();
+
+
+
+    }).timeout(105000);
 })

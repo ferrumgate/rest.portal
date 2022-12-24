@@ -30,7 +30,7 @@ describe('auditLogToES ', async () => {
     })
 
 
-    const streamKey = '/audit/logs';
+    const streamKey = '/logs/audit';
     function createSampleData() {
         const log1: AuditLog = {
             insertDate: new Date().toISOString(),
@@ -90,7 +90,7 @@ describe('auditLogToES ', async () => {
                   }
               }
           }) */
-        const redisPos = await redis.get('/audit/logs/pos', false);
+        const redisPos = await redis.get('/logs/audit/pos', false);
         expect(redisPos).exist;
 
 

@@ -11,7 +11,6 @@ import { channel } from "diagnostics_channel";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 import fsp from 'fs/promises';
 import { Util } from "../../util";
-import { ConfigReplicator } from "./configReplicator";
 import { ConfigEvent } from "../../model/config";
 
 

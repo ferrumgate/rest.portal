@@ -21,7 +21,7 @@ export class AuditLogToES {
     timer: any;
     isRedisMaster = false;
     lastRedisMasterCheck = 0;
-    auditStreamKey = '/audit/logs';
+    auditStreamKey = '/logs/audit';
     public encKey = '';
     es: ESService;
 
@@ -60,7 +60,7 @@ export class AuditLogToES {
                 return;
             }
             if (!this.lastPos) {
-                const pos = await this.redis.get('/audit/logs/pos', false) as string;
+                const pos = await this.redis.get('/logs/audit/pos', false) as string;
                 if (pos)
                     this.lastPos = pos;
                 else
@@ -75,7 +75,7 @@ export class AuditLogToES {
                 for (const item of items) {
                     try {
                         this.lastPos = item.xreadPos;
-                        const message = Util.decrypt(this.encKey, item.data);
+                        const message = Util.decrypt(this.encKey, item.data, 'base64');
                         const log = JSON.parse(message) as AuditLog;
                         const nitem = await this.es.auditCreateIndexIfNotExits(log)
                         pushItems.push(nitem);
@@ -91,7 +91,7 @@ export class AuditLogToES {
                     logger.info(`audit logs written to es size: ${pushItems.length}`)
                 }
                 if (items.length)
-                    await this.redis.set('/audit/logs/pos', this.lastPos);
+                    await this.redis.set('/logs/audit/pos', this.lastPos);
                 if (!items.length)
                     break;
             }

@@ -20,7 +20,7 @@ export class ActivityLogToES {
      */
     lastPos = '';
     timer: any;
-    activityStreamKey = '/activity/logs';
+    activityStreamKey = '/logs/activity';
     es: ESService;
 
     constructor(private configService: ConfigService,
@@ -58,7 +58,7 @@ export class ActivityLogToES {
                 return;
             }
             if (!this.lastPos) {
-                const pos = await this.redis.get('/activity/logs/pos', false) as string;
+                const pos = await this.redis.get('/logs/activity/pos', false) as string;
                 if (pos)
                     this.lastPos = pos;
                 else
@@ -93,11 +93,11 @@ export class ActivityLogToES {
                 }
                 if (pushItems.length) {
                     await this.es.activitySave(pushItems);
-                    await this.redis.set('/activity/logs/pos', this.lastPos);
+                    await this.redis.set('/logs/activity/pos', this.lastPos);
                     logger.info(`activity logs written to es size: ${pushItems.length}`)
                 } else
                     if (unknownItemsCount) {//save only new pos
-                        await this.redis.set('/activity/logs/pos', this.lastPos);
+                        await this.redis.set('/logs/activity/pos', this.lastPos);
                     }
 
                 if (!items.length)

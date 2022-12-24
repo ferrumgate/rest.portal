@@ -24,7 +24,7 @@ describe('activityService', async () => {
     })
 
 
-    const streamKey = '/activity/logs';
+    const streamKey = '/logs/activity';
     const esHost = 'https://192.168.88.250:9200';
     const esUser = "elastic";
     const esPass = '123456';

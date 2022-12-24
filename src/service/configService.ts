@@ -59,7 +59,8 @@ export class ConfigService {
         if (configFile)
             this.configfile = configFile;
         this.config = {
-            version: 0,
+            revision: 0,
+            version: 1,
             isConfigured: 0,
             users: [
                 adminUser
@@ -424,7 +425,7 @@ export class ConfigService {
             if (process.env.NODE_ENV == 'development') {
                 this.config = yaml.parse(content);
             } else {
-                const decrpted = Util.decrypt(this.secretKey, content);
+                const decrpted = Util.decrypt(this.secretKey, content, 'base64');
                 this.config = yaml.parse(decrpted);
             }
         }
@@ -436,7 +437,7 @@ export class ConfigService {
 
             fs.writeFileSync(this.configfile, str, { encoding: 'utf-8' });
         } else {
-            const encrypted = Util.encrypt(this.secretKey, str);
+            const encrypted = Util.encrypt(this.secretKey, str, 'base64');
             fs.writeFileSync(this.configfile, encrypted, { encoding: 'utf-8' });
         }
         this.lastUpdateTime = new Date().toISOString();
@@ -446,7 +447,7 @@ export class ConfigService {
         if (process.env.NODE_ENV == 'development') {
             return str;
         } else {
-            const encrypted = Util.encrypt(this.secretKey, str);
+            const encrypted = Util.encrypt(this.secretKey, str, 'base64');
             return encrypted;
         }
     }

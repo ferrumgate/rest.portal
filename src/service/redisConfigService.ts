@@ -1,40 +1,41 @@
 import { Util } from "../util";
 import { logger } from "../common";
 import { ConfigService } from "./configService";
-import { RedisService } from "../service/redisService";
+import { RedisPipelineService, RedisService } from "../service/redisService";
 import { User } from "../model/user";
-import { verify } from "crypto";
 import { WatchService } from "./watchService";
+import { pipeline } from "stream";
+import { RedLockService } from "./redLockService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 export class RedisConfigService extends ConfigService {
 
-    isLoadedEveryThing = false;
+    isInitCompleted = false;
     timerInterval: any;
     timerInterval2: any;
     lastPos = '$';
     logs: any[] = [];
     isFatalError = false;
     logWatcher: WatchService;
+    redLock: RedLockService;
     constructor(private redis: RedisService, private redisStream: RedisService, encryptKey: string, configFile?: string) {
         super(encryptKey, configFile);
-        this.logWatcher = new WatchService(redis, redisStream, '/config/logs');
-
+        this.logWatcher = new WatchService(redis, redisStream, '/logs/config');
+        this.redLock = new RedLockService(redis);
     }
 
 
     override loadConfigFromFile(): void {
-        this.startLoading();
     }
     saveConfigToFile(): void {
 
     }
 
-    async startLoading() {
+    async start() {
         try {
 
-            this.timerInterval2 = await setIntervalAsync(async () => {
-                await this.loadEverything();
+            this.timerInterval = await setIntervalAsync(async () => {
+                await this.init();
             }, 1000)
 
 
@@ -43,186 +44,181 @@ export class RedisConfigService extends ConfigService {
         }
     }
 
-    async rGetSet(path: string, defaultValue: any, callback?: (val: any) => void) {
-        const rpath = `/config/${path}`;
-        const type = typeof (defaultValue);
-        if (type == 'symbol' || type == 'function')
-            throw new Error('not implemented yet');
 
-
-        try {
-            const isExists = await this.redis.containsKey(rpath);
-            if (!isExists) {
-                await this.redis.set(rpath, defaultValue);
-                if (callback)
-                    callback(defaultValue);
-
-            } else {
-                let val = await this.redis.get(rpath, false) as any;
-                if (type == 'number')
-                    val = Util.convertToNumber(val);
-                if (type == 'boolean')
-                    val = Util.convertToBoolean(val as any);
-                if (callback)
-                    callback(val);
-            }
-
-        } finally {
-
-        }
-    }
-
-
-    async rGetObjectArray(path: string, def: any, callback?: (vals: any[]) => void) {
+    async rGetAll(path: string, callback?: (vals: any[]) => void) {
         const rpath = `/config/${path}`;
 
 
-        try {
-            const keys = await this.redis.getAllKeys(`${rpath}/*`);
-            if (keys.length) {
-                const pipe = await this.redis.multi();
-                keys.forEach(x => pipe.get(x));
-                const items = await pipe.exec();
-                if (callback)
-                    callback(items.map((x: string) => JSON.parse(x)));
-            } else {
-                if (def) {
-                    await this.redis.set(`${rpath}/${def.id}`, def);
-                    if (callback)
-                        callback([def]);
+
+        const keys = await this.redis.getAllKeys(`${rpath}/*`);
+        if (keys.length) {
+            const pipe = await this.redis.multi();
+            keys.forEach(x => pipe.get(x));
+            let items = await pipe.exec();
+            items = items.map((x: string) => {
+                let decrypted = x;
+                if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
+                    decrypted = Util.decrypt(this.getEncKey(), x, 'base64');
                 }
-            }
-
-
-        } finally {
-
+                let val = JSON.parse(decrypted);
+                return val;
+            })
+            if (callback)
+                callback(items);
+            return items;
+        } else {
+            if (callback)
+                callback([]);
+            return [];
         }
+
     }
 
 
-    async loadEverything() {
+
+    async rGet(path: string, callback?: (val: any) => Promise<any>) {
+        const rpath = `/config/${path}`;
+
+        let dataStr = await this.redis.get(rpath, false) as any;
+        let decrypted = dataStr;
+        if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
+            decrypted = Util.decrypt(this.getEncKey(), dataStr, 'base64');
+        }
+        let val = JSON.parse(decrypted);
+        if (callback)
+            return callback(val);
+        return val;
+    }
+    async rGetIndex(path: string, search: string) {
+
+        let dataStr = search;
+        if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
+            dataStr = Util.encrypt(this.getEncKey(), dataStr, 'base64');
+        }
+        const rpath = `/index/config/${path}/${dataStr}`;
+        return await this.redis.get(rpath, false) as any;
+    }
+
+    async rDel(path: string, data: any, pipeline?: RedisPipelineService, callback?: (val: any, pipeline?: RedisPipelineService) => Promise<any>) {
+        if (data == null || data == undefined) return;
+        let rpath = `/config/${path}`;
+        if (typeof (data) == 'object' && data.id)
+            rpath += `/${data.id}`;
+        const lpipeline = pipeline || await this.redis.multi();
+        await lpipeline.remove(rpath);
+        await lpipeline.incr('/config/revision');
+        if (callback)
+            callback(data, lpipeline);
+        if (!pipeline)
+            await lpipeline.exec();
+    }
+
+    async rSave(path: string, data: any, pipeline?: RedisPipelineService, extra?: (data: any, pipeline: RedisPipelineService) => Promise<void>) {
+        if (data == null || data == undefined) return;
+        let rpath = `/config/${path}`;
+        if (typeof (data) == 'object' && data.id)
+            rpath += `/${data.id}`;
+        let dataStr = '';
+        if (typeof (data) == 'boolean' || typeof (data) == 'number' || typeof (data) == 'string' || typeof (data) == 'object')
+            dataStr = JSON.stringify(data);
+        else
+            throw new Error('not implemented');
+        let encrypted = dataStr;
+        if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
+            encrypted = Util.encrypt(this.getEncKey(), dataStr, 'base64');
+        }
+
+        const lpipeline = pipeline || await this.redis.multi();
+        await lpipeline.set(rpath, encrypted);
+        await lpipeline.incr('/config/revision');
+        if (extra)
+            await extra(data, lpipeline);
+        await this.logWatcher.write({ path: rpath, type: 'put', data: dataStr }, lpipeline);
+        if (!pipeline)
+            await lpipeline.exec();
+
+    }
+    async rSaveArray(path: string, data: any[], pipeline?: RedisPipelineService, extra?: (data: any, pipeline: RedisPipelineService) => Promise<void>) {
+        if (data == null || data == undefined) return;
+
+        for (const item of data) {
+            await this.rSave(path, item, pipeline, extra);
+        }
+
+
+    }
+
+    async rExists(path: string, data: any) {
+        if (data == null || data == undefined) return false;
+        let rpath = `/config/${path}`;
+        if (typeof (data) == 'object' && data.id)
+            rpath += `/${data.id}`;
+        return await this.redis.containsKey(rpath);
+    }
+
+
+    async init() {
         try {
-            await this.rGetSet('version', this.config.version, (val) => this.config.version = val)
-            await this.rGetSet('isConfigured', this.config.isConfigured, (val) => this.config.isConfigured = val);
+            logger.info("config service init, trying lock");
+            await this.redLock.tryLock('/lock/config', 1000, true);
+            await this.redLock.lock('/lock/config', 1000, 500);
+            logger.info("initting config service");
 
+            const revisionExits = await this.rExists('revision', this.config.revision);
+            if (revisionExits)
+                this.config.revision = await this.rGet('revision');
+            const versionExits = await this.rExists('version', this.config.version);
+            if (versionExits)
+                this.config.version = await this.rGet('version');
 
-            await this.rGetObjectArray('users', this.config.users[0], (vals: any[]) => {
-                this.config.users = vals;
-            })
-
-
-            await this.rGetObjectArray('groups', null, (vals: any[]) => {
-                this.config.groups = vals;
-            })
-
-            await this.rGetObjectArray('services', null, (vals: any[]) => {
-                this.config.services = vals;
-            })
-
-            await this.rGetSet('captcha', this.config.captcha, (val => {
-                this.config.captcha = val;
-            }))
-
-            await this.rGetSet('jwtSSLCertificate', this.config.jwtSSLCertificate, (val => {
-                this.config.jwtSSLCertificate = val;
-            }))
-
-            await this.rGetSet('sslCertificate', this.config.sslCertificate, (val => {
-                this.config.sslCertificate = val;
-            }))
-
-            await this.rGetSet('caSSLCertificate', this.config.caSSLCertificate, (val => {
-                this.config.caSSLCertificate = val;
-            }))
-
-            await this.rGetSet('domain', this.config.domain, (val => {
-                this.config.domain = val;
-            }))
-
-
-            await this.rGetSet('url', this.config.url, (val => {
-                this.config.url = val;
-            }))
-
-            await this.rGetSet('email', this.config.email, (val => {
-                this.config.email = val;
-            }))
-            await this.rGetSet('logo', this.config.logo, (val => {
-                this.config.logo = val;
-            }))
-            await this.rGetSet('auth/common', this.config.auth.common, (val => {
-                this.config.auth.common = val;
-            }))
-            await this.rGetSet('auth/local', this.config.auth.local, (val => {
-                this.config.auth.local = val;
-            }))
-            await this.rGetObjectArray('auth/ldap/providers', null, (val => {
-                this.config.auth.ldap = { providers: [] }
-                this.config.auth.ldap.providers = val;
-            }))
-            await this.rGetObjectArray('auth/oauth/providers', null, (val => {
-                this.config.auth.oauth = { providers: [] }
-                this.config.auth.oauth.providers = val;
-            }))
-            await this.rGetObjectArray('auth/saml/providers', null, (val => {
-                this.config.auth.saml = { providers: [] }
-                this.config.auth.saml.providers = val;
-            }))
-
-            await this.rGetObjectArray('networks', this.config.networks[0], (vals: any) => {
-                this.config.networks = vals;
-            })
-
-            await this.rGetObjectArray('gateways', null, (vals: any) => {
-                this.config.gateways = vals;
-            })
-
-            await this.rGetObjectArray('authenticationPolicy/rules', null, (vals: any) => {
-                this.config.authenticationPolicy.rules = vals;
-            })
-
-            await this.rGetObjectArray('authorizationPolicy/rules', null, (vals: any) => {
-                this.config.authorizationPolicy.rules = vals;
-            })
-            this.isLoadedEveryThing = true;
-            clearIntervalAsync(this.timerInterval2);
-            this.timerInterval2 = null;
+            if (!versionExits) {//if not saved before, first installing system
+                logger.info("config service not saved before");
+                logger.info("create default values");
+                await this.saveV1();
+            }
+            clearIntervalAsync(this.timerInterval);
+            this.timerInterval = null;
+            this.isInitCompleted = true;
         } catch (err) {
             logger.error(err);
-        }
-
-    }
-
-    async rGet(path: string, defaultValue: any, callback: (val: any) => Promise<any>) {
-        const rpath = `/config/${path}`;
-        const type = typeof (defaultValue);
-        if (type == 'symbol' || type == 'function')
-            throw new Error('not implemented yet');
-
-        try {
-
-            let val = await this.redis.get(rpath, false) as any;
-            if (type == 'number')
-                val = Util.convertToNumber(val);
-            if (type == 'boolean')
-                val = Util.convertToBoolean(val as any);
-            if (type == 'object')
-                val = JSON.parse(type);
-            if (callback)
-                return callback(val);
-            return val;
-
         } finally {
-
+            this.redLock.release();
         }
     }
+    async saveV1() {
+        const pipeline = await this.redis.multi();
+        await this.rSave('version', this.config.version, pipeline);
+        await this.rSave('isConfigured', this.config.isConfigured, pipeline);
 
+        await this.rSaveArray('users', this.config.users, pipeline,
+            async (data: any, trx: RedisPipelineService) => {
+                let dataStr = data.username;
+                if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
+                    dataStr = Util.encrypt(this.getEncKey(), dataStr, 'base64')
+                }
+                await trx.set(`/index/config/users/${dataStr}`, data.id);
+                return data;
+            });
+        await this.rSaveArray('groups', this.config.groups, pipeline);
+        await this.rSaveArray('services', this.config.services, pipeline);
+        await this.rSave('captcha', this.config.captcha, pipeline);
+        await this.rSave('jwtSSLCertificate', this.config.jwtSSLCertificate, pipeline);
+        await this.rSave('sslCertificate', this.config.sslCertificate, pipeline);
+        await this.rSave('caSSLCertificate', this.config.caSSLCertificate, pipeline);
+        await this.rSave('domain', this.config.domain, pipeline);
+        await this.rSave('url', this.config.url, pipeline);
+        await this.rSave('email', this.config.email, pipeline);
+        await this.rSave('logo', this.config.logo, pipeline);
+        await this.rSave('auth/common', this.config.auth.common, pipeline);
+        await this.rSaveArray('auth/ldap/providers', this.config.auth.ldap?.providers || [], pipeline);
+        await this.rSaveArray('auth/oauth/providers', this.config.auth.oauth?.providers || [], pipeline);
+        await this.rSaveArray('auth/saml/providers', this.config.auth.saml?.providers || [], pipeline);
+        await this.rSaveArray('networks', this.config.networks, pipeline);
+        await this.rSaveArray('gateways', this.config.gateways, pipeline);
+        await this.rSaveArray('authenticationPolicy/rules', this.config.authenticationPolicy.rules, pipeline);
+        await this.rSaveArray('authorizationPolicy/rules', this.config.authorizationPolicy.rules, pipeline);
+        await pipeline.exec();
 
-
-
-
-
-
-
+    }
 
 }

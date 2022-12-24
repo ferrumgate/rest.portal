@@ -7,7 +7,7 @@ export interface SystemLog {
 }
 
 export class SystemLogger {
-    key = '/system/logs';
+    key = '/logs/system';
     /**
      *
      */

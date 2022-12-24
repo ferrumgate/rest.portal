@@ -11,6 +11,8 @@ export class RedisPipelineService {
     }
     async exec(): Promise<any> {
         const results = await this.pipeline.exec();
+        if (results == null)
+            throw new Error("redis exec failed");
         return results?.map(x => x[1]);
     }
 
@@ -218,9 +220,11 @@ export class RedisService {
             valueStr = JSON.stringify(value);
         }
         if (!ttl)
-            await this.redis.setnx(key, valueStr)
-        else
-            await this.redis.set(key, valueStr, 'PX', ttl, 'NX');
+            await this.redis.set(key, valueStr, 'NX');
+        else {
+            await this.redis.set(key, valueStr, 'PX', ttl, 'NX')
+
+        }
 
     }
     async get<T>(key: string, parse = true): Promise<T | null | undefined> {

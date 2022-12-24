@@ -28,6 +28,7 @@ export interface ConfigAuditEvent {
 }
 
 export interface Config {
+    revision: number;
     version: number;
     /**
      * @summary is default configuration reconfigured

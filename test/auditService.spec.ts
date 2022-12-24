@@ -53,7 +53,7 @@ describe('auditService ', async () => {
         expect(msgStr).to.equal('.added.surname: null >>> 22,.added.role.sur: null >>> xx,.deleted.gsm: 34 >>> null,.deleted.ops.1: { .name: dea } >>> null,.updated.name: aborted >>> ab,.updated.role.name: acb >>> def,.updated.test.1: 3 >>> 2,.updated.test.2: 4 >>> 3,.updated.ops.0.name: deneme >>> dea2');
     })
 
-    const streamKey = '/audit/logs';
+    const streamKey = '/logs/audit';
     const esHost = 'https://192.168.88.250:9200';
     const esUser = "elastic";
     const esPass = '123456';

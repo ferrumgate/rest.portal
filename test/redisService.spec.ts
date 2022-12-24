@@ -50,6 +50,20 @@ describe('redisService', () => {
 
     }).timeout(10000)
 
+    it('test setnx', async () => {
+        const simpleRedis = new RedisService('localhost:6379,localhost:6390');
+
+        const result = await simpleRedis.setnx('deneme', 'deneme', 15000);
+        let data = await simpleRedis.get<string>('deneme', false);
+        expect(data).to.equal('deneme');
+        await Util.sleep(5000);
+        await simpleRedis.setnx('deneme', 'deneme', 15000);
+
+
+
+    }).timeout(10000);
+
+
     it('test transaction', async () => {
         const simpleRedis = new RedisService('localhost:6379');
 
@@ -104,7 +118,26 @@ describe('redisService', () => {
 
 
 
+    }).timeout(10000);
+
+    it('test transaction', async () => {
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let pipe = await simpleRedis.multi()
+        await pipe.set('deneme2', 'deneme2', { ttl: '60000' });
+        let pipe2 = await simpleRedis.multi()
+        await pipe2.set('deneme3', 'deneme3', { ttl: '60000' });
+        let results = await pipe2.exec();
+        let as = await simpleRedis.get('deneme2', false);
+        expect(as).to.be.null;
+
+        let as2 = await simpleRedis.get('deneme3', false)
+        expect(as2).to.equal('deneme3')
+
+
+
     }).timeout(10000)
+
 
 
     it('test transaction that will terminate transaction', async () => {

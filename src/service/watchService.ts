@@ -1,6 +1,7 @@
 import { logger } from "../common";
 import { EventEmitter } from "stream";
-import { RedisService } from "./redisService";
+import { RedisPipelineService, RedisService } from "./redisService";
+import { Util } from "../util";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 export class WatchService {
@@ -9,7 +10,9 @@ export class WatchService {
     private intervalRead: any;
     private lastPostReaded = false;
     constructor(private redis: RedisService, private redisStreamService: RedisService,
-        private file: string, private lastPos = '$', private trimTime = 24 * 60 * 60 * 1000
+        private file: string, private lastPos = '$',
+        private trimTime = 24 * 60 * 60 * 1000,
+        private encKey?: string
 
     ) {
         this.events = new EventEmitter();
@@ -17,7 +20,6 @@ export class WatchService {
     }
 
     async startWatch() {
-
 
         this.intervalRead = await setIntervalAsync(async () => {
 
@@ -41,10 +43,20 @@ export class WatchService {
         this.intervalRead = null;
     }
 
-    async write(data: any) {
+    async write(data: any, redisPipeLine?: RedisPipelineService) {
         if (data == null || data == undefined) return;
-        const base64 = Buffer.from(JSON.stringify(data)).toString('base64')
-        await this.redis.xadd(this.file, { data: base64, time: new Date().getTime(), type: 'b64' });
+        let dataStr = JSON.stringify(data);
+        let base64 = '';
+        if (this.encKey && process.env.NODE_ENV !== 'development') {
+            base64 = Util.encrypt(this.encKey, dataStr, 'base64');
+
+        } else {
+            base64 = Buffer.from(dataStr).toString('base64');;
+        }
+        if (redisPipeLine)
+            await redisPipeLine.xadd(this.file, { data: base64, time: new Date().getTime(), type: 'b64' });
+        else
+            await this.redis.xadd(this.file, { data: base64, time: new Date().getTime(), type: 'b64' });
     }
     async read() {
         try {
@@ -58,7 +70,8 @@ export class WatchService {
                 for (const item of items) {
                     try {
                         this.lastPos = item.xreadPos;
-                        const data = JSON.parse(Buffer.from(item.data, 'base64').toString());
+                        let dataStr = (this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.data, 'base64') : Buffer.from(item.data, 'base64').toString();
+                        const data = JSON.parse(dataStr);
                         const time = Number(item.time);
                         this.events.emit('data', { val: data, time: time })
 

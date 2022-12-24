@@ -229,7 +229,7 @@ export const Util = {
         //logger.info("http headers:" + JSON.stringify(req.headers))
         return req.protocol || 'not found';
     },
-    encrypt(key: string, data: string): string {
+    encrypt(key: string, data: string, encoding: BufferEncoding = 'hex'): string {
 
         const keyBuffer = Buffer.from(key).slice(0, 32); //8f7403c9bb5eb04f
 
@@ -239,12 +239,12 @@ export const Util = {
         const cipher = crypto.createCipheriv(algoritm, keyBuffer, iv);
         const encrypted = Buffer.concat([cipher.update(Buffer.from(data, 'utf-8')), cipher.final()]);
 
-        return encrypted.toString('hex');
+        return encrypted.toString(encoding);
 
 
     },
 
-    decrypt(key: string, data: string): string {
+    decrypt(key: string, data: string, encoding: BufferEncoding = 'hex'): string {
 
         const keyBuffer = Buffer.from(key).slice(0, 32); //8f7403c9bb5eb04f
 
@@ -252,7 +252,7 @@ export const Util = {
         //const pass=crypto.scryptSync(key,initVector,initVector.length);
         const algoritm = 'aes-256-cbc'
         const cipher = crypto.createDecipheriv(algoritm, keyBuffer, iv);
-        const decrpted = Buffer.concat([cipher.update(Buffer.from(data, 'hex')), cipher.final()]);
+        const decrpted = Buffer.concat([cipher.update(Buffer.from(data, encoding)), cipher.final()]);
 
         let value = decrpted.toString('utf-8');
         return value;

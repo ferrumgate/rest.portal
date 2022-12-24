@@ -39,7 +39,7 @@ export class AuditService {
     }
     async trimStream() {
         try {
-            await this.redisService.xtrim('/audit/logs', (new Date().getTime() - 1 * 60 * 60 * 1000).toString());
+            await this.redisService.xtrim('/logs/audit', (new Date().getTime() - 1 * 60 * 60 * 1000).toString());
 
         } catch (err) {
             logger.error(err);
@@ -57,8 +57,8 @@ export class AuditService {
 
     async saveToRedis(auditLog: AuditLog) {
 
-        const strHex = Util.encrypt(this.encKey, JSON.stringify(auditLog))
-        await this.redisService.xadd('/audit/logs', { data: strHex });
+        const strHex = Util.encrypt(this.encKey, JSON.stringify(auditLog), 'base64')
+        await this.redisService.xadd('/logs/audit', { data: strHex });
 
     }
     async executeTryCatch(func: () => Promise<void>) {

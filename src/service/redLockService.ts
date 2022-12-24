@@ -13,7 +13,6 @@ export class RedLockService {
     protected interval: any;
     isLocked = false;
     protected lastSuccessTime = 0;
-    protected isLockedTime = 0;
     private resourceKey = '';
     constructor(private redis: RedisService) {
 
@@ -33,45 +32,56 @@ export class RedLockService {
             }, check);
         }
     }
-    protected async tryLock(resource: string, ttl: number) {
+    async tryLock(resource: string, ttl: number, throwErr = false) {
         try {
             this.resourceKey = resource;
-            await this.redis.setnx(resource, this.randomKey, ttl);
-            const val = await this.redis.get(resource, false) as string;
-            if (val == this.randomKey) {
-                if (!this.isLockedTime) {//lock is successfull
-                    this.isLockedTime = new Date().getTime();
-                }
-                this.lastSuccessTime = new Date().getTime();
+            let tryCount = this.isLocked ? 1 : 4;
+            while (tryCount) {
+                tryCount--;
+                await this.redis.setnx(resource, this.randomKey, ttl);
+                const val = await this.redis.get(resource, false) as string;
+                if (val == this.randomKey) {
+                    await this.redis.expire(resource, ttl);
+                    this.lastSuccessTime = new Date().getTime();
+                    //wait a little for a better experience
+                    if (!this.isLocked && !tryCount) {
+                        this.isLocked = true;
+                        this.events.emit('acquired');
+                    }
 
-                if (!this.isLocked && this.lastSuccessTime - this.isLockedTime > 2 * ttl) {
-                    this.isLocked = true;
-                    this.events.emit('acquired');
+                } else {
+                    console.log(`${this.resourceKey} could not locked with ${this.randomKey}`)
+                    await this.release(false);
                 }
-            } else {
-
-                await this.release(false);
+                if (tryCount)
+                    await Util.sleep(ttl < 500 ? ttl / 2 : 500);
             }
+            if (!this.isLocked && throwErr)
+                throw new Error(`${resource} lock could not acquired`);
         } catch (err) {
 
             await this.release(false);
             logger.error(err);
+            if (throwErr)
+                throw err;
 
         }
     }
     async release(stop = true) {
-        if (this.isLocked) {
-            this.isLocked = false;
-            this.randomKey = Util.randomNumberString(16);
-            this.lastSuccessTime = 0;
-            this.isLockedTime = 0;
-            await this.redis.delete(this.resourceKey);
-            this.events.emit('released');
-        }
-        if (stop) {
-            if (this.interval)
-                clearIntervalAsync(this.interval);
-            this.interval = null;
+        try {
+            if (this.isLocked) {
+                this.isLocked = false;
+                this.lastSuccessTime = 0;
+                await this.redis.delete(this.resourceKey);
+                this.events.emit('released');
+            }
+            if (stop) {
+                if (this.interval)
+                    clearIntervalAsync(this.interval);
+                this.interval = null;
+            }
+        } catch (err) {
+            logger.error(err);
         }
     }
 
