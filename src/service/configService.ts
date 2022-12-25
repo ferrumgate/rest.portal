@@ -673,11 +673,7 @@ export class ConfigService {
         }
         else {
             cloned.id = finded.id;//security
-            /* let newone = {
-                ...finded,
-                ...cloned
-            }
-            Object.assign(finded, newone) */
+
             this.config.users[findedIndex] = {
                 ...finded,
                 ...cloned,
@@ -762,7 +758,7 @@ export class ConfigService {
     async setCASSLCertificate(cert: SSLCertificate | {}) {
         let cloned = Util.clone(cert);
         const prev = this.config.caSSLCertificate;
-        this.config.sslCertificate = {
+        this.config.caSSLCertificate = {
             ...this.config.caSSLCertificate,
             ...cloned
         }

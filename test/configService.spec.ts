@@ -95,7 +95,7 @@ describe('configService', async () => {
         expect(readed).to.equal(str);
 
     });
-    it('getUserByEmail', async () => {
+    it('getUserByUsername', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
@@ -116,7 +116,7 @@ describe('configService', async () => {
 
     });
 
-    it('getUserByEmailAndPass', async () => {
+    it('getUserByUsernameAndPass', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
