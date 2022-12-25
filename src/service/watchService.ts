@@ -2,7 +2,14 @@ import { logger } from "../common";
 import { EventEmitter } from "stream";
 import { RedisPipelineService, RedisService } from "./redisService";
 import { Util } from "../util";
+import { EncodingOption } from "fs";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
+
+export interface WatchItem<T> {
+    val: T,
+    time: number,
+    encoding?: EncodingOption;
+}
 
 export class WatchService {
     events: EventEmitter;
@@ -10,7 +17,7 @@ export class WatchService {
     private intervalRead: any;
     private lastPostReaded = false;
     constructor(private redis: RedisService, private redisStreamService: RedisService,
-        private file: string, private lastPos = '$',
+        private file: string, private lastPos = new Date().getTime().toString(),
         private trimTime = 24 * 60 * 60 * 1000,
         private encKey?: string
 
@@ -54,13 +61,13 @@ export class WatchService {
             base64 = Buffer.from(dataStr).toString('base64');;
         }
         if (redisPipeLine)
-            await redisPipeLine.xadd(this.file, { data: base64, time: new Date().getTime(), type: 'b64' });
+            await redisPipeLine.xadd(this.file, { val: base64, time: new Date().getTime(), encoding: 'base64' } as WatchItem<string>);
         else
-            await this.redis.xadd(this.file, { data: base64, time: new Date().getTime(), type: 'b64' });
+            await this.redis.xadd(this.file, { val: base64, time: new Date().getTime(), encoding: 'base64' } as WatchItem<string>);
     }
     async read() {
         try {
-            if (this.lastPostReaded) {
+            if (!this.lastPostReaded) {
                 this.lastPos = await this.redis.get(`${this.file}/pos`, false) || this.lastPos;
                 this.lastPostReaded = true;
             }
@@ -70,10 +77,10 @@ export class WatchService {
                 for (const item of items) {
                     try {
                         this.lastPos = item.xreadPos;
-                        let dataStr = (this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.data, 'base64') : Buffer.from(item.data, 'base64').toString();
+                        let dataStr = (this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.val, 'base64') : Buffer.from(item.val, 'base64').toString();
                         const data = JSON.parse(dataStr);
                         const time = Number(item.time);
-                        this.events.emit('data', { val: data, time: time })
+                        this.events.emit('data', { val: data, time: time } as WatchItem<string>)
 
 
                     } catch (err) {

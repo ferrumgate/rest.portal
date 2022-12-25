@@ -32,7 +32,7 @@ export class ConfigService {
     config: Config;
     protected configfile = `/etc/ferrumgate/config.yaml`;
     private secretKey = '';
-    lastUpdateTime = '';
+
 
     /**
      *
@@ -59,6 +59,7 @@ export class ConfigService {
         if (configFile)
             this.configfile = configFile;
         this.config = {
+            lastUpdateTime: new Date().toISOString(),
             revision: 0,
             version: 1,
             isConfigured: 0,
@@ -351,7 +352,7 @@ export class ConfigService {
             })
 
         }
-
+        this.config.lastUpdateTime = new Date().toISOString();
 
         //dont delete below line
         //for testing end
@@ -372,7 +373,7 @@ export class ConfigService {
                 })
         }
 
-        this.lastUpdateTime = new Date().toISOString();
+
 
     }
 
@@ -386,8 +387,12 @@ export class ConfigService {
         return this.secretKey;
     }
 
-    resetUpdateTime() {
-        this.lastUpdateTime = new Date(1900, 1, 1).toISOString();
+
+    async getLastUpdateTime() {
+        return this.config.lastUpdateTime;
+    }
+    async saveLastUpdateTime() {
+        this.config.lastUpdateTime = new Date().toISOString();
     }
     setConfigPath(path: string) {
         this.configfile = path;
@@ -431,7 +436,7 @@ export class ConfigService {
         }
         //this.saveAssets();
     }
-    saveConfigToFile() {
+    async saveConfigToFile() {
         const str = yaml.stringify(this.config);
         if (process.env.NODE_ENV == 'development') {
 
@@ -440,9 +445,11 @@ export class ConfigService {
             const encrypted = Util.encrypt(this.secretKey, str, 'base64');
             fs.writeFileSync(this.configfile, encrypted, { encoding: 'utf-8' });
         }
-        this.lastUpdateTime = new Date().toISOString();
+        await this.saveLastUpdateTime();
+
+
     }
-    saveConfigToString() {
+    async saveConfigToString() {
         const str = yaml.stringify(this.config);
         if (process.env.NODE_ENV == 'development') {
             return str;
@@ -452,7 +459,7 @@ export class ConfigService {
         }
     }
 
-    private deleteUserSensitiveData(user?: User) {
+    protected deleteUserSensitiveData(user?: User) {
         delete user?.apiKey;
         delete user?.twoFASecret;
         delete user?.password;
@@ -1556,10 +1563,7 @@ export class ConfigService {
         }
         return this.createTrackEvent(rule);
     }
-    /*   async updateAuthorizationPolicyUpdateTime() {
-          this.config.authorizationPolicy.updateDate = new Date().toISOString();
-          await this.saveConfigToFile();
-      } */
+
 
 
 

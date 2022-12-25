@@ -44,7 +44,7 @@ describe('configService', async () => {
         };
 
         configService.config.users.push(aUser);
-        configService.saveConfigToFile();
+        await configService.saveConfigToFile();
         expect(fs.existsSync(filename));
 
 
@@ -64,7 +64,7 @@ describe('configService', async () => {
         };
 
         configService.config.users.push(aUser);
-        configService.saveConfigToFile();
+        await configService.saveConfigToFile();
         expect(fs.existsSync(filename));
 
         let result = configService.loadConfigFromFile();
@@ -88,9 +88,9 @@ describe('configService', async () => {
         };
 
         configService.config.users.push(aUser);
-        configService.saveConfigToFile();
+        await configService.saveConfigToFile();
         expect(fs.existsSync(filename));
-        const str = configService.saveConfigToString()
+        const str = await configService.saveConfigToString()
         const readed = fs.readFileSync(filename).toString();
         expect(readed).to.equal(str);
 

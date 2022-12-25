@@ -25,7 +25,7 @@ const expect = chai.expect;
 const esHost = 'https://192.168.88.250:9200';
 const esUser = "elastic";
 const esPass = '123456';
-describe('activityLogToES ', async () => {
+describe.skip('activityLogToES ', async () => {
 
     beforeEach(async () => {
 

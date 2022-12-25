@@ -28,6 +28,7 @@ export interface ConfigAuditEvent {
 }
 
 export interface Config {
+    lastUpdateTime: string;
     revision: number;
     version: number;
     /**

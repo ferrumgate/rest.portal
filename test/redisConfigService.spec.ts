@@ -14,9 +14,11 @@ import { AuthorizationRule } from '../src/model/authorizationPolicy';
 import { ConfigEvent } from '../src/model/config';
 
 import chaiExclude from 'chai-exclude';
-import { RedisConfigService } from '../src/service/redisConfigService';
+import { ConfigWatch, RedisConfigService } from '../src/service/redisConfigService';
 import { RedisService } from '../src/service/redisService';
 import { config } from 'process';
+import { WatchItem } from '../src/service/watchService';
+import { authenticate } from 'passport';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -60,28 +62,40 @@ describe('redisConfigService', async () => {
         let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
 
         await configService.rSave('users', { id: 1 });
-        const data = await configService.rExists('users', { id: 1 })
+        const data = await configService.rExists('users/1')
         expect(data).to.be.true;
 
     });
 
+
     it('rDel', async () => {
         let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-
+        let logs: ConfigWatch[] = [];
+        configService.logWatcher.events.on('data', (data: WatchItem<ConfigWatch>) => {
+            logs.push(data.val);
+        })
+        //await configService.logWatcher.read();
         await configService.rSave('users', { id: 1 });
         await configService.rDel('users', { id: 1 });
-        const data = await configService.rExists('users', { id: 1 })
+        const data = await configService.rExists('users/1')
         expect(data).to.be.false;
+        await Util.sleep(1000);
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+        await Util.sleep(5000);
+        expect(logs.length).to.equal(2);
+        expect(logs[0].type).to.equal('put');
+        expect(logs[1].type).to.equal('del');
 
-    });
+    }).timeout(120000);
 
     it('rSaveArray', async () => {
         let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
 
         await configService.rSaveArray('users', [{ id: 1 }, { id: 2 }]);
-        const data = await configService.rExists('users', { id: 1 })
+        const data = await configService.rExists('users/1')
         expect(data).to.be.true;
-        const data2 = await configService.rExists('users', { id: 2 })
+        const data2 = await configService.rExists('users/2')
         expect(data2).to.be.true;
 
     });
@@ -91,7 +105,7 @@ describe('redisConfigService', async () => {
         await configService.rSaveArray('users', [{ id: 1 }, { id: 2 }]);
         const data = await configService.rGetAll('users')
         expect(data.length).to.be.equal(2);
-        expect(data[0].id).to.equal(1);
+        expect(data[0].id).to.equal(2);
     });
 
 
@@ -105,7 +119,7 @@ describe('redisConfigService', async () => {
         const networks = await configService.rGetAll('networks');
         expect(networks.length).to.equal(2);
         //check index
-        const id = await configService.rGetIndex('users', 'admin');
+        const id = await configService.rGetIndex('users/username', 'admin');
         expect(id).exist;
     }).timeout(60000);
 
@@ -118,6 +132,73 @@ describe('redisConfigService', async () => {
         expect(users.length).to.be.equal(4); // we are adding some users for test
 
     }).timeout(60000);
+
+    it('getUserByUsername', async () => {
+
+        //first create a config and save to a file
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        let aUser: User = {
+            id: 'someid',
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        await configService.init();
+        const aUserDb = await configService.getUserByUsername(aUser.username);
+        expect(aUserDb).exist;
+        expect(aUserDb).to.excluding(['password']).deep.equal(aUser);
+
+    });
+
+    it('getUserByUsernameAndSource', async () => {
+
+        //first create a config and save to a file
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        let aUser: User = {
+            id: 'someid',
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        await configService.init();
+        const aUserDb = await configService.getUserByUsernameAndSource(aUser.username, 'local');
+        expect(aUserDb).exist;
+        expect(aUserDb).to.excluding(['password']).deep.equal(aUser);
+
+    });
+
+    it('getUserByApiKey', async () => {
+
+        //first create a config and save to a file
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        let aUser: User = {
+            id: '6hiryy8ujv3n',
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            apiKey: '1fviqq286bmcm',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        await configService.init();
+        const userDb = await configService.getUserByApiKey('1fviqq286bmcm');
+        expect(userDb?.id).to.equal('6hiryy8ujv3n');
+
+    });
+
 
 
 
@@ -136,9 +217,9 @@ describe('redisConfigService', async () => {
             };
     
             configService.config.users.push(aUser);
-            configService.saveConfigToFile();
+            await configService.saveConfigToFile();
             expect(fs.existsSync(filename));
-            const str = configService.saveConfigToString()
+            const str =await configService.saveConfigToString()
             const readed = fs.readFileSync(filename).toString();
             expect(readed).to.equal(str);
     
@@ -400,26 +481,7 @@ describe('redisConfigService', async () => {
  
      });
  
-     it('getUserByApiKey', async () => {
- 
-         //first create a config and save to a file
-         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-         configService.config.users = [];
-         let aUser: User = {
-             id: '6hiryy8ujv3n',
-             username: 'hamza.kilic@ferrumgate.com',
-             name: 'test', source: 'local',
-             password: 'passwordWithHash', groupIds: [],
-             apiKey: '1fviqq286bmcm',
-             insertDate: new Date().toISOString(),
-             updateDate: new Date().toISOString()
-         };
- 
-         configService.config.users.push(aUser);
-         const userDb = await configService.getUserByApiKey('1fviqq286bmcm');
-         expect(userDb?.id).to.equal('6hiryy8ujv3n');
- 
-     });
+
  
  
      it('saveNetwork getNetwork getNetworkByName', async () => {

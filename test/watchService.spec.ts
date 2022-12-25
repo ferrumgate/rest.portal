@@ -9,7 +9,7 @@ import { Util } from '../src/util';
 import { ESService } from '../src/service/esService';
 import { ConfigService } from '../src/service/configService';
 import { RedLockService } from '../src/service/redLockService';
-import { WatchService } from '../src/service/watchService';
+import { WatchItem, WatchService } from '../src/service/watchService';
 
 
 
@@ -32,7 +32,7 @@ describe('watchService ', async () => {
         const watcher2 = new WatchService(redis, redisStream, '/log/abc', '0');
         let written = '';
         let time = 0;
-        watcher2.events.on('data', (data: any) => {
+        watcher2.events.on('data', (data: WatchItem<string>) => {
             written = data.val;
             time = data.time;
         })

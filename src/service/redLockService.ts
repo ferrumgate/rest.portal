@@ -32,10 +32,10 @@ export class RedLockService {
             }, check);
         }
     }
-    async tryLock(resource: string, ttl: number, throwErr = false) {
+    async tryLock(resource: string, ttl: number, throwErr = false, tryCount = 4, tryTTL = 500) {
         try {
             this.resourceKey = resource;
-            let tryCount = this.isLocked ? 1 : 4;
+            tryCount = this.isLocked ? 1 : tryCount;
             while (tryCount) {
                 tryCount--;
                 await this.redis.setnx(resource, this.randomKey, ttl);
@@ -54,7 +54,7 @@ export class RedLockService {
                     await this.release(false);
                 }
                 if (tryCount)
-                    await Util.sleep(ttl < 500 ? ttl / 2 : 500);
+                    await Util.sleep(ttl < tryTTL ? ttl / 2 : tryTTL);
             }
             if (!this.isLocked && throwErr)
                 throw new Error(`${resource} lock could not acquired`);
@@ -64,7 +64,6 @@ export class RedLockService {
             logger.error(err);
             if (throwErr)
                 throw err;
-
         }
     }
     async release(stop = true) {

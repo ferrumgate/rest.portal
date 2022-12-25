@@ -75,7 +75,7 @@ describe('authApi', async () => {
     }
 
     beforeEach(async () => {
-        configService.resetUpdateTime();
+
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         await configService.setConfigPath(filename);
         const auth: AuthSettings = {

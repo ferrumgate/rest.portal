@@ -21,7 +21,7 @@ const expect = chai.expect;
 const esHost = 'https://192.168.88.250:9200';
 const esUser = "elastic";
 const esPass = '123456';
-describe('auditLogToES ', async () => {
+describe.skip('auditLogToES ', async () => {
 
     beforeEach(async () => {
         //const redis = new RedisService();
