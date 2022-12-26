@@ -53,7 +53,7 @@ describe('redisConfigService', async () => {
         let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
 
         await configService.rSave('users', undefined, { id: 1 });
-        const data = await configService.rGet<User>('users/1')
+        const data = await configService.rGetWith<User>('users', '1')
         expect(data).exist;
 
         expect(data?.id).to.equal(1);

@@ -25,7 +25,40 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 type Nullable<T> = T | null | undefined;
 
 
+type RPath =
+    'lastUpdateTime' |
+    'revision' |
+    'version' |
+    'isConfigured' |
+    'domain' |
+    'url' |
+    'auth' |
+    'auth/common' |
+    'auth/local' |
+    'auth/oauth/providers' |
+    'auth/ldap/providers' |
+    'auth/saml/providers' |
+    'jwtSSLCertificate' |
+    'sslCertificate' |
+    'caSSLCertificate' |
+    'users' |
+    'groups' |
+    'services' |
+    'captcha' |
+    'email' |
+    'logo' |
+    'networks' |
+    'gateways' |
+    'authenticationPolicy/rules' |
+    'authorizationPolicy/rules';
 
+type RPathCount = 'users/*' |
+    'groups/*' |
+    'services/*' |
+    'networks/*' |
+    'gateways/*' |
+    'authenticationPolicy/rules/*' |
+    'authorizationPolicy/rules/*';
 
 
 
@@ -66,12 +99,12 @@ export class RedisConfigService extends ConfigService {
             logger.error(err);
         }
     }
-    async rCount(path: string) {
+    async rCount(path: RPathCount) {
         const rpath = `/config/${path}`;
         return (await this.redis.getAllKeys(rpath)).length;
     }
 
-    async rGetAll<T>(path: string, callback?: (vals: T[]) => void) {
+    async rGetAll<T>(path: RPath, callback?: (vals: T[]) => void) {
         const rpath = `/config/${path}`;
 
         const keys = await this.redis.getAllKeys(`${rpath}/*`);
@@ -100,7 +133,7 @@ export class RedisConfigService extends ConfigService {
 
 
 
-    async rGet<Nullable>(path: string, callback?: (val: Nullable | null) => Promise<Nullable>) {
+    async rGet<Nullable>(path: RPath, callback?: (val: Nullable | null) => Promise<Nullable>) {
         let rpath = `/config/${path}`;
 
         let dataStr = await this.redis.get(rpath, false) as any;
@@ -118,6 +151,10 @@ export class RedisConfigService extends ConfigService {
                 return callback(null);
             return null;
         }
+    }
+    async rGetWith<Nullable>(path: RPath, id: string, callback?: (val: Nullable | null) => Promise<Nullable>) {
+        let rpath = `${path}/${id}`;
+        return await this.rGet(rpath as RPath, callback);
     }
     async rGetIndex<Nullable>(path: string, search: string) {
 
@@ -306,7 +343,7 @@ export class RedisConfigService extends ConfigService {
         const id = await this.rGetIndex<string>('users/username', username);
         if (!id || !id.trim()) return undefined;
         this.config.users = [];
-        const user = await this.rGet<User>(`users/${id}`);
+        const user = await this.rGetWith<User>(`users`, id);
         if (user)
             this.config.users.push(user);
         return await super.getUserByUsername(username);
@@ -319,7 +356,7 @@ export class RedisConfigService extends ConfigService {
         const id = await this.rGetIndex<string>('users/username', username);
         if (!id || !id.trim()) return undefined;
         this.config.users = [];
-        const user = await this.rGet<User>(`users/${id}`);
+        const user = await this.rGetWith<User>(`users`, id);
         if (user)
             this.config.users.push(user);
         return await super.getUserByUsernameAndSource(username, source);
@@ -329,10 +366,10 @@ export class RedisConfigService extends ConfigService {
         this.isEverythingOK();
         if (!key && !key.trim()) return undefined;
 
-        const id = await this.rGetIndex('users/apiKey', key);
+        const id = await this.rGetIndex('users/apiKey', key) as string;
         if (!id) return undefined;
         this.config.users = [];
-        const user = await this.rGet<User>(`users/${id}`);
+        const user = await this.rGetWith<User>(`users`, id);
         if (user)
             this.config.users.push(user);
         return await super.getUserByApiKey(key);
@@ -343,7 +380,7 @@ export class RedisConfigService extends ConfigService {
         this.isEverythingOK();
         if (!id || !id.trim()) return undefined;
         this.config.users = [];
-        const user = await this.rGet<User>(`users/${id}`);
+        const user = await this.rGetWith<User>(`users`, id);
         if (user)
             this.config.users.push(user);
         return await super.getUserById(id);
@@ -382,7 +419,7 @@ export class RedisConfigService extends ConfigService {
         const id = await this.rGetIndex<string>('users/username', username);
         if (!id || !id.trim()) return undefined;
         this.config.users = [];
-        const user = await this.rGet<User>(`users/${id}`);
+        const user = await this.rGetWith<User>(`users`, id);
         if (user)
             this.config.users.push(user);
         return super.getUserByUsernameAndPass(username, pass);
@@ -392,7 +429,7 @@ export class RedisConfigService extends ConfigService {
     override async getUserByIdAndPass(id: string, pass: string): Promise<User | undefined> {
         this.isEverythingOK();
         this.config.users = [];
-        const user = await this.rGet<User>(`users/${id}`);
+        const user = await this.rGetWith<User>(`users`, id);
         if (user)
             this.config.users.push(user);
         return super.getUserByIdAndPass(id, pass);
@@ -401,7 +438,7 @@ export class RedisConfigService extends ConfigService {
     override async getUserSensitiveData(id: string) {
         this.isEverythingOK();
         this.config.users = [];
-        const user = await this.rGet<User>(`users/${id}`);
+        const user = await this.rGetWith<User>(`users`, id);
         if (user)
             this.config.users.push(user);
         return super.getUserSensitiveData(id);
@@ -430,7 +467,7 @@ export class RedisConfigService extends ConfigService {
         const id = await this.rGetIndex<string>('users/username', data.username);
         this.config.users = [];
         if (id) {
-            const user = await this.rGet<User>(`users/${id}`);
+            const user = await this.rGetWith<User>(`users`, id);
             if (user) {
                 this.config.users.push(user);
             }
@@ -498,7 +535,7 @@ export class RedisConfigService extends ConfigService {
         //dont call super method
         this.isEverythingOK();
         this.config.users = [];
-        const user = await this.rGet<User>(`users/${id}`);
+        const user = await this.rGetWith<User>(`users`, id);
         if (user) {
 
             this.config.authenticationPolicy.rules = await this.rGetAll<AuthenticationRule>('authenticationPolicy/rules');
@@ -522,7 +559,7 @@ export class RedisConfigService extends ConfigService {
         const id = await this.rGetIndex<string>('users/username', 'admin');
         if (!id || !id.trim()) return;
         this.config.users = [];
-        const user = await this.rGet<User>(`users/${id}`);
+        const user = await this.rGetWith<User>(`users`, id);
         if (user)
             this.config.users.push(user);
 
@@ -825,7 +862,7 @@ export class RedisConfigService extends ConfigService {
     override async getNetwork(id: string) {
         this.isEverythingOK();
         this.config.networks = [];
-        const network = await this.rGet<Network>(`networks/${id}`);
+        const network = await this.rGetWith<Network>(`networks`, id);
         if (network) {
             this.config.networks.push(network);
         }
@@ -968,7 +1005,7 @@ export class RedisConfigService extends ConfigService {
         this.isEverythingOK();
         this.config.gateways = [];
 
-        const gateway = await this.rGet<Gateway>(`gateways/${id}`);
+        const gateway = await this.rGetWith<Gateway>(`gateways`, id);
         if (gateway) {
             this.config.gateways.push(gateway)
         }
@@ -1070,7 +1107,7 @@ export class RedisConfigService extends ConfigService {
     override async getGroupCount() {
         this.isEverythingOK();
         this.config.groups = [];
-        return await this.rCount('groups');
+        return await this.rCount('groups/*');
 
     }
 
@@ -1189,7 +1226,7 @@ export class RedisConfigService extends ConfigService {
     override async getServiceCount() {
         this.isEverythingOK();
         this.config.services = [];
-        return await this.rCount('services');
+        return await this.rCount('services/*');
     }
 
     override async getServicesBy(query?: string, networkIds?: string[], ids?: string[]) {
@@ -1287,7 +1324,7 @@ export class RedisConfigService extends ConfigService {
     }
     override async getAuthenticationPolicyRuleCount() {
         this.isEverythingOK();
-        return await this.rCount('authenticationPolicy/rules');
+        return await this.rCount('authenticationPolicy/rules/*');
 
     }
 
@@ -1361,7 +1398,7 @@ export class RedisConfigService extends ConfigService {
 
     async getAuthorizationPolicyRuleCount() {
         this.isEverythingOK();
-        return await this.rCount('authorizationPolicy/rules');
+        return await this.rCount('authorizationPolicy/rules/*');
     }
     async deleteAuthorizationPolicyRule(id: string) {
         this.isEverythingOK();
