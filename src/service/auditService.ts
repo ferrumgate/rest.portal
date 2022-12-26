@@ -13,7 +13,7 @@ import { Gateway, Network } from "../model/network";
 import { EmailSettings } from "../model/emailSettings";
 import { Captcha } from "../model/captcha";
 import { AuthenticationRule } from "../model/authenticationPolicy";
-import { BaseAuth } from "../model/authSettings";
+import { AuthCommon, BaseAuth } from "../model/authSettings";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Group } from "../model/group";
 import { off } from "process";
@@ -224,10 +224,10 @@ export class AuditService {
             `auth local ${before ? 'updated' : 'created'}`,
             `${before?.name || after?.name}`)
     }
-    async logSetAuthSettingsCommon(currentSession: AuthSession, currentUser: User, before?: BaseAuth, after?: BaseAuth) {
+    async logSetAuthSettingsCommon(currentSession: AuthSession, currentUser: User, before?: AuthCommon, after?: AuthCommon) {
         await this.executeSave(currentSession, currentUser, before, after,
             `auth common ${before ? 'updated' : 'created'}`,
-            `${before?.name || after?.name}`)
+            ``)
     }
     async logSaveAuthorizationPolicyRule(currentSession: AuthSession, currentUser: User, before?: AuthorizationRule, after?: AuthorizationRule) {
         await this.executeSave(currentSession, currentUser, before, after,
@@ -250,7 +250,7 @@ export class AuditService {
             `authn rule deleted`,
             `${before?.name || after?.name}`)
     }
-    async saveAuthorizationPolicyRule(currentSession: AuthSession, currentUser: User, before?: AuthenticationRule, after?: AuthenticationRule) {
+    async saveAuthorizationPolicyRule(currentSession: AuthSession, currentUser: User, before?: AuthorizationRule, after?: AuthorizationRule) {
         await this.executeSave(currentSession, currentUser, before, after,
             `authn rule ${before ? 'updated' : 'created'}`,
             `${before?.name || after?.name}`)

@@ -81,19 +81,7 @@ export class ConfigService {
             logo: {},
             auth: {
                 common: {},
-                local: {
-                    id: Util.randomNumberString(16),
-                    type: 'local',
-                    baseType: 'local',
-                    name: 'Local',
-                    tags: [],
-                    isForgotPassword: false,
-                    isRegister: false,
-                    isEnabled: true,
-                    insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-
-                },
+                local: this.createAuthLocal(),
                 ldap: { providers: [] },
                 oauth: { providers: [] },
                 saml: { providers: [] }
@@ -375,6 +363,22 @@ export class ConfigService {
 
 
 
+    }
+
+    protected createAuthLocal() {
+        let local: AuthLocal = {
+            type: 'local',
+            baseType: 'local',
+            name: 'Local',
+            tags: [],
+            isForgotPassword: false,
+            isRegister: false,
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        return local
     }
 
     protected createAdminUser() {
@@ -802,10 +806,11 @@ export class ConfigService {
     async getAuthSettings(): Promise<AuthSettings> {
         return Util.clone(this.config.auth);
     }
-    // needs a sync version
+    /* // needs a sync version
     getAuthSettingsSync(): AuthSettings {
         return Util.clone(this.config.auth);
-    }
+    } */
+
     async setAuthSettings(option: AuthSettings | {}) {
         let cloned = Util.clone(option);
         let prev = this.config.auth;
@@ -1365,18 +1370,18 @@ export class ConfigService {
 
     }
 
+
     /**
      * @summary create tracking items
      * @param previous 
      * @param item 
      * @returns 
      */
-    createTrackEvent(previous?: any, item?: any) {
+    createTrackEvent<T>(previous: T, item?: T): { before?: NonNullable<T>, after?: NonNullable<T> } {
         return {
             before: Util.isUndefinedOrNull(previous) ? undefined : Util.clone(previous),
             after: Util.isUndefinedOrNull(item) ? undefined : Util.clone(item)
-
-        }
+        } as { before?: NonNullable<T>, after?: NonNullable<T> }
     }
     /**
      * @summary tracks an array object, if something changes

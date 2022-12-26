@@ -46,7 +46,6 @@ describe('configApi ', async () => {
         const auth: AuthSettings = {
             common: {},
             local: {
-                id: Util.randomNumberString(),
                 type: 'local',
                 baseType: 'local',
                 name: 'Local',

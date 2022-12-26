@@ -321,8 +321,10 @@ routerUserAuthenticated.put('/current/2fa',
         if (isChanged) {
             const { before, after } = await configService.saveUser(user);
             //we try to show a little data
-            before.twoFASecret2 = before.twoFASecret?.substring(0, 5);
-            after.twoFASecret2 = after.twoFASecret?.substring(0, 5);
+            if (before)
+                Util.any(before).twoFASecret2 = before.twoFASecret?.substring(0, 5);
+            if (after)
+                Util.any(after).twoFASecret2 = after.twoFASecret?.substring(0, 5);
             await auditService.logSaveUser(currentSession, currentUser, before, after);
         }
 
@@ -372,8 +374,10 @@ routerUserAuthenticated.put('/current/pass',
         if (isChanged) {
             const { before, after } = await configService.saveUser(user);
             //we try to show a little data
-            before.password2 = 'before';
-            after.password2 = 'after';
+            if (before)
+                Util.any(before).password2 = 'before';
+            if (after)
+                Util.any(after).password2 = 'after';
             await auditService.logSaveUser(currentSession, currentUser, before, after);
         }
 

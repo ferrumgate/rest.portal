@@ -10,6 +10,14 @@ import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Captcha } from "../model/captcha";
 import { SSLCertificate } from "../model/sslCertificate";
+import { EmailSettings } from "../model/emailSettings";
+import { LogoSettings } from "../model/logoSettings";
+import { AuthSettings, BaseOAuth, BaseSaml } from "../model/authSettings";
+import { AuthCommon } from "../model/authSettings";
+import { AuthLocal } from "../model/authSettings";
+import { BaseLdap } from "../model/authSettings";
+import { Gateway, Network } from "../model/network";
+import { Group } from "../model/group";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -64,8 +72,6 @@ export class RedisConfigService extends ConfigService {
 
     async rGetAll<T>(path: string, callback?: (vals: T[]) => void) {
         const rpath = `/config/${path}`;
-
-
 
         const keys = await this.redis.getAllKeys(`${rpath}/*`);
         if (keys.length) {
@@ -254,6 +260,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('email', undefined, this.config.email, pipeline);
         await this.rSave('logo', undefined, this.config.logo, pipeline);
         await this.rSave('auth/common', undefined, this.config.auth.common, pipeline);
+        await this.rSave('auth/local', undefined, this.config.auth.local, pipeline);
         await this.rSaveArray('auth/ldap/providers', this.config.auth.ldap?.providers || [], pipeline);
         await this.rSaveArray('auth/oauth/providers', this.config.auth.oauth?.providers || [], pipeline);
         await this.rSaveArray('auth/saml/providers', this.config.auth.saml?.providers || [], pipeline);
@@ -282,7 +289,7 @@ export class RedisConfigService extends ConfigService {
     }
     override async saveLastUpdateTime(pipeline?: RedisPipelineService) {
         let val = new Date().toISOString();
-        await this.rSave('lastIpdateTime', this.config.lastUpdateTime, val, pipeline);
+        await this.rSave('lastUpdateTime', this.config.lastUpdateTime, val, pipeline);
         this.config.lastUpdateTime = val;
 
     }
@@ -497,14 +504,14 @@ export class RedisConfigService extends ConfigService {
             this.config.authorizationPolicy.rules = await this.rGetAll<AuthorizationRule>('authorizationPolicy/rules');
             const pipeline = await this.redis.multi();
             await this.deleteUserIndexes(user, pipeline);
-            await this.rDel('users', user, pipeline);
             await this.triggerUserDeleted2(user, pipeline);
+            await this.rDel('users', user, pipeline);
             await this.saveLastUpdateTime(pipeline);
             await pipeline.exec();
 
 
         }
-        return this.createTrackEvent(user);
+        return this.createTrackEvent(user || undefined);
 
     }
 
@@ -586,6 +593,605 @@ export class RedisConfigService extends ConfigService {
         await pipeline.exec();
         return ret;
     }
+
+    //TODO test
+    override async getEmailSettings(): Promise<EmailSettings> {
+        this.isEverythingOK();
+        this.config.email = await this.rGet<EmailSettings>('email') || {
+            type: 'empty',
+            fromname: '', pass: '', user: ''
+        };
+        return await super.getEmailSettings();
+    }
+
+    override async setEmailSettings(options: EmailSettings) {
+        this.isEverythingOK();
+        this.config.email = await this.rGet<EmailSettings>('email') || {
+            type: 'empty',
+            fromname: '', pass: '', user: ''
+        };
+        const ret = await super.setEmailSettings(options);
+        const pipeline = await this.redis.multi();
+        await this.rSave('email', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    override async getLogo(): Promise<LogoSettings> {
+        this.isEverythingOK();
+        this.config.logo = await this.rGet<LogoSettings>('logo') || {};
+        return await super.getLogo();
+    }
+    override async setLogo(logo: LogoSettings | {}) {
+        this.isEverythingOK();
+        this.config.logo = await this.rGet<LogoSettings>('email') || {};
+        const ret = await super.setLogo(logo);
+        const pipeline = await this.redis.multi();
+        await this.rSave('logo', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+    async rGetAuthsettings() {
+        this.config.auth.common = await this.rGet<AuthCommon>('auth/common') || {};
+        this.config.auth.ldap = { providers: [] };
+        this.config.auth.local = await this.rGet<AuthLocal>('auth/local') || this.createAuthLocal();
+        this.config.auth.oauth = { providers: [] };
+        this.config.auth.saml = { providers: [] };
+        this.config.auth.ldap.providers = await this.rGetAll<BaseLdap>('auth/ldap/providers');
+        this.config.auth.oauth.providers = await this.rGetAll<BaseOAuth>('auth/oauth/providers');
+        this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
+    }
+
+    override async getAuthSettings(): Promise<AuthSettings> {
+        this.isEverythingOK();
+        await this.rGetAuthsettings();
+        return await super.getAuthSettings();
+
+    }
+    override async setAuthSettings(option: AuthSettings | {}) {
+        this.isEverythingOK();
+        await this.rGetAuthsettings();
+        const ret = await super.setAuthSettings(option) as { before: AuthSettings, after: AuthSettings };
+        const pipeline = await this.redis.multi();
+        await this.rSave('auth/common', ret.before.common, ret.after, pipeline);
+        await this.rSave('auth/local', ret.before, ret.after, pipeline);
+        if (ret.before.ldap?.providers)
+            for (const it of ret.before.ldap?.providers)
+                await this.rDel('auth/ldap/providers', it, pipeline);
+        if (ret.before.oauth?.providers)
+            for (const it of ret.before.oauth?.providers)
+                await this.rDel('auth/oauth/providers', it, pipeline);
+        if (ret.before.saml?.providers)
+            for (const it of ret.before.saml?.providers)
+                await this.rDel('auth/saml/providers', it, pipeline)
+
+        if (ret.after.ldap?.providers)
+            for (const it of ret.after.ldap?.providers)
+                await this.rSave('auth/ldap/providers', undefined, it, pipeline);
+        if (ret.after.oauth?.providers)
+            for (const it of ret.after.oauth?.providers)
+                await this.rSave('auth/oauth/providers', undefined, it, pipeline);
+        if (ret.after.saml?.providers)
+            for (const it of ret.after.saml?.providers)
+                await this.rSave('auth/saml/providers', undefined, it, pipeline);
+
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+
+        return ret;
+
+    }
+
+    async setAuthSettingsCommon(common: AuthCommon) {
+        this.isEverythingOK();
+        this.config.auth.common = await this.rGet<AuthCommon>('auth/common') || {};
+        let ret = await super.setAuthSettingsCommon(common);
+        const pipeline = await this.redis.multi();
+        await this.rSave('auth/common', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+
+
+    }
+    override async getAuthSettingsCommon() {
+        this.isEverythingOK();
+        this.config.auth.common = await this.rGet<AuthCommon>('auth/common') || {};
+        return super.getAuthSettingsCommon();
+    }
+
+    override async setAuthSettingsLocal(local: AuthLocal) {
+        this.isEverythingOK();
+        this.config.auth.local = await this.rGet<AuthLocal>('auth/local') || this.createAuthLocal();
+        let ret = await super.setAuthSettingsLocal(local);
+        const pipeline = await this.redis.multi();
+        await this.rSave('auth/local', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+    override async getAuthSettingsLocal() {
+        this.isEverythingOK();
+        this.config.auth.local = await this.rGet<AuthLocal>('auth/local') || this.createAuthLocal();
+        return super.getAuthSettingsLocal();
+    }
+
+
+    override async getAuthSettingOAuth() {
+        this.isEverythingOK();
+        this.config.auth.oauth = { providers: [] };
+        this.config.auth.oauth.providers = await this.rGetAll<BaseOAuth>('auth/oauth/providers');
+        return await super.getAuthSettingOAuth();
+    }
+
+    override async addAuthSettingOAuth(provider: BaseOAuth) {
+        this.isEverythingOK();
+        this.config.auth.oauth = { providers: [] };
+        this.config.auth.oauth.providers = await this.rGetAll<BaseOAuth>('auth/oauth/providers');
+        let ret = await super.addAuthSettingOAuth(provider);
+        const pipeline = await this.redis.multi();
+        await this.rSave('auth/oauth/providers', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    override async deleteAuthSettingOAuth(id: string) {
+        this.isEverythingOK();
+        this.config.auth.oauth = { providers: [] };
+        this.config.auth.oauth.providers = await this.rGetAll<BaseOAuth>('auth/oauth/providers');
+        let ret = await super.deleteAuthSettingOAuth(id);
+        if (ret.before) {//means deleted something
+            const pipeline = await this.redis.multi();
+            await this.rDel('auth/oauth/providers', ret.before, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return ret;
+    }
+
+
+    override async getAuthSettingLdap() {
+        this.isEverythingOK();
+        this.config.auth.ldap = { providers: [] };
+        this.config.auth.ldap.providers = await this.rGetAll<BaseLdap>('auth/ldap/providers');
+        return await super.getAuthSettingLdap();
+    }
+
+    override async addAuthSettingLdap(provider: BaseLdap) {
+        this.isEverythingOK();
+        this.config.auth.ldap = { providers: [] };
+        this.config.auth.ldap.providers = await this.rGetAll<BaseLdap>('auth/ldap/providers');
+        let ret = await super.addAuthSettingLdap(provider);
+        const pipeline = await this.redis.multi();
+        await this.rSave('auth/ldap/providers', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    override async deleteAuthSettingLdap(id: string) {
+        this.isEverythingOK();
+        this.config.auth.ldap = { providers: [] };
+        this.config.auth.ldap.providers = await this.rGetAll<BaseLdap>('auth/ldap/providers');
+        let ret = await super.deleteAuthSettingLdap(id);
+        if (ret.before) {//means deleted something
+            const pipeline = await this.redis.multi();
+            await this.rDel('auth/ldap/providers', ret.before, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return ret;
+    }
+
+
+
+    override async getAuthSettingSaml() {
+        this.isEverythingOK();
+        this.config.auth.saml = { providers: [] };
+        this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
+        return await super.getAuthSettingSaml();
+    }
+
+    override async addAuthSettingSaml(provider: BaseSaml) {
+        this.isEverythingOK();
+        this.config.auth.saml = { providers: [] };
+        this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
+        let ret = await super.addAuthSettingSaml(provider);
+        const pipeline = await this.redis.multi();
+        await this.rSave('auth/saml/providers', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    override async deleteAuthSettingSaml(id: string) {
+        this.isEverythingOK();
+        this.config.auth.saml = { providers: [] };
+        this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
+        let ret = await super.deleteAuthSettingSaml(id);
+        if (ret.before) {//means deleted something
+            const pipeline = await this.redis.multi();
+            await this.rDel('auth/saml/providers', ret.before, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return ret;
+    }
+
+    override async getNetwork(id: string) {
+        this.isEverythingOK();
+        this.config.networks = [];
+        const network = await this.rGet<Network>(`networks/${id}`);
+        if (network) {
+            this.config.networks.push(network);
+        }
+        return await super.getNetwork(id);
+    }
+    override async getNetworkCount() {
+        this.isEverythingOK();
+        this.config.networks = [];
+        return this.rCount('networks/*');
+    }
+
+    override async getNetworkByName(name: string) {
+        this.isEverythingOK();
+        this.config.networks = await this.rGetAll('networks');
+        return await super.getNetworkByName(name);
+    }
+    async getNetworkByGateway(gatewayId: string) {
+        this.isEverythingOK();
+        this.config.gateways = await this.rGetAll('gateways');
+        this.config.networks = await this.rGetAll('networks');
+        return await super.getNetworkByGateway(gatewayId);
+    }
+
+    async getNetworksBy(query: string) {
+        this.isEverythingOK();
+        this.config.networks = await this.rGetAll('networks');
+        return await super.getNetworksBy(query);
+    }
+    async getNetworksAll() {
+        this.isEverythingOK();
+        this.config.networks = await this.rGetAll('networks');
+        return await super.getNetworksAll();
+    }
+
+    async saveNetwork(network: Network) {
+        this.isEverythingOK();
+        this.config.networks = await this.rGetAll('networks');
+        let ret = await super.saveNetwork(network);
+        const pipeline = await this.redis.multi();
+        await this.rSave('networks', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+
+    }
+
+    async triggerNetworkDeleted2(net: Network, pipeline: RedisPipelineService) {
+        ////// gateways
+        let changedGateways = this.config.gateways.filter(x => x.networkId == net.id);
+        for (const x of changedGateways) {
+            let previous = Util.clone(x);
+            x.networkId = '';
+            await this.rSave('gateways', previous, x, pipeline);
+            this.emitEvent({ type: "updated", path: '/gateways', data: this.createTrackEvent(previous, x) })
+        };
+
+        //////////services
+
+        let deleteServices = this.config.services.filter(x => x.networkId == net.id);
+        this.config.services = this.config.services.filter(x => x.networkId != net.id);
+        for (const x of deleteServices) {
+            await this.rDel('services', x, pipeline);
+            this.emitEvent({ type: 'deleted', path: '/services', data: this.createTrackEvent(x) });
+        }
+
+        //// policy authorization
+        let deleteAuthorizationRules = this.config.authorizationPolicy.rules.filter(x => x.networkId == net.id);
+        this.config.authorizationPolicy.rules = this.config.authorizationPolicy.rules.filter(x => x.networkId != net.id);
+        for (const x of deleteAuthorizationRules) {
+            await this.rDel('authorizationPolicy/rules', x, pipeline);
+            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) });
+        };
+        //check one more
+        let deleteServicesId = deleteServices.map(x => x.id);
+        let deleteAuthorizatonRules2 = this.config.authorizationPolicy.rules.filter(x => deleteServicesId.includes(x.serviceId));
+        this.config.authorizationPolicy.rules = this.config.authorizationPolicy.rules.filter(x => !deleteServicesId.includes(x.serviceId));
+        for (const x of deleteAuthorizatonRules2) {
+            await this.rDel('authorizationPolicy/rules', x, pipeline);
+            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) });
+        }
+
+        if (deleteAuthorizationRules.length || deleteAuthorizatonRules2.length) {
+            this.emitEvent({ type: 'updated', path: '/authorizationPolicy' });
+        }
+
+        //policy authentication
+        let deleteAuthenticationRules = this.config.authenticationPolicy.rules.filter(x => x.networkId == net.id);
+        this.config.authenticationPolicy.rules = this.config.authenticationPolicy.rules.filter(x => x.networkId != net.id);
+        for (const x of deleteAuthenticationRules) {
+            await this.rDel('authenticationPolicy/rules', x, pipeline);
+            this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(x) });
+        }
+        if (deleteAuthenticationRules.length) {
+            this.emitEvent({ type: 'updated', path: '/authenticationPolicy' });
+        }
+
+        this.emitEvent({ type: 'deleted', path: '/networks', data: this.createTrackEvent(net) });
+
+    }
+
+    override async deleteNetwork(id: string) {
+        this.isEverythingOK();
+
+        this.config.networks = await this.rGetAll('networks');
+        const network = this.config.networks.find(x => x.id == id);
+        if (network) {
+            this.config.gateways = await this.rGetAll('gateways');
+            this.config.services = await this.rGetAll('services');
+            this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+            this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+            const pipeline = await this.redis.multi();
+
+            await this.triggerNetworkDeleted2(network, pipeline);
+            await this.rDel('networks', network, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return this.createTrackEvent(network)
+
+    }
+
+    override async getDomain(): Promise<string> {
+        this.isEverythingOK();
+        this.config.domain = await this.rGet<string>('domain') || '';
+        return await super.getDomain();
+    }
+    async setDomain(domain: string) {
+        this.isEverythingOK();
+        this.config.domain = await this.rGet<string>('domain') || '';
+        const ret = await super.setDomain(domain);
+        const pipeline = await this.redis.multi();
+        await this.rSave('domain', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+
+    override async getGateway(id: string) {
+        this.isEverythingOK();
+        this.config.gateways = [];
+
+        const gateway = await this.rGet<Gateway>(`gateways/${id}`);
+        if (gateway) {
+            this.config.gateways.push(gateway)
+        }
+        return await super.getGateway(id);
+    }
+    override async getGatewayCount() {
+        this.isEverythingOK();
+        return await this.rCount('gateways/*')
+    }
+
+    override async getGatewaysByNetworkId(id: string) {
+        this.isEverythingOK();
+        this.config.gateways = await this.rGetAll('gateways');
+        return await super.getGatewaysByNetworkId(id);
+    }
+    override async getGatewaysBy(query: string) {
+        this.isEverythingOK();
+        this.config.gateways = await this.rGetAll('gateways');
+        return await super.getGatewaysBy(query);
+    }
+
+    override async getGatewaysAll() {
+        this.isEverythingOK();
+        this.config.gateways = await this.rGetAll('gateways');
+        return await super.getGatewaysAll();
+    }
+
+    override async saveGateway(gateway: Gateway) {
+        this.isEverythingOK();
+        this.config.gateways = await this.rGetAll('gateways');
+        let ret = await super.saveGateway(gateway);
+        const pipeline = await this.redis.multi();
+        await this.rSave('gateways', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+    override async deleteGateway(id: string) {
+        this.isEverythingOK();
+        this.config.gateways = await this.rGetAll('gateways');
+
+        const gateway = this.config.gateways.find(x => x.id == id);
+        if (gateway) {
+            const pipeline = await this.redis.multi();
+            await this.triggerGatewayDeleted(gateway);
+            await this.rDel('gateways', gateway, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return this.createTrackEvent(gateway);
+
+    }
+
+
+    override async getUrl(): Promise<string> {
+        this.isEverythingOK();
+        this.config.url = await this.rGet('url') || '';
+        return super.getUrl();
+    }
+    override async setUrl(url: string) {
+        this.isEverythingOK();
+        this.config.url = await this.rGet('url') || '';
+        let ret = await super.setUrl(url);
+        const pipeline = await this.redis.multi();
+        await this.rSave('url', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+
+    }
+
+    async getIsConfigured(): Promise<number> {
+        this.isEverythingOK();
+        this.config.isConfigured = await this.rGet('isConfigured') || 0;
+        return await super.getIsConfigured();
+    }
+
+    async setIsConfigured(val: number) {
+        this.isEverythingOK();
+        this.config.isConfigured = await this.rGet<number>('isConfigured') || 0;
+        let ret = await super.setIsConfigured(val);
+        const pipeline = await this.redis.multi();
+        await this.rSave('isConfigured', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+
+    /// Group
+
+    override async getGroup(id: string): Promise<Group | undefined> {
+        this.isEverythingOK();
+        this.config.groups = await this.rGetAll('groups');
+        return await super.getGroup(id);
+
+    }
+    override async getGroupCount() {
+        this.isEverythingOK();
+        return await this.rCount('groups');
+
+    }
+
+    override async getGroupsBySearch(query: string) {
+        this.isEverythingOK();
+        this.config.groups = await this.rGetAll('groups');
+        return await super.getGroupsBySearch(query);
+    }
+    override async getGroupsAll() {
+        this.isEverythingOK();
+        this.config.groups = await this.rGetAll('groups');
+        return await super.getGroupsAll();
+    }
+
+    async triggerDeleteGroup2(grp: Group, pipeline: RedisPipelineService) {
+
+        let usersChanged: { previous: User, item: User }[] = [];
+        for (const x of this.config.users) {
+            let userGroupIndex = x.groupIds.findIndex(y => y == grp.id)
+            if (userGroupIndex >= 0) {
+                let cloned = Util.clone(x);
+                x.groupIds.splice(userGroupIndex, 1);
+                await this.rSave('users', cloned, x, pipeline);
+                usersChanged.push({ previous: cloned, item: x })
+            }
+        }
+
+        //check policy authentication
+
+        let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
+        for (const x of this.config.authenticationPolicy.rules) {
+            const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
+            if (userIdIndex >= 0) {
+                let cloned = Util.clone(x);
+                x.userOrgroupIds.splice(userIdIndex, 1);
+                await this.rSave('authenticationPolicy/rules', cloned, x, pipeline);
+                rulesAuthnChanged.push({ previous: cloned, item: x });
+            }
+        }
+        //check authorization
+
+        let rulesAuthzChanged: { previous: AuthorizationRule, item: AuthorizationRule }[] = [];
+        for (const x of this.config.authorizationPolicy.rules) {
+            const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
+            if (userIdIndex >= 0) {
+                let cloned = Util.clone(x);
+                x.userOrgroupIds.splice(userIdIndex, 1);
+                await this.rSave('authorizationPolicy/rules', cloned, x, pipeline);
+                rulesAuthzChanged.push({ previous: cloned, item: x });
+            }
+        }
+
+        usersChanged.forEach(x => {
+            this.emitEvent({ type: 'updated', path: '/users', data: this.createTrackEvent(x.previous, x.item) })
+        })
+
+        rulesAuthnChanged.forEach(x => {
+            this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
+        })
+        if (rulesAuthnChanged.length)
+            this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
+        rulesAuthzChanged.forEach(x => {
+            this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
+        })
+        if (rulesAuthzChanged.length)
+            this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
+
+        this.emitEvent({ type: 'deleted', path: '/groups', data: this.createTrackEvent(grp) })
+
+
+
+    }
+
+    override  async deleteGroup(id: string) {
+        this.isEverythingOK();
+        this.config.groups = await this.rGetAll('groups');
+
+        const group = this.config.groups.find(x => x.id == id);
+        if (group) {
+            this.config.users = await this.rGetAll('users');
+            this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+            this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+
+            const pipeline = await this.redis.multi();
+            await this.triggerDeleteGroup2(group, pipeline);
+            await this.rDel('groups', group, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+
+        }
+        return this.createTrackEvent(group);
+
+
+    }
+
+    override async saveGroup(group: Group) {
+        this.isEverythingOK();
+        this.config.groups = await this.rGetAll('groups');
+
+        let ret = await super.saveGroup(group);
+        const pipeline = await this.redis.multi();
+        await this.rSave('groups', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

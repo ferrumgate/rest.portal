@@ -1,7 +1,10 @@
 
+export interface BaseAuthId {
+    id: string;
+}
 
 export interface BaseAuth {
-    id: string;
+
     name: string;
     baseType: 'local' | 'oauth' | 'saml' | 'ldap';
     type: 'local' | 'google' | 'linkedin' | 'activedirectory' | 'auth0';
@@ -12,11 +15,11 @@ export interface BaseAuth {
     updateDate: string;
 
 }
-export interface BaseOAuth extends BaseAuth {
+export interface BaseOAuth extends BaseAuthId, BaseAuth {
     clientId: string,
     clientSecret: string,
 }
-export interface BaseLdap extends BaseAuth {
+export interface BaseLdap extends BaseAuthId, BaseAuth {
     host: string,
     bindDN?: string,
     bindPass?: string;
@@ -28,7 +31,7 @@ export interface BaseLdap extends BaseAuth {
 
 
 }
-export interface BaseSaml extends BaseAuth {
+export interface BaseSaml extends BaseAuthId, BaseAuth {
     issuer: string;
     cert: string;
     fingerPrint?: string;

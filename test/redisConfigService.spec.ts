@@ -6,7 +6,7 @@ import { ConfigService } from '../src/service/configService';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Gateway, Network } from '../src/model/network';
-import { AuthCommon, BaseOAuth, BaseLocal } from '../src/model/authSettings';
+import { AuthCommon, BaseOAuth, BaseLocal, AuthLocal, BaseLdap, BaseSaml } from '../src/model/authSettings';
 import { Group } from '../src/model/group';
 import { Service } from '../src/model/service';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
@@ -108,7 +108,7 @@ describe('redisConfigService', async () => {
         const data = await configService.rGetAll<User>('users')
         expect(data.length).to.be.equal(2);
 
-        expect(data[0].id).to.equal(2);
+        expect(data[0].id).exist;
     });
 
 
@@ -394,7 +394,7 @@ describe('redisConfigService', async () => {
 
     it('getUserByUsername', async () => {
 
-        //first create a config and save to a file
+        //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         configService.config.users = [];
         let aUser: User = {
@@ -416,7 +416,7 @@ describe('redisConfigService', async () => {
 
     it('getUserByIdAndPass', async () => {
 
-        //first create a config and save to a file
+        //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         configService.config.users = [];
         let aUser: User = {
@@ -563,13 +563,596 @@ describe('redisConfigService', async () => {
 
     });
 
+    it('setLogo/getLogo', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.logo = {};
+        await configService.init();
+
+        await configService.setLogo({ default: 'a' });
+        const db = await configService.getLogo()
+        expect(db.default).to.equal('a');
+
+
+    });
+
+    it('setAuthSettings/getAuthSettings', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.auth = {
+            common: {},
+            local: {} as AuthLocal,
+            ldap: {
+                providers: [
+                    { id: '1' } as BaseLdap
+                ]
+            },
+            oauth: {
+                providers: [
+                    { id: '1' } as BaseOAuth
+                ]
+            },
+            saml: {
+                providers: [
+                    { id: '1' } as BaseSaml
+                ]
+            }
+
+        };
+
+        await configService.init();
+
+        await configService.setAuthSettings({
+            common: {},
+            local: {} as AuthLocal,
+            ldap: {
+                providers: [
+                    { id: '2' } as BaseLdap
+                ]
+            },
+            oauth: {
+                providers: [
+                    { id: '3' } as BaseOAuth
+                ]
+            },
+            saml: {
+                providers: [
+                    { id: '4' } as BaseSaml
+                ]
+            }
+
+        });
+        const db = await configService.getAuthSettings()
+        expect(db.ldap?.providers[0].id).to.equal('2');
+        expect(db.oauth?.providers[0].id).to.equal('3');
+
+
+    });
+
+
+    it('authSettingsCommon', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.init();
+        let common: AuthCommon = {
+            bla: 'test'
+        }
+        await configService.setAuthSettingsCommon(common);
+        const returned = await configService.getAuthSettingsCommon() as any;
+        expect(returned).to.be.exist;
+        expect(returned.bla).exist;
+
+    });
+
+    it('authSettingsOAuth', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.auth = {
+            common: {}, local: {} as any
+        }
+        await configService.init();
+        let oauth: BaseOAuth = {
+            name: 'google',
+            baseType: 'oauth',
+            type: 'google',
+            id: 'jkj;adfa',
+            clientId: 'akdfa',
+            clientSecret: 'adfa',
+            tags: [],
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        //add
+        await configService.addAuthSettingOAuth(oauth);
+
+        const returned = await configService.getAuthSettingOAuth();
+        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
+        //delete
+        await configService.deleteAuthSettingOAuth(oauth.id);
+        const returned2 = await configService.getAuthSettingOAuth();
+        expect(returned2.providers.length).to.equal(0);
+        // adding same id
+        await configService.addAuthSettingOAuth(oauth);
+        const cloned = Util.clone(oauth);
+        await configService.addAuthSettingOAuth(oauth);
+        const returned3 = await configService.getAuthSettingOAuth();
+        expect(returned3.providers.length).to.equal(1);
+
+
+    });
+
+    it('setAuthSettingsLocal/getAuthSettingsLocal', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        configService.config.auth = {
+            common: {}, local: {} as any
+        }
+        await configService.init();
+        let local: BaseLocal = {
+            name: 'google',
+            baseType: 'oauth',
+            type: 'google',
+
+            tags: [],
+            isForgotPassword: true,
+            isRegister: false,
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.setAuthSettingsLocal(local);
+
+        const returned = await configService.getAuthSettingsLocal();
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
+
+
+    });
+
+
+    it('authSettingsLdap', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.auth = {
+            common: {}, local: {} as any, ldap: { providers: [] }
+        }
+        await configService.init();
+        let ldap: BaseLdap = {
+            name: 'google',
+            baseType: 'oauth',
+            type: 'google',
+            id: 'oneid',
+
+            tags: [],
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            groupnameField: '', host: 'adfa',
+            searchBase: 'adfa', usernameField: 'adfa'
+        }
+
+        //add
+        await configService.addAuthSettingLdap(ldap);
+
+        const returned = await configService.getAuthSettingLdap();
+        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(ldap);
+        //delete
+        await configService.deleteAuthSettingLdap(ldap.id);
+        const returned2 = await configService.getAuthSettingOAuth();
+        expect(returned2.providers.length).to.equal(0);
+        // adding same id
+        await configService.addAuthSettingLdap(ldap);
+        const cloned = Util.clone(ldap);
+        await configService.addAuthSettingLdap(ldap);
+        const returned3 = await configService.getAuthSettingLdap();
+        expect(returned3.providers.length).to.equal(1);
+
+
+    });
+
+    it('authSettingsSaml', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.auth = {
+            common: {}, local: {} as any, ldap: { providers: [] }
+        }
+        await configService.init();
+        let saml: BaseSaml = {
+            name: 'google',
+            baseType: 'oauth',
+            type: 'google',
+            id: 'oneid',
+
+            tags: [],
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            cert: '', issuer: '', loginUrl: '', nameField: '', usernameField: ''
+        }
+
+        //add
+        await configService.addAuthSettingSaml(saml);
+
+        const returned = await configService.getAuthSettingSaml();
+        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(saml);
+        //delete
+        await configService.deleteAuthSettingSaml(saml.id);
+        const returned2 = await configService.getAuthSettingSaml();
+        expect(returned2.providers.length).to.equal(0);
+        // adding same id
+        await configService.addAuthSettingSaml(saml);
+        const cloned = Util.clone(saml);
+        await configService.addAuthSettingSaml(saml);
+        const returned3 = await configService.getAuthSettingSaml();
+        expect(returned3.providers.length).to.equal(1);
+
+
+    });
+
+    it('saveNetwork getNetwork getNetworkByName', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.init();
+        let network: Network = {
+            id: '6hiryy8ujv3n',
+            name: 'default2',
+            labels: [],
+            clientNetwork: '10.10.0.0/16',
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        await configService.saveNetwork(network);
+        const networkDb = await configService.getNetwork(network.id);
+        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+        const networkDb2 = await configService.getNetworkByName('default2');
+        expect(networkDb2).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+
+    });
+
+    it('getNetworkByHostname', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.init();
+        let network: Network = {
+            id: '6hiryy8ujv3n',
+            name: 'default',
+            labels: [],
+            clientNetwork: '10.10.0.0/16',
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        let gateway: Gateway = {
+            id: '231a0932',
+            name: 'myserver',
+            labels: [],
+            isEnabled: true,
+            networkId: network.id,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        await configService.saveNetwork(network);
+        await configService.saveGateway(gateway);
+        const networkDb = await configService.getNetworkByGateway(gateway.id);
+        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+
+    });
+
+
+    it('deleteNetwork', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.init();
+        let network: Network = {
+            id: '6hiryy8ujv3n',
+            name: 'default',
+            labels: [],
+            clientNetwork: '10.10.0.0/16',
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        let gateway: Gateway = {
+            id: '231a0932',
+            name: 'myserver',
+            labels: [],
+            isEnabled: true,
+            networkId: network.id,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        await configService.saveNetwork(network);
+        await configService.saveGateway(gateway);
+        await configService.deleteNetwork(network.id);
+        const net = await configService.getNetwork(network.id)
+        expect(net).not.exist;
+        const gate = await configService.getGateway(gateway.id);
+        expect(gate?.networkId).to.equal('');
+
+    });
+
+    it('getGateway/saveGateway', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.init();
+        let gateway: Gateway = {
+            id: '231a0932',
+            name: 'myserver',
+            labels: [],
+            isEnabled: true,
+
+            networkId: '',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+
+        await configService.saveGateway(gateway);
+        const gatewayDb = await configService.getGateway(gateway.id);
+        expect(gatewayDb).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
+
+    });
+    it('deleteGateway', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.init();
+        let gateway: Gateway = {
+            id: '231a0932',
+            name: 'myserver',
+            labels: [],
+            isEnabled: true,
+
+            networkId: '',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        await configService.saveGateway(gateway);
+        await configService.deleteGateway(gateway.id);
+        const gatewayDb = await configService.getGateway(gateway.id);
+        expect(gatewayDb).not.exist;
+    });
+
+    it('getDomain/setDomain', async () => {
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        await configService.init();
+
+        await configService.setDomain('test.me');
+        const domain = await configService.getDomain();
+        expect(domain).to.equal('test.me');
+
+    }).timeout(10000);
+
+
+    it('getUrl/setUrl', async () => {
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        await configService.init();
+
+        await configService.setUrl('test.url');
+        const url = await configService.getUrl();
+        expect(url).to.equal('test.url');
+
+    }).timeout(10000);
+
+    it('getIsConfigured/setIsConfigured', async () => {
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        await configService.init();
+
+        await configService.setIsConfigured(1);
+        const val = await configService.getIsConfigured();
+        expect(val).to.equal(1);
+
+    }).timeout(10000);
+
+    it('getGroup', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.init();
+        configService.config.groups = [];
+        let group: Group = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveGroup(group);
+
+        const returned = await configService.getGroup(group.id);
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+
+
+    });
+
+    it('getGroupBySearch', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        configService.config.groups = [];
+        await configService.init();
+        let group: Group = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveGroup(group);
+
+        let group2: Group = {
+            id: Util.randomNumberString(),
+            name: 'south',
+            isEnabled: true,
+            labels: ['test'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveGroup(group2);
+
+        const returned = await configService.getGroupsBySearch('test');
+        expect(returned.length).to.equal(2);
+
+        const returned2 = await configService.getGroupsBySearch('abo');
+        expect(returned2.length).to.be.equal(0);
+
+
+    });
+
+
+    it('getGroupsAll', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        configService.config.groups = [];
+        await configService.init();
+        let group: Group = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveGroup(group);
+
+        let group2: Group = {
+            id: Util.randomNumberString(),
+            name: 'south',
+            isEnabled: true,
+            labels: ['test'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveGroup(group2);
+
+        const returned = await configService.getGroupsAll();
+        expect(returned.length).to.be.equal(2);
+        //expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+
+    });
+
+    it('saveGroup', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        configService.config.groups = [];
+        await configService.init();
+        let group: Group = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveGroup(group);
+
+        group.name = 'north2';
+        //add
+        await configService.saveGroup(group);
+
+        const returned = await configService.getGroup(group.id)
+
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+
+    });
+
+    it('deleteGroup', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+
+        configService.config.groups = [];
+        configService.config.users = [];
+        await configService.init();
+        let group: Group = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveGroup(group);
+
+        //save a user
+        let aUser: User = {
+            id: 'someid',
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: Util.bcryptHash('passwordWithHash'),
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            groupIds: [group.id]
+
+        };
+
+        configService.config.users.push(aUser);
+        await configService.saveUser(aUser);
+
+        await configService.deleteGroup(group.id);
+
+        const returned = await configService.getGroup(group.id)
+
+        expect(returned).not.exist;
+        const user = await configService.getUserById(aUser.id)
+        expect(user?.groupIds.length).to.equal(0);
+
+    });
+
 
 
 
 
     /*     it('saveConfigToString', async () => {
      
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.users = [];
             let aUser: User = {
@@ -588,408 +1171,21 @@ describe('redisConfigService', async () => {
             const readed = fs.readFileSync(filename).toString();
             expect(readed).to.equal(str);
      
-        }); */
-
-
-    /*
+        }); 
+        
+      
     
-    
-    
+        
     
     
       
-    
-    
-    
-        it('saveNetwork getNetwork getNetworkByName', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-    
-            let network: Network = {
-                id: '6hiryy8ujv3n',
-                name: 'default2',
-                labels: [],
-                clientNetwork: '10.10.0.0/16',
-                serviceNetwork: '172.16.0.0/24',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            };
-    
-            await configService.saveNetwork(network);
-            const networkDb = await configService.getNetwork(network.id);
-            expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
-            const networkDb2 = await configService.getNetworkByName('default2');
-            expect(networkDb2).to.deep.include(network);
-    
-        });
-    
-        it('getNetworkByHostname', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            let network: Network = {
-                id: '6hiryy8ujv3n',
-                name: 'default',
-                labels: [],
-                clientNetwork: '10.10.0.0/16',
-                serviceNetwork: '172.16.0.0/24',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            };
-    
-            let gateway: Gateway = {
-                id: '231a0932',
-                name: 'myserver',
-                labels: [],
-                isEnabled: true,
-                networkId: network.id,
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            }
-    
-            await configService.saveNetwork(network);
-            await configService.saveGateway(gateway);
-            const networkDb = await configService.getNetworkByGateway(gateway.id);
-            expect(networkDb).to.deep.include(network);
-    
-        });
-    
-    
-        it('deleteNetwork', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            let network: Network = {
-                id: '6hiryy8ujv3n',
-                name: 'default',
-                labels: [],
-                clientNetwork: '10.10.0.0/16',
-                serviceNetwork: '172.16.0.0/24',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            };
-    
-            let gateway: Gateway = {
-                id: '231a0932',
-                name: 'myserver',
-                labels: [],
-                isEnabled: true,
-                networkId: network.id,
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            }
-    
-            await configService.saveNetwork(network);
-            await configService.saveGateway(gateway);
-            await configService.deleteNetwork(network.id);
-            const net = await configService.getNetwork(network.id)
-            expect(net).not.exist;
-            const gate = await configService.getGateway(gateway.id);
-            expect(gate?.networkId).to.equal('');
-    
-        });
-    
-        it('getGateway saveGateway', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-    
-            let gateway: Gateway = {
-                id: '231a0932',
-                name: 'myserver',
-                labels: [],
-                isEnabled: true,
-    
-                networkId: '',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            }
-    
-    
-            await configService.saveGateway(gateway);
-            const gatewayDb = await configService.getGateway(gateway.id);
-            expect(gatewayDb).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
-    
-        });
-        it('deleteGateway', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-    
-            let gateway: Gateway = {
-                id: '231a0932',
-                name: 'myserver',
-                labels: [],
-                isEnabled: true,
-    
-                networkId: '',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            }
-    
-    
-            await configService.saveGateway(gateway);
-            await configService.deleteGateway(gateway.id);
-            const gatewayDb = await configService.getGateway(gateway.id);
-            expect(gatewayDb).not.exist;
-        });
-    
-        it('authSettingsCommon', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-    
-            let common: AuthCommon = {
-                bla: 'test'
-            }
-            await configService.setAuthSettingsCommon(common);
-            const returned = await configService.getAuthSettingsCommon() as any;
-            expect(returned).to.be.exist;
-            expect(returned.bla).exist;
-    
-        });
-    
-        it('authSettingsOAuth', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.auth = {
-                common: {}, local: {} as any
-            }
-            let oauth: BaseOAuth = {
-                name: 'google',
-                baseType: 'oauth',
-                type: 'google',
-                id: 'jkj;adfa',
-                clientId: 'akdfa',
-                clientSecret: 'adfa',
-                tags: [],
-                isEnabled: true,
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            }
-            //add
-            await configService.addAuthSettingOAuth(oauth);
-    
-            const returned = await configService.getAuthSettingOAuth();
-            expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
-            //delete
-            await configService.deleteAuthSettingOAuth(oauth.id);
-            const returned2 = await configService.getAuthSettingOAuth();
-            expect(returned2.providers.length).to.equal(0);
-            // adding same id
-            await configService.addAuthSettingOAuth(oauth);
-            const cloned = Util.clone(oauth);
-            await configService.addAuthSettingOAuth(oauth);
-            const returned3 = await configService.getAuthSettingOAuth();
-            expect(returned3.providers.length).to.equal(1);
-    
-    
-        });
-    
-        it('authSettingsLocal', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.auth = {
-                common: {}, local: {} as any
-            }
-            let local: BaseLocal = {
-                name: 'google',
-                baseType: 'oauth',
-                type: 'google',
-                id: 'jkj;adfa',
-                tags: [],
-                isForgotPassword: true,
-                isRegister: false,
-                isEnabled: true,
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.setAuthSettingsLocal(local);
-    
-            const returned = await configService.getAuthSettingsLocal();
-            expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
-    
-    
-        });
-    
-    
-        it('getGroup', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.groups = [];
-            let group: Group = {
-                id: Util.randomNumberString(),
-                name: 'north',
-                isEnabled: true,
-                labels: [],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveGroup(group);
-    
-            const returned = await configService.getGroup(group.id);
-            expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
-    
-    
-        });
-    
-        it('getGroupBySearch', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.groups = [];
-            let group: Group = {
-                id: Util.randomNumberString(),
-                name: 'north',
-                isEnabled: true,
-                labels: ['test2'],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveGroup(group);
-    
-            let group2: Group = {
-                id: Util.randomNumberString(),
-                name: 'south',
-                isEnabled: true,
-                labels: ['test'],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveGroup(group2);
-    
-            const returned = await configService.getGroupsBySearch('test');
-            expect(returned.length).to.equal(2);
-    
-            const returned2 = await configService.getGroupsBySearch('abo');
-            expect(returned2.length).to.be.equal(0);
-    
-    
-        });
-    
-    
-        it('getGroupsAll', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.groups = [];
-            let group: Group = {
-                id: Util.randomNumberString(),
-                name: 'north',
-                isEnabled: true,
-                labels: ['test2'],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveGroup(group);
-    
-            let group2: Group = {
-                id: Util.randomNumberString(),
-                name: 'south',
-                isEnabled: true,
-                labels: ['test'],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveGroup(group2);
-    
-            const returned = await configService.getGroupsAll();
-            expect(returned.length).to.be.equal(2);
-            expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
-    
-        });
-    
-        it('saveGroup', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.groups = [];
-            let group: Group = {
-                id: Util.randomNumberString(),
-                name: 'north',
-                isEnabled: true,
-                labels: ['test2'],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveGroup(group);
-    
-            group.name = 'north2';
-            //add
-            await configService.saveGroup(group);
-    
-            const returned = await configService.getGroup(group.id)
-    
-            expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
-    
-        });
-    
-        it('deleteGroup', async () => {
-    
-            //first create a config and save to a file
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-    
-            configService.config.groups = [];
-            let group: Group = {
-                id: Util.randomNumberString(),
-                name: 'north',
-                isEnabled: true,
-                labels: ['test2'],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveGroup(group);
-    
-            //save a user
-            let aUser: User = {
-                id: 'someid',
-                username: 'hamza.kilic@ferrumgate.com',
-                name: 'test', source: 'local',
-                password: Util.bcryptHash('passwordWithHash'),
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                groupIds: [group.id]
-    
-            };
-    
-            configService.config.users.push(aUser);
-    
-            await configService.deleteGroup(group.id);
-    
-            const returned = await configService.getGroup(group.id)
-    
-            expect(returned).not.exist;
-            const user = await configService.getUserById(aUser.id)
-            expect(user?.groupIds.length).to.equal(0);
-    
-        });
     
     
         ///// service 
     
         it('getService', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.services = [];
             let service: Service = {
@@ -1016,7 +1212,7 @@ describe('redisConfigService', async () => {
     
         it('getServicesBy', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.services = [];
             let service1: Service = {
@@ -1078,7 +1274,7 @@ describe('redisConfigService', async () => {
     
         it('getServicesByNetworkId', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.services = [];
             let service1: Service = {
@@ -1124,7 +1320,7 @@ describe('redisConfigService', async () => {
     
         it('getServicesAll', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.services = [];
             let service1: Service = {
@@ -1169,7 +1365,7 @@ describe('redisConfigService', async () => {
     
         it('saveService', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.services = [];
             let service1: Service = {
@@ -1201,7 +1397,7 @@ describe('redisConfigService', async () => {
     
         it('deleteService', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
     
             configService.config.groups = [];
@@ -1236,7 +1432,7 @@ describe('redisConfigService', async () => {
     
         it('saveAthenticationPolicyAddRule', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.authenticationPolicy.rules = [];
             let rule: AuthenticationRule = {
@@ -1261,7 +1457,7 @@ describe('redisConfigService', async () => {
         });
         it('getAuthenticationPolicy', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.authenticationPolicy.rules = [];
             let rule: AuthenticationRule = {
@@ -1287,7 +1483,7 @@ describe('redisConfigService', async () => {
     
         it('getAuthenticationPolicyUnsafe', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.authenticationPolicy.rules = [];
             let rule: AuthenticationRule = {
@@ -1313,7 +1509,7 @@ describe('redisConfigService', async () => {
     
         it('deleteAuthenticationPolicyRule', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.authenticationPolicy.rules = [];
             let rule: AuthenticationRule = {
@@ -1340,7 +1536,7 @@ describe('redisConfigService', async () => {
     
         it('updateAuthenticationRulePos', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.authenticationPolicy.rules = [];
             let rule1: AuthenticationRule = {
@@ -1429,7 +1625,7 @@ describe('redisConfigService', async () => {
     
         it('saveAuthorizationPolicyAddRule', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.authorizationPolicy.rules = [];
             let rule: AuthorizationRule = {
@@ -1454,7 +1650,7 @@ describe('redisConfigService', async () => {
         });
         it('getAuthorizationPolicy', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.authenticationPolicy.rules = [];
             configService.config.authorizationPolicy.rules = [];
@@ -1481,7 +1677,7 @@ describe('redisConfigService', async () => {
     
         it('getAuthorizationPolicyUnsafe', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.authorizationPolicy.rules = [];
             let rule: AuthorizationRule = {
@@ -1508,7 +1704,7 @@ describe('redisConfigService', async () => {
     
         it('deleteAuthorizationPolicyRule', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.authorizationPolicy.rules = [];
             let rule: AuthorizationRule = {
@@ -1538,7 +1734,7 @@ describe('redisConfigService', async () => {
     
         it('triggerUserDeleted', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             let eventDatas: ConfigEvent[] = [];
             configService.events.on('changed', (data: ConfigEvent) => {
@@ -1629,7 +1825,7 @@ describe('redisConfigService', async () => {
     
         it('triggerUserSavedOrUpdated', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             let eventDatas: ConfigEvent[] = [];
             configService.events.on('changed', (data: ConfigEvent) => {
@@ -1670,7 +1866,7 @@ describe('redisConfigService', async () => {
     
         it('triggerNetworkDeleted', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.networks = [];
             configService.config.gateways = [];
@@ -1825,7 +2021,7 @@ describe('redisConfigService', async () => {
     
         it('triggerGatewayDeleted', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.networks = [];
             configService.config.gateways = [];
@@ -1870,7 +2066,7 @@ describe('redisConfigService', async () => {
     
         it('triggerGroupDeleted', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             let eventDatas: ConfigEvent[] = [];
             configService.events.on('changed', (data: ConfigEvent) => {
@@ -1971,7 +2167,7 @@ describe('redisConfigService', async () => {
     
         it('triggerServiceDeleted', async () => {
     
-            //first create a config and save to a file
+            //first create a config and save to redis
             let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
             configService.config.networks = [];
             configService.config.gateways = [];

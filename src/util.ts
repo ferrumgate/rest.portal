@@ -421,6 +421,12 @@ export const Util = {
             })
         }
         return val;
+    },
+
+    any(val: any) {
+        if (val == null) return null;
+        if (val == undefined) return undefined;
+        return val as any;
     }
 
 
