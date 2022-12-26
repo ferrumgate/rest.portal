@@ -1707,561 +1707,520 @@ describe('redisConfigService', async () => {
 
     });
 
-    /*
-        it('triggerUserDeleted', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            let eventDatas: ConfigEvent[] = [];
-            configService.events.on('changed', (data: ConfigEvent) => {
-                eventDatas.push(data)
-            })
-    
-            let aUser: User = {
-                id: Util.randomNumberString(),
-                username: 'hamza.kilic@ferrumgate.com',
-                name: 'test', source: 'local',
-                password: 'passwordWithHash', groupIds: [],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            };
-    
-            configService.config.users.push(aUser);
-    
-            configService.config.authenticationPolicy.rules = [];
-            configService.config.authorizationPolicy.rules = [];
-            let rule: AuthorizationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-    
-                networkId: 'networkId',
-                userOrgroupIds: [aUser.id],
-                serviceId: 'some service',
-                profile: { is2FA: true, },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            //add
-    
-            configService.config.authorizationPolicy.rules.push(rule);
-    
-    
-            let rule2: AuthenticationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-                action: 'allow',
-                networkId: 'networkId',
-                userOrgroupIds: [aUser.id],
-                profile: {},
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-    
-            //add
-            configService.config.authenticationPolicy.rules.push(rule2);
-    
-            await configService.deleteUser(aUser.id);
-            expect(configService.config.authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
-            expect(configService.config.authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
-    
-            expect(eventDatas.length).to.equal(5);
-    
-            expect(eventDatas[0].type).to.equal('updated')
-            expect(eventDatas[0].path).to.equal('/authenticationPolicy/rules');
-            expect(eventDatas[0].data.before.id).exist;
-            expect(eventDatas[0].data.after.id).exist;
-    
-            expect(eventDatas[1].type).to.equal('updated')
-            expect(eventDatas[1].path).to.equal('/authenticationPolicy');
-            expect(eventDatas[1].data).not.exist;
-    
-            expect(eventDatas[2].type).to.equal('updated')
-            expect(eventDatas[2].path).to.equal('/authorizationPolicy/rules');
-            expect(eventDatas[2].data.before.id).exist;
-            expect(eventDatas[2].data.after.id).exist;
-    
-            expect(eventDatas[3].type).to.equal('updated')
-            expect(eventDatas[3].path).to.equal('/authorizationPolicy');
-            expect(eventDatas[3].data).not.exist;
-    
-            expect(eventDatas[4].type).to.equal('deleted');
-            expect(eventDatas[4].path).to.equal('/users');
-            expect(eventDatas[4].data.before.id).exist;
-            expect(eventDatas[4].data.after).not.exist;
-    
-    
-    
-    
-        });
-    
-    
-        it('triggerUserSavedOrUpdated', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            let eventDatas: ConfigEvent[] = [];
-            configService.events.on('changed', (data: ConfigEvent) => {
-                eventDatas.push(data)
-            })
-    
-            let aUser: User = {
-                id: Util.randomNumberString(),
-                username: 'hamza.kilic@ferrumgate.com',
-                name: 'test', source: 'local',
-                password: 'passwordWithHash', groupIds: [],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            };
-    
-            await configService.saveUser(aUser);
-    
-    
-            aUser.name = 'changed';
-    
-            await configService.saveUser(aUser);
-    
-    
-            expect(eventDatas.length).to.equal(2);
-            expect(eventDatas[0].type).to.equal('saved')
-            expect(eventDatas[0].path).to.equal('/users')
-            expect(eventDatas[0].data.before).not.exist
-            expect(eventDatas[0].data.after.id).to.equal(aUser.id);
-    
-    
-            expect(eventDatas[1].type).to.equal('updated')
-            expect(eventDatas[1].path).to.equal('/users')
-            expect(eventDatas[1].data.before.id).to.equal(aUser.id);
-            expect(eventDatas[1].data.after.id).to.equal(aUser.id);
-    
-        });
-    
-    
-        it('triggerNetworkDeleted', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.networks = [];
-            configService.config.gateways = [];
-            configService.config.services = [];
-            configService.config.authenticationPolicy.rules = [];
-            configService.config.authorizationPolicy.rules = [];
-    
-    
-    
-            let eventDatas: ConfigEvent[] = [];
-            configService.events.on('changed', (data: ConfigEvent) => {
-                eventDatas.push(data)
-            })
-    
-            let network: Network = {
-                id: Util.randomNumberString(),
-                name: 'default',
-                labels: [],
-                clientNetwork: '10.10.0.0/16',
-                serviceNetwork: '172.16.0.0/24',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            };
-    
-            let gateway: Gateway = {
-                id: Util.randomNumberString(),
-                name: 'myserver',
-                labels: [],
-                isEnabled: true,
-                networkId: network.id,
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            }
-            let service1: Service = {
-                id: Util.randomNumberString(),
-                name: 'mysql-dev',
-                isEnabled: true,
-                labels: [],
-                host: '1.2.3.4',
-                networkId: network.id,
-                tcp: 3306,
-                assignedIp: '10.0.0.1',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-    
-            await configService.config.services.push(service1);
-            await configService.config.gateways.push(gateway);
-            await configService.config.networks.push(network);
-    
-            let aUser: User = {
-                id: Util.randomNumberString(),
-                username: 'hamza.kilic@ferrumgate.com',
-                name: 'test', source: 'local',
-                password: 'passwordWithHash', groupIds: [],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            };
-    
-            configService.config.users.push(aUser);
-    
-    
-    
-            configService.config.authenticationPolicy.rules = [];
-            configService.config.authorizationPolicy.rules = [];
-            let rule: AuthorizationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-    
-                networkId: network.id,
-                userOrgroupIds: [aUser.id],
-                serviceId: service1.id,
-                profile: { is2FA: true, },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            //add
-    
-            configService.config.authorizationPolicy.rules.push(rule);
-    
-    
-            let rule2: AuthenticationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-                action: 'allow',
-                networkId: network.id,
-                userOrgroupIds: [aUser.id],
-                profile: {},
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-    
-            //add
-            configService.config.authenticationPolicy.rules.push(rule2);
-    
-            await configService.deleteNetwork(network.id);
-    
-            expect(configService.config.authorizationPolicy.rules.find(x => x.networkId == network.id)).to.not.exist;
-            expect(configService.config.authenticationPolicy.rules.find(x => x.networkId == network.id)).to.not.exist;
-            expect(configService.config.services.find(x => x.networkId == network.id)).not.exist;
-            expect(configService.config.gateways.find(x => x.networkId == network.id)).not.exist;
-            expect(configService.config.gateways[0].networkId).to.be.equal('');
-    
-            expect(eventDatas.length).to.equal(7);
-            expect(eventDatas[0].type).to.equal('updated')
-            expect(eventDatas[0].path).to.equal('/gateways')
-            expect(eventDatas[0].data.before.id).exist;
-            expect(eventDatas[0].data.before.id).exist;
-    
-            expect(eventDatas[1].type).to.equal('deleted')
-            expect(eventDatas[1].path).to.equal('/services');
-            expect(eventDatas[1].data.before.id).exist;
-            expect(eventDatas[1].data.after).not.exist;
-    
-            expect(eventDatas[2].type).to.equal('deleted')
-            expect(eventDatas[2].path).to.equal('/authorizationPolicy/rules');
-            expect(eventDatas[2].data.before.id).exist;
-            expect(eventDatas[2].data.after).not.exist;
-    
-            expect(eventDatas[3].type).to.equal('updated')
-            expect(eventDatas[3].path).to.equal('/authorizationPolicy');
-            expect(eventDatas[3].data).not.exist;
-    
-    
-    
-            expect(eventDatas[4].type).to.equal('deleted')
-            expect(eventDatas[4].path).to.equal('/authenticationPolicy/rules');
-            expect(eventDatas[4].data.before.id).exist;
-            expect(eventDatas[4].data.after).not.exist;
-    
-            expect(eventDatas[5].type).to.equal('updated')
-            expect(eventDatas[5].path).to.equal('/authenticationPolicy');
-            expect(eventDatas[5].data).not.exist;
-    
-    
-            expect(eventDatas[6].type).to.equal('deleted')
-            expect(eventDatas[6].path).to.equal('/networks');
-            expect(eventDatas[6].data.before.id).exist;
-            expect(eventDatas[6].data.after).not.exist;
-    
-    
-    
-    
-    
-        });
-    
-        it('triggerGatewayDeleted', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.networks = [];
-            configService.config.gateways = [];
-            configService.config.services = [];
-            configService.config.authenticationPolicy.rules = [];
-            configService.config.authorizationPolicy.rules = [];
-    
-    
-    
-            let eventDatas: ConfigEvent[] = [];
-    
-    
-    
-            let gateway: Gateway = {
-                id: Util.randomNumberString(),
-                name: 'myserver',
-                labels: [],
-                isEnabled: true,
-                networkId: 'adaf',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            }
-    
-            await configService.saveGateway(gateway);
-            configService.events.on('changed', (data: ConfigEvent) => {
-                eventDatas.push(data)
-            })
-            await configService.deleteGateway(gateway.id);
-    
-    
-    
-            expect(eventDatas.length).to.equal(1);
-            expect(eventDatas[0].type).to.equal('deleted')
-            expect(eventDatas[0].path).to.equal('/gateways')
-            expect(eventDatas[0].data.before.id).exist;
-            expect(eventDatas[0].data.after).not.exist;
-    
-    
-        });
-    
-    
-    
-        it('triggerGroupDeleted', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            let eventDatas: ConfigEvent[] = [];
-            configService.events.on('changed', (data: ConfigEvent) => {
-                eventDatas.push(data)
-            })
-    
-            let aGroup: Group = {
-                id: Util.randomNumberString(),
-                name: 'notrh',
-                isEnabled: true,
-                labels: [],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            }
-    
-            let aUser: User = {
-                id: Util.randomNumberString(),
-                username: 'hamza.kilic@ferrumgate.com',
-                name: 'test', source: 'local',
-                password: 'passwordWithHash', groupIds: [aGroup.id],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            };
-            configService.config.groups.push(aGroup);
-            configService.config.users.push(aUser);
-    
-            configService.config.authenticationPolicy.rules = [];
-            configService.config.authorizationPolicy.rules = [];
-            let rule: AuthorizationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-    
-                networkId: 'networkId',
-                userOrgroupIds: [aGroup.id],
-                serviceId: 'some service',
-                profile: { is2FA: true, },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            //add
-    
-            configService.config.authorizationPolicy.rules.push(rule);
-    
-    
-            let rule2: AuthenticationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-                action: 'allow',
-                networkId: 'networkId',
-                userOrgroupIds: [aGroup.id],
-                profile: {},
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-    
-            //add
-            configService.config.authenticationPolicy.rules.push(rule2);
-    
-            await configService.deleteGroup(aGroup.id);
-            expect(configService.config.authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aGroup.id))).to.not.exist;
-            expect(configService.config.authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
-    
-            expect(eventDatas.length).to.equal(6);
-    
-            expect(eventDatas[1].type).to.equal('updated')
-            expect(eventDatas[1].path).to.equal('/authenticationPolicy/rules');
-            expect(eventDatas[1].data.before.id).exist;
-            expect(eventDatas[1].data.after.id).exist;
-    
-            expect(eventDatas[2].type).to.equal('updated')
-            expect(eventDatas[2].path).to.equal('/authenticationPolicy');
-            expect(eventDatas[2].data).not.exist;
-    
-            expect(eventDatas[3].type).to.equal('updated')
-            expect(eventDatas[3].path).to.equal('/authorizationPolicy/rules');
-            expect(eventDatas[3].data.before.id).exist;
-            expect(eventDatas[3].data.after.id).exist;
-    
-            expect(eventDatas[4].type).to.equal('updated')
-            expect(eventDatas[4].path).to.equal('/authorizationPolicy');
-            expect(eventDatas[4].data).not.exist;
-    
-    
-            expect(eventDatas[5].type).to.equal('deleted');
-            expect(eventDatas[5].path).to.equal('/groups');
-            expect(eventDatas[5].data.before.id).exist;
-            expect(eventDatas[5].data.after).not.exist;
-    
-    
-    
-    
-        });
-    
-    
-        it('triggerServiceDeleted', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.networks = [];
-            configService.config.gateways = [];
-            configService.config.services = [];
-            configService.config.authenticationPolicy.rules = [];
-            configService.config.authorizationPolicy.rules = [];
-    
-    
-    
-            let eventDatas: ConfigEvent[] = [];
-            configService.events.on('changed', (data: ConfigEvent) => {
-                eventDatas.push(data)
-            })
-    
-    
-            let service1: Service = {
-                id: Util.randomNumberString(),
-                name: 'mysql-dev',
-                isEnabled: true,
-                labels: [],
-                host: '1.2.3.4',
-                networkId: 'sadid',
-                tcp: 3306,
-                assignedIp: '10.0.0.1',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-    
-            await configService.config.services.push(service1);
-    
-    
-            let aUser: User = {
-                id: Util.randomNumberString(),
-                username: 'hamza.kilic@ferrumgate.com',
-                name: 'test', source: 'local',
-                password: 'passwordWithHash', groupIds: [],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            };
-    
-            configService.config.users.push(aUser);
-    
-    
-    
-            configService.config.authenticationPolicy.rules = [];
-            configService.config.authorizationPolicy.rules = [];
-            let rule: AuthorizationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-    
-                networkId: 'ssid',
-                userOrgroupIds: [aUser.id],
-                serviceId: service1.id,
-                profile: { is2FA: true, },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            //add
-    
-            configService.config.authorizationPolicy.rules.push(rule);
-    
-    
-    
-            await configService.deleteService(service1.id);
-    
-            expect(configService.config.authorizationPolicy.rules.find(x => x.serviceId == service1.id)).to.not.exist;
-    
-    
-            expect(eventDatas.length).to.equal(3);
-    
-            expect(eventDatas[0].type).to.equal('deleted')
-            expect(eventDatas[0].path).to.equal('/authorizationPolicy/rules');
-            expect(eventDatas[0].data.before.id).exist;
-            expect(eventDatas[0].data.after).not.exist;
-    
-            expect(eventDatas[1].type).to.equal('updated')
-            expect(eventDatas[1].path).to.equal('/authorizationPolicy');
-            expect(eventDatas[1].data).not.exist;
-    
-    
-            expect(eventDatas[2].type).to.equal('deleted')
-            expect(eventDatas[2].path).to.equal('/services');
-            expect(eventDatas[2].data.before.id).exist;
-            expect(eventDatas[2].data.after).not.exist;
-    
-    
-    
-    
-    
-        });
-    
-    
+
+    it('triggerUserDeleted', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.groups = [];
+        configService.config.networks = [];
+        configService.config.gateways = [];
+
+        let logs: any[] = [];
+
+        await configService.init();
+        await configService.logWatcher.trim(1);
+        configService.logWatcher.events.on('data', (data: any) => {
+
+            logs.push(data);
+        })
+        let aUser: User = {
+            id: Util.randomNumberString(),
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        await configService.saveUser(aUser);
+
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+
+            networkId: 'networkId',
+            userOrgroupIds: [aUser.id],
+            serviceId: 'some service',
+            profile: { is2FA: true, },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+        await configService.saveAuthorizationPolicyRule(rule);
+
+        let rule2: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: [aUser.id],
+            profile: {},
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+
+        //add
+        configService.config.authenticationPolicy.rules.push(rule2);
+        await configService.saveAuthenticationPolicyRule(rule2);
+
+        await configService.deleteUser(aUser.id);
+        const users = await configService.getUserByUsername(aUser.username);
+        const authenticationPolicy = await configService.getAuthenticationPolicy();
+        const authorizationPolicy = await configService.getAuthorizationPolicy();
+        expect(authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
+        expect(authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
+
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+
+
+        expect(logs.length > 0).to.be.true;
+
+
+
+
+    }).timeout(60000);
+
+
+    it('triggerUserSavedOrUpdated', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.groups = [];
+        configService.config.networks = [];
+        configService.config.gateways = [];
+
+        let logs: any[] = [];
+
+        await configService.init();
+        await configService.logWatcher.trim(1);
+        configService.logWatcher.events.on('data', (data: any) => {
+
+            logs.push(data);
+        })
+
+        let aUser: User = {
+            id: Util.randomNumberString(),
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        await configService.saveUser(aUser);
+
+
+        aUser.name = 'changed';
+
+        await configService.saveUser(aUser);
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+
+        expect(logs.length > 0).to.be.true;
+
+    }).timeout(60000);
+
+
+    it('triggerNetworkDeleted', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.groups = [];
+        configService.config.networks = [];
+        configService.config.gateways = [];
+
+        let logs: any[] = [];
+
+        await configService.init();
+        await configService.logWatcher.trim(1);
+        configService.logWatcher.events.on('data', (data: any) => {
+
+            logs.push(data);
+        })
+
+
+        let network: Network = {
+            id: Util.randomNumberString(),
+            name: 'default',
+            labels: [],
+            clientNetwork: '10.10.0.0/16',
+            serviceNetwork: '172.16.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        let gateway: Gateway = {
+            id: Util.randomNumberString(),
+            name: 'myserver',
+            labels: [],
+            isEnabled: true,
+            networkId: network.id,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: network.id,
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+
+        await configService.saveService(service1);
+        await configService.saveGateway(gateway);
+        await configService.saveNetwork(network);
+
+        let aUser: User = {
+            id: Util.randomNumberString(),
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.saveUser(aUser);
+
+
+
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+
+            networkId: network.id,
+            userOrgroupIds: [aUser.id],
+            serviceId: service1.id,
+            profile: { is2FA: true, },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+        await configService.saveAuthorizationPolicyRule(rule);
+
+
+        let rule2: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: network.id,
+            userOrgroupIds: [aUser.id],
+            profile: {},
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+
+        //add
+        configService.config.authenticationPolicy.rules.push(rule2);
+        await configService.saveAuthenticationPolicyRule(rule2);
+
+        await configService.deleteNetwork(network.id);
+        const authorizationPolicy = await configService.getAuthorizationPolicy();
+        const authenticationPolicy = await configService.getAuthenticationPolicy();
+        const services = await configService.getServicesAll();
+        const gateways = await configService.getGatewaysAll();
+
+
+        expect(authorizationPolicy.rules.find(x => x.networkId == network.id)).to.not.exist;
+        expect(authenticationPolicy.rules.find(x => x.networkId == network.id)).to.not.exist;
+        expect(services.find(x => x.networkId == network.id)).not.exist;
+        expect(gateways.find(x => x.networkId == network.id)).not.exist;
+        expect(gateways[0].networkId).to.be.equal('');
+
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+
+        expect(logs.length > 0).to.be.true;
+
+    }).timeout(60000);
+
+    it('triggerGatewayDeleted', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.groups = [];
+        configService.config.networks = [];
+        configService.config.gateways = [];
+
+        let logs: any[] = [];
+
+        await configService.init();
+        await configService.logWatcher.trim(1);
+        configService.logWatcher.events.on('data', (data: any) => {
+
+            logs.push(data);
+        })
+
+
+        let gateway: Gateway = {
+            id: Util.randomNumberString(),
+            name: 'myserver',
+            labels: [],
+            isEnabled: true,
+            networkId: 'adaf',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        await configService.saveGateway(gateway);
+
+        await configService.deleteGateway(gateway.id);
+
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+        expect(logs.length > 0).to.be.true;
+
+
+    }).timeout(60000);
+
+
+
+    it('triggerGroupDeleted', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.groups = [];
+        configService.config.networks = [];
+        configService.config.gateways = [];
+
+        let logs: any[] = [];
+
+        await configService.init();
+        await configService.logWatcher.trim(1);
+        configService.logWatcher.events.on('data', (data: any) => {
+
+            logs.push(data);
+        })
+
+        let aGroup: Group = {
+            id: Util.randomNumberString(),
+            name: 'notrh',
+            isEnabled: true,
+            labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        let aUser: User = {
+            id: Util.randomNumberString(),
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [aGroup.id],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+        configService.config.groups.push(aGroup);
+        await configService.saveGroup(aGroup);
+        configService.config.users.push(aUser);
+        await configService.saveUser(aUser);
+
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+
+            networkId: 'networkId',
+            userOrgroupIds: [aGroup.id],
+            serviceId: 'some service',
+            profile: { is2FA: true, },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+        await configService.saveAuthorizationPolicyRule(rule);
+
+
+        let rule2: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: [aGroup.id],
+            profile: {},
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+
+        //add
+        configService.config.authenticationPolicy.rules.push(rule2);
+        await configService.saveAuthenticationPolicyRule(rule2);
+
+        await configService.deleteGroup(aGroup.id);
+        const authorizationPolicy = await configService.getAuthorizationPolicy();
+        const authenticationPolicy = await configService.getAuthenticationPolicy();
+        expect(authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aGroup.id))).to.not.exist;
+        expect(authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
+
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+
+        expect(logs.length > 0).to.be.true;
+
+
+    }).timeout(60000);
+
+
+    it('triggerServiceDeleted', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.groups = [];
+        configService.config.networks = [];
+        configService.config.gateways = [];
+
+        let logs: any[] = [];
+
+        await configService.init();
+        await configService.logWatcher.trim(1);
+        configService.logWatcher.events.on('data', (data: any) => {
+
+            logs.push(data);
+        })
+
+
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'sadid',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+
+        await configService.config.services.push(service1);
+        await configService.saveService(service1);
+
+
+        let aUser: User = {
+            id: Util.randomNumberString(),
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        await configService.saveUser(aUser);
+
+
+
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+
+            networkId: 'ssid',
+            userOrgroupIds: [aUser.id],
+            serviceId: service1.id,
+            profile: { is2FA: true, },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+        await configService.saveAuthorizationPolicyRule(rule);
+
+
+        await configService.deleteService(service1.id);
+
+        const authorizationPolicy = await configService.getAuthorizationPolicy();
+        expect(authorizationPolicy.rules.find(x => x.serviceId == service1.id)).to.not.exist;
+
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
+
+        expect(logs.length > 0).to.be.true;
+
+
+    }).timeout(60000);
+
+
+
     it('saveConfigToString', async () => {
-     
-       //first create a config and save to redis
-       let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-       configService.config.users = [];
-       let aUser: User = {
-           id: 'someid',
-           username: 'hamza.kilic@ferrumgate.com',
-           name: 'test', source: 'local',
-           password: 'passwordWithHash', groupIds: [],
-           insertDate: new Date().toISOString(),
-           updateDate: new Date().toISOString()
-       };
-     
-       configService.config.users.push(aUser);
-       await configService.saveConfigToFile();
-       expect(fs.existsSync(filename));
-       const str =await configService.saveConfigToString()
-       const readed = fs.readFileSync(filename).toString();
-       expect(readed).to.equal(str);
-     
-    }); */
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.users = [];
+        let aUser: User = {
+            id: 'someid',
+            username: 'hamza.kilic@ferrumgate.com',
+            name: 'test', source: 'local',
+            password: 'passwordWithHash', groupIds: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        };
+
+        configService.config.users.push(aUser);
+        const str = await configService.saveConfigToString()
+
+        expect(str).exist
+
+    });
 
 
 

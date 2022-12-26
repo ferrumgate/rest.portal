@@ -74,10 +74,7 @@ export class ConfigService {
             caSSLCertificate: {},
             domain: 'ferrumgate.local',
             url: 'https://secure.yourdomain.com',
-            email: {
-                type: 'empty',
-                fromname: '', pass: '', user: ''
-            },
+            email: this.createDefaultEmail(),
             logo: {},
             auth: {
                 common: {},
@@ -363,6 +360,12 @@ export class ConfigService {
 
 
 
+    }
+    protected createDefaultEmail(): EmailSettings {
+        return {
+            type: 'empty',
+            fromname: '', pass: '', user: ''
+        }
     }
 
     protected createAuthLocal() {

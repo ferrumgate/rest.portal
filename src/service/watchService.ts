@@ -96,11 +96,11 @@ export class WatchService {
             logger.error(err);
         }
     }
-    async trim() {
+    async trim(min = 0) {
         try {
             logger.info(`trimming log file ${this.file}`);
             await this.redis.expire(this.file, this.trimTime * 2);
-            await this.redis.xtrim(this.file, (new Date().getTime() - this.trimTime).toString());
+            await this.redis.xtrim(this.file, (new Date().getTime() - (min || this.trimTime)).toString());
         } catch (err) {
             logger.error(err);
         }

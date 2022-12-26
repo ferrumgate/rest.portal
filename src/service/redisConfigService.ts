@@ -73,7 +73,7 @@ export class RedisConfigService extends ConfigService {
     timerInterval: any;
     timerInterval2: any;
     lastPos = '$';
-    logs: any[] = [];
+    //logs: any[] = [];
 
     logWatcher: WatchService;
     redLock: RedLockService;
@@ -83,8 +83,6 @@ export class RedisConfigService extends ConfigService {
         this.logWatcher = new WatchService(redis, redisStream, '/logs/config');
         this.redLock = new RedLockService(redis);
     }
-
-
 
 
     async start() {
@@ -308,6 +306,41 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('authorizationPolicy/rules', this.config.authorizationPolicy.rules, pipeline);
         await this.rSave('lastUpdateTime', this.config.lastUpdateTime, this.config.lastUpdateTime, pipeline);
         await pipeline.exec();
+
+    }
+
+    override async saveConfigToString() {
+
+        this.config.version = await this.rGet('version') || 0;
+        this.config.isConfigured = await this.rGet('isConfigured') || 0;
+        this.config.users = await this.rGetAll('users');
+        this.config.groups = await this.rGetAll('groups');
+        this.config.services = await this.rGetAll('services');
+        this.config.captcha = await this.rGet('captcha') || {};
+        this.config.jwtSSLCertificate = await this.rGet('jwtSSLCertificate') || {};
+        this.config.sslCertificate = await this.rGet('sslCertificate') || {};
+        this.config.caSSLCertificate = await this.rGet('caSSLCertificate') || {};
+        this.config.domain = await this.rGet('domain') || '';
+        this.config.url = await this.rGet('url') || '';
+        this.config.email = await this.rGet('email') || this.createDefaultEmail();
+        this.config.auth.common = await this.rGet('auth/common') || {};
+        this.config.auth.local = await this.rGet('auth/local') || this.createAuthLocal();
+
+        this.config.auth.ldap = { providers: [] };
+        this.config.auth.ldap.providers = await this.rGetAll('auth/ldap/providers');
+
+        this.config.auth.oauth = { providers: [] };
+        this.config.auth.oauth.providers = await this.rGetAll('auth/oauth/providers');
+
+        this.config.auth.saml = { providers: [] };
+        this.config.auth.saml.providers = await this.rGetAll('auth/saml/providers');
+
+        this.config.networks = await this.rGetAll('networks');
+        this.config.gateways = await this.rGetAll('gateways');
+        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+
+        return await super.saveConfigToString();
 
     }
 
