@@ -18,6 +18,7 @@ import { AuthLocal } from "../model/authSettings";
 import { BaseLdap } from "../model/authSettings";
 import { Gateway, Network } from "../model/network";
 import { Group } from "../model/group";
+import { Service } from "../model/service";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -373,7 +374,7 @@ export class RedisConfigService extends ConfigService {
     override async getUserCount() {
         this.isEverythingOK();
         this.config.users = [];
-        return this.rCount('users/*');
+        return await this.rCount('users/*');
     }
 
     override async getUserByUsernameAndPass(username: string, pass: string): Promise<User | undefined> {
@@ -833,7 +834,7 @@ export class RedisConfigService extends ConfigService {
     override async getNetworkCount() {
         this.isEverythingOK();
         this.config.networks = [];
-        return this.rCount('networks/*');
+        return await this.rCount('networks/*');
     }
 
     override async getNetworkByName(name: string) {
@@ -975,6 +976,7 @@ export class RedisConfigService extends ConfigService {
     }
     override async getGatewayCount() {
         this.isEverythingOK();
+        this.config.gateways = [];
         return await this.rCount('gateways/*')
     }
 
@@ -1067,6 +1069,7 @@ export class RedisConfigService extends ConfigService {
     }
     override async getGroupCount() {
         this.isEverythingOK();
+        this.config.groups = [];
         return await this.rCount('groups');
 
     }
@@ -1175,6 +1178,214 @@ export class RedisConfigService extends ConfigService {
         return ret;
 
     }
+
+
+    override  async getService(id: string): Promise<Service | undefined> {
+        this.isEverythingOK();
+        this.config.services = await this.rGetAll('services');
+        return await super.getService(id);
+
+    }
+    override async getServiceCount() {
+        this.isEverythingOK();
+        this.config.services = [];
+        return await this.rCount('services');
+    }
+
+    override async getServicesBy(query?: string, networkIds?: string[], ids?: string[]) {
+        this.isEverythingOK();
+        this.config.services = await this.rGetAll('services');
+        return await super.getServicesBy(query, networkIds, ids);
+    }
+
+    override async getServicesByNetworkId(networkId: string) {
+        this.isEverythingOK();
+        this.config.services = await this.rGetAll('services');
+        return await super.getServicesByNetworkId(networkId);
+    }
+
+    //// service entity
+    override async getServicesAll(): Promise<Service[]> {
+
+        this.isEverythingOK();
+        this.config.services = await this.rGetAll('services');
+        return await super.getServicesAll();
+
+    }
+
+
+    async triggerServiceDeleted2(svc: Service, pipeline: RedisPipelineService) {
+
+        //check authorization
+        let rulesAuthzChanged = this.config.authorizationPolicy.rules.filter(x => x.serviceId == svc.id);
+        this.config.authorizationPolicy.rules = this.config.authorizationPolicy.rules.filter(x => x.serviceId != svc.id);
+        for (const x of rulesAuthzChanged) {
+            await this.rDel('authorizationPolicy/rules', x, pipeline);
+            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) })
+        }
+        if (rulesAuthzChanged.length)
+            this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
+
+        this.emitEvent({ type: 'deleted', path: '/services', data: this.createTrackEvent(svc) })
+
+    }
+
+    override async deleteService(id: string) {
+        this.isEverythingOK();
+        this.config.services = await this.rGetAll('services');
+
+        const svc = this.config.services.find(x => x.id == id);
+        if (svc) {
+            this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules')
+            const pipeline = await this.redis.multi();
+            await this.triggerServiceDeleted2(svc, pipeline);
+            await this.rDel('services', svc, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return this.createTrackEvent(svc);//return deleted service for log if exists
+    }
+
+    override async saveService(service: Service) {
+        this.isEverythingOK();
+        this.config.services = await this.rGetAll('services');
+        let ret = await super.saveService(service);
+        const pipeline = await this.redis.multi();
+        await this.rSave('services', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    //authentication policy rule
+    override async saveAuthenticationPolicyRule(arule: AuthenticationRule) {
+        this.isEverythingOK();
+        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        let ret = await super.saveAuthenticationPolicyRule(arule);
+        const pipeline = await this.redis.multi();
+        await this.rSave('authenticationPolicy/rules', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+    override async getAuthenticationPolicy() {
+        this.isEverythingOK();
+        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        return await super.getAuthenticationPolicy();
+    }
+
+    override async getAuthenticationPolicyUnsafe() {
+        this.isEverythingOK();
+        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        return await super.getAuthenticationPolicyUnsafe();
+    }
+    override async getAuthenticationPolicyRule(id: string) {
+        this.isEverythingOK();
+        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        return await super.getAuthenticationPolicyRule(id);
+
+    }
+    override async getAuthenticationPolicyRuleCount() {
+        this.isEverythingOK();
+        return await this.rCount('authenticationPolicy/rules');
+
+    }
+
+    override async deleteAuthenticationPolicyRule(id: string) {
+        this.isEverythingOK();
+        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+
+
+        const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
+        if (rule) {
+
+            const pipeline = await this.redis.multi();
+            await this.rDel('authenticationPolicy/rules', rule, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+            this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(rule) })
+            this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
+
+        }
+        return this.createTrackEvent(rule);
+    }
+
+    override  async updateAuthenticationRulePos(id: string, previous: number, index: number) {
+        const currentRule = this.config.authenticationPolicy.rules[previous];
+        if (currentRule.id != id)
+            throw new Error('no rule found at this position');
+        if (previous < 0)
+            throw new Error('array index can be negative');
+
+
+        this.config.authenticationPolicy.rules.splice(previous, 1);
+        this.config.authenticationPolicy.rules.splice(index, 0, currentRule);
+        //TODO how to manage
+        this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
+        this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
+        return this.createTrackIndexEvent(currentRule, previous, index);
+
+
+    }
+
+
+
+    //authorization policy
+
+    async saveAuthorizationPolicyRule(arule: AuthorizationRule) {
+        this.isEverythingOK();
+        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        let ret = await super.saveAuthorizationPolicyRule(arule);
+        const pipeline = await this.redis.multi();
+        await this.rSave('authorizationPolicy/rules', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+
+    }
+    async getAuthorizationPolicy() {
+        this.isEverythingOK();
+        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        return await super.getAuthorizationPolicy();
+    }
+    async getAuthorizationPolicyUnsafe() {
+        this.isEverythingOK();
+        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        return await super.getAuthorizationPolicyUnsafe();
+    }
+    async getAuthorizationPolicyRule(id: string) {
+        this.isEverythingOK();
+        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        return await super.getAuthorizationPolicyRule(id);
+    }
+
+    async getAuthorizationPolicyRuleCount() {
+        this.isEverythingOK();
+        return await this.rCount('authorizationPolicy/rules');
+    }
+    async deleteAuthorizationPolicyRule(id: string) {
+        this.isEverythingOK();
+        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+
+        const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
+        if (rule) {
+            const pipeline = await this.redis.multi();
+            await this.rDel('authorizationPolicy/rules', rule, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(rule) })
+            this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
+
+        }
+        return this.createTrackEvent(rule);
+    }
+
+
+
+
+
+
+
 
 
 

@@ -1146,592 +1146,568 @@ describe('redisConfigService', async () => {
 
     });
 
+    ///// service 
+
+    it('getService', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.services = [];
+        await configService.init();
+        let service: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306, assignedIp: '1.3',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+        //add
+        await configService.saveService(service);
+
+        const returned = await configService.getService(service.id);
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
+
+
+    });
+
+    it('getServicesBy', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.services = [];
+        await configService.init();
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+        //add
+        await configService.saveService(service1);
+
+        let service2: Service = {
+            id: Util.randomNumberString(),
+            name: 'remote-desktop-dev',
+            isEnabled: true,
+            labels: ['test'],
+            host: '192.168.10.10',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+        //add
+        await configService.saveService(service2);
+
+        const returned = await configService.getServicesBy('dev');
+        expect(returned.length).to.equal(2);
+
+        const returned2 = await configService.getServicesBy('remote222');
+        expect(returned2.length).to.be.equal(0);
+
+        const returned3 = await configService.getServicesBy('test');
+        expect(returned3.length).to.be.equal(1);
+
+        const returned4 = await configService.getServicesBy('192.168');
+        expect(returned4.length).to.be.equal(1);
+
+
+        const returned5 = await configService.getServicesBy('', ['abcd']);
+        expect(returned5.length).to.be.equal(2);
+
+        const returned6 = await configService.getServicesBy('', [], [service2.id]);
+        expect(returned6.length).to.be.equal(1);
 
 
 
+    });
 
-    /*     it('saveConfigToString', async () => {
-     
-            //first create a config and save to redis
-            let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.users = [];
-            let aUser: User = {
-                id: 'someid',
-                username: 'hamza.kilic@ferrumgate.com',
-                name: 'test', source: 'local',
-                password: 'passwordWithHash', groupIds: [],
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            };
-     
-            configService.config.users.push(aUser);
-            await configService.saveConfigToFile();
-            expect(fs.existsSync(filename));
-            const str =await configService.saveConfigToString()
-            const readed = fs.readFileSync(filename).toString();
-            expect(readed).to.equal(str);
-     
-        }); 
-        
-      
-    
-        
-    
-    
-      
-    
-    
-        ///// service 
-    
-        it('getService', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.services = [];
-            let service: Service = {
-                id: Util.randomNumberString(),
-                name: 'mysql-dev',
-                isEnabled: true,
-                labels: [],
-                host: '1.2.3.4',
-                networkId: 'abcd',
-                tcp: 3306, assignedIp: '1.3',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-            //add
-            await configService.saveService(service);
-    
-            const returned = await configService.getService(service.id);
-            expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
-    
-    
-        });
-    
-        it('getServicesBy', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.services = [];
-            let service1: Service = {
-                id: Util.randomNumberString(),
-                name: 'mysql-dev',
-                isEnabled: true,
-                labels: [],
-                host: '1.2.3.4',
-                networkId: 'abcd',
-                tcp: 3306,
-                assignedIp: '10.0.0.1',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-            //add
-            await configService.saveService(service1);
-    
-            let service2: Service = {
-                id: Util.randomNumberString(),
-                name: 'remote-desktop-dev',
-                isEnabled: true,
-                labels: ['test'],
-                host: '192.168.10.10',
-                networkId: 'abcd',
-                tcp: 3306,
-                assignedIp: '10.0.0.1',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-            //add
-            await configService.saveService(service2);
-    
-            const returned = await configService.getServicesBy('dev');
-            expect(returned.length).to.equal(2);
-    
-            const returned2 = await configService.getServicesBy('remote222');
-            expect(returned2.length).to.be.equal(0);
-    
-            const returned3 = await configService.getServicesBy('test');
-            expect(returned3.length).to.be.equal(1);
-    
-            const returned4 = await configService.getServicesBy('192.168');
-            expect(returned4.length).to.be.equal(1);
-    
-    
-            const returned5 = await configService.getServicesBy('', ['abcd']);
-            expect(returned5.length).to.be.equal(2);
-    
-            const returned6 = await configService.getServicesBy('', [], [service2.id]);
-            expect(returned6.length).to.be.equal(1);
-    
-    
-    
-        });
-    
-        it('getServicesByNetworkId', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.services = [];
-            let service1: Service = {
-                id: Util.randomNumberString(),
-                name: 'mysql-dev',
-                isEnabled: true,
-                labels: [],
-                host: '1.2.3.4',
-                networkId: 'abcd',
-                tcp: 3306,
-                assignedIp: '10.0.0.1',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-            //add
-            await configService.saveService(service1);
-    
-            let service2: Service = {
-                id: Util.randomNumberString(),
-                name: 'remote-desktop-dev',
-                isEnabled: true,
-                labels: ['test'],
-                host: '192.168.10.10',
-                networkId: 'dabc',
-                tcp: 3306,
-                assignedIp: '10.0.0.1',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-            //add
-            await configService.saveService(service2);
-    
-            const returned = await configService.getServicesByNetworkId('dabc');
-            expect(returned.length).to.equal(1);
-    
-    
-        });
-    
-    
-        it('getServicesAll', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.services = [];
-            let service1: Service = {
-                id: Util.randomNumberString(),
-                name: 'mysql-dev',
-                isEnabled: true,
-                labels: [],
-                host: '1.2.3.4',
-                networkId: 'abcd',
-                tcp: 3306,
-                assignedIp: '10.0.0.1',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-            //add
-            await configService.saveService(service1);
-    
-            let service2: Service = {
-                id: Util.randomNumberString(),
-                name: 'remote-desktop-dev',
-                isEnabled: true,
-                labels: ['test'],
-                host: '192.168.10.10',
-                networkId: 'abcd',
-                tcp: 3306,
-                assignedIp: '10.0.0.1',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-            //add
-            await configService.saveService(service2);
-    
-            const returned = await configService.getServicesBy();
-            expect(returned.length).to.be.equal(2);
-            expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
-    
-        });
-    
-        it('saveService', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.services = [];
-            let service1: Service = {
-                id: Util.randomNumberString(),
-                name: 'mysql-dev',
-                isEnabled: true,
-                labels: [],
-                host: '1.2.3.4',
-                networkId: 'abcd',
-                tcp: 3306,
-                assignedIp: '10.0.0.1',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-            //add
-            await configService.saveService(service1);
-    
-            service1.name = 'north2';
-            //add
-            await configService.saveService(service1);
-    
-            const returned = await configService.getService(service1.id)
-    
-            expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
-    
-        });
-    
-        it('deleteService', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-    
-            configService.config.groups = [];
-            let service1: Service = {
-                id: Util.randomNumberString(),
-                name: 'mysql-dev',
-                isEnabled: true,
-                labels: [],
-                host: '1.2.3.4',
-                networkId: 'abcd',
-                tcp: 3306,
-                assignedIp: '10.0.0.1',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(),
-                count: 1
-    
-            }
-            //add
-            await configService.saveService(service1);
-    
-    
-            await configService.deleteService(service1.id);
-    
-            const returned = await configService.getService(service1.id)
-    
-            expect(returned).not.exist;
-    
-    
-        });
-    
-        //authenticationPolicy
-    
-        it('saveAthenticationPolicyAddRule', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.authenticationPolicy.rules = [];
-            let rule: AuthenticationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-                action: 'allow',
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                profile: {},
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveAuthenticationPolicyRule(rule);
-    
-            const policy = await configService.getAuthenticationPolicyUnsafe();
-            expect(policy.rules.find(x => x.id == rule.id)).to.exist;
-    
-    
-        });
-        it('getAuthenticationPolicy', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.authenticationPolicy.rules = [];
-            let rule: AuthenticationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-                action: 'allow',
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                profile: {},
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            configService.config.authenticationPolicy.rules.push(rule);
-    
-    
-            const policy = await configService.getAuthenticationPolicy();
-            expect(policy.rules.find(x => x.id == rule.id)).to.exist;
-            expect(policy.rules.length).to.equal(1);
-    
-        });
-    
-        it('getAuthenticationPolicyUnsafe', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.authenticationPolicy.rules = [];
-            let rule: AuthenticationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-                action: 'allow',
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                profile: {},
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            configService.config.authenticationPolicy.rules.push(rule);
-    
-    
-            const policy = await configService.getAuthenticationPolicyUnsafe();
-            expect(policy.rules.find(x => x.id == rule.id)).to.exist;
-            expect(policy.rules.length).to.equal(1);
-    
-        });
-    
-        it('deleteAuthenticationPolicyRule', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.authenticationPolicy.rules = [];
-            let rule: AuthenticationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-                action: 'allow',
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                profile: {},
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            configService.config.authenticationPolicy.rules.push(rule);
-    
-    
-            await configService.deleteAuthenticationPolicyRule(rule.id);
-            expect(configService.config.authenticationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
-            expect(configService.config.authenticationPolicy.rules.length).to.equal(0);
-    
-        });
-    
-    
-        it('updateAuthenticationRulePos', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.authenticationPolicy.rules = [];
-            let rule1: AuthenticationRule = {
-                id: '1',
-                name: "zero trust1",
-                action: 'allow',
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                profile: {},
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            configService.config.authenticationPolicy.rules.push(rule1);
-    
-            let rule2: AuthenticationRule = {
-                id: '2',
-                name: "zero trust2",
-                action: 'allow',
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                profile: {},
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            configService.config.authenticationPolicy.rules.push(rule2);
-    
-    
-            let rule3: AuthenticationRule = {
-                id: '3',
-                name: "zero trust3",
-                action: 'allow',
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                profile: {},
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            configService.config.authenticationPolicy.rules.push(rule3);
-            const policy = configService.config.authenticationPolicy;
-    
-            await configService.updateAuthenticationRulePos(rule1.id, 0, 0);
-            expect(policy.rules[0].id).to.be.equal('1');
-            expect(policy.rules[1].id).to.be.equal('2');
-            expect(policy.rules[2].id).to.be.equal('3');
-    
-    
-            await configService.updateAuthenticationRulePos(rule1.id, 0, 5);
-            expect(policy.rules[0].id).to.be.equal('2');
-            expect(policy.rules[1].id).to.be.equal('3');
-            expect(policy.rules[2].id).to.be.equal('1');
-    
-            await configService.updateAuthenticationRulePos(rule1.id, 2, 1);
-            expect(policy.rules[0].id).to.be.equal('2');
-            expect(policy.rules[1].id).to.be.equal('1');
-            expect(policy.rules[2].id).to.be.equal('3');
-    
-            await configService.updateAuthenticationRulePos(rule1.id, 1, 0);
-            expect(policy.rules[0].id).to.be.equal('1');
-            expect(policy.rules[1].id).to.be.equal('2');
-            expect(policy.rules[2].id).to.be.equal('3');
-    
-            let errrored = false;
-            try {
-                await configService.updateAuthenticationRulePos(rule1.id, 1, 5);
-            } catch (err) {
-                errrored = true;
-            }
-            expect(errrored).to.be.true;
-    
-    
-    
-    
-    
-        });
-    
-    
-    
-    
-        //authorizationPolicy
-    
-        it('saveAuthorizationPolicyAddRule', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.authorizationPolicy.rules = [];
-            let rule: AuthorizationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                serviceId: 'some service',
-                profile: { is2FA: true },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveAuthorizationPolicyRule(rule);
-    
-            const policy = await configService.getAuthorizationPolicyUnsafe();
-            expect(policy.rules.find(x => x.id == rule.id)).to.exist;
-    
-    
-        });
-        it('getAuthorizationPolicy', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.authenticationPolicy.rules = [];
-            configService.config.authorizationPolicy.rules = [];
-            let rule: AuthorizationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                serviceId: 'some service',
-                profile: { is2FA: true, },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveAuthorizationPolicyRule(rule);
-    
-            const policy = await configService.getAuthorizationPolicy();
-            expect(policy.rules.find(x => x.id == rule.id)).to.exist;
-            expect(policy.rules.length).to.equal(1);
-    
-        });
-    
-        it('getAuthorizationPolicyUnsafe', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.authorizationPolicy.rules = [];
-            let rule: AuthorizationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                serviceId: 'some service',
-                profile: { is2FA: true, },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            //add
-            await configService.saveAuthorizationPolicyRule(rule);
-    
-    
-            const policy = await configService.getAuthorizationPolicyUnsafe();
-            expect(policy.rules.find(x => x.id == rule.id)).to.exist;
-            expect(policy.rules.length).to.equal(1);
-    
-        });
-    
-        it('deleteAuthorizationPolicyRule', async () => {
-    
-            //first create a config and save to redis
-            let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-            configService.config.authorizationPolicy.rules = [];
-            let rule: AuthorizationRule = {
-                id: Util.randomNumberString(),
-                name: "zero trust",
-    
-                networkId: 'networkId',
-                userOrgroupIds: ['somegroupid'],
-                serviceId: 'some service',
-                profile: { is2FA: true },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-    
-            }
-            //add
-    
-            configService.config.authorizationPolicy.rules.push(rule);
-    
-    
-            await configService.deleteAuthorizationPolicyRule(rule.id);
-            expect(configService.config.authorizationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
-            expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
-    
-        });
-    
-    
+    it('getServicesByNetworkId', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.services = [];
+        await configService.init();
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+        //add
+        await configService.saveService(service1);
+
+        let service2: Service = {
+            id: Util.randomNumberString(),
+            name: 'remote-desktop-dev',
+            isEnabled: true,
+            labels: ['test'],
+            host: '192.168.10.10',
+            networkId: 'dabc',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+        //add
+        await configService.saveService(service2);
+
+        const returned = await configService.getServicesByNetworkId('dabc');
+        expect(returned.length).to.equal(1);
+
+
+    });
+
+
+    it('getServicesAll', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        configService.config.services = [];
+        await configService.init();
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+        //add
+        await configService.saveService(service1);
+
+        let service2: Service = {
+            id: Util.randomNumberString(),
+            name: 'remote-desktop-dev',
+            isEnabled: true,
+            labels: ['test'],
+            host: '192.168.10.10',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+        //add
+        await configService.saveService(service2);
+
+        const returned = await configService.getServicesBy();
+        expect(returned.length).to.be.equal(2);
+        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+
+    });
+
+    it('saveService', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.services = [];
+        await configService.init();
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+        //add
+        await configService.saveService(service1);
+
+        service1.name = 'north2';
+        //add
+        await configService.saveService(service1);
+
+        const returned = await configService.getService(service1.id)
+
+        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+
+    });
+
+    it('deleteService', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        configService.config.groups = [];
+        await configService.init();
+
+        let service1: Service = {
+            id: Util.randomNumberString(),
+            name: 'mysql-dev',
+            isEnabled: true,
+            labels: [],
+            host: '1.2.3.4',
+            networkId: 'abcd',
+            tcp: 3306,
+            assignedIp: '10.0.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1
+
+        }
+        //add
+        await configService.saveService(service1);
+
+
+        await configService.deleteService(service1.id);
+
+        const returned = await configService.getService(service1.id)
+
+        expect(returned).not.exist;
+
+
+    });
+
+    //authenticationPolicy
+
+    it('saveAthenticationPolicyAddRule', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        await configService.init();
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveAuthenticationPolicyRule(rule);
+
+        const policy = await configService.getAuthenticationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+
+
+    });
+    it('getAuthenticationPolicy', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        await configService.init();
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule);
+        await configService.saveAuthenticationPolicyRule(rule);
+
+        const policy = await configService.getAuthenticationPolicy();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('getAuthenticationPolicyUnsafe', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        await configService.init();
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule);
+        await configService.saveAuthenticationPolicyRule(rule);
+
+        const policy = await configService.getAuthenticationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('deleteAuthenticationPolicyRule', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        await configService.init();
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule);
+
+
+        await configService.deleteAuthenticationPolicyRule(rule.id);
+        expect(configService.config.authenticationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
+        expect(configService.config.authenticationPolicy.rules.length).to.equal(0);
+
+    });
+
+
+    it.skip('updateAuthenticationRulePos', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        await configService.init();
+        let rule1: AuthenticationRule = {
+            id: '1',
+            name: "zero trust1",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule1);
+
+        let rule2: AuthenticationRule = {
+            id: '2',
+            name: "zero trust2",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule2);
+
+
+        let rule3: AuthenticationRule = {
+            id: '3',
+            name: "zero trust3",
+            action: 'allow',
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {},
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        configService.config.authenticationPolicy.rules.push(rule3);
+        const policy = configService.config.authenticationPolicy;
+
+        await configService.updateAuthenticationRulePos(rule1.id, 0, 0);
+        expect(policy.rules[0].id).to.be.equal('1');
+        expect(policy.rules[1].id).to.be.equal('2');
+        expect(policy.rules[2].id).to.be.equal('3');
+
+
+        await configService.updateAuthenticationRulePos(rule1.id, 0, 5);
+        expect(policy.rules[0].id).to.be.equal('2');
+        expect(policy.rules[1].id).to.be.equal('3');
+        expect(policy.rules[2].id).to.be.equal('1');
+
+        await configService.updateAuthenticationRulePos(rule1.id, 2, 1);
+        expect(policy.rules[0].id).to.be.equal('2');
+        expect(policy.rules[1].id).to.be.equal('1');
+        expect(policy.rules[2].id).to.be.equal('3');
+
+        await configService.updateAuthenticationRulePos(rule1.id, 1, 0);
+        expect(policy.rules[0].id).to.be.equal('1');
+        expect(policy.rules[1].id).to.be.equal('2');
+        expect(policy.rules[2].id).to.be.equal('3');
+
+        let errrored = false;
+        try {
+            await configService.updateAuthenticationRulePos(rule1.id, 1, 5);
+        } catch (err) {
+            errrored = true;
+        }
+        expect(errrored).to.be.true;
+
+    });
+
+
+    //authorizationPolicy
+
+    it('saveAuthorizationPolicyAddRule', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authorizationPolicy.rules = [];
+        await configService.init();
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveAuthorizationPolicyRule(rule);
+
+        const policy = await configService.getAuthorizationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+
+
+    });
+    it('getAuthorizationPolicy', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        await configService.init();
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true, },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveAuthorizationPolicyRule(rule);
+
+        const policy = await configService.getAuthorizationPolicy();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('getAuthorizationPolicyUnsafe', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authorizationPolicy.rules = [];
+        await configService.init();
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true, },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveAuthorizationPolicyRule(rule);
+
+
+        const policy = await configService.getAuthorizationPolicyUnsafe();
+        expect(policy.rules.find(x => x.id == rule.id)).to.exist;
+        expect(policy.rules.length).to.equal(1);
+
+    });
+
+    it('deleteAuthorizationPolicyRule', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authorizationPolicy.rules = [];
+        await configService.init();
+        let rule: AuthorizationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            serviceId: 'some service',
+            profile: { is2FA: true },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        //add
+
+        configService.config.authorizationPolicy.rules.push(rule);
+
+
+        await configService.deleteAuthorizationPolicyRule(rule.id);
+        expect(configService.config.authorizationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
+        expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
+
+    });
+
+    /*
         it('triggerUserDeleted', async () => {
     
             //first create a config and save to redis
@@ -2261,7 +2237,31 @@ describe('redisConfigService', async () => {
     
     
     
-        }); */
+        });
+    
+    
+    it('saveConfigToString', async () => {
+     
+       //first create a config and save to redis
+       let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+       configService.config.users = [];
+       let aUser: User = {
+           id: 'someid',
+           username: 'hamza.kilic@ferrumgate.com',
+           name: 'test', source: 'local',
+           password: 'passwordWithHash', groupIds: [],
+           insertDate: new Date().toISOString(),
+           updateDate: new Date().toISOString()
+       };
+     
+       configService.config.users.push(aUser);
+       await configService.saveConfigToFile();
+       expect(fs.existsSync(filename));
+       const str =await configService.saveConfigToString()
+       const readed = fs.readFileSync(filename).toString();
+       expect(readed).to.equal(str);
+     
+    }); */
 
 
 

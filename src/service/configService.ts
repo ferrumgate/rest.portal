@@ -1496,10 +1496,7 @@ export class ConfigService {
         }
         return this.createTrackEvent(rule);
     }
-    /* async updateAuthenticationPolicyUpdateTime() {
-        this.config.authenticationPolicy.updateDate = new Date().toISOString();
-        await this.saveConfigToFile();
-    } */
+
     async updateAuthenticationRulePos(id: string, previous: number, index: number) {
         const currentRule = this.config.authenticationPolicy.rules[previous];
         if (currentRule.id != id)
@@ -1530,7 +1527,7 @@ export class ConfigService {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
             this.config.authorizationPolicy.rules.push(cloned);
-            ruleIndex = this.config.authenticationPolicy.rules.length - 1;
+            ruleIndex = this.config.authorizationPolicy.rules.length - 1;
             this.emitEvent({ type: 'saved', path: '/authorizationPolicy/rules', data: this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]) })
         }
 
