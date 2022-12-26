@@ -899,7 +899,9 @@ export class RedisConfigService extends ConfigService {
 
     async saveNetwork(network: Network) {
         this.isEverythingOK();
-        this.config.networks = await this.rGetAll('networks');
+        this.config.networks = [];
+        const net = await this.rGetWith<Network>('networks', network.id);
+        if (net) this.config.networks.push(net);
         let ret = await super.saveNetwork(network);
         const pipeline = await this.redis.multi();
         await this.rSave('networks', ret.before, ret.after, pipeline);
@@ -966,9 +968,11 @@ export class RedisConfigService extends ConfigService {
     override async deleteNetwork(id: string) {
         this.isEverythingOK();
 
-        this.config.networks = await this.rGetAll('networks');
-        const network = this.config.networks.find(x => x.id == id);
+        this.config.networks = [];
+
+        const network = await this.rGetWith<Network>('networks', id);
         if (network) {
+            this.config.networks.push(network);
             this.config.gateways = await this.rGetAll('gateways');
             this.config.services = await this.rGetAll('services');
             this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
@@ -1036,7 +1040,9 @@ export class RedisConfigService extends ConfigService {
 
     override async saveGateway(gateway: Gateway) {
         this.isEverythingOK();
-        this.config.gateways = await this.rGetAll('gateways');
+        this.config.gateways = [];
+        const gt = await this.rGetWith<Gateway>('gateways', gateway.id);
+        if (gt) this.config.gateways.push(gt);
         let ret = await super.saveGateway(gateway);
         const pipeline = await this.redis.multi();
         await this.rSave('gateways', ret.before, ret.after, pipeline);
@@ -1046,9 +1052,8 @@ export class RedisConfigService extends ConfigService {
     }
     override async deleteGateway(id: string) {
         this.isEverythingOK();
-        this.config.gateways = await this.rGetAll('gateways');
-
-        const gateway = this.config.gateways.find(x => x.id == id);
+        this.config.gateways = [];
+        const gateway = await this.rGetWith<Gateway>('gateways', id);
         if (gateway) {
             const pipeline = await this.redis.multi();
             await this.triggerGatewayDeleted(gateway);
@@ -1183,10 +1188,11 @@ export class RedisConfigService extends ConfigService {
 
     override  async deleteGroup(id: string) {
         this.isEverythingOK();
-        this.config.groups = await this.rGetAll('groups');
+        this.config.groups = [];
+        const group = await this.rGetWith<Group>('groups', id);
 
-        const group = this.config.groups.find(x => x.id == id);
         if (group) {
+            this.config.groups.push(group);
             this.config.users = await this.rGetAll('users');
             this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
             this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
@@ -1205,7 +1211,10 @@ export class RedisConfigService extends ConfigService {
 
     override async saveGroup(group: Group) {
         this.isEverythingOK();
-        this.config.groups = await this.rGetAll('groups');
+        this.config.groups = [];
+        const grp = await this.rGetWith<Group>('groups', group.id);
+        if (grp)
+            this.config.groups.push(grp);
 
         let ret = await super.saveGroup(group);
         const pipeline = await this.redis.multi();
@@ -1269,10 +1278,10 @@ export class RedisConfigService extends ConfigService {
 
     override async deleteService(id: string) {
         this.isEverythingOK();
-        this.config.services = await this.rGetAll('services');
-
-        const svc = this.config.services.find(x => x.id == id);
+        this.config.services = [];
+        const svc = await this.rGetWith<Service>('services', id);
         if (svc) {
+            this.config.services.push(svc);
             this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules')
             const pipeline = await this.redis.multi();
             await this.triggerServiceDeleted2(svc, pipeline);
@@ -1285,7 +1294,9 @@ export class RedisConfigService extends ConfigService {
 
     override async saveService(service: Service) {
         this.isEverythingOK();
-        this.config.services = await this.rGetAll('services');
+        this.config.services = [];
+        const svc = await this.rGetWith<Service>('services', service.id);
+        if (svc) this.config.services.push(svc);
         let ret = await super.saveService(service);
         const pipeline = await this.redis.multi();
         await this.rSave('services', ret.before, ret.after, pipeline);
@@ -1297,7 +1308,9 @@ export class RedisConfigService extends ConfigService {
     //authentication policy rule
     override async saveAuthenticationPolicyRule(arule: AuthenticationRule) {
         this.isEverythingOK();
-        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        this.config.authenticationPolicy.rules = [];
+        const rule = await this.rGetWith<AuthenticationRule>('authenticationPolicy/rules', arule.id)
+        if (rule) this.config.authenticationPolicy.rules.push(rule);
         let ret = await super.saveAuthenticationPolicyRule(arule);
         const pipeline = await this.redis.multi();
         await this.rSave('authenticationPolicy/rules', ret.before, ret.after, pipeline);
@@ -1318,7 +1331,9 @@ export class RedisConfigService extends ConfigService {
     }
     override async getAuthenticationPolicyRule(id: string) {
         this.isEverythingOK();
-        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        this.config.authenticationPolicy.rules = [];
+        const rule = await this.rGetWith<AuthenticationRule>('authenticationPolicy/rules', id);
+        if (rule) this.config.authenticationPolicy.rules.push(rule);
         return await super.getAuthenticationPolicyRule(id);
 
     }
@@ -1330,10 +1345,10 @@ export class RedisConfigService extends ConfigService {
 
     override async deleteAuthenticationPolicyRule(id: string) {
         this.isEverythingOK();
-        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        this.config.authenticationPolicy.rules = [];
 
 
-        const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
+        const rule = await this.rGetWith<AuthenticationRule>('authenticationPolicy/rules', id)
         if (rule) {
 
             const pipeline = await this.redis.multi();
@@ -1371,7 +1386,12 @@ export class RedisConfigService extends ConfigService {
 
     async saveAuthorizationPolicyRule(arule: AuthorizationRule) {
         this.isEverythingOK();
-        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        this.config.authorizationPolicy.rules = [];
+
+        const rule = await this.rGetWith<AuthorizationRule>('authorizationPolicy/rules', arule.id);
+        if (rule)
+            this.config.authorizationPolicy.rules.push(rule);
+
         let ret = await super.saveAuthorizationPolicyRule(arule);
         const pipeline = await this.redis.multi();
         await this.rSave('authorizationPolicy/rules', ret.before, ret.after, pipeline);
@@ -1392,7 +1412,9 @@ export class RedisConfigService extends ConfigService {
     }
     async getAuthorizationPolicyRule(id: string) {
         this.isEverythingOK();
-        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        this.config.authorizationPolicy.rules = [];
+        const rule = await this.rGetWith<AuthorizationRule>('authorizationPolicy/rules', id);
+        if (rule) this.config.authorizationPolicy.rules.push(rule);
         return await super.getAuthorizationPolicyRule(id);
     }
 
@@ -1402,9 +1424,9 @@ export class RedisConfigService extends ConfigService {
     }
     async deleteAuthorizationPolicyRule(id: string) {
         this.isEverythingOK();
-        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        this.config.authorizationPolicy.rules = [];
 
-        const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
+        const rule = await this.rGetWith<AuthorizationRule>('authorizationPolicy/rules', id);
         if (rule) {
             const pipeline = await this.redis.multi();
             await this.rDel('authorizationPolicy/rules', rule, pipeline);
