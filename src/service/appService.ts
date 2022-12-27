@@ -72,7 +72,10 @@ export class AppService {
     ) {
         //create self signed certificates for JWT
 
-        this.configService = cfg || new RedisCachedConfigService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? `/tmp/${Util.randomNumberString(16)}_config.yaml` : '/etc/ferrumgate/config.yaml');
+        this.configService = cfg || new RedisCachedConfigService(AppService.createRedisService(), AppService.createRedisService(),
+            process.env.ENCRYPT_KEY || Util.randomNumberString(32),
+            `redisConfig/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`,
+            process.env.NODE_ENV == 'development' ? `/tmp/${Util.randomNumberString(16)}_config.yaml` : '/etc/ferrumgate/config.yaml');
         this.redisService = redis || AppService.createRedisService()
         this.rateLimit = rateLimit || new RateLimitService(this.configService, this.redisService);
         this.inputService = input || new InputService();

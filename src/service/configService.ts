@@ -97,7 +97,7 @@ export class ConfigService {
                 rules: [
                 ],
             },
-            authorizationPolicy: { rules: [] }
+            authorizationPolicy: { rules: [], rulesSort: '' }
 
 
         }

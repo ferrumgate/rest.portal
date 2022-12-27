@@ -17,8 +17,9 @@ export class WatchService {
     private intervalRead: any;
     private lastPostReaded = false;
     constructor(private redis: RedisService, private redisStreamService: RedisService,
-        private file: string, private lastPos = new Date().getTime().toString(),
+        private file: string, private posFollowKey = 'pos', private lastPos = new Date().getTime().toString(),
         private trimTime = 24 * 60 * 60 * 1000,
+
         private encKey?: string
 
     ) {
@@ -65,10 +66,14 @@ export class WatchService {
         else
             await this.redis.xadd(this.file, { val: base64, time: new Date().getTime(), encoding: 'base64' } as WatchItem<string>);
     }
+    //position key
+    private posKey() {
+        return `${this.file}${this.posFollowKey.startsWith('/') ? this.posFollowKey : '/' + this.posFollowKey}`;
+    }
     async read() {
         try {
             if (!this.lastPostReaded) {
-                this.lastPos = await this.redis.get(`${this.file}/pos`, false) || this.lastPos;
+                this.lastPos = await this.redis.get(this.posKey(), false) || this.lastPos;
                 this.lastPostReaded = true;
             }
             while (true) {
@@ -87,8 +92,12 @@ export class WatchService {
                         logger.error(err);
                     }
                 }
-                if (items.length)
-                    await this.redis.set(`${this.file}/pos`, this.lastPos);
+                if (items.length) {
+                    const pipe = await this.redis.multi();
+                    await pipe.set(this.posKey(), this.lastPos);
+                    await pipe.expire(this.posKey(), 7 * 24 * 60 * 60 * 1000);
+                    await pipe.exec();
+                }
                 if (!items.length)
                     break;
             }

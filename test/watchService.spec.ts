@@ -26,10 +26,10 @@ describe('watchService ', async () => {
         await redis.flushAll();
     })
     it('read/write', async () => {
-        const watcher = new WatchService(redis, redisStream, '/log/abc');
+        const watcher = new WatchService(redis, redisStream, 'pos', '/log/abc');
         await watcher.write('test');
 
-        const watcher2 = new WatchService(redis, redisStream, '/log/abc', '0');
+        const watcher2 = new WatchService(redis, redisStream, 'pos', '/log/abc', '0');
         let written = '';
         let time = 0;
         watcher2.events.on('data', (data: WatchItem<string>) => {
@@ -43,11 +43,11 @@ describe('watchService ', async () => {
     }).timeout(15000);
 
     it('trim', async () => {
-        const watcher = new WatchService(redis, redisStream, '/log/abc', '$', 1000);
+        const watcher = new WatchService(redis, redisStream, 'pos', '/log/abc', '$', 1000);
         await watcher.write('test');
         await Util.sleep(2000);
         await watcher.trim();
-        const watcher2 = new WatchService(redis, redisStream, '/log/abc', '0');
+        const watcher2 = new WatchService(redis, redisStream, 'pos', '/log/abc', '0');
         let written = '';
         watcher2.events.on('data', (data: any) => {
             written = data.val;

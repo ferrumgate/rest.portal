@@ -79,10 +79,10 @@ export class RedisConfigService extends ConfigService {
     logWatcher: WatchService;
     redLock: RedLockService;
     constructor(private redis: RedisService, private redisStream: RedisService,
-        encryptKey: string, configFile?: string) {
+        encryptKey: string, uniqueName = 'redisConfig', configFile?: string) {
         super(encryptKey, configFile);
-        this.logWatcher = new WatchService(redis, redisStream, '/logs/config');
-        this.redLock = new RedLockService(redis);
+        this.logWatcher = new WatchService(this.redis, this.redisStream, uniqueName + '/pos', '/logs/config');
+        this.redLock = new RedLockService(this.redis);
     }
 
 
