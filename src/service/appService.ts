@@ -25,6 +25,7 @@ import { ActivityService } from "./activityService";
 import { ActivityLogToES } from "./system/activityLogToES";
 import { SummaryService } from "./summaryService";
 import { RedisWatcher } from "./system/redisWatcher";
+import { RedisCachedConfigService, RedisConfigService } from "./redisConfigService";
 
 
 
@@ -71,8 +72,8 @@ export class AppService {
     ) {
         //create self signed certificates for JWT
 
-        this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? `/tmp/${Util.randomNumberString(16)}_config.yaml` : '/etc/ferrumgate/config.yaml');
-        this.redisService = redis || new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS)
+        this.configService = cfg || new RedisCachedConfigService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? `/tmp/${Util.randomNumberString(16)}_config.yaml` : '/etc/ferrumgate/config.yaml');
+        this.redisService = redis || AppService.createRedisService()
         this.rateLimit = rateLimit || new RateLimitService(this.configService, this.redisService);
         this.inputService = input || new InputService();
         this.captchaService = captcha || new CaptchaService(this.configService);
@@ -91,6 +92,19 @@ export class AppService {
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
 
+
+    }
+
+    static createRedisService() {
+        return new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
+    }
+
+    async start() {
+        await this.configService.start();
+
+    }
+    async stop() {
+        await this.configService.stop();
 
     }
 

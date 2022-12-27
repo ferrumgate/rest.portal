@@ -361,6 +361,43 @@ export class ConfigService {
 
 
     }
+    async start() {
+
+        await this.createCerts();
+    }
+    protected async createCerts() {
+
+        if (!(await this.getJWTSSLCertificate()).privateKey) {
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.com");
+            await this.setJWTSSLCertificate({
+                privateKey: privateKey,
+                publicKey: publicKey,
+            });
+        }
+        //create ca ssl certificate if not exists;
+        if (!(await this.getCASSLCertificate()).privateKey) {
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.local");
+            await this.setSSLCertificate({
+                privateKey: privateKey,
+                publicKey: publicKey,
+            });
+        }
+        //create ssl certificates if not exists
+        if (!(await this.getSSLCertificate()).privateKey) {
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("secure.ferrumgate.local");
+            await this.setSSLCertificate({
+                privateKey: privateKey,
+                publicKey: publicKey,
+            });
+        }
+    }
+    async stop() {
+
+    }
+
+
+
+
     protected createDefaultEmail(): EmailSettings {
         return {
             type: 'empty',
@@ -1097,6 +1134,14 @@ export class ConfigService {
         return this.config.domain;
     }
 
+    async setDomain(domain: string) {
+        let previous = this.config.domain;
+        this.config.domain = domain;
+        this.emitEvent({ type: 'updated', path: '/domain', data: this.createTrackEvent(previous, this.config.domain) })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.domain);
+    }
+
     async getGateway(id: string) {
         const gateway = this.config.gateways.find(x => x.id == id);
         if (!gateway) {
@@ -1168,13 +1213,7 @@ export class ConfigService {
         return await this.createTrackEvent(finded, this.config.gateways[findedIndex]);
     }
 
-    async setDomain(domain: string) {
-        let previous = this.config.domain;
-        this.config.domain = domain;
-        this.emitEvent({ type: 'updated', path: '/domain', data: this.createTrackEvent(previous, this.config.domain) })
-        await this.saveConfigToFile();
-        return this.createTrackEvent(previous, this.config.domain);
-    }
+
 
 
     async getUrl(): Promise<string> {

@@ -19,6 +19,7 @@ import { BaseLdap } from "../model/authSettings";
 import { Gateway, Network } from "../model/network";
 import { Group } from "../model/group";
 import { Service } from "../model/service";
+import NodeCache from "node-cache";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -71,7 +72,7 @@ export class RedisConfigService extends ConfigService {
 
     isInitCompleted = false;
     timerInterval: any;
-    timerInterval2: any;
+    //timerInterval2: any;
     lastPos = '$';
     //logs: any[] = [];
 
@@ -85,7 +86,7 @@ export class RedisConfigService extends ConfigService {
     }
 
 
-    async start() {
+    override async start() {
         try {
 
             this.timerInterval = await setIntervalAsync(async () => {
@@ -96,6 +97,11 @@ export class RedisConfigService extends ConfigService {
         } catch (err) {
             logger.error(err);
         }
+    }
+    override async stop() {
+        if (this.timerInterval)
+            clearIntervalAsync(this.timerInterval);
+        this.timerInterval = null;
     }
     async rCount(path: RPathCount) {
         const rpath = `/config/${path}`;
@@ -247,10 +253,17 @@ export class RedisConfigService extends ConfigService {
                 logger.info("config service not saved before");
                 logger.info("create default values");
                 await this.saveV1();
+
             }
+
+
+
+
             clearIntervalAsync(this.timerInterval);
             this.timerInterval = null;
             this.isInitCompleted = true;
+
+
         } catch (err) {
             logger.error(err);
         } finally {
@@ -305,9 +318,33 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('authenticationPolicy/rules', this.config.authenticationPolicy.rules, pipeline);
         await this.rSaveArray('authorizationPolicy/rules', this.config.authorizationPolicy.rules, pipeline);
         await this.rSave('lastUpdateTime', this.config.lastUpdateTime, this.config.lastUpdateTime, pipeline);
+        //create certs
+        {
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.com");
+            await this.rSave('jwtSSLCertificate', undefined, {
+                privateKey: privateKey,
+                publicKey: publicKey,
+            }, pipeline);
+        }
+        {
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.local");
+            await this.rSave('caSSLCertificate', undefined, {
+                privateKey: privateKey,
+                publicKey: publicKey,
+            }, pipeline);
+        }
+        {
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("secure.ferrumgate.local");
+            await this.rSave('sslCertificate', undefined, {
+                privateKey: privateKey,
+                publicKey: publicKey,
+            }, pipeline);
+        }
+
         await pipeline.exec();
 
     }
+
 
     override async saveConfigToString() {
 
@@ -1473,34 +1510,83 @@ export class RedisConfigService extends ConfigService {
     }
 
 
+}
 
 
+class NodeCacheForUs extends NodeCache {
+    override get<T>(key: RPath): T | undefined {
+        return super.get<T>(key);
+    }
 
+    override set<T>(key: RPath, value: T): boolean {
+        return super.set(key, value);
+    }
 
+}
 
+export class RedisCachedConfigService extends RedisConfigService {
+    nodeCache = new NodeCacheForUs(
+        {
+            deleteOnExpire: true, stdTTL: 60 * 60, useClones: false
+        }
+    )
 
+    override async getJWTSSLCertificate(): Promise<SSLCertificate> {
+        const ssl = this.nodeCache.get<SSLCertificate>('jwtSSLCertificate');
+        if (ssl) return ssl;
+        const sup = await super.getJWTSSLCertificate();
+        this.nodeCache.set('jwtSSLCertificate', sup);
+        return sup;
+    }
 
+    override async setJWTSSLCertificate(cert: SSLCertificate | {}) {
 
+        const ret = await super.setJWTSSLCertificate(cert);
+        this.nodeCache.set('jwtSSLCertificate', ret.after);
+        return ret;
+    }
 
+    override async getCaptcha(): Promise<Captcha> {
+        const val = this.nodeCache.get<Captcha>('captcha');
+        if (val) return val;
+        const sup = await super.getCaptcha();
+        this.nodeCache.set('captcha', sup);
+        return sup;
+    }
 
+    override async setCaptcha(captcha: Captcha | {}) {
+        const ret = await super.setCaptcha(captcha);
+        this.nodeCache.set('captcha', ret.after);
+        return ret;
+    }
 
+    override async getDomain(): Promise<string> {
+        const val = this.nodeCache.get<string>('domain');
+        if (val) return val;
+        const sup = await super.getDomain();
+        this.nodeCache.set('domain', sup);
+        return sup;
+    }
 
+    override async setDomain(domain: string) {
+        const ret = await super.setDomain(domain);
+        this.nodeCache.set('domain', ret.after);
+        return ret;
+    }
 
+    override async getUrl(): Promise<string> {
+        const val = this.nodeCache.get<string>('url');
+        if (val) return val;
+        const sup = await super.getUrl();
+        this.nodeCache.set('url', sup);
+        return sup;
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    override async setUrl(url: string) {
+        const ret = await super.setUrl(url);
+        this.nodeCache.set('url', ret.after);
+        return ret;
+    }
 
 
 

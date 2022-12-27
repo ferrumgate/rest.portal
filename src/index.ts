@@ -405,28 +405,7 @@ app.start = async function () {
     const appService = (app.appService as AppService);
     const configService = appService.configService;
 
-    const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.com");
-    await configService.setJWTSSLCertificate({
-        privateKey: privateKey,
-        publicKey: publicKey,
-    });
-    //create ca ssl certificate if not exists;
-    if (!(await configService.getCASSLCertificate()).privateKey) {
-        const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.local");
-        await configService.setSSLCertificate({
-            privateKey: privateKey,
-            publicKey: publicKey,
-        });
-    }
-    //create ssl certificates if not exists
-    if (!(await configService.getSSLCertificate()).privateKey) {
-        const { privateKey, publicKey } = await Util.createSelfSignedCrt("secure.ferrumgate.local");
-        await configService.setSSLCertificate({
-            privateKey: privateKey,
-            publicKey: publicKey,
-        });
-    }
-
+    await configService.start();
 
 
     if (!process.env.NODE_TEST)

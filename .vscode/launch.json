@@ -26,7 +26,7 @@
                 "ES_USER": "elastic",
                 "ES_PASS": "123456",
                 "GATEWAY_ID": "12edf",
-                "LIMITED_MODE": "true"
+                "LIMITED_MODE": "true22"
             },
             "outputCapture": "console",
             "console": "integratedTerminal",
