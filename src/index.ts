@@ -433,9 +433,11 @@ app.start = async function () {
 app.start();
 
 
+///// exports 
 
-
-
+export { RestfullException } from './restfullException';
+export { logger } from './common';
+export { ESService } from './service/esService';
 
 
 
