@@ -10,7 +10,7 @@ import { ConfigPublicRoom, ConfigPublicListener, ConfigRequest, ConfigResponse }
 import { Service } from '../src/model/service';
 
 import chaiExclude from 'chai-exclude';
-import { RedisWatcher } from '../src/service/system/redisWatcher';
+import { RedisWatcherService } from '../src/service/redisWatcherService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -226,7 +226,7 @@ describe('configPublicListener ', async () => {
     it('executeMessage', async () => {
 
         const { gateway, gateway2, network, service, configService } = await createSampleData();
-        const watcher = new RedisWatcher('localhost:6379');
+        const watcher = new RedisWatcherService('localhost:6379');
         await watcher.start();
         const listener = new ConfigPublicListener(configService, new RedisService('localhost:6379'),
             watcher);

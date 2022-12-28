@@ -1,4 +1,4 @@
-export const ActivitiyStatus = {
+export const ActivityStatus = {
     Success: 200,
     AuthenticationFailed: 1,
 }

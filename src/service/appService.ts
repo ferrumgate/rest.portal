@@ -24,7 +24,7 @@ import { SessionService } from "./sessionService";
 import { ActivityService } from "./activityService";
 import { ActivityLogToES } from "./system/activityLogToES";
 import { SummaryService } from "./summaryService";
-import { RedisWatcher } from "./system/redisWatcher";
+import { RedisWatcherService } from "./redisWatcherService";
 import { RedisCachedConfigService, RedisConfigService } from "./redisConfigService";
 
 
@@ -115,26 +115,24 @@ export class AppService {
 
 export class AppSystemService {
 
-    public redisSlaveWatcher: RedisWatcher;
+    public redisSlaveWatcher: RedisWatcherService;
     public systemWatcherService: SystemWatcherService;
     public policyAuthzChannel: PolicyAuthzListener;
     public configPublicListener: ConfigPublicListener;
-    public auditLogToES: AuditLogToES;
-    public activityLogToES: ActivityLogToES;
+
 
 
     /**
      *
      */
-    constructor(app: AppService, redisSlaveWatcher?: RedisWatcher, systemWatcher?: SystemWatcherService,
-        policyAuthzChannel?: PolicyAuthzListener, configPublic?: ConfigPublicListener,
-        auditLogES?: AuditLogToES, activityLogToES?: ActivityLogToES) {
-        this.redisSlaveWatcher = redisSlaveWatcher || new RedisWatcher(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS);
+    constructor(app: AppService, redisSlaveWatcher?: RedisWatcherService, systemWatcher?: SystemWatcherService,
+        policyAuthzChannel?: PolicyAuthzListener, configPublic?: ConfigPublicListener
+    ) {
+        this.redisSlaveWatcher = redisSlaveWatcher || new RedisWatcherService(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS);
         this.systemWatcherService = systemWatcher || new SystemWatcherService();
         this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(app.policyService, this.systemWatcherService, app.configService);
         this.configPublicListener = configPublic || new ConfigPublicListener(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
-        this.auditLogToES = auditLogES || new AuditLogToES(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
-        this.activityLogToES = activityLogToES || new ActivityLogToES(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
+
 
     }
     createRedisSlave() {
@@ -145,15 +143,15 @@ export class AppSystemService {
         await this.systemWatcherService.start();
         await this.policyAuthzChannel.start();
         await this.configPublicListener.start();
-        await this.auditLogToES.start();
-        await this.activityLogToES.start();
+        //await this.auditLogToES.start();
+        //await this.activityLogToES.start();
     }
     async stop() {
         await this.redisSlaveWatcher.stop();
         await this.systemWatcherService.stop();
         await this.policyAuthzChannel.stop();
         await this.configPublicListener.stop();
-        await this.auditLogToES.stop();
-        await this.activityLogToES.stop();
+        //await this.auditLogToES.stop();
+        //await this.activityLogToES.stop();
     }
 }

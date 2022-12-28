@@ -1,12 +1,12 @@
-import { ConfigService } from "../configService";
-import { RedisService } from "../redisService";
+import { ConfigService } from "./configService";
+import { RedisService } from "./redisService";
 
 export interface SystemLog {
     type: string;
     val: any;
 }
 
-export class SystemLogger {
+export class SystemLoggerService {
     key = '/logs/system';
     /**
      *

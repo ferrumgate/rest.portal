@@ -9,7 +9,7 @@ import { AuthSession } from "../../model/authSession";
 import { RedisService } from "../../service/redisService";
 import { logger } from "../../common";
 import { AppService } from "../../service/appService";
-import { ActivitiyStatus, ActivityLog } from "../../model/activityLog";
+import { ActivityStatus, ActivityLog } from "../../model/activityLog";
 import { Tunnel } from "../../model/tunnel";
 
 
@@ -165,7 +165,7 @@ export async function saveActivityError(req: any, type: string, err: any, extFun
             authSource: act.authSource || 'unknown',
             insertDate: new Date().toISOString(),
             ip: act.clientIp || req.clientIp,
-            status: ActivitiyStatus.Success,
+            status: ActivityStatus.Success,
             userId: act.user?.id,
             user2FA: act.user?.is2FA,//user needs 2FA            
             sessionId: act.sessionId,
@@ -209,7 +209,7 @@ export async function saveActivity(req: any, type: string, extFunc?: (log: Activ
             authSource: act.authSource || 'unknown',
             insertDate: new Date().toISOString(),
             ip: act.clientIp || req.clientIp,
-            status: ActivitiyStatus.Success,
+            status: ActivityStatus.Success,
             sessionId: act.sessionId,
             requestPath: req.path,
             //tunnel related data

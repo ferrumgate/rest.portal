@@ -12,7 +12,7 @@ import { ConfigService } from '../src/service/configService';
 import { ActivityLog } from '../src/model/activityLog';
 import { ActivityService } from '../src/service/activityService';
 import { ActivityLogToES } from '../src/service/system/activityLogToES';
-import { RedisWatcher } from '../src/service/system/redisWatcher';
+import { RedisWatcherService } from '../src/service/redisWatcherService';
 import { watch } from 'fs';
 
 
@@ -73,7 +73,7 @@ describe.skip('activityLogToES ', async () => {
         await activityService.save(log2);
 
         await es.reset();
-        const watcher = new RedisWatcher();
+        const watcher = new RedisWatcherService();
         await watcher.start();
         const activityLog = new Mock(configService, redis, watcher);
         await activityLog.start();

@@ -6,7 +6,7 @@ import { RedisService } from "../redisService";
 
 import { ConfigService } from "../configService";
 import { ActivityLog } from "../../model/activityLog";
-import { RedisWatcher } from "./redisWatcher";
+import { RedisWatcherService } from "../redisWatcherService";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -25,7 +25,7 @@ export class ActivityLogToES {
 
     constructor(private configService: ConfigService,
         private redis: RedisService,
-        private redisWatcher: RedisWatcher) {
+        private redisWatcher: RedisWatcherService) {
         this.es = this.createESService();
 
     }

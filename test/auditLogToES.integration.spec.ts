@@ -9,7 +9,7 @@ import { Util } from '../src/util';
 import { ESService } from '../src/service/esService';
 import { AuditLogToES } from '../src/service/system/auditLogToES';
 import { ConfigService } from '../src/service/configService';
-import { RedisWatcher } from '../src/service/system/redisWatcher';
+import { RedisWatcherService } from '../src/service/redisWatcherService';
 
 
 
@@ -76,7 +76,7 @@ describe.skip('auditLogToES ', async () => {
         await auditService.saveToRedis(log2);
 
         await es.reset();
-        const watcher = new RedisWatcher();
+        const watcher = new RedisWatcherService();
         await watcher.start();
         const auditLog = new Mock(configService, redis, watcher);
         await auditLog.start();
