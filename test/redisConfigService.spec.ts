@@ -83,6 +83,8 @@ describe('redisConfigService', async () => {
         await Util.sleep(1000);
         await configService.logWatcher.read();
         await configService.logWatcher.read();
+        await configService.logWatcher.read();
+        await configService.logWatcher.read();
         await Util.sleep(5000);
         expect(logs.length).to.equal(2);
         expect(logs[0].type).to.equal('put');

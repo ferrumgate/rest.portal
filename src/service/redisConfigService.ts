@@ -20,7 +20,12 @@ import { Gateway, Network } from "../model/network";
 import { Group } from "../model/group";
 import { Service } from "../model/service";
 import NodeCache from "node-cache";
+import { RestfullException } from "../restfullException";
+import { ErrorCodes } from "../restfullException";
+import { ConfigEvent } from "../model/config";
+
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
+
 
 
 type Nullable<T> = T | null | undefined;
@@ -284,6 +289,7 @@ export class RedisConfigService extends ConfigService {
 
     }
 
+
     async rExists(path: string) {
 
         let rpath = `/config/${path}`;
@@ -403,6 +409,12 @@ export class RedisConfigService extends ConfigService {
 
         await pipeline.exec();
 
+    }
+
+    override emitEvent(event: ConfigEvent): void {
+        // we need to disabled this,
+        // with redis, every change is written to /logs/config file,
+        // clients need to follow that file, about changes
     }
 
 
@@ -1505,16 +1517,16 @@ export class RedisConfigService extends ConfigService {
     override  async updateAuthenticationRulePos(id: string, previous: number, next: string, index: number) {
         const currentRule = await this.rGetWith<AuthenticationRule>('authenticationPolicy/rules', id);
         if (currentRule?.id != id)
-            throw new Error('no rule found at this position');
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
         if (previous < 0)
             throw new Error('array index can be negative');
         const ruleId = await this.rListGetIndex<string>('authenticationPolicy/rulesOrder', previous);
         if (ruleId != id)
-            throw new Error('no rule found at this position');
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
         const listlen = await this.rListLen('authenticationPolicy/rulesOrder');
         const pivot = await this.rListGetIndex('authenticationPolicy/rulesOrder', index);
         if (!pivot || next != pivot)
-            throw new Error("rule position problem");
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
 
         const pipeline = await this.redis.multi();
 
@@ -1599,16 +1611,16 @@ export class RedisConfigService extends ConfigService {
     override  async updateAuthorizationRulePos(id: string, previous: number, next: string, index: number) {
         const currentRule = await this.rGetWith<AuthorizationRule>('authorizationPolicy/rules', id);
         if (currentRule?.id != id)
-            throw new Error('no rule found at this position');
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
         if (previous < 0)
             throw new Error('array index can be negative');
         const ruleId = await this.rListGetIndex<string>('authorizationPolicy/rulesOrder', previous);
         if (ruleId != id)
-            throw new Error('no rule found at this position');
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
         const listlen = await this.rListLen('authorizationPolicy/rulesOrder');
         const pivot = await this.rListGetIndex('authorizationPolicy/rulesOrder', index);
         if (!pivot || pivot != next)
-            throw new Error("rule position problem");
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
         const pipeline = await this.redis.multi();
 
         await this.rListDel('authorizationPolicy/rulesOrder', currentRule.id, pipeline);

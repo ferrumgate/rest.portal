@@ -457,7 +457,7 @@ export class ConfigService {
      */
     emitEvent(event: ConfigEvent) {
         this.events.emit('changed', event);
-        return event;
+        //return event;
     }
 
     /* private writeAsset(name: string, image: string) {

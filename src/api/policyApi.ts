@@ -123,9 +123,11 @@ routerAuthenticationPolicyAuthenticated.put('/rule/pos/:id',
 
         const previousNumber = Number(input.previous);
         const currentNumber = Number(input.current);
+
         const { item, iBefore, iAfter } = await configService.updateAuthenticationRulePos(rule.id, previousNumber, input.pivot, currentNumber);
 
         await auditService.logUpdateAuthenticationRulePos(currentSession, currentUser, item, iBefore, iAfter);
+
 
         return res.status(200).json(rule);
 

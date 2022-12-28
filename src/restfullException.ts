@@ -74,7 +74,7 @@ export class ErrorCodes {
     static ErrKeyLengthSmall: string = 'ErrKeyLengthSmall';
     static ErrInputNullOrUndefined: string = "ErrInputNullOrUndefined";
     static ErrLimitedModeIsWorking: string = 'ErrLimitedModeIsWorking';
-
+    static ErrConflictData: string = 'ErrConflictData';
 
 }
 
