@@ -1553,12 +1553,15 @@ export class ConfigService {
     }
 
     async updateAuthenticationRulePos(id: string, previous: number, next: string, index: number) {
+
         const currentRule = this.config.authenticationPolicy.rules[previous];
         if (currentRule.id != id)
-            throw new Error('no rule found at this position');
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
         if (previous < 0)
             throw new Error('array index can be negative');
 
+        if (this.config.authenticationPolicy.rulesOrder[index] != next)
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
 
         this.config.authenticationPolicy.rules.splice(previous, 1);
         this.config.authenticationPolicy.rules.splice(index, 0, currentRule);
@@ -1624,7 +1627,7 @@ export class ConfigService {
     async updateAuthorizationRulePos(id: string, previous: number, next: string, index: number) {
         const currentRule = this.config.authorizationPolicy.rules[previous];
         if (currentRule.id != id)
-            throw new Error('no rule found at this position');
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
         if (previous < 0)
             throw new Error('array index can be negative');
 

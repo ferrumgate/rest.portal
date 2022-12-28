@@ -455,7 +455,7 @@ export class RedisConfigService extends ConfigService {
 
     isEverythingOK() {
         if (!this.isInitCompleted) {
-            throw new Error("config initialization error");
+            throw new RestfullException(412, ErrorCodes.ErrSystemIsNotReady, ErrorCodes.ErrSystemIsNotReady, 'config is not ready');
         }
     }
 
@@ -1514,12 +1514,12 @@ export class RedisConfigService extends ConfigService {
         return this.createTrackEvent(rule);
     }
 
+    //TODO remove these exceptions to REST API
     override  async updateAuthenticationRulePos(id: string, previous: number, next: string, index: number) {
         const currentRule = await this.rGetWith<AuthenticationRule>('authenticationPolicy/rules', id);
-        if (currentRule?.id != id)
+        if (!currentRule)
             throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
-        if (previous < 0)
-            throw new Error('array index can be negative');
+
         const ruleId = await this.rListGetIndex<string>('authenticationPolicy/rulesOrder', previous);
         if (ruleId != id)
             throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
@@ -1608,12 +1608,12 @@ export class RedisConfigService extends ConfigService {
         return this.createTrackEvent(rule);
     }
 
+    //TODO remove these exceptions to REST API
     override  async updateAuthorizationRulePos(id: string, previous: number, next: string, index: number) {
         const currentRule = await this.rGetWith<AuthorizationRule>('authorizationPolicy/rules', id);
-        if (currentRule?.id != id)
+        if (!currentRule)
             throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
-        if (previous < 0)
-            throw new Error('array index can be negative');
+
         const ruleId = await this.rListGetIndex<string>('authorizationPolicy/rulesOrder', previous);
         if (ruleId != id)
             throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");

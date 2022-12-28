@@ -1513,11 +1513,12 @@ describe('redisConfigService', async () => {
     });
 
 
-    it.skip('updateAuthenticationRulePos', async () => {
+    it('updateAuthenticationRulePos', async () => {
 
-        //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        //first create a config and save to a file
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         configService.config.authenticationPolicy.rules = [];
+        configService.config.authenticationPolicy.rulesOrder = [];
         await configService.init();
         let rule1: AuthenticationRule = {
             id: '1',
@@ -1531,7 +1532,7 @@ describe('redisConfigService', async () => {
             insertDate: new Date().toISOString()
 
         }
-        configService.config.authenticationPolicy.rules.push(rule1);
+
 
         let rule2: AuthenticationRule = {
             id: '2',
@@ -1545,7 +1546,7 @@ describe('redisConfigService', async () => {
             insertDate: new Date().toISOString()
 
         }
-        configService.config.authenticationPolicy.rules.push(rule2);
+
 
 
         let rule3: AuthenticationRule = {
@@ -1560,29 +1561,36 @@ describe('redisConfigService', async () => {
             insertDate: new Date().toISOString()
 
         }
-        configService.config.authenticationPolicy.rules.push(rule3);
+        await configService.saveAuthenticationPolicyRule(rule3);
+        await configService.saveAuthenticationPolicyRule(rule2);
+        await configService.saveAuthenticationPolicyRule(rule1);
+
         const policy = configService.config.authenticationPolicy;
+        await configService.getAuthenticationPolicy();
+        expect(policy.rulesOrder[0]).to.be.equal(rule1.id);
+        expect(policy.rulesOrder[1]).to.be.equal(rule2.id);
+        expect(policy.rulesOrder[2]).to.be.equal(rule3.id);
 
-        await configService.updateAuthenticationRulePos(rule1.id, 0, rule1.id, 0);
-        expect(policy.rules[0].id).to.be.equal('1');
-        expect(policy.rules[1].id).to.be.equal('2');
-        expect(policy.rules[2].id).to.be.equal('3');
 
 
-        await configService.updateAuthenticationRulePos(rule1.id, 0, rule1.id, 5);
-        expect(policy.rules[0].id).to.be.equal('2');
-        expect(policy.rules[1].id).to.be.equal('3');
-        expect(policy.rules[2].id).to.be.equal('1');
+        await configService.updateAuthenticationRulePos(rule1.id, 0, rule3.id, 2);
+        await configService.getAuthenticationPolicy();
+        expect(policy.rulesOrder[0]).to.be.equal('2');
+        expect(policy.rulesOrder[1]).to.be.equal('3');
+        expect(policy.rulesOrder[2]).to.be.equal('1');
 
-        await configService.updateAuthenticationRulePos(rule1.id, 2, rule1.id, 1);
-        expect(policy.rules[0].id).to.be.equal('2');
-        expect(policy.rules[1].id).to.be.equal('1');
-        expect(policy.rules[2].id).to.be.equal('3');
+        await configService.updateAuthenticationRulePos(rule1.id, 2, rule3.id, 1);
+        await configService.getAuthenticationPolicy();
+        expect(policy.rulesOrder[0]).to.be.equal('2');
+        expect(policy.rulesOrder[1]).to.be.equal('1');
+        expect(policy.rulesOrder[2]).to.be.equal('3');
 
-        await configService.updateAuthenticationRulePos(rule1.id, 1, rule1.id, 0);
-        expect(policy.rules[0].id).to.be.equal('1');
-        expect(policy.rules[1].id).to.be.equal('2');
-        expect(policy.rules[2].id).to.be.equal('3');
+        await configService.updateAuthenticationRulePos(rule1.id, 1, rule2.id, 0);
+        await configService.getAuthenticationPolicy();
+
+        expect(policy.rulesOrder[0]).to.be.equal('1');
+        expect(policy.rulesOrder[1]).to.be.equal('2');
+        expect(policy.rulesOrder[2]).to.be.equal('3');
 
         let errrored = false;
         try {
@@ -1592,7 +1600,12 @@ describe('redisConfigService', async () => {
         }
         expect(errrored).to.be.true;
 
+
+
+
+
     });
+
 
 
     //authorizationPolicy
@@ -1708,6 +1721,107 @@ describe('redisConfigService', async () => {
         expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
 
     });
+
+
+    it('updateAuthorizationRulePos', async () => {
+
+        //first create a config and save to a file
+        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.authorizationPolicy.rulesOrder = [];
+        await configService.init();
+        let rule1: AuthorizationRule = {
+            id: '1',
+            name: "zero trust1",
+            serviceId: '12',
+            profile: { is2FA: true },
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+
+
+        let rule2: AuthorizationRule = {
+            id: '2',
+            name: "zero trust2",
+            serviceId: '12',
+            profile: { is2FA: true },
+            networkId: 'networkId',
+
+            userOrgroupIds: ['somegroupid'],
+
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+
+
+        let rule3: AuthorizationRule = {
+            id: '3',
+            name: "zero trust3",
+
+            serviceId: '12',
+            profile: { is2FA: true },
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+        }
+        await configService.saveAuthorizationPolicyRule(rule3);
+        await configService.saveAuthorizationPolicyRule(rule2);
+        await configService.saveAuthorizationPolicyRule(rule1);
+
+
+        const policy = configService.config.authorizationPolicy;
+
+
+        expect(policy.rulesOrder[0]).to.be.equal(rule1.id);
+        expect(policy.rulesOrder[1]).to.be.equal(rule2.id);
+        expect(policy.rulesOrder[2]).to.be.equal(rule3.id);
+
+
+
+        await configService.updateAuthorizationRulePos(rule1.id, 0, rule3.id, 2);
+        await configService.getAuthorizationPolicy();
+        expect(policy.rulesOrder[0]).to.be.equal('2');
+        expect(policy.rulesOrder[1]).to.be.equal('3');
+        expect(policy.rulesOrder[2]).to.be.equal('1');
+
+        await configService.updateAuthorizationRulePos(rule1.id, 2, rule3.id, 1);
+        await configService.getAuthorizationPolicy();
+
+        expect(policy.rulesOrder[0]).to.be.equal('2');
+        expect(policy.rulesOrder[1]).to.be.equal('1');
+        expect(policy.rulesOrder[2]).to.be.equal('3');
+
+        await configService.updateAuthorizationRulePos(rule1.id, 1, rule2.id, 0);
+        await configService.getAuthorizationPolicy();
+
+        expect(policy.rulesOrder[0]).to.be.equal('1');
+        expect(policy.rulesOrder[1]).to.be.equal('2');
+        expect(policy.rulesOrder[2]).to.be.equal('3');
+
+        let errrored = false;
+        try {
+            await configService.updateAuthorizationRulePos(rule1.id, 1, rule1.id, 5);
+        } catch (err) {
+            errrored = true;
+        }
+        expect(errrored).to.be.true;
+
+
+
+
+
+    });
+
 
 
     it('triggerUserDeleted', async () => {

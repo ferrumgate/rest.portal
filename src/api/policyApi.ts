@@ -123,6 +123,8 @@ routerAuthenticationPolicyAuthenticated.put('/rule/pos/:id',
 
         const previousNumber = Number(input.previous);
         const currentNumber = Number(input.current);
+        if (previousNumber < 0 || currentNumber < 0 || previousNumber == currentNumber)
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "bad argument");
 
         const { item, iBefore, iAfter } = await configService.updateAuthenticationRulePos(rule.id, previousNumber, input.pivot, currentNumber);
 
@@ -305,6 +307,9 @@ routerAuthorizationPolicyAuthenticated.put('/rule/pos/:id',
 
         const previousNumber = Number(input.previous);
         const currentNumber = Number(input.current);
+        if (previousNumber < 0 || currentNumber < 0 || previousNumber == currentNumber)
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "bad argument");
+
         const { item, iBefore, iAfter } = await configService.updateAuthorizationRulePos(rule.id, previousNumber, input.pivot, currentNumber);
         //await configService.updateAuthenticationPolicyUpdateTime();
         await auditService.logUpdateAuthenticationRulePos(currentSession, currentUser, item, iBefore, iAfter);
