@@ -1779,7 +1779,7 @@ describe('redisConfigService', async () => {
         await configService.saveAuthorizationPolicyRule(rule1);
 
 
-        const policy = configService.config.authorizationPolicy;
+        const policy = await configService.getAuthorizationPolicy();
 
 
         expect(policy.rulesOrder[0]).to.be.equal(rule1.id);
