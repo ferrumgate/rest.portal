@@ -1159,30 +1159,30 @@ describe('configService', async () => {
         configService.config.authenticationPolicy.rules.push(rule3);
         const policy = configService.config.authenticationPolicy;
 
-        await configService.updateAuthenticationRulePos(rule1.id, 0, 0);
+        await configService.updateAuthenticationRulePos(rule1.id, 0, rule1.id, 0);
         expect(policy.rules[0].id).to.be.equal('1');
         expect(policy.rules[1].id).to.be.equal('2');
         expect(policy.rules[2].id).to.be.equal('3');
 
 
-        await configService.updateAuthenticationRulePos(rule1.id, 0, 5);
+        await configService.updateAuthenticationRulePos(rule1.id, 0, rule1.id, 5);
         expect(policy.rules[0].id).to.be.equal('2');
         expect(policy.rules[1].id).to.be.equal('3');
         expect(policy.rules[2].id).to.be.equal('1');
 
-        await configService.updateAuthenticationRulePos(rule1.id, 2, 1);
+        await configService.updateAuthenticationRulePos(rule1.id, 2, rule1.id, 1);
         expect(policy.rules[0].id).to.be.equal('2');
         expect(policy.rules[1].id).to.be.equal('1');
         expect(policy.rules[2].id).to.be.equal('3');
 
-        await configService.updateAuthenticationRulePos(rule1.id, 1, 0);
+        await configService.updateAuthenticationRulePos(rule1.id, 1, rule1.id, 0);
         expect(policy.rules[0].id).to.be.equal('1');
         expect(policy.rules[1].id).to.be.equal('2');
         expect(policy.rules[2].id).to.be.equal('3');
 
         let errrored = false;
         try {
-            await configService.updateAuthenticationRulePos(rule1.id, 1, 5);
+            await configService.updateAuthenticationRulePos(rule1.id, 1, rule1.id, 5);
         } catch (err) {
             errrored = true;
         }

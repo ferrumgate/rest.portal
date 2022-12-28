@@ -339,7 +339,7 @@ describe('policy', async () => {
             chai.request(app)
                 .put(`/policy/authn/rule/pos/${rule1.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
-                .send({ previous: 0, current: 2 })
+                .send({ previous: 0, current: 2, pivot: rule3.id })
                 .end((err, res) => {
                     if (err)
                         reject(err);

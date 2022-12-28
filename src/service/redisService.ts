@@ -133,6 +133,45 @@ export class RedisPipelineService {
         return this.pipeline;
     }
 
+    async lpush(key: string, values: (string | number)[]) {
+        this.pipeline = await this.pipeline.lpush(key, ...values);
+        return this.pipeline;
+    }
+    async rpush(key: string, values: (string | number)[]) {
+        this.pipeline = await this.pipeline.rpush(key, ...values);
+        return this.pipeline;
+    }
+    async llen(key: string) {
+        this.pipeline = await this.pipeline.llen(key);
+        return this.pipeline;
+    }
+    async lrange(key: string, start: number, stop: number) {
+        this.pipeline = await this.pipeline.lrange(key, start, stop);
+        return this.pipeline;
+    }
+    async lrem(key: string, val: string | number, count = 1) {
+        this.pipeline = await this.pipeline.lrem(key, count, val);
+        return this.pipeline;
+    }
+
+    async lindex(key: string, val: string | number) {
+        this.pipeline = await this.pipeline.lindex(key, val)
+        return this.pipeline;
+    }
+    async lset(key: string, index: number, val: string | number) {
+        this.pipeline = await this.pipeline.lset(key, index, val)
+        return this.pipeline;
+    }
+    async linsertBefore(key: string, ref: string | number, val: string | number) {
+        this.pipeline = await this.pipeline.linsert(key, 'BEFORE', ref, val);
+        return this.pipeline;
+    }
+    async linsertAfter(key: string, ref: string | number, val: string | number) {
+        this.pipeline = await this.pipeline.linsert(key, 'AFTER', ref, val);
+        return this.pipeline;
+    }
+
+
 }
 export class RedisService {
 
@@ -442,8 +481,32 @@ export class RedisService {
         return await this.redis.xtrim(key, 'MINID', pos);
     }
 
-    async lpush(key: string, values: string[]) {
+    async lpush(key: string, values: string | number[]) {
         return await this.redis.lpush(key, ...values);
+    }
+    async rpush(key: string, values: string | number[]) {
+        return await this.redis.rpush(key, ...values);
+    }
+    async llen(key: string) {
+        return await this.redis.llen(key);
+    }
+    async lrange(key: string, start: number, stop: number) {
+        return await this.redis.lrange(key, start, stop);
+    }
+    async lrem(key: string, val: string | number, count = 1) {
+        return await this.redis.lrem(key, count, val);
+    }
+    async linsertBefore(key: string, ref: string | number, val: string | number) {
+        return await this.redis.linsert(key, 'BEFORE', ref, val);
+    }
+    async linsertAfter(key: string, ref: string | number, val: string | number) {
+        return await this.redis.linsert(key, 'AFTER', ref, val);
+    }
+    async lindex(key: string, val: string | number) {
+        return await this.redis.lindex(key, val)
+    }
+    async lset(key: string, index: number, val: string | number) {
+        return await this.redis.lset(key, index, val)
     }
     async smembers(key: string) {
         return await this.redis.smembers(key);

@@ -103,8 +103,8 @@ routerAuthenticationPolicyAuthenticated.put('/rule/pos/:id',
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
-        const input = req.body as { previous: string, current: string };
-        logger.info(`changing authentication policy rule pos with id:${id} to ${input}`);
+        const input = req.body as { previous: string, current: string, pivot: string };
+        logger.info(`changing authentication policy rule pos with id:${id} to previous:${input.previous} current:${input.current}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
@@ -113,14 +113,18 @@ routerAuthenticationPolicyAuthenticated.put('/rule/pos/:id',
 
         await inputService.checkIsNumber(input.previous);
         await inputService.checkIsNumber(input.current);
+        await inputService.checkIfExists(input.pivot);
         const rule = await configService.getAuthenticationPolicyRule(id);
         if (!rule) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrAuthnRuleNotFound, 'no rule');
+
+        const pivot = await configService.getAuthenticationPolicyRule(input.pivot);
+        if (!pivot) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrAuthnRuleNotFound, 'no rule');
 
 
         const previousNumber = Number(input.previous);
         const currentNumber = Number(input.current);
-        const { item, iBefore, iAfter } = await configService.updateAuthenticationRulePos(rule.id, previousNumber, currentNumber);
-        //await configService.updateAuthenticationPolicyUpdateTime();
+        const { item, iBefore, iAfter } = await configService.updateAuthenticationRulePos(rule.id, previousNumber, input.pivot, currentNumber);
+
         await auditService.logUpdateAuthenticationRulePos(currentSession, currentUser, item, iBefore, iAfter);
 
         return res.status(200).json(rule);
@@ -265,6 +269,45 @@ routerAuthorizationPolicyAuthenticated.delete('/rule/:id',
         await auditService.logDeleteAuthorizationPolicyRule(currentSession, currentUser, before);
 
         return res.status(200).json({});
+
+    }))
+
+
+routerAuthorizationPolicyAuthenticated.put('/rule/pos/:id',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const input = req.body as { previous: string, current: string, pivot: string };
+        logger.info(`changing authorization policy rule pos with id:${id} to previous:${input.previous} current:${input.current}`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+
+        await inputService.checkIsNumber(input.previous);
+        await inputService.checkIsNumber(input.current);
+        await inputService.checkIfExists(input.pivot);
+        const rule = await configService.getAuthorizationPolicyRule(id);
+        if (!rule) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrAuthnRuleNotFound, 'no rule');
+
+        const pivot = await configService.getAuthorizationPolicyRule(input.pivot);
+        if (!pivot) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrAuthnRuleNotFound, 'no rule');
+
+
+        const previousNumber = Number(input.previous);
+        const currentNumber = Number(input.current);
+        const { item, iBefore, iAfter } = await configService.updateAuthorizationRulePos(rule.id, previousNumber, input.pivot, currentNumber);
+        //await configService.updateAuthenticationPolicyUpdateTime();
+        await auditService.logUpdateAuthenticationRulePos(currentSession, currentUser, item, iBefore, iAfter);
+
+        return res.status(200).json(rule);
 
     }))
 

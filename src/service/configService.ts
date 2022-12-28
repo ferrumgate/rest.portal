@@ -14,15 +14,12 @@ import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthSaml, AuthSettings, Bas
 import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
 import { Gateway, Network } from "../model/network";
-import { isAbsolute } from "path";
 import { Group } from "../model/group";
-import { util } from "chai";
 import { Service } from "../model/service";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
-import { urlToHttpOptions } from "url";
 import { EventEmitter } from "stream";
-import { runInThisContext } from "vm";
+
 
 
 
@@ -94,10 +91,10 @@ export class ConfigService {
             gateways: [],
 
             authenticationPolicy: {
-                rules: [
-                ],
+                rules: [], rulesOrder: []
+
             },
-            authorizationPolicy: { rules: [], rulesSort: '' }
+            authorizationPolicy: { rules: [], rulesOrder: [] }
 
 
         }
@@ -293,6 +290,7 @@ export class ConfigService {
                 updateDate: new Date().toISOString(),
                 insertDate: new Date().toISOString()
             })
+            this.config.authorizationPolicy.rulesOrder.push(this.config.authorizationPolicy.rules[0].id);
 
             //
             this.config.authenticationPolicy.rules.push({
@@ -305,9 +303,11 @@ export class ConfigService {
                 profile: { is2FA: true },
                 isEnabled: true,
                 updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
+                insertDate: new Date().toISOString(),
+
 
             })
+            this.config.authenticationPolicy.rulesOrder.push(this.config.authenticationPolicy.rules[0].id)
 
             this.config.authenticationPolicy.rules.push({
 
@@ -319,9 +319,12 @@ export class ConfigService {
                 profile: { is2FA: true },
                 isEnabled: true,
                 updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
+                insertDate: new Date().toISOString(),
+
+
 
             })
+            this.config.authenticationPolicy.rulesOrder.push(this.config.authenticationPolicy.rules[1].id)
             this.config.authenticationPolicy.rules.push({
 
                 id: Util.randomNumberString(16),
@@ -332,9 +335,14 @@ export class ConfigService {
                 profile: { is2FA: true },
                 isEnabled: true,
                 updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
+                insertDate: new Date().toISOString(),
+
 
             })
+            this.config.authenticationPolicy.rulesOrder.push(this.config.authenticationPolicy.rules[2].id)
+
+
+
 
         }
         this.config.lastUpdateTime = new Date().toISOString();
@@ -361,9 +369,12 @@ export class ConfigService {
 
 
     }
-    async start() {
-
+    async init() {
         await this.createCerts();
+    }
+    async start() {
+        await this.init();
+
     }
     protected async createCerts() {
 
@@ -1504,6 +1515,7 @@ export class ConfigService {
             cloned.updateDate = new Date().toISOString();
 
             this.config.authenticationPolicy.rules.push(cloned);
+            this.config.authenticationPolicy.rulesOrder.push(cloned.id);
             ruleIndex = this.config.authenticationPolicy.rules.length - 1;
             this.emitEvent({ type: 'saved', path: '/authenticationPolicy/rules', data: this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex]) })
         }
@@ -1532,6 +1544,7 @@ export class ConfigService {
         const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
         if (ruleIndex >= 0 && rule) {
             this.config.authenticationPolicy.rules.splice(ruleIndex, 1);
+            this.config.authenticationPolicy.rulesOrder.splice(ruleIndex, 1);
             this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(rule) })
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
             await this.saveConfigToFile();
@@ -1539,7 +1552,7 @@ export class ConfigService {
         return this.createTrackEvent(rule);
     }
 
-    async updateAuthenticationRulePos(id: string, previous: number, index: number) {
+    async updateAuthenticationRulePos(id: string, previous: number, next: string, index: number) {
         const currentRule = this.config.authenticationPolicy.rules[previous];
         if (currentRule.id != id)
             throw new Error('no rule found at this position');
@@ -1549,7 +1562,9 @@ export class ConfigService {
 
         this.config.authenticationPolicy.rules.splice(previous, 1);
         this.config.authenticationPolicy.rules.splice(index, 0, currentRule);
-        //TODO how to manage
+        this.config.authenticationPolicy.rulesOrder.splice(previous, 1);
+        this.config.authenticationPolicy.rulesOrder.splice(index, 0, currentRule.id);
+
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
         return this.createTrackIndexEvent(currentRule, previous, index);
@@ -1569,6 +1584,7 @@ export class ConfigService {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
             this.config.authorizationPolicy.rules.push(cloned);
+            this.config.authorizationPolicy.rulesOrder.push(cloned.id);
             ruleIndex = this.config.authorizationPolicy.rules.length - 1;
             this.emitEvent({ type: 'saved', path: '/authorizationPolicy/rules', data: this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]) })
         }
@@ -1597,11 +1613,31 @@ export class ConfigService {
         const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
         if (ruleIndex >= 0 && rule) {
             this.config.authorizationPolicy.rules.splice(ruleIndex, 1);
+            this.config.authorizationPolicy.rulesOrder.splice(ruleIndex, 1);
             this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(rule) })
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
             await this.saveConfigToFile();
         }
         return this.createTrackEvent(rule);
+    }
+
+    async updateAuthorizationRulePos(id: string, previous: number, next: string, index: number) {
+        const currentRule = this.config.authorizationPolicy.rules[previous];
+        if (currentRule.id != id)
+            throw new Error('no rule found at this position');
+        if (previous < 0)
+            throw new Error('array index can be negative');
+
+
+        this.config.authorizationPolicy.rules.splice(previous, 1);
+        this.config.authorizationPolicy.rules.splice(index, 0, currentRule);
+        this.config.authorizationPolicy.rulesOrder.splice(previous, 1);
+        this.config.authorizationPolicy.rulesOrder.splice(index, 0, currentRule.id);
+
+        this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
+        this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
+        return this.createTrackIndexEvent(currentRule, previous, index);
+
     }
 
 

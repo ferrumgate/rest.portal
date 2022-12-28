@@ -427,6 +427,11 @@ export const Util = {
         if (val == null) return null;
         if (val == undefined) return undefined;
         return val as any;
+    },
+    nanosecond() {
+        const NS_PER_SEC = 1e9;
+        const [second, nanosecond] = process.hrtime();
+        return second * NS_PER_SEC + nanosecond;
     }
 
 

@@ -51,7 +51,10 @@ type RPath =
     'networks' |
     'gateways' |
     'authenticationPolicy/rules' |
-    'authorizationPolicy/rules';
+    'authenticationPolicy/rulesOrder' |
+    'authorizationPolicy/rules' |
+    'authorizationPolicy/rulesOrder';
+
 
 type RPathCount = 'users/*' |
     'groups/*' |
@@ -135,6 +138,60 @@ export class RedisConfigService extends ConfigService {
 
     }
 
+    async rListAll<T>(path: RPath, callback?: (vals: string[]) => T[]) {
+        const rpath = `/config/${path}`;
+        const len = Util.convertToNumber(await this.redis.llen(rpath));
+        if (len) {
+            const items = await this.redis.lrange(rpath, 0, len);
+            if (callback)
+                return callback(items);
+            return items;
+        } else return [];
+    }
+    async rListGetIndex<T>(path: RPath, index: number) {
+        const rpath = `/config/${path}`;
+        return await this.redis.lindex(rpath, index);
+    }
+    async rListDel(path: RPath, val: string | number, pipeline?: RedisPipelineService) {
+        const rpath = `/config/${path}`;
+        const trx = pipeline || await this.redis.multi();
+
+        await trx.lrem(rpath, val);
+        await this.logWatcher.write({ path: rpath, type: 'del', val: val }, trx);
+        if (!pipeline)
+            await trx.exec();
+    }
+    async rListAdd(path: RPath, val: string | number, pushBack: boolean, pipeline?: RedisPipelineService) {
+        const rpath = `/config/${path}`;
+        const trx = pipeline || await this.redis.multi();
+        if (pushBack)
+            await trx.rpush(rpath, [val]);
+        else await trx.lpush(rpath, [val]);
+        await this.logWatcher.write({ path: rpath, type: 'put', val: val }, trx);
+        if (!pipeline)
+            await trx.exec();
+    }
+    async rListInsert(path: RPath, val: string | number, refPos: 'BEFORE' | 'AFTER', refVal: string | number, previous: number, current: number, total: number, pipeline?: RedisPipelineService) {
+        const rpath = `/config/${path}`;
+        const trx = pipeline || await this.redis.multi();
+        /* if (current == 0)
+            await trx.lpush(rpath, [val]);
+        else
+            if (current == total - 1)
+                await trx.rpush(rpath, [val]);
+            else */
+        if (refPos == 'BEFORE')
+            await trx.linsertBefore(rpath, refVal, val);
+        else await trx.linsertAfter(rpath, refVal, val);
+
+        await this.logWatcher.write({ path: rpath, type: 'put', val: { id: val, previous: previous, current: current } }, trx);
+        if (!pipeline)
+            await trx.exec();
+    }
+    async rListLen(path: RPath) {
+        const rpath = `/config/${path}`;
+        return await this.redis.llen(rpath);
+    }
 
 
     async rGet<Nullable>(path: RPath, callback?: (val: Nullable | null) => Promise<Nullable>) {
@@ -235,7 +292,7 @@ export class RedisConfigService extends ConfigService {
     }
 
 
-    async init() {
+    override async init() {
         try {
             logger.info("config service init, trying lock");
             await this.redLock.tryLock('/lock/config', 1000, true, 2, 250);
@@ -255,9 +312,6 @@ export class RedisConfigService extends ConfigService {
                 await this.saveV1();
 
             }
-
-
-
 
             clearIntervalAsync(this.timerInterval);
             this.timerInterval = null;
@@ -316,7 +370,13 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('networks', this.config.networks, pipeline);
         await this.rSaveArray('gateways', this.config.gateways, pipeline);
         await this.rSaveArray('authenticationPolicy/rules', this.config.authenticationPolicy.rules, pipeline);
+        for (const order of this.config.authenticationPolicy.rulesOrder) {
+            await this.rListAdd('authenticationPolicy/rulesOrder', order, true, pipeline);
+        }
         await this.rSaveArray('authorizationPolicy/rules', this.config.authorizationPolicy.rules, pipeline);
+        for (const order of this.config.authorizationPolicy.rulesOrder) {
+            await this.rListAdd('authorizationPolicy/rulesOrder', order, true, pipeline);
+        }
         await this.rSave('lastUpdateTime', this.config.lastUpdateTime, this.config.lastUpdateTime, pipeline);
         //create certs
         {
@@ -1005,6 +1065,7 @@ export class RedisConfigService extends ConfigService {
         this.config.authorizationPolicy.rules = this.config.authorizationPolicy.rules.filter(x => x.networkId != net.id);
         for (const x of deleteAuthorizationRules) {
             await this.rDel('authorizationPolicy/rules', x, pipeline);
+            await this.rListDel('authorizationPolicy/rulesOrder', x.id, pipeline);
             this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) });
         };
         //check one more
@@ -1013,6 +1074,7 @@ export class RedisConfigService extends ConfigService {
         this.config.authorizationPolicy.rules = this.config.authorizationPolicy.rules.filter(x => !deleteServicesId.includes(x.serviceId));
         for (const x of deleteAuthorizatonRules2) {
             await this.rDel('authorizationPolicy/rules', x, pipeline);
+            await this.rListDel('authorizationPolicy/rulesOrder', x.id, pipeline);
             this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) });
         }
 
@@ -1025,6 +1087,7 @@ export class RedisConfigService extends ConfigService {
         this.config.authenticationPolicy.rules = this.config.authenticationPolicy.rules.filter(x => x.networkId != net.id);
         for (const x of deleteAuthenticationRules) {
             await this.rDel('authenticationPolicy/rules', x, pipeline);
+            await this.rListDel('authenticationPolicy/rulesOrder', x.id, pipeline);
             this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(x) });
         }
         if (deleteAuthenticationRules.length) {
@@ -1337,6 +1400,7 @@ export class RedisConfigService extends ConfigService {
         this.config.authorizationPolicy.rules = this.config.authorizationPolicy.rules.filter(x => x.serviceId != svc.id);
         for (const x of rulesAuthzChanged) {
             await this.rDel('authorizationPolicy/rules', x, pipeline);
+            await this.rListDel('authorizationPolicy/rulesOrder', x.id, pipeline);
             this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) })
         }
         if (rulesAuthzChanged.length)
@@ -1384,6 +1448,9 @@ export class RedisConfigService extends ConfigService {
         let ret = await super.saveAuthenticationPolicyRule(arule);
         const pipeline = await this.redis.multi();
         await this.rSave('authenticationPolicy/rules', ret.before, ret.after, pipeline);
+        if (!ret.before && ret.after) {
+            await this.rListAdd('authenticationPolicy/rulesOrder', ret.after.id, false, pipeline);
+        }
         await this.saveLastUpdateTime(pipeline);
         await pipeline.exec();
         return ret;
@@ -1391,12 +1458,14 @@ export class RedisConfigService extends ConfigService {
     override async getAuthenticationPolicy() {
         this.isEverythingOK();
         this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        this.config.authenticationPolicy.rulesOrder = await this.rListAll('authenticationPolicy/rulesOrder');
         return await super.getAuthenticationPolicy();
     }
 
     override async getAuthenticationPolicyUnsafe() {
         this.isEverythingOK();
         this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        this.config.authenticationPolicy.rulesOrder = await this.rListAll('authenticationPolicy/rulesOrder')
         return await super.getAuthenticationPolicyUnsafe();
     }
     override async getAuthenticationPolicyRule(id: string) {
@@ -1423,6 +1492,7 @@ export class RedisConfigService extends ConfigService {
 
             const pipeline = await this.redis.multi();
             await this.rDel('authenticationPolicy/rules', rule, pipeline);
+            await this.rListDel('authenticationPolicy/rulesOrder', rule.id, pipeline);
             await this.saveLastUpdateTime(pipeline);
             await pipeline.exec();
             this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(rule) })
@@ -1432,17 +1502,28 @@ export class RedisConfigService extends ConfigService {
         return this.createTrackEvent(rule);
     }
 
-    override  async updateAuthenticationRulePos(id: string, previous: number, index: number) {
-        const currentRule = this.config.authenticationPolicy.rules[previous];
-        if (currentRule.id != id)
+    override  async updateAuthenticationRulePos(id: string, previous: number, next: string, index: number) {
+        const currentRule = await this.rGetWith<AuthenticationRule>('authenticationPolicy/rules', id);
+        if (currentRule?.id != id)
             throw new Error('no rule found at this position');
         if (previous < 0)
             throw new Error('array index can be negative');
+        const ruleId = await this.rListGetIndex<string>('authenticationPolicy/rulesOrder', previous);
+        if (ruleId != id)
+            throw new Error('no rule found at this position');
+        const listlen = await this.rListLen('authenticationPolicy/rulesOrder');
+        const pivot = await this.rListGetIndex('authenticationPolicy/rulesOrder', index);
+        if (!pivot || next != pivot)
+            throw new Error("rule position problem");
 
+        const pipeline = await this.redis.multi();
 
-        this.config.authenticationPolicy.rules.splice(previous, 1);
-        this.config.authenticationPolicy.rules.splice(index, 0, currentRule);
-        //TODO how to manage
+        await this.rListDel('authenticationPolicy/rulesOrder', currentRule.id, pipeline);
+        await this.rListInsert('authenticationPolicy/rulesOrder', id, previous < index ? 'AFTER' : 'BEFORE', pivot, previous, index, listlen, pipeline);
+
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
         return this.createTrackIndexEvent(currentRule, previous, index);
@@ -1465,6 +1546,9 @@ export class RedisConfigService extends ConfigService {
         let ret = await super.saveAuthorizationPolicyRule(arule);
         const pipeline = await this.redis.multi();
         await this.rSave('authorizationPolicy/rules', ret.before, ret.after, pipeline);
+        if (!ret.before && ret.after) {
+            await this.rListAdd('authorizationPolicy/rulesOrder', ret.after.id, false, pipeline);
+        }
         await this.saveLastUpdateTime(pipeline);
         await pipeline.exec();
         return ret;
@@ -1473,11 +1557,13 @@ export class RedisConfigService extends ConfigService {
     async getAuthorizationPolicy() {
         this.isEverythingOK();
         this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        this.config.authorizationPolicy.rulesOrder = await this.rListAll('authorizationPolicy/rulesOrder');
         return await super.getAuthorizationPolicy();
     }
     async getAuthorizationPolicyUnsafe() {
         this.isEverythingOK();
         this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        this.config.authorizationPolicy.rulesOrder = await this.rListAll('authorizationPolicy/rulesOrder');
         return await super.getAuthorizationPolicyUnsafe();
     }
     async getAuthorizationPolicyRule(id: string) {
@@ -1500,6 +1586,7 @@ export class RedisConfigService extends ConfigService {
         if (rule) {
             const pipeline = await this.redis.multi();
             await this.rDel('authorizationPolicy/rules', rule, pipeline);
+            await this.rListDel('authorizationPolicy/rulesOrder', rule.id, pipeline);
             await this.saveLastUpdateTime(pipeline);
             await pipeline.exec();
             this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(rule) })
@@ -1507,6 +1594,34 @@ export class RedisConfigService extends ConfigService {
 
         }
         return this.createTrackEvent(rule);
+    }
+
+    override  async updateAuthorizationRulePos(id: string, previous: number, next: string, index: number) {
+        const currentRule = await this.rGetWith<AuthorizationRule>('authorizationPolicy/rules', id);
+        if (currentRule?.id != id)
+            throw new Error('no rule found at this position');
+        if (previous < 0)
+            throw new Error('array index can be negative');
+        const ruleId = await this.rListGetIndex<string>('authorizationPolicy/rulesOrder', previous);
+        if (ruleId != id)
+            throw new Error('no rule found at this position');
+        const listlen = await this.rListLen('authorizationPolicy/rulesOrder');
+        const pivot = await this.rListGetIndex('authorizationPolicy/rulesOrder', index);
+        if (!pivot || pivot != next)
+            throw new Error("rule position problem");
+        const pipeline = await this.redis.multi();
+
+        await this.rListDel('authorizationPolicy/rulesOrder', currentRule.id, pipeline);
+        await this.rListInsert('authorizationPolicy/rulesOrder', id, previous < index ? 'AFTER' : 'BEFORE', pivot, previous, index, listlen, pipeline);
+
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+
+        this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
+        this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
+        return this.createTrackIndexEvent(currentRule, previous, index);
+
+
     }
 
 
