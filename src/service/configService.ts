@@ -18,7 +18,8 @@ import { Group } from "../model/group";
 import { Service } from "../model/service";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
-import { EventEmitter } from "stream";
+import EventEmitter from "node:events";
+
 
 
 

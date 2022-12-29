@@ -1,6 +1,7 @@
+
 import { Redis } from "ioredis";
+import EventEmitter from "node:events";
 import { logger } from "../common";
-import { EventEmitter } from "stream";
 import { Util } from "../util";
 import { RedisService } from "./redisService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
@@ -24,11 +25,11 @@ export class RedLockService {
         return this.randomKey;
     }
 
-    async lock(resource: string, ttl = 10000, check = 5000) {
+    async lock(resource: string, ttl = 10000, check = 5000, tryCount = 4, tryTTL = 500) {
         if (!this.interval) {
-            await this.tryLock(resource, ttl);
+            await this.tryLock(resource, ttl, false, tryCount, tryTTL);
             this.interval = setIntervalAsync(async () => {
-                await this.tryLock(resource, ttl)
+                await this.tryLock(resource, ttl, false, tryCount, tryTTL)
             }, check);
         }
     }
@@ -38,19 +39,20 @@ export class RedLockService {
             tryCount = this.isLocked ? 1 : tryCount;
             while (tryCount) {
                 tryCount--;
-                await this.redis.setnx(resource, this.randomKey, ttl);
-                const val = await this.redis.get(resource, false) as string;
+                await this.redis.setnx(this.resourceKey, this.randomKey, ttl);
+                const val = await this.redis.get(this.resourceKey, false) as string;
                 if (val == this.randomKey) {
-                    await this.redis.expire(resource, ttl);
+                    await this.redis.expire(this.resourceKey, ttl);
                     this.lastSuccessTime = new Date().getTime();
                     //wait a little for a better experience
                     if (!this.isLocked && !tryCount) {
                         this.isLocked = true;
+                        logger.info(`${this.resourceKey} locked with ${this.randomKey}`)
                         this.events.emit('acquired');
                     }
 
                 } else {
-                    console.log(`${this.resourceKey} could not locked with ${this.randomKey}`)
+                    logger.warn(`${this.resourceKey} could not locked with ${this.randomKey}`)
                     await this.release(false);
                 }
                 if (tryCount)
@@ -68,17 +70,18 @@ export class RedLockService {
     }
     async release(stop = true) {
         try {
+            if (stop) {
+                if (this.interval)
+                    clearIntervalAsync(this.interval);
+                this.interval = null;
+            }
             if (this.isLocked) {
                 this.isLocked = false;
                 this.lastSuccessTime = 0;
                 await this.redis.delete(this.resourceKey);
                 this.events.emit('released');
             }
-            if (stop) {
-                if (this.interval)
-                    clearIntervalAsync(this.interval);
-                this.interval = null;
-            }
+
         } catch (err) {
             logger.error(err);
         }

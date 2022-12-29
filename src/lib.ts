@@ -9,7 +9,7 @@ export { RedLockService } from './service/redLockService';
 export { ActivityService } from './service/activityService';
 export { AuditLog } from './model/auditLog';
 export { AuditService } from './service/auditService';
-export { Util } from './util'
+export { Util } from './util';
 export { WatchService } from './service/watchService'
 export { ConfigEvent } from './model/config';
 export { Service } from './model/service';
@@ -20,4 +20,5 @@ export { Network, Gateway, GatewayDetail, cloneGateway, cloneNetwork } from './m
 export { RedisConfigService, RedisCachedConfigService } from './service/redisConfigService';
 export { HelperService } from './service/helperService';
 export { TunnelService } from './service/tunnelService';
-export { ActivityLog, ActivityStatus } from './model/activityLog'
+export { ActivityLog, ActivityStatus } from './model/activityLog';
+export { PingService } from './service/pingService';

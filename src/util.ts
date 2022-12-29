@@ -432,7 +432,11 @@ export const Util = {
         const NS_PER_SEC = 1e9;
         const [second, nanosecond] = process.hrtime();
         return second * NS_PER_SEC + nanosecond;
+    },
+    now() {
+        return new Date().getTime();
     }
+
 
 
 
