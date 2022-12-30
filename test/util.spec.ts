@@ -132,7 +132,7 @@ describe('util ', () => {
 
         let tmpFolder = `/tmp/${Util.randomNumberString()}`;
         if (fs.existsSync(tmpFolder))
-            del.sync(tmpFolder, { force: true });
+            await del.deleteAsync(tmpFolder, { force: true });
         fs.mkdirSync(tmpFolder);
         let path = tmpFolder + '/' + Util.randomNumberString() + '.zip'
         await Util.downloadFile('http://ferrumgate.com/test.zip', path);
@@ -148,7 +148,7 @@ describe('util ', () => {
 
         let tmpFolder = `/tmp/${Util.randomNumberString()}`;
         if (fs.existsSync(tmpFolder))
-            await del(tmpFolder, { force: true });
+            await del.deleteAsync(tmpFolder, { force: true });
         fs.mkdirSync(tmpFolder);
         let path = tmpFolder + '/' + Util.randomNumberString() + '.zip'
         await Util.downloadFile('http://ferrumgate.com/test.zip', path);
@@ -168,7 +168,7 @@ describe('util ', () => {
 
         let tmpFolder = `/tmp/${Util.randomNumberString()}`;
         if (fs.existsSync(tmpFolder))
-            await del(tmpFolder, { force: true });
+            await del.deleteAsync(tmpFolder, { force: true });
         fs.mkdirSync(tmpFolder);
         let path = tmpFolder + '/' + Util.randomNumberString() + '.txt'
         fs.writeFileSync(path, 'deneme');

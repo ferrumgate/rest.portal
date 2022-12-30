@@ -73,7 +73,7 @@ export class AppService {
         this.configService = cfg ||
             process.env.CONFIGSERVICE_TYPE === 'CONFIG' ?
             new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), `/tmp/${Util.randomNumberString(16)}_config.yaml`) :
-            new RedisCachedConfigService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `redisConfig/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`, '/etc/ferrumgate/config.yaml');
+            new RedisCachedConfigService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `redisconfig/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`, '/etc/ferrumgate/config.yaml');
         this.redisService = redis || AppService.createRedisService()
         this.rateLimit = rateLimit || new RateLimitService(this.configService, this.redisService);
         this.inputService = input || new InputService();

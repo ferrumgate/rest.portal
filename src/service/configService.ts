@@ -24,6 +24,8 @@ import EventEmitter from "node:events";
 
 
 
+
+
 export class ConfigService {
 
     events: EventEmitter = new EventEmitter();
@@ -102,255 +104,18 @@ export class ConfigService {
         // start point for delete
         //for testing start
         //dont delete aboveline
-        if (process.env.NODE_ENV == 'development') {
-            this.config.auth.oauth = {
-                providers: [
-                    {
-                        baseType: 'oauth',
-                        type: 'google',
-                        id: Util.randomNumberString(16),
-                        name: 'Google/OAuth2',
-                        tags: [],
-                        clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
-                        clientSecret: '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',
-                        isEnabled: true,
-                        insertDate: new Date().toISOString(),
-                        updateDate: new Date().toISOString()
-                    },
-                    {
-                        baseType: 'oauth',
-                        type: 'linkedin',
-                        id: Util.randomNumberString(16),
-                        name: 'Linkedin/OAuth2',
-                        tags: [],
-                        clientId: '866dr29tuc5uy5',
-                        clientSecret: '1E3DHw0FJFUsp1Um',
-                        isEnabled: true,
-                        insertDate: new Date().toISOString(),
-                        updateDate: new Date().toISOString()
-                    }
-                ]
-            }
-            this.config.auth.ldap = {
-                providers: [
-                    {
-                        baseType: 'ldap',
-                        type: 'activedirectory',
-                        id: Util.randomNumberString(16),
-                        name: 'Active Directory/Ldap',
-                        tags: [],
-                        host: 'ldap://192.168.88.254:389',
-                        bindDN: 'CN=myadmin,CN=users,DC=testad,DC=local',
-                        bindPass: 'Qa12345678',
-                        searchBase: 'CN=users,DC=testad,DC=local',
-                        groupnameField: 'memberOf',
-                        usernameField: 'sAMAccountName',
-                        isEnabled: true,
-                        insertDate: new Date().toISOString(),
-                        updateDate: new Date().toISOString()
-
-
-
-                    },
-                ]
-            }
-
-            this.config.auth.saml = {
-                providers: [
-                    {
-                        baseType: 'saml',
-                        type: 'auth0',
-                        id: Util.randomNumberString(16),
-                        name: 'Auth0/Saml',
-                        tags: [],
-                        issuer: 'urn:dev-24wm8m7g.us.auth0.com',
-                        loginUrl: 'https://dev-24wm8m7g.us.auth0.com/samlp/pryXTgkqDprtoGOg0RRH26ylKV0zg4xV',
-                        fingerPrint: '96:39:6C:F6:ED:DF:07:30:F0:2E:45:95:02:B6:F6:68:B7:2C:11:37',
-                        cert: `MIIDDTCCAfWgAwIBAgIJDVrH9KeUS+k8MA0GCSqGSIb3DQEBCwUAMCQxIjAgBgNVBAMTGWRldi0yNHdtOG03Zy51cy5hdXRoMC5jb20wHhcNMjIxMDEwMjIzOTA2WhcNMzYwNjE4MjIzOTA2WjAkMSIwIAYDVQQDExlkZXYtMjR3bThtN2cudXMuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA14riTBaUOB2+OZiEbpL5Cjy4MVl78Qi+Msi6IbmIs8nIGRav2hYsI3/mUex6+dCeqwoKCALByRySTEWhUCRWNsi86ae5CSsRikVBAPtEZqKBuoSthrjXUQT5/UBBOHc+EVUAiNrAEE1DBjpkFPkZfGk974ZukK8MyfliajjmFHGj23vwxJncxfx49kOEalz10M500MNldl+Kl628i//y3QiojTsNvPK4SiORFBR89DnWJoB/m6npsm9tkRKUFuYNedVEDru+8aac6LVrKkimDOUzXecAbCm7+td4rXCyV25cc3Pp0sHUYFYk4NoqzW6kJtddFcRQi+xo5JqcPjtunwIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBRZYMCT4GSETh+A4Ji9wWJxlcv53zAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBACNDPiTHjyeFUIOTWnnZbTZil0nf+yrA6QVesV5+KJ9Ek+YgMrnZ4KdXEZZozUgiGsER1RjetWVYnv3AmEvML0CY/+xJu2bCfwQssSXFLQGdv079V81Mk2+Hz8gQgruLpJpfENQCsbWm3lXQP4F3avFw68HB62rr6jfyEIPb9n8rw/pj57y5ZILl97sb3QikgRh1pTEKVz05WLeHdGPE30QWklGDYxqv2/TbRWOUsdXjjbpE6pIfTUX5OLqGRbrtdHL9fHbhVOfqczALtneEjv5o/TpB3Jo2w9RU9AgMYwWT2Hpqop/fe9fyDQ+u5Hz7ZnADi/oktGBzm8/Y03WpkuM=`,
-                        usernameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
-                        nameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
-                        isEnabled: true,
-                        insertDate: new Date().toISOString(),
-                        updateDate: new Date().toISOString()
-
-                    },
-                ]
-            }
-
-            this.config.email = { fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: 'nqquxankumksakon' };
-            this.config.url = 'http://localhost:4200';
-            this.config.captcha = {
-                client: '6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH',
-                server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
-            }
-
-            this.config.jwtSSLCertificate.privateKey = fs.readFileSync(`./ferrumgate.com.key`).toString();
-            this.config.jwtSSLCertificate.publicKey = fs.readFileSync(`./ferrumgate.com.crt`).toString();
-            if (fs.existsSync('/tmp/config.yaml') && !process.env.LOCAL_TEST)
-                fs.rmSync('/tmp/config.yaml');
-            const adminUser = HelperService.createUser('local-local', 'hamza1@hamzakilic.com', 'hamzaadmin', 'Deneme123');
-            adminUser.isLocked = false;
-            adminUser.isVerified = true;
-            adminUser.roleIds = ['Admin'];
-            adminUser.is2FA = true;
-            adminUser.twoFASecret = 'GZTM2CLFZFQA4W3QSCOGG53QKU23CAZW';
-            this.config.users.push(adminUser);
-
-            const standartUser = HelperService.createUser('local-local', 'hamzauser@hamzakilic.com', 'hamzauser', 'Deneme123');
-            standartUser.isLocked = false;
-            standartUser.isVerified = true;
-            standartUser.roleIds = ['User'];
-            this.config.users.push(standartUser);
-
-            const reporterUser = HelperService.createUser('local-local', 'hamzareporter@hamzakilic.com', 'hamzareporter', 'Deneme123');
-            reporterUser.isLocked = false;
-            reporterUser.isVerified = true;
-            reporterUser.roleIds = ['Reporter'];
-            this.config.users.push(reporterUser);
-
-            this.config.groups.push({
-                id: Util.randomNumberString(16),
-                name: 'north',
-                isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
-            })
-            this.config.groups.push({
-                id: Util.randomNumberString(16),
-                name: 'south',
-                isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
-            })
-            // some networks
-            let net: Network = {
-
-                id: Util.randomNumberString(16), name: 'ops', labels: ['deneme2'],
-                serviceNetwork: '1.1.1.1/16',
-                clientNetwork: '1.2.3.4/24',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            }
-            this.config.networks.push(net);
-
-
-            let gateways: Gateway[] = [
-                {
-                    id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: true, insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-                },
-                {
-                    id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: true, insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-                },
-                {
-                    id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: false, insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-                },
-                {
-                    id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: false, insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-                },
-                {
-                    id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: false, insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-                }
-            ];
-            gateways.forEach(x => this.config.gateways.push(x));
-            const service1 = {
-                id: Util.randomNumberString(16),
-                name: 'mysql-dev', host: '10.0.0.12', protocol: 'raw', tcp: 3306,
-                assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
-                insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), isSystem: true, count: 1
-            }
-            this.config.services.push(service1);
-
-            const service2 = {
-                id: Util.randomNumberString(16),
-                name: 'ssh-dev', host: '10.0.0.12', protocol: 'raw', tcp: 22,
-                assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
-                insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), count: 1
-            }
-
-            this.config.services.push(service2);
-
-            const service3 = {
-                id: Util.randomNumberString(16),
-                name: 'mysql-prod', host: '10.0.0.12', protocol: 'raw', tcp: 22,
-                assignedIp: '10.3.4.4', isEnabled: true, networkId: defaultNetwork.id, labels: [], count: 1,
-                insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
-            }
-            this.config.services.push(service3);
-
-
-            //authiraziton policy
-            this.config.authorizationPolicy.rules.push({
-                id: Util.randomNumberString(16),
-                name: 'tst1',
-                isEnabled: true,
-                networkId: net.id,
-                serviceId: service1.id,
-                userOrgroupIds: [standartUser.id],
-                profile: { is2FA: false },
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-            })
-            this.config.authorizationPolicy.rulesOrder.push(this.config.authorizationPolicy.rules[0].id);
-
-            //
-            this.config.authenticationPolicy.rules.push({
-
-                id: Util.randomNumberString(16),
-                name: 'abc rule',
-                networkId: net.id,
-                userOrgroupIds: [standartUser.id],
-                action: 'allow',
-                profile: { is2FA: true },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString(),
-
-
-            })
-            this.config.authenticationPolicy.rulesOrder.push(this.config.authenticationPolicy.rules[0].id)
-
-            this.config.authenticationPolicy.rules.push({
-
-                id: Util.randomNumberString(16),
-                name: 'abc2',
-                networkId: net.id,
-                userOrgroupIds: [adminUser.id],
-                action: 'deny',
-                profile: { is2FA: true },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString(),
-
-
-
-            })
-            this.config.authenticationPolicy.rulesOrder.push(this.config.authenticationPolicy.rules[1].id)
-            this.config.authenticationPolicy.rules.push({
-
-                id: Util.randomNumberString(16),
-                name: 'def2',
-                networkId: net.id,
-                userOrgroupIds: [adminUser.id],
-                action: 'deny',
-                profile: { is2FA: true },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString(),
-
-
-            })
-            this.config.authenticationPolicy.rulesOrder.push(this.config.authenticationPolicy.rules[2].id)
-
-
-
-
+        try {
+            var m = require('../../test/configServiceTestData');
+            m.loadTestData(this.config);
+        } catch (err) {
+            logger.error(err);
         }
-        this.config.lastUpdateTime = new Date().toISOString();
+
 
         //dont delete below line
         //for testing end
         // end point for delete
+        this.config.lastUpdateTime = new Date().toISOString();
         this.loadConfigFromFile();
         if (process.env.LIMITED_MODE == 'true') {
             if (!this.config.groups.find(x => x.id == 'hb16ldst577l9mkf'))

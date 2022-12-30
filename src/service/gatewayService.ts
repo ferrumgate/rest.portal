@@ -27,7 +27,7 @@ export class GatewayService {
     }
     async getAllAlive(): Promise<GatewayDetail[]> {
 
-        const keys = await this.redisService.getAllKeys('/gateway/alive/id/*', 'hash');
+        const keys = await this.redisService.getAllKeys('/alive/gateway/id/*', 'hash');
         const pipeline = await this.redisService.multi();
         for (const key of keys) {
             await pipeline.hgetAll(key);
@@ -42,7 +42,7 @@ export class GatewayService {
     }
 
     async getAliveById(id: string) {
-        let key = `/gateway/alive/id/${id}`;
+        let key = `/alive/gateway/id/${id}`;
         const isExists = await this.redisService.containsKey(key);
         if (!isExists) return null;
         const gatewayDetail = await this.redisService.hgetAll(key) as unknown as GatewayDetail;
