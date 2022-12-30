@@ -63,6 +63,19 @@ describe('redisService', () => {
 
     }).timeout(10000);
 
+    it('test hincr', async () => {
+        const simpleRedis = new RedisService('localhost:6379,localhost:6390');
+
+        const result = await simpleRedis.incr('deneme');
+        let data = await simpleRedis.get<number>('deneme', false);
+        expect(data).to.equal(1);
+        expect(typeof (data) == 'string').to.be.true;
+
+
+
+
+    }).timeout(10000);
+
 
     it('test transaction', async () => {
         const simpleRedis = new RedisService('localhost:6379');

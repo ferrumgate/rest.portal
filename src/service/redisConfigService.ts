@@ -198,6 +198,20 @@ export class RedisConfigService extends ConfigService {
         return await this.redis.llen(rpath);
     }
 
+    async rGetDirect<T extends number>(path: RPath, callback?: (val: any) => Promise<any>) {
+        let rpath = `/config/${path}`;
+        let dataStr = await this.redis.get(rpath, false) as any;
+        if (dataStr) {
+            let val = Util.convertToNumber(dataStr)
+            if (callback)
+                return callback(val);
+            return val;
+        } else {
+            if (callback)
+                return callback(null);
+            return null;
+        }
+    }
 
     async rGet<Nullable>(path: RPath, callback?: (val: Nullable | null) => Promise<Nullable>) {
         let rpath = `/config/${path}`;
@@ -307,7 +321,7 @@ export class RedisConfigService extends ConfigService {
 
             const revisionExits = await this.rExists('revision');
             if (revisionExits)
-                this.config.revision = await this.rGet<number>('revision') || 0;
+                this.config.revision = await this.rGetDirect<number>('revision') || 0;
             const versionExits = await this.rExists('version');
             if (versionExits)
                 this.config.version = await this.rGet<number>('version') || 0;
