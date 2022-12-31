@@ -18,9 +18,9 @@ export class WatchService {
     private intervalRead: any;
     private lastPostReaded = false;
     constructor(private redis: RedisService, private redisStreamService: RedisService,
-        private file: string, private posFollowKey = 'pos', private lastPos = new Date().getTime().toString(),
+        private file: string, private posFollowKey = 'pos',
+        private lastPos = new Date().getTime().toString(),
         private trimTime = 24 * 60 * 60 * 1000,
-
         private encKey?: string
 
     ) {
@@ -31,7 +31,6 @@ export class WatchService {
     async startWatch() {
 
         this.intervalRead = await setIntervalAsync(async () => {
-
             await this.read()
         }, 100);
 
@@ -43,10 +42,15 @@ export class WatchService {
         if (startWatch)
             await this.startWatch();
     }
-    async stop() {
+    async stop(stopWatch = true) {
         if (this.interval)
             clearIntervalAsync(this.interval);
         this.interval = null;
+        if (stopWatch) {
+            await this.stopWatch();
+        }
+    }
+    async stopWatch() {
         if (this.intervalRead)
             clearIntervalAsync(this.intervalRead);
         this.intervalRead = null;

@@ -89,7 +89,10 @@ export class RedisConfigService extends ConfigService {
     constructor(private redis: RedisService, private redisStream: RedisService,
         encryptKey: string, uniqueName = 'redisconfig', configFile?: string) {
         super(encryptKey, configFile);
-        this.logWatcher = new WatchService(this.redis, this.redisStream, '/logs/config', uniqueName + '/pos');
+        this.logWatcher = new WatchService(this.redis, this.redisStream, '/logs/config', uniqueName + '/pos',
+            new Date().getTime().toString(),
+            24 * 60 * 60 * 1000,
+            encryptKey);
         this.redLock = new RedLockService(this.redis);
     }
 
@@ -110,6 +113,11 @@ export class RedisConfigService extends ConfigService {
         if (this.timerInterval)
             clearIntervalAsync(this.timerInterval);
         this.timerInterval = null;
+        await this.logWatcherStop();
+
+    }
+    protected async logWatcherStop() {
+        await this.logWatcher.stop(false);
     }
     async rCount(path: RPathCount) {
         const rpath = `/config/${path}`;
@@ -336,13 +344,17 @@ export class RedisConfigService extends ConfigService {
             clearIntervalAsync(this.timerInterval);
             this.timerInterval = null;
             this.isInitCompleted = true;
-
+            await this.logWatcherStart()
 
         } catch (err) {
             logger.error(err);
         } finally {
             this.redLock.release();
         }
+    }
+
+    protected async logWatcherStart() {
+        await this.logWatcher.start(false);
     }
     private async saveUserIndexes(user: User, pipeline?: RedisPipelineService) {
         const trx = pipeline || await this.redis.multi();

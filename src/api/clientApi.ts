@@ -78,7 +78,7 @@ routerClientTunnelAuthenticated.post('/',
             const policyService = appService.policyService;
             const inputService = appService.inputService;
             const tunnelService = appService.tunnelService;
-
+            const systemlogService = appService.systemLogService;
 
             const user = req.currentUser as User;
             attachActivityUser(req, user);
@@ -100,6 +100,7 @@ routerClientTunnelAuthenticated.post('/',
 
             const rule = await policyService.authenticate(user, session.is2FA, tunnelKey);
             tunnel = await tunnelService.createTunnel(user, tunnelKey, session);
+            await systemlogService.write({ path: '/system/tunnel/create', 'type': 'put', val: tunnel });
             attachActivityTunnel(req, tunnel);
 
             await saveActivity(req, 'create tunnel', (log) => {
@@ -132,8 +133,9 @@ routerClientTunnelAuthenticated.post('/confirm',
         const tunnelService = appService.tunnelService;
         const user = req.currentUser as User;
         const tunnel = req.currentTunnel as Tunnel;
+        const systemlogService = appService.systemLogService;
         await tunnelService.confirm(tunnel.id || '');
-
+        await systemlogService.write({ path: '/system/tunnel/confirm', 'type': 'put', val: tunnel });
         return res.status(200).json({});
     })
 );
@@ -150,6 +152,7 @@ routerClientTunnelAuthenticated.get('/alive',
             const configService = appService.configService;
             const redisService = appService.redisService;
             const tunnelService = appService.tunnelService;
+            const systemlogService = appService.systemLogService;
             const user = req.currentUser as User;
             attachActivityUser(req, user);
             const session = req.currentSession as AuthSession;
@@ -158,7 +161,7 @@ routerClientTunnelAuthenticated.get('/alive',
             attachActivityTunnel(req, tunnel);
             logger.info(`i am alive tunnel: ${tunnel.id}`);
             await tunnelService.alive(tunnel.id || '');
-
+            await systemlogService.write({ path: '/system/tunnel/alive', 'type': 'put', val: tunnel });
             //await saveActivity(req, 'tunnel alive');
 
             return res.status(200).json({});

@@ -68,7 +68,7 @@ describe('redisService', () => {
 
         const result = await simpleRedis.incr('deneme');
         let data = await simpleRedis.get<number>('deneme', false);
-        expect(data).to.equal(1);
+        expect(data).to.equal('1');
         expect(typeof (data) == 'string').to.be.true;
 
 

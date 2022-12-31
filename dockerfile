@@ -1,4 +1,4 @@
-FROM node:16.13.2-bullseye-slim
+FROM node:18.12.1-bullseye-slim
 RUN apt update &&\
     apt install --assume-yes --no-install-recommends openssl \
     ca-certificates gnupg
