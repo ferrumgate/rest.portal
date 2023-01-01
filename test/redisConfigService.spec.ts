@@ -1565,8 +1565,7 @@ describe('redisConfigService', async () => {
         await configService.saveAuthenticationPolicyRule(rule2);
         await configService.saveAuthenticationPolicyRule(rule1);
 
-        const policy = configService.config.authenticationPolicy;
-        await configService.getAuthenticationPolicy();
+        let policy = await configService.getAuthenticationPolicy();
         expect(policy.rulesOrder[0]).to.be.equal(rule1.id);
         expect(policy.rulesOrder[1]).to.be.equal(rule2.id);
         expect(policy.rulesOrder[2]).to.be.equal(rule3.id);
@@ -1574,19 +1573,19 @@ describe('redisConfigService', async () => {
 
 
         await configService.updateAuthenticationRulePos(rule1.id, 0, rule3.id, 2);
-        await configService.getAuthenticationPolicy();
+        policy = await configService.getAuthenticationPolicy();
         expect(policy.rulesOrder[0]).to.be.equal('2');
         expect(policy.rulesOrder[1]).to.be.equal('3');
         expect(policy.rulesOrder[2]).to.be.equal('1');
 
         await configService.updateAuthenticationRulePos(rule1.id, 2, rule3.id, 1);
-        await configService.getAuthenticationPolicy();
+        policy = await configService.getAuthenticationPolicy();
         expect(policy.rulesOrder[0]).to.be.equal('2');
         expect(policy.rulesOrder[1]).to.be.equal('1');
         expect(policy.rulesOrder[2]).to.be.equal('3');
 
         await configService.updateAuthenticationRulePos(rule1.id, 1, rule2.id, 0);
-        await configService.getAuthenticationPolicy();
+        policy = await configService.getAuthenticationPolicy();
 
         expect(policy.rulesOrder[0]).to.be.equal('1');
         expect(policy.rulesOrder[1]).to.be.equal('2');
@@ -1779,7 +1778,9 @@ describe('redisConfigService', async () => {
         await configService.saveAuthorizationPolicyRule(rule1);
 
 
-        const policy = await configService.getAuthorizationPolicy();
+        let policy = await configService.getAuthorizationPolicy();
+
+
 
 
         expect(policy.rulesOrder[0]).to.be.equal(rule1.id);
@@ -1789,20 +1790,20 @@ describe('redisConfigService', async () => {
 
 
         await configService.updateAuthorizationRulePos(rule1.id, 0, rule3.id, 2);
-        await configService.getAuthorizationPolicy();
+        policy = await configService.getAuthorizationPolicy();
         expect(policy.rulesOrder[0]).to.be.equal('2');
         expect(policy.rulesOrder[1]).to.be.equal('3');
         expect(policy.rulesOrder[2]).to.be.equal('1');
 
         await configService.updateAuthorizationRulePos(rule1.id, 2, rule3.id, 1);
-        await configService.getAuthorizationPolicy();
+        policy = await configService.getAuthorizationPolicy();
 
         expect(policy.rulesOrder[0]).to.be.equal('2');
         expect(policy.rulesOrder[1]).to.be.equal('1');
         expect(policy.rulesOrder[2]).to.be.equal('3');
 
         await configService.updateAuthorizationRulePos(rule1.id, 1, rule2.id, 0);
-        await configService.getAuthorizationPolicy();
+        policy = await configService.getAuthorizationPolicy();
 
         expect(policy.rulesOrder[0]).to.be.equal('1');
         expect(policy.rulesOrder[1]).to.be.equal('2');

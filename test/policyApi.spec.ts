@@ -95,7 +95,9 @@ describe('policy', async () => {
         appService.configService.config.networks = [];
         appService.configService.config.gateways = [];
         appService.configService.config.authenticationPolicy.rules = [];
+        appService.configService.config.authenticationPolicy.rulesOrder = [];
         appService.configService.config.authorizationPolicy.rules = [];
+        appService.configService.config.authorizationPolicy.rulesOrder = [];
         await redisService.flushAll();
     })
 
@@ -339,7 +341,7 @@ describe('policy', async () => {
             chai.request(app)
                 .put(`/policy/authn/rule/pos/${rule1.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
-                .send({ previous: 0, current: 2, pivot: rule1.id })
+                .send({ previous: 0, current: 2, pivot: rule3.id })
                 .end((err, res) => {
                     if (err)
                         reject(err);

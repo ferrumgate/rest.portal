@@ -516,11 +516,11 @@ export class RedisService {
         let pos = "0";
         let keyList: string[] = [];
         while (true) {
-
             const [cursor, elements] = await this.scan(search, pos, 10000, type);
             keyList = keyList.concat(elements);
-            if (!cursor || cursor == '0')
+            if (!cursor || cursor == '0') {
                 break;
+            }
             pos = cursor;
         }
         return keyList;

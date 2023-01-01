@@ -23,3 +23,4 @@ export { TunnelService } from './service/tunnelService';
 export { ActivityLog, ActivityStatus } from './model/activityLog';
 export { PingService } from './service/pingService';
 export { SystemLogService } from './service/systemLogService';
+export { RedisConfigWatchService } from './service/redisConfigWatchService';

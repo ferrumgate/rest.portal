@@ -436,7 +436,10 @@ async function start() {
 }
 
 init().then(async () => {
-    await start()
+    await start().catch(err => {
+        logger.error(err);
+        process.exit(1);
+    })
 });
 
 

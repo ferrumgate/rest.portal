@@ -30,7 +30,9 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 type Nullable<T> = T | null | undefined;
 
-
+// adding new paths here
+// also effects redisConfigWatchService
+// processExecuteList
 export type RPath =
     'lastUpdateTime' |
     'revision' |
@@ -59,7 +61,7 @@ export type RPath =
     'authorizationPolicy/rules' |
     'authorizationPolicy/rulesOrder';
 
-
+// there paths are select count(*)
 export type RPathCount = 'users/*' |
     'groups/*' |
     'services/*' |
@@ -127,9 +129,13 @@ export class RedisConfigService extends ConfigService {
         const rpath = `/config/${path}`;
 
         const keys = await this.redis.getAllKeys(`${rpath}/*`);
+
         if (keys.length) {
+
             const pipe = await this.redis.multi();
-            keys.forEach(x => pipe.get(x));
+            for (const k of keys) {
+                await pipe.get(k, false);
+            }
             let items = await pipe.exec();
             let elements: T[] = items.map((x: string) => {
                 let decrypted = x;
@@ -141,10 +147,12 @@ export class RedisConfigService extends ConfigService {
             })
             if (callback)
                 callback(elements);
+
             return elements;
         } else {
             if (callback)
                 callback([]);
+
             return [];
         }
 
@@ -258,13 +266,14 @@ export class RedisConfigService extends ConfigService {
     async rDel<T>(path: string, data: T, pipeline?: RedisPipelineService, callback?: (val: T, pipeline: RedisPipelineService) => Promise<any>) {
         if (data == null || data == undefined) return;
         let rpath = `/config/${path}`;
+        let wrpath = `/config/${path}`;
         if (typeof (data) == 'object' && (data as any).id)
             rpath += `/${(data as any).id}`;
         const lpipeline = pipeline || await this.redis.multi();
         await lpipeline.remove(rpath);
         await lpipeline.incr('/config/revision');
 
-        await this.logWatcher.write({ path: rpath, type: 'del', val: data }, lpipeline);
+        await this.logWatcher.write({ path: wrpath, type: 'del', val: data }, lpipeline);
         if (callback)
             callback(data, lpipeline);
         if (!pipeline)
@@ -276,6 +285,7 @@ export class RedisConfigService extends ConfigService {
         extra?: (before: T | undefined, after: T, pipeline: RedisPipelineService) => Promise<void>) {
         if (after == null || after == undefined) return;
         let rpath = `/config/${path}`;
+        let wrpath = `/config/${path}`;
         if (typeof (after) == 'object' && (after as any).id)
             rpath += `/${(after as any).id}`;
         let dataStr = '';
@@ -294,7 +304,7 @@ export class RedisConfigService extends ConfigService {
         await lpipeline.incr('/config/revision');
         if (extra)
             await extra(before, after, lpipeline);
-        await this.logWatcher.write({ path: rpath, type: 'put', val: after, before: before }, lpipeline);
+        await this.logWatcher.write({ path: wrpath, type: 'put', val: after, before: before }, lpipeline);
         if (!pipeline)
             await lpipeline.exec();
 
@@ -481,7 +491,7 @@ export class RedisConfigService extends ConfigService {
 
     }
 
-    isEverythingOK() {
+    override isReady() {
         if (!this.isInitCompleted) {
             throw new RestfullException(412, ErrorCodes.ErrSystemIsNotReady, ErrorCodes.ErrSystemIsNotReady, 'config is not ready');
         }
@@ -491,7 +501,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getLastUpdateTime() {
-        this.isEverythingOK();
+        this.isReady();
         return await this.rGet<string>('lastUpdateTime') || new Date().toISOString();
 
     }
@@ -507,7 +517,7 @@ export class RedisConfigService extends ConfigService {
 
 
     override async getUserByUsername(username: string): Promise<User | undefined> {
-        this.isEverythingOK();
+        this.isReady();
         if (!username) return undefined;
         if (!username.trim()) return undefined;
         const id = await this.rGetIndex<string>('users/username', username);
@@ -520,7 +530,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getUserByUsernameAndSource(username: string, source: string): Promise<User | undefined> {
-        this.isEverythingOK();
+        this.isReady();
         if (!username) return undefined;
         if (!username.trim()) return undefined;
         const id = await this.rGetIndex<string>('users/username', username);
@@ -533,7 +543,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getUserByApiKey(key: string): Promise<User | undefined> {
-        this.isEverythingOK();
+        this.isReady();
         if (!key && !key.trim()) return undefined;
 
         const id = await this.rGetIndex('users/apiKey', key) as string;
@@ -547,7 +557,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getUserById(id: string): Promise<User | undefined> {
-        this.isEverythingOK();
+        this.isReady();
         if (!id || !id.trim()) return undefined;
         this.config.users = [];
         const user = await this.rGetWith<User>(`users`, id);
@@ -560,7 +570,7 @@ export class RedisConfigService extends ConfigService {
         ids?: string[], groupIds?: string[], roleIds?: string[],
         is2FA?: boolean, isVerified?: boolean, isLocked?: boolean,
         isEmailVerified?: boolean, isOnlyApiKey?: boolean) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.users = [];
         const users = await this.rGetAll<User>('users');
         this.config.users = users;
@@ -571,7 +581,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getUserByRoleIds(roleIds: string[]): Promise<User[]> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.users = [];
         const users = await this.rGetAll<User>('users');
         this.config.users = users;
@@ -579,13 +589,13 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getUserCount() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.users = [];
         return await this.rCount('users/*');
     }
 
     override async getUserByUsernameAndPass(username: string, pass: string): Promise<User | undefined> {
-        this.isEverythingOK();
+        this.isReady();
         const id = await this.rGetIndex<string>('users/username', username);
         if (!id || !id.trim()) return undefined;
         this.config.users = [];
@@ -597,7 +607,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getUserByIdAndPass(id: string, pass: string): Promise<User | undefined> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.users = [];
         const user = await this.rGetWith<User>(`users`, id);
         if (user)
@@ -606,7 +616,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getUserSensitiveData(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.users = [];
         const user = await this.rGetWith<User>(`users`, id);
         if (user)
@@ -633,7 +643,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async saveUser(data: User) {
-        this.isEverythingOK();
+        this.isReady();
         const id = await this.rGetIndex<string>('users/username', data.username);
         this.config.users = [];
         if (id) {
@@ -703,7 +713,7 @@ export class RedisConfigService extends ConfigService {
 
     override async deleteUser(id: string) {
         //dont call super method
-        this.isEverythingOK();
+        this.isReady();
         this.config.users = [];
         const user = await this.rGetWith<User>(`users`, id);
         if (user) {
@@ -725,7 +735,7 @@ export class RedisConfigService extends ConfigService {
 
 
     override async changeAdminUser(email: string, password: string) {
-        this.isEverythingOK();
+        this.isReady();
         const id = await this.rGetIndex<string>('users/username', 'admin');
         if (!id || !id.trim()) return;
         this.config.users = [];
@@ -747,13 +757,13 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getCaptcha(): Promise<Captcha> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.captcha = await this.rGet<Captcha>('captcha') || {};
         return await super.getCaptcha();
     }
 
     override async setCaptcha(captcha: Captcha | {}) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.captcha = await this.rGet<Captcha>('captcha') || {};
         const ret = await super.setCaptcha(captcha);
         const pipeline = await this.redis.multi();
@@ -764,13 +774,13 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getJWTSSLCertificate(): Promise<SSLCertificate> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.jwtSSLCertificate = await this.rGet<SSLCertificate>('jwtSSLCertificate') || {};
         return await super.getJWTSSLCertificate();
     }
 
     override async setJWTSSLCertificate(cert: SSLCertificate | {}) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.jwtSSLCertificate = await this.rGet<SSLCertificate>('jwtSSLCertificate') || {};
         const ret = await super.setJWTSSLCertificate(cert);
         const pipeline = await this.redis.multi();
@@ -781,18 +791,18 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getCASSLCertificate(): Promise<SSLCertificate> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {};
         return await super.getCASSLCertificate();
     }
     override async getCASSLCertificatePublic(): Promise<string | null | undefined> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {};
         return await super.getCASSLCertificatePublic();
     }
 
     override async setCASSLCertificate(cert: SSLCertificate | {}) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {};
         const ret = await super.setCASSLCertificate(cert);
         const pipeline = await this.redis.multi();
@@ -804,7 +814,7 @@ export class RedisConfigService extends ConfigService {
 
     //TODO test
     override async getEmailSettings(): Promise<EmailSettings> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.email = await this.rGet<EmailSettings>('email') || {
             type: 'empty',
             fromname: '', pass: '', user: ''
@@ -813,7 +823,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async setEmailSettings(options: EmailSettings) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.email = await this.rGet<EmailSettings>('email') || {
             type: 'empty',
             fromname: '', pass: '', user: ''
@@ -827,12 +837,12 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getLogo(): Promise<LogoSettings> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.logo = await this.rGet<LogoSettings>('logo') || {};
         return await super.getLogo();
     }
     override async setLogo(logo: LogoSettings | {}) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.logo = await this.rGet<LogoSettings>('email') || {};
         const ret = await super.setLogo(logo);
         const pipeline = await this.redis.multi();
@@ -853,13 +863,13 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getAuthSettings(): Promise<AuthSettings> {
-        this.isEverythingOK();
+        this.isReady();
         await this.rGetAuthsettings();
         return await super.getAuthSettings();
 
     }
     override async setAuthSettings(option: AuthSettings | {}) {
-        this.isEverythingOK();
+        this.isReady();
         await this.rGetAuthsettings();
         const ret = await super.setAuthSettings(option) as { before: AuthSettings, after: AuthSettings };
         const pipeline = await this.redis.multi();
@@ -893,7 +903,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     async setAuthSettingsCommon(common: AuthCommon) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.common = await this.rGet<AuthCommon>('auth/common') || {};
         let ret = await super.setAuthSettingsCommon(common);
         const pipeline = await this.redis.multi();
@@ -905,13 +915,13 @@ export class RedisConfigService extends ConfigService {
 
     }
     override async getAuthSettingsCommon() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.common = await this.rGet<AuthCommon>('auth/common') || {};
         return super.getAuthSettingsCommon();
     }
 
     override async setAuthSettingsLocal(local: AuthLocal) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.local = await this.rGet<AuthLocal>('auth/local') || this.createAuthLocal();
         let ret = await super.setAuthSettingsLocal(local);
         const pipeline = await this.redis.multi();
@@ -921,21 +931,21 @@ export class RedisConfigService extends ConfigService {
         return ret;
     }
     override async getAuthSettingsLocal() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.local = await this.rGet<AuthLocal>('auth/local') || this.createAuthLocal();
         return super.getAuthSettingsLocal();
     }
 
 
     override async getAuthSettingOAuth() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.oauth = { providers: [] };
         this.config.auth.oauth.providers = await this.rGetAll<BaseOAuth>('auth/oauth/providers');
         return await super.getAuthSettingOAuth();
     }
 
     override async addAuthSettingOAuth(provider: BaseOAuth) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.oauth = { providers: [] };
         this.config.auth.oauth.providers = await this.rGetAll<BaseOAuth>('auth/oauth/providers');
         let ret = await super.addAuthSettingOAuth(provider);
@@ -947,7 +957,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async deleteAuthSettingOAuth(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.oauth = { providers: [] };
         this.config.auth.oauth.providers = await this.rGetAll<BaseOAuth>('auth/oauth/providers');
         let ret = await super.deleteAuthSettingOAuth(id);
@@ -962,14 +972,14 @@ export class RedisConfigService extends ConfigService {
 
 
     override async getAuthSettingLdap() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.ldap = { providers: [] };
         this.config.auth.ldap.providers = await this.rGetAll<BaseLdap>('auth/ldap/providers');
         return await super.getAuthSettingLdap();
     }
 
     override async addAuthSettingLdap(provider: BaseLdap) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.ldap = { providers: [] };
         this.config.auth.ldap.providers = await this.rGetAll<BaseLdap>('auth/ldap/providers');
         let ret = await super.addAuthSettingLdap(provider);
@@ -981,7 +991,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async deleteAuthSettingLdap(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.ldap = { providers: [] };
         this.config.auth.ldap.providers = await this.rGetAll<BaseLdap>('auth/ldap/providers');
         let ret = await super.deleteAuthSettingLdap(id);
@@ -997,14 +1007,14 @@ export class RedisConfigService extends ConfigService {
 
 
     override async getAuthSettingSaml() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.saml = { providers: [] };
         this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
         return await super.getAuthSettingSaml();
     }
 
     override async addAuthSettingSaml(provider: BaseSaml) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.saml = { providers: [] };
         this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
         let ret = await super.addAuthSettingSaml(provider);
@@ -1016,7 +1026,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async deleteAuthSettingSaml(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.auth.saml = { providers: [] };
         this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
         let ret = await super.deleteAuthSettingSaml(id);
@@ -1030,7 +1040,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getNetwork(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.networks = [];
         const network = await this.rGetWith<Network>(`networks`, id);
         if (network) {
@@ -1039,36 +1049,36 @@ export class RedisConfigService extends ConfigService {
         return await super.getNetwork(id);
     }
     override async getNetworkCount() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.networks = [];
         return await this.rCount('networks/*');
     }
 
     override async getNetworkByName(name: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.networks = await this.rGetAll('networks');
         return await super.getNetworkByName(name);
     }
     async getNetworkByGateway(gatewayId: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.gateways = await this.rGetAll('gateways');
         this.config.networks = await this.rGetAll('networks');
         return await super.getNetworkByGateway(gatewayId);
     }
 
     async getNetworksBy(query: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.networks = await this.rGetAll('networks');
         return await super.getNetworksBy(query);
     }
     async getNetworksAll() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.networks = await this.rGetAll('networks');
         return await super.getNetworksAll();
     }
 
     async saveNetwork(network: Network) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.networks = [];
         const net = await this.rGetWith<Network>('networks', network.id);
         if (net) this.config.networks.push(net);
@@ -1139,7 +1149,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async deleteNetwork(id: string) {
-        this.isEverythingOK();
+        this.isReady();
 
         this.config.networks = [];
 
@@ -1162,12 +1172,12 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getDomain(): Promise<string> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.domain = await this.rGet<string>('domain') || '';
         return await super.getDomain();
     }
     async setDomain(domain: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.domain = await this.rGet<string>('domain') || '';
         const ret = await super.setDomain(domain);
         const pipeline = await this.redis.multi();
@@ -1179,7 +1189,7 @@ export class RedisConfigService extends ConfigService {
 
 
     override async getGateway(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.gateways = [];
 
         const gateway = await this.rGetWith<Gateway>(`gateways`, id);
@@ -1189,30 +1199,30 @@ export class RedisConfigService extends ConfigService {
         return await super.getGateway(id);
     }
     override async getGatewayCount() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.gateways = [];
         return await this.rCount('gateways/*')
     }
 
     override async getGatewaysByNetworkId(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.gateways = await this.rGetAll('gateways');
         return await super.getGatewaysByNetworkId(id);
     }
     override async getGatewaysBy(query: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.gateways = await this.rGetAll('gateways');
         return await super.getGatewaysBy(query);
     }
 
     override async getGatewaysAll() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.gateways = await this.rGetAll('gateways');
         return await super.getGatewaysAll();
     }
 
     override async saveGateway(gateway: Gateway) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.gateways = [];
         const gt = await this.rGetWith<Gateway>('gateways', gateway.id);
         if (gt) this.config.gateways.push(gt);
@@ -1224,7 +1234,7 @@ export class RedisConfigService extends ConfigService {
         return ret;
     }
     override async deleteGateway(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.gateways = [];
         const gateway = await this.rGetWith<Gateway>('gateways', id);
         if (gateway) {
@@ -1240,12 +1250,12 @@ export class RedisConfigService extends ConfigService {
 
 
     override async getUrl(): Promise<string> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.url = await this.rGet('url') || '';
         return super.getUrl();
     }
     override async setUrl(url: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.url = await this.rGet('url') || '';
         let ret = await super.setUrl(url);
         const pipeline = await this.redis.multi();
@@ -1257,13 +1267,13 @@ export class RedisConfigService extends ConfigService {
     }
 
     async getIsConfigured(): Promise<number> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.isConfigured = await this.rGet('isConfigured') || 0;
         return await super.getIsConfigured();
     }
 
     async setIsConfigured(val: number) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.isConfigured = await this.rGet<number>('isConfigured') || 0;
         let ret = await super.setIsConfigured(val);
         const pipeline = await this.redis.multi();
@@ -1277,25 +1287,25 @@ export class RedisConfigService extends ConfigService {
     /// Group
 
     override async getGroup(id: string): Promise<Group | undefined> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.groups = await this.rGetAll('groups');
         return await super.getGroup(id);
 
     }
     override async getGroupCount() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.groups = [];
         return await this.rCount('groups/*');
 
     }
 
     override async getGroupsBySearch(query: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.groups = await this.rGetAll('groups');
         return await super.getGroupsBySearch(query);
     }
     override async getGroupsAll() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.groups = await this.rGetAll('groups');
         return await super.getGroupsAll();
     }
@@ -1360,7 +1370,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override  async deleteGroup(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.groups = [];
         const group = await this.rGetWith<Group>('groups', id);
 
@@ -1383,7 +1393,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async saveGroup(group: Group) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.groups = [];
         const grp = await this.rGetWith<Group>('groups', group.id);
         if (grp)
@@ -1400,25 +1410,25 @@ export class RedisConfigService extends ConfigService {
 
 
     override  async getService(id: string): Promise<Service | undefined> {
-        this.isEverythingOK();
+        this.isReady();
         this.config.services = await this.rGetAll('services');
         return await super.getService(id);
 
     }
     override async getServiceCount() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.services = [];
         return await this.rCount('services/*');
     }
 
     override async getServicesBy(query?: string, networkIds?: string[], ids?: string[]) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.services = await this.rGetAll('services');
         return await super.getServicesBy(query, networkIds, ids);
     }
 
     override async getServicesByNetworkId(networkId: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.services = await this.rGetAll('services');
         return await super.getServicesByNetworkId(networkId);
     }
@@ -1426,7 +1436,7 @@ export class RedisConfigService extends ConfigService {
     //// service entity
     override async getServicesAll(): Promise<Service[]> {
 
-        this.isEverythingOK();
+        this.isReady();
         this.config.services = await this.rGetAll('services');
         return await super.getServicesAll();
 
@@ -1451,7 +1461,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async deleteService(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.services = [];
         const svc = await this.rGetWith<Service>('services', id);
         if (svc) {
@@ -1467,7 +1477,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async saveService(service: Service) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.services = [];
         const svc = await this.rGetWith<Service>('services', service.id);
         if (svc) this.config.services.push(svc);
@@ -1481,7 +1491,7 @@ export class RedisConfigService extends ConfigService {
 
     //authentication policy rule
     override async saveAuthenticationPolicyRule(arule: AuthenticationRule) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.authenticationPolicy.rules = [];
         const rule = await this.rGetWith<AuthenticationRule>('authenticationPolicy/rules', arule.id)
         if (rule) this.config.authenticationPolicy.rules.push(rule);
@@ -1496,20 +1506,20 @@ export class RedisConfigService extends ConfigService {
         return ret;
     }
     override async getAuthenticationPolicy() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
         this.config.authenticationPolicy.rulesOrder = await this.rListAll('authenticationPolicy/rulesOrder');
         return await super.getAuthenticationPolicy();
     }
 
     override async getAuthenticationPolicyUnsafe() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
         this.config.authenticationPolicy.rulesOrder = await this.rListAll('authenticationPolicy/rulesOrder')
         return await super.getAuthenticationPolicyUnsafe();
     }
     override async getAuthenticationPolicyRule(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.authenticationPolicy.rules = [];
         const rule = await this.rGetWith<AuthenticationRule>('authenticationPolicy/rules', id);
         if (rule) this.config.authenticationPolicy.rules.push(rule);
@@ -1517,13 +1527,13 @@ export class RedisConfigService extends ConfigService {
 
     }
     override async getAuthenticationPolicyRuleCount() {
-        this.isEverythingOK();
+        this.isReady();
         return await this.rCount('authenticationPolicy/rules/*');
 
     }
 
     override async deleteAuthenticationPolicyRule(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.authenticationPolicy.rules = [];
 
 
@@ -1576,7 +1586,7 @@ export class RedisConfigService extends ConfigService {
     //authorization policy
 
     async saveAuthorizationPolicyRule(arule: AuthorizationRule) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.authorizationPolicy.rules = [];
 
         const rule = await this.rGetWith<AuthorizationRule>('authorizationPolicy/rules', arule.id);
@@ -1595,19 +1605,19 @@ export class RedisConfigService extends ConfigService {
 
     }
     async getAuthorizationPolicy() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
         this.config.authorizationPolicy.rulesOrder = await this.rListAll('authorizationPolicy/rulesOrder');
         return await super.getAuthorizationPolicy();
     }
     async getAuthorizationPolicyUnsafe() {
-        this.isEverythingOK();
+        this.isReady();
         this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
         this.config.authorizationPolicy.rulesOrder = await this.rListAll('authorizationPolicy/rulesOrder');
         return await super.getAuthorizationPolicyUnsafe();
     }
     async getAuthorizationPolicyRule(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.authorizationPolicy.rules = [];
         const rule = await this.rGetWith<AuthorizationRule>('authorizationPolicy/rules', id);
         if (rule) this.config.authorizationPolicy.rules.push(rule);
@@ -1615,11 +1625,11 @@ export class RedisConfigService extends ConfigService {
     }
 
     async getAuthorizationPolicyRuleCount() {
-        this.isEverythingOK();
+        this.isReady();
         return await this.rCount('authorizationPolicy/rules/*');
     }
     async deleteAuthorizationPolicyRule(id: string) {
-        this.isEverythingOK();
+        this.isReady();
         this.config.authorizationPolicy.rules = [];
 
         const rule = await this.rGetWith<AuthorizationRule>('authorizationPolicy/rules', id);
