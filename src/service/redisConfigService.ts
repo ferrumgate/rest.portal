@@ -31,14 +31,13 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 type Nullable<T> = T | null | undefined;
 
 
-type RPath =
+export type RPath =
     'lastUpdateTime' |
     'revision' |
     'version' |
     'isConfigured' |
     'domain' |
     'url' |
-    'auth' |
     'auth/common' |
     'auth/local' |
     'auth/oauth/providers' |
@@ -61,7 +60,7 @@ type RPath =
     'authorizationPolicy/rulesOrder';
 
 
-type RPathCount = 'users/*' |
+export type RPathCount = 'users/*' |
     'groups/*' |
     'services/*' |
     'networks/*' |
@@ -345,12 +344,15 @@ export class RedisConfigService extends ConfigService {
             this.timerInterval = null;
             this.isInitCompleted = true;
             await this.logWatcherStart()
-
+            await this.afterInit();
         } catch (err) {
             logger.error(err);
         } finally {
             this.redLock.release();
         }
+    }
+    protected async afterInit() {
+
     }
 
     protected async logWatcherStart() {
