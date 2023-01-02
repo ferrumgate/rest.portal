@@ -90,7 +90,7 @@ export class WatchService {
                         let dataStr = (this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.val, 'base64') : Buffer.from(item.val, 'base64').toString();
                         const data = JSON.parse(dataStr);
                         const time = Number(item.time);
-                        this.events.emit('data', { val: data, time: time } as WatchItem<string>)
+                        this.events.emit('data', { val: data, time: time } as WatchItem<any>)
 
 
                     } catch (err) {

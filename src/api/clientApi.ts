@@ -98,7 +98,7 @@ routerClientTunnelAuthenticated.post('/',
             tunnel = await tunnelService.getTunnel(tunnelKey);
             attachActivityTunnel(req, tunnel);
 
-            const rule = await policyService.authenticate(user, session.is2FA, tunnelKey);
+            const rule = await policyService.authenticate(user, session.is2FA, tunnel);
             tunnel = await tunnelService.createTunnel(user, tunnelKey, session);
             await systemlogService.write({ path: '/system/tunnel/create', 'type': 'put', val: tunnel });
             attachActivityTunnel(req, tunnel);

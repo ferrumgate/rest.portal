@@ -27,6 +27,7 @@
                 "ES_PASS": "123456",
                 "GATEWAY_ID": "12edf",
                 "LIMITED_MODE": "true22",
+                "LOAD_TEST_DATA": "true"
             },
             "outputCapture": "console",
             "console": "integratedTerminal",

@@ -14,7 +14,6 @@ export class RedisWatcherService {
         this.redis = new RedisService(host, pass);
     }
     async start() {
-        await this.checkRedisIsMaster();
         this.timer = setIntervalAsync(async () => {
             await this.checkRedisIsMaster();
         }, 5000)

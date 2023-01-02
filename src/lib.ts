@@ -10,7 +10,7 @@ export { ActivityService } from './service/activityService';
 export { AuditLog } from './model/auditLog';
 export { AuditService } from './service/auditService';
 export { Util } from './util';
-export { WatchService } from './service/watchService'
+export { WatchService, WatchItem } from './service/watchService'
 export { ConfigEvent } from './model/config';
 export { Service } from './model/service';
 export { Tunnel } from './model/tunnel';
@@ -22,6 +22,6 @@ export { HelperService } from './service/helperService';
 export { TunnelService } from './service/tunnelService';
 export { ActivityLog, ActivityStatus } from './model/activityLog';
 export { PingService } from './service/pingService';
-export { SystemLogService } from './service/systemLogService';
+export { SystemLogService, SystemLog } from './service/systemLogService';
 export { RedisConfigWatchService } from './service/redisConfigWatchService';
 export { PolicyService } from './service/policyService';

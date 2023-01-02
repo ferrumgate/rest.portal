@@ -105,8 +105,10 @@ export class ConfigService {
         //for testing start
         //dont delete aboveline
         try {
-            var m = require('../../test/configServiceTestData');
-            m.loadTestData(this.config);
+            if (process.env.LOAD_TEST_DATA) {
+                var m = require('../../test/configServiceTestData');
+                m.loadTestData(this.config);
+            }
         } catch (err) {
             logger.error(err);
         }

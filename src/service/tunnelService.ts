@@ -170,10 +170,10 @@ export class TunnelService {
         HelperService.isValidTunnel(tunnel);
         await this.redisService.set(`/gateway/${tunnel.gatewayId}/tun/${tunnel.tun}`, tunnelKey, { ttl: 5 * 60 * 1000 });
         // add to a list
-        await this.redisService.sadd(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id || '');
-        await this.redisService.expire(`/tunnel/configure/${tunnel.gatewayId}`, 5 * 60 * 1000);
+        //await this.redisService.sadd(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id || '');
+        //await this.redisService.expire(`/tunnel/configure/${tunnel.gatewayId}`, 5 * 60 * 1000);
         // and publish to listener for configuring all network settings to the destination gateway
-        await this.redisService.publish(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id);
+        //await this.redisService.publish(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id);
     }
 
     /**

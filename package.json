@@ -5,7 +5,7 @@
   "main": "index.js",
   "typings": "lib.d.ts",
   "scripts": {
-    "test": "CONFIGSERVICE_TYPE=CONFIG NODE_ENV=development NODE_TEST=true DEBUG2=nock.*  ES_HOST=https://192.168.88.250:9200     ES_USER=elastic ES_PASS=123456 node ./node_modules/mocha/bin/mocha --exit --timeout 30000 --require ts-node/register test/**/redisConfigService.spec.ts",
+    "test": "CONFIGSERVICE_TYPE=CONFIG NODE_ENV=development NODE_TEST=true DEBUG2=nock.*  ES_HOST=https://192.168.88.250:9200     ES_USER=elastic ES_PASS=123456 node ./node_modules/mocha/bin/mocha --exit --timeout 30000 --require ts-node/register test/**/policyService.spec.ts",
     "testintegration": "DEBUG=nock.* node ./node_modules/mocha/bin/mocha --exit  --require ts-node/register test/**/*.spec.integration.ts",
     "build": "tsc && cp -R src/service/templates build/src/service/ && cp ferrumgate.* build/ && cp package.json ./build/src/ && sed -i  s/index.js/lib.js/g ./build/src/package.json",
     "start": "tsc && NODE_ENV=development node ./build/src/index.js",

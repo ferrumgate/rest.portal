@@ -33,7 +33,6 @@ export class PolicyService {
      *
      */
     constructor(private configService: ConfigService,
-        private tunnelService: TunnelService,
     ) {
 
 
@@ -71,10 +70,10 @@ export class PolicyService {
     }
     errorNumber = 0;
     // TODO  make this errors  most meaning full
-    async authenticate(user: User, is2FAValidated: boolean, tunnelKey: string) {
+    async authenticate(user: User, is2FAValidated: boolean, tunnel: Tunnel | undefined) {
         //get tunnel basic information
         this.errorNumber = 0;
-        const tunnel = await this.tunnelService.getTunnel(tunnelKey);
+        //const tunnel = await this.tunnelService.getTunnel(tunnelKey);
         if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.gatewayId) {
             this.errorNumber = 1;
 
@@ -189,28 +188,21 @@ export class PolicyService {
 
     //TODO
     authorizeErrorNumber = 0;
-    async authorize(trackId: number, serviceId: string, throwError: boolean = true, tun?: Tunnel): Promise<PolicyAuthzResult> {
+    async authorize(tunnel: Tunnel, serviceId: string, throwError: boolean = true): Promise<PolicyAuthzResult> {
         //TODO make this so fast
-        logger.debug(`policy authz calculate trackId: ${trackId} serviceId:${serviceId}`);
+
         this.authorizeErrorNumber = 0;
-        const tunnelKey = tun ? `/tunnel/id/${tun.id}` : await this.tunnelService.getTunnelKeyFromTrackId(trackId);
-        if (!tunnelKey) {
+        if (!tunnel) {
 
             this.authorizeErrorNumber = 1;
             if (!throwError) return { error: this.authorizeErrorNumber };
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'key not found');
-        }
-        const tunnel = tun || await this.tunnelService.getTunnel(tunnelKey);
-        if (!tunnel) {
-
-            this.authorizeErrorNumber = 2;
-            if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'tunnel found');
         }
+        logger.debug(`policy authz calculate trackId: ${tunnel.trackId} serviceId:${serviceId}`);
 
 
-        if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.gatewayId || !tunnel.trackId || tunnel.trackId != trackId) {
-            this.authorizeErrorNumber = 3;
+        if (!tunnel.id || !tunnel.clientIp || !tunnel.gatewayId || !tunnel.trackId) {
+            this.authorizeErrorNumber = 2;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'secure tunnel failed');
@@ -218,7 +210,7 @@ export class PolicyService {
         const user = await this.configService.getUserById(tunnel.userId || '')
         if (!user) {
 
-            this.authorizeErrorNumber = 4;
+            this.authorizeErrorNumber = 3;
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrUserNotFound, 'not found');
         }
@@ -273,7 +265,7 @@ export class PolicyService {
             let f2 = await this.check2FA(rule, tunnel.is2FA || false);
             if (f1 && f2) {
 
-                logger.debug(`policy authz calculate trackId: ${trackId} serviceId:${serviceId} rule matched: ${rule.id}`);
+                logger.debug(`policy authz calculate trackId: ${tunnel.trackId} serviceId:${serviceId} rule matched: ${rule.id}`);
                 return { error: 0, index: i, rule: rule };
             }
 

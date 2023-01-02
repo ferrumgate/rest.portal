@@ -141,7 +141,7 @@ describe('policyAuthzListener', () => {
         const tunnelService = new TunnelService(configService, redisService);
         const esService = new ESService(esHost, esUser, esPass);
         const auditService = new AuditService(configService, redisService, esService);
-        let policyService = new PolicyService(configService, tunnelService);
+        let policyService = new PolicyService(configService);
         return { simpleRedis: redisService, configService: configService, policyService: policyService, tunnelService: tunnelService, auditService: auditService, };
     }
 

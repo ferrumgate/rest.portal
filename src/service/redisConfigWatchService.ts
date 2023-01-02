@@ -68,7 +68,7 @@ export class RedisConfigWatchService extends ConfigService {
         }
         this.interval = await setIntervalAsync(async () => {
             await this.processExecuteList();
-        }, 1000);
+        }, 500);
 
     }
     override async stop(): Promise<void> {
@@ -203,8 +203,8 @@ export class RedisConfigWatchService extends ConfigService {
             if (!this.config.auth.saml)
                 this.config.auth.saml = { providers: [] };
             while (this.executeList.length) {
-
-                const item = this.executeList[0].val;
+                const watch = this.executeList[0];
+                const item = watch.val;
                 let rpath = item.path;
                 if (rpath.startsWith('/config')) {
                     let path = rpath.substring(8);
@@ -294,12 +294,12 @@ export class RedisConfigWatchService extends ConfigService {
                             throw new Error(`not implemented path ${item.path}`)
                     }
                     this.executeList.shift();
-                    this.watch.emit('configChanged', item);
-                    this.watch.emit('log', item);
+                    this.watch.emit('configChanged', watch);
+                    this.watch.emit('log', watch);
                 } else {
                     this.executeList.shift();
-                    this.watch.emit('data', item);
-                    this.watch.emit('log', item);
+                    this.watch.emit('data', watch);
+                    this.watch.emit('log', watch);
                 }
             }
 

@@ -247,9 +247,9 @@ export class PolicyAuthzListener {
                 if (item.action == 'delete')
                     await room.pushDelete(item.tunnel.trackId);
                 else {
-                    const presult = await this.policyService.authorize(item.tunnel.trackId, room.serviceId, false, item.tunnel);
-                    logger.debug(`policy authz calculated trackId: ${item.tunnel?.trackId || 0} serviceId: ${room.serviceId} result: error=>${presult.error} ruleId=>${presult.rule?.id}`);
-                    await room.push(item.tunnel.trackId, presult);
+                    /*  const presult = await this.policyService.authorize(item.tunnel.trackId, room.serviceId, false, item.tunnel);
+                     logger.debug(`policy authz calculated trackId: ${item.tunnel?.trackId || 0} serviceId: ${room.serviceId} result: error=>${presult.error} ruleId=>${presult.rule?.id}`);
+                     await room.push(item.tunnel.trackId, presult); */
                 }
             }
 
@@ -324,10 +324,10 @@ export class PolicyAuthzListener {
         for (const tunnel of filteredTunnels) {
             if (!tunnel.trackId)
                 continue;
-            const pResult = await this.policyService.authorize(tunnel.trackId, room.serviceId, false, tunnel);
+            /* const pResult = await this.policyService.authorize(tunnel.trackId, room.serviceId, false, tunnel);
 
             logger.debug(`policy authz trackId:${tunnel.trackId} serviceId:${room.serviceId} result:${JSON.stringify(pResult)}`);
-            await room.push(tunnel.trackId, pResult);
+            await room.push(tunnel.trackId, pResult); */
         }
     }
 
