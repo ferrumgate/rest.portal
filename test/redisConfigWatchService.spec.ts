@@ -9,6 +9,7 @@ import { RedisConfigService } from '../src/service/redisConfigService';
 import { RedisConfigWatchService } from '../src/service/redisConfigWatchService';
 import { Group } from '../src/model/group';
 import { User } from '../src/model/user';
+import { SystemLogService } from '../src/service/systemLogService'
 
 
 
@@ -20,6 +21,7 @@ describe('redisConfigWatchService ', async () => {
     const redis = new RedisService();
 
     const encryptKey = Util.randomNumberString(32);
+    const systemLog = new SystemLogService(redis, new RedisService(), encryptKey, 'test2');
     beforeEach(async () => {
         await redis.flushAll();
     })
@@ -31,11 +33,11 @@ describe('redisConfigWatchService ', async () => {
         await redisConfig.saveGroup({ id: '1', name: 'gr' } as Group)
     }
     it('isReady', async () => {
-        const redisConfig = new RedisConfigService(new RedisService(), new RedisService(), encryptKey, 'test', '/tmp/abc');
+        const redisConfig = new RedisConfigService(new RedisService(), new RedisService(), systemLog, encryptKey, 'test', '/tmp/abc');
         await redisConfig.init();
         await saveTestData(redisConfig);
 
-        const watch = new RedisConfigWatchService(new RedisService(), new RedisService(), encryptKey, 'test2', '/tmp/abcd');
+        const watch = new RedisConfigWatchService(new RedisService(), new RedisService(), systemLog, false, encryptKey, 'test2', '/tmp/abcd');
         let isError = false;
         try {
             await watch.getUrl();
@@ -48,11 +50,11 @@ describe('redisConfigWatchService ', async () => {
 
 
     it('isReadonly', async () => {
-        const redisConfig = new RedisConfigService(new RedisService(), new RedisService(), encryptKey, 'test', '/tmp/abc');
+        const redisConfig = new RedisConfigService(new RedisService(), new RedisService(), systemLog, encryptKey, 'test', '/tmp/abc');
         await redisConfig.init();
         await saveTestData(redisConfig);
 
-        const watch = new RedisConfigWatchService(new RedisService(), new RedisService(), encryptKey, 'test2', '/tmp/abcd');
+        const watch = new RedisConfigWatchService(new RedisService(), new RedisService(), systemLog, false, encryptKey, 'test2', '/tmp/abcd');
         await watch.start();
         await Util.sleep(3000);
         let isError = false;
@@ -76,11 +78,11 @@ describe('redisConfigWatchService ', async () => {
 
 
     it('default system settings must exit', async () => {
-        const redisConfig = new RedisConfigService(new RedisService(), new RedisService(), encryptKey, 'test', '/tmp/abc');
+        const redisConfig = new RedisConfigService(new RedisService(), new RedisService(), systemLog, encryptKey, 'test', '/tmp/abc');
         await redisConfig.init();
 
 
-        const watch = new RedisConfigWatchService(new RedisService(), new RedisService(), encryptKey, 'test2', '/tmp/abcd');
+        const watch = new RedisConfigWatchService(new RedisService(), new RedisService(), systemLog, false, encryptKey, 'test2', '/tmp/abcd');
         await watch.start();
         await saveTestData(redisConfig);
         await Util.sleep(3000);
@@ -93,11 +95,30 @@ describe('redisConfigWatchService ', async () => {
 
 
     it('events', async () => {
-        const redisConfig = new RedisConfigService(new RedisService(), new RedisService(), encryptKey, 'test', '/tmp/abc');
+        const redisConfig = new RedisConfigService(new RedisService(), new RedisService(), systemLog, encryptKey, 'test', '/tmp/abc');
         await redisConfig.init();
 
 
-        const watcher = new RedisConfigWatchService(new RedisService(), new RedisService(), encryptKey, 'test2', '/tmp/abcd');
+        const watcher = new RedisConfigWatchService(new RedisService(), new RedisService(), systemLog, false, encryptKey, 'test2', '/tmp/abcd');
+        let eventsReceived = false;
+        watcher.watch.on('configChanged', (data: any) => {
+            eventsReceived = true;
+        })
+        await watcher.start();
+        await saveTestData(redisConfig);
+        await Util.sleep(3000);
+        expect(eventsReceived).to.be.true;
+        await watcher.stop();
+
+    }).timeout(150000);
+
+
+    it('events over systemlog', async () => {
+        const redisConfig = new RedisConfigService(new RedisService(), new RedisService(), systemLog, encryptKey, 'test', '/tmp/abc');
+        await redisConfig.init();
+
+
+        const watcher = new RedisConfigWatchService(new RedisService(), new RedisService(), systemLog, true, encryptKey, 'test2', '/tmp/abcd');
         let eventsReceived = false;
         watcher.watch.on('configChanged', (data: any) => {
             eventsReceived = true;

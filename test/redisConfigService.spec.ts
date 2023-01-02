@@ -19,6 +19,7 @@ import { RedisService } from '../src/service/redisService';
 import { config } from 'process';
 import { WatchItem } from '../src/service/watchService';
 import { authenticate } from 'passport';
+import { SystemLogService } from '../src/service/systemLogService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -29,6 +30,10 @@ describe('redisConfigService', async () => {
     const redis = new RedisService();
     const redisStream = new RedisService();
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+    const encKey = 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg'
+
+    const systemLogService = new SystemLogService(redis, redisStream, encKey, 'test');
+
     beforeEach(async () => {
         await redis.flushAll();
     })
@@ -41,7 +46,7 @@ describe('redisConfigService', async () => {
     });
 
     it('rSave', async () => {
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         await configService.rSave('users', undefined, { id: 1 });
         const data = await redis.get('/config/users/1', false);
@@ -50,7 +55,7 @@ describe('redisConfigService', async () => {
     });
 
     it('rGet', async () => {
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         await configService.rSave('users', undefined, { id: 1 });
         const data = await configService.rGetWith<User>('users', '1')
@@ -60,7 +65,7 @@ describe('redisConfigService', async () => {
 
     });
     it('rExits', async () => {
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         await configService.rSave('users', undefined, { id: 1 });
         const data = await configService.rExists('users/1')
@@ -70,7 +75,7 @@ describe('redisConfigService', async () => {
 
 
     it('rDel', async () => {
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         let logs: ConfigWatch<User>[] = [];
         configService.logWatcher.events.on('data', (data: WatchItem<ConfigWatch<User>>) => {
             logs.push(data.val);
@@ -93,7 +98,7 @@ describe('redisConfigService', async () => {
     }).timeout(120000);
 
     it('rSaveArray', async () => {
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         await configService.rSaveArray('users', [{ id: 1 }, { id: 2 }]);
         const data = await configService.rExists('users/1')
@@ -104,7 +109,7 @@ describe('redisConfigService', async () => {
     });
     it('rGetAll', async () => {
         let configService = new RedisConfigService(redis, redisStream,
-            'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+            systemLogService, encKey, filename);
 
         await configService.rSaveArray('users', [{ id: 1 }, { id: 2 }]);
         const data = await configService.rGetAll<User>('users')
@@ -115,7 +120,7 @@ describe('redisConfigService', async () => {
 
 
     it('saveV1', async () => {
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         await configService.saveV1();
         const users = await configService.rGetAll('users')
@@ -130,7 +135,7 @@ describe('redisConfigService', async () => {
 
 
     it('init', async () => {
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         await configService.init();
         const users = await configService.rGetAll('users')
@@ -141,7 +146,7 @@ describe('redisConfigService', async () => {
     it('getUserByUsername', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',
@@ -163,7 +168,7 @@ describe('redisConfigService', async () => {
     it('getUserByUsernameAndSource', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',
@@ -185,7 +190,7 @@ describe('redisConfigService', async () => {
     it('getUserByApiKey', async () => {
 
         //first create a config and save to a redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: '6hiryy8ujv3n',
@@ -207,7 +212,7 @@ describe('redisConfigService', async () => {
     it('getUserById', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',
@@ -231,7 +236,7 @@ describe('redisConfigService', async () => {
     it('getUsersBy', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'id1',
@@ -344,7 +349,7 @@ describe('redisConfigService', async () => {
     it('getUserByRoleIds', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',
@@ -371,7 +376,7 @@ describe('redisConfigService', async () => {
     it('getUserByUsernameAndPass', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',
@@ -397,7 +402,7 @@ describe('redisConfigService', async () => {
     it('getUserByUsername', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',
@@ -419,7 +424,7 @@ describe('redisConfigService', async () => {
     it('getUserByIdAndPass', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',
@@ -441,7 +446,7 @@ describe('redisConfigService', async () => {
     it('saveUser', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',
@@ -467,7 +472,7 @@ describe('redisConfigService', async () => {
     it('deleteUser', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',
@@ -498,7 +503,7 @@ describe('redisConfigService', async () => {
     it('changeAdminUser', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',
@@ -525,7 +530,7 @@ describe('redisConfigService', async () => {
     it('setCaptcha/getCaptcha', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.captcha = {};
         await configService.init();
 
@@ -539,7 +544,7 @@ describe('redisConfigService', async () => {
     it('setJWTSSLCertificate/getJWTSSLCertificate', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.jwtSSLCertificate = {};
         await configService.init();
 
@@ -552,7 +557,7 @@ describe('redisConfigService', async () => {
     it('setCASSLCertificate/getCASSLCertificate', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.caSSLCertificate = {};
         await configService.init();
 
@@ -568,7 +573,7 @@ describe('redisConfigService', async () => {
     it('setLogo/getLogo', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.logo = {};
         await configService.init();
 
@@ -582,7 +587,7 @@ describe('redisConfigService', async () => {
     it('setAuthSettings/getAuthSettings', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
             common: {},
             local: {} as AuthLocal,
@@ -637,7 +642,7 @@ describe('redisConfigService', async () => {
     it('authSettingsCommon', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         await configService.init();
         let common: AuthCommon = {
             bla: 'test'
@@ -652,7 +657,7 @@ describe('redisConfigService', async () => {
     it('authSettingsOAuth', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
             common: {}, local: {} as any
         }
@@ -692,7 +697,7 @@ describe('redisConfigService', async () => {
     it('setAuthSettingsLocal/getAuthSettingsLocal', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         configService.config.auth = {
             common: {}, local: {} as any
@@ -724,7 +729,7 @@ describe('redisConfigService', async () => {
     it('authSettingsLdap', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
             common: {}, local: {} as any, ldap: { providers: [] }
         }
@@ -765,7 +770,7 @@ describe('redisConfigService', async () => {
     it('authSettingsSaml', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
             common: {}, local: {} as any, ldap: { providers: [] }
         }
@@ -805,7 +810,7 @@ describe('redisConfigService', async () => {
     it('saveNetwork getNetwork getNetworkByName', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         await configService.init();
         let network: Network = {
             id: '6hiryy8ujv3n',
@@ -828,7 +833,7 @@ describe('redisConfigService', async () => {
     it('getNetworkByHostname', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         await configService.init();
         let network: Network = {
             id: '6hiryy8ujv3n',
@@ -861,7 +866,7 @@ describe('redisConfigService', async () => {
     it('deleteNetwork', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         await configService.init();
         let network: Network = {
             id: '6hiryy8ujv3n',
@@ -896,7 +901,7 @@ describe('redisConfigService', async () => {
     it('getGateway/saveGateway', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         await configService.init();
         let gateway: Gateway = {
             id: '231a0932',
@@ -918,7 +923,7 @@ describe('redisConfigService', async () => {
     it('deleteGateway', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         await configService.init();
         let gateway: Gateway = {
             id: '231a0932',
@@ -938,7 +943,7 @@ describe('redisConfigService', async () => {
     });
 
     it('getDomain/setDomain', async () => {
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         await configService.init();
 
@@ -950,7 +955,7 @@ describe('redisConfigService', async () => {
 
 
     it('getUrl/setUrl', async () => {
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         await configService.init();
 
@@ -961,7 +966,7 @@ describe('redisConfigService', async () => {
     }).timeout(10000);
 
     it('getIsConfigured/setIsConfigured', async () => {
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         await configService.init();
 
@@ -974,7 +979,7 @@ describe('redisConfigService', async () => {
     it('getGroup', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         await configService.init();
         configService.config.groups = [];
         let group: Group = {
@@ -998,7 +1003,7 @@ describe('redisConfigService', async () => {
     it('getGroupBySearch', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         configService.config.groups = [];
         await configService.init();
@@ -1039,7 +1044,7 @@ describe('redisConfigService', async () => {
     it('getGroupsAll', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         configService.config.groups = [];
         await configService.init();
@@ -1076,7 +1081,7 @@ describe('redisConfigService', async () => {
     it('saveGroup', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         configService.config.groups = [];
         await configService.init();
@@ -1105,7 +1110,7 @@ describe('redisConfigService', async () => {
     it('deleteGroup', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
 
         configService.config.groups = [];
@@ -1153,7 +1158,7 @@ describe('redisConfigService', async () => {
     it('getService', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.services = [];
         await configService.init();
         let service: Service = {
@@ -1181,7 +1186,7 @@ describe('redisConfigService', async () => {
     it('getServicesBy', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.services = [];
         await configService.init();
         let service1: Service = {
@@ -1244,7 +1249,7 @@ describe('redisConfigService', async () => {
     it('getServicesByNetworkId', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.services = [];
         await configService.init();
         let service1: Service = {
@@ -1291,7 +1296,7 @@ describe('redisConfigService', async () => {
     it('getServicesAll', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         configService.config.services = [];
         await configService.init();
@@ -1338,7 +1343,7 @@ describe('redisConfigService', async () => {
     it('saveService', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.services = [];
         await configService.init();
         let service1: Service = {
@@ -1371,7 +1376,7 @@ describe('redisConfigService', async () => {
     it('deleteService', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         configService.config.groups = [];
         await configService.init();
@@ -1408,7 +1413,7 @@ describe('redisConfigService', async () => {
     it('saveAthenticationPolicyAddRule', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.authenticationPolicy.rules = [];
         await configService.init();
         let rule: AuthenticationRule = {
@@ -1434,7 +1439,7 @@ describe('redisConfigService', async () => {
     it('getAuthenticationPolicy', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.authenticationPolicy.rules = [];
         await configService.init();
         let rule: AuthenticationRule = {
@@ -1461,7 +1466,7 @@ describe('redisConfigService', async () => {
     it('getAuthenticationPolicyUnsafe', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.authenticationPolicy.rules = [];
         await configService.init();
         let rule: AuthenticationRule = {
@@ -1488,7 +1493,7 @@ describe('redisConfigService', async () => {
     it('deleteAuthenticationPolicyRule', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.authenticationPolicy.rules = [];
         await configService.init();
         let rule: AuthenticationRule = {
@@ -1516,7 +1521,7 @@ describe('redisConfigService', async () => {
     it('updateAuthenticationRulePos', async () => {
 
         //first create a config and save to a file
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, filename);
         configService.config.authenticationPolicy.rules = [];
         configService.config.authenticationPolicy.rulesOrder = [];
         await configService.init();
@@ -1612,7 +1617,7 @@ describe('redisConfigService', async () => {
     it('saveAuthorizationPolicyAddRule', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.authorizationPolicy.rules = [];
         await configService.init();
         let rule: AuthorizationRule = {
@@ -1638,7 +1643,7 @@ describe('redisConfigService', async () => {
     it('getAuthorizationPolicy', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
         await configService.init();
@@ -1666,7 +1671,7 @@ describe('redisConfigService', async () => {
     it('getAuthorizationPolicyUnsafe', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.authorizationPolicy.rules = [];
         await configService.init();
         let rule: AuthorizationRule = {
@@ -1694,7 +1699,7 @@ describe('redisConfigService', async () => {
     it('deleteAuthorizationPolicyRule', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.authorizationPolicy.rules = [];
         await configService.init();
         let rule: AuthorizationRule = {
@@ -1725,7 +1730,7 @@ describe('redisConfigService', async () => {
     it('updateAuthorizationRulePos', async () => {
 
         //first create a config and save to a file
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, filename);
         configService.config.authorizationPolicy.rules = [];
         configService.config.authorizationPolicy.rulesOrder = [];
         await configService.init();
@@ -1828,7 +1833,7 @@ describe('redisConfigService', async () => {
     it('triggerUserDeleted', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
@@ -1916,7 +1921,7 @@ describe('redisConfigService', async () => {
     it('triggerUserSavedOrUpdated', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
@@ -1962,7 +1967,7 @@ describe('redisConfigService', async () => {
     it('triggerNetworkDeleted', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
@@ -2092,7 +2097,7 @@ describe('redisConfigService', async () => {
     it('triggerGatewayDeleted', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
@@ -2136,7 +2141,7 @@ describe('redisConfigService', async () => {
     it('triggerGroupDeleted', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
@@ -2231,7 +2236,7 @@ describe('redisConfigService', async () => {
     it('triggerServiceDeleted', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
@@ -2321,7 +2326,7 @@ describe('redisConfigService', async () => {
     it('saveConfigToString', async () => {
 
         //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg', 'redisConfig', filename);
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.users = [];
         let aUser: User = {
             id: 'someid',

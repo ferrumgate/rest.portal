@@ -72,11 +72,11 @@ export class AppService {
         systemLogService?: SystemLogService
     ) {
         //create self signed certificates for JWT
-
+        this.systemLogService = systemLogService || new SystemLogService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`)
         this.configService = cfg ||
             process.env.CONFIGSERVICE_TYPE === 'CONFIG' ?
             new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), `/tmp/${Util.randomNumberString(16)}_config.yaml`) :
-            new RedisCachedConfigService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`, '/etc/ferrumgate/config.yaml');
+            new RedisCachedConfigService(AppService.createRedisService(), AppService.createRedisService(), this.systemLogService, process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`, '/etc/ferrumgate/config.yaml');
         this.redisService = redis || AppService.createRedisService()
         this.rateLimit = rateLimit || new RateLimitService(this.configService, this.redisService);
         this.inputService = input || new InputService();
@@ -95,7 +95,7 @@ export class AppService {
         this.policyService = policy || new PolicyService(this.configService, this.tunnelService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
-        this.systemLogService = systemLogService || new SystemLogService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`)
+
 
 
 
@@ -107,12 +107,12 @@ export class AppService {
 
     async start() {
         await this.configService.start();
-        await this.systemLogService.start();
+        await this.systemLogService.start(false);
 
     }
     async stop() {
         await this.configService.stop();
-        await this.systemLogService.stop();
+        await this.systemLogService.stop(false);
     }
 
 }

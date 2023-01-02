@@ -6,13 +6,15 @@ export interface SystemLog {
     type: string;
     path: string;
     val: any;
+    before?: any;
 }
 
 export class SystemLogService {
     private key = '/logs/system';
 
     logWatcher: WatchService;
-    constructor(private redis: RedisService, private redisStream: RedisService, encryptKey: string = '', uniqueName = 'systemlog') {
+    constructor(private redis: RedisService, private redisStream: RedisService,
+        encryptKey: string = '', uniqueName = 'systemlog') {
 
         this.logWatcher = new WatchService(this.redis, this.redisStream, this.key, uniqueName + '/pos',
             new Date().getTime().toString(),
@@ -24,11 +26,17 @@ export class SystemLogService {
         await this.logWatcher.write(type, pipeline);
     }
 
-    async start() {
-        await this.logWatcher.start(false);
+    async start(watch = true) {
+        await this.logWatcher.start(watch);
     }
-    async stop() {
-        await this.logWatcher.stop(false);
+    async stop(watch = true) {
+        await this.logWatcher.stop(watch);
+    }
+    async startWatch() {
+        await this.logWatcher.startWatch();
+    }
+    async stopWatch() {
+        await this.logWatcher.stopWatch();
     }
 
 

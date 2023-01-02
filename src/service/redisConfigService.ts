@@ -23,6 +23,7 @@ import NodeCache from "node-cache";
 import { RestfullException } from "../restfullException";
 import { ErrorCodes } from "../restfullException";
 import { ConfigEvent } from "../model/config";
+import { SystemLogService } from "./systemLogService";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -86,10 +87,14 @@ export class RedisConfigService extends ConfigService {
     //logs: any[] = [];
 
     logWatcher: WatchService;
+    systemLogWatcher: SystemLogService;
     redLock: RedLockService;
     constructor(private redis: RedisService, private redisStream: RedisService,
-        encryptKey: string, uniqueName = 'redisconfig', configFile?: string) {
+        systemLog: SystemLogService,
+        encryptKey: string,
+        uniqueName = 'redisconfig', configFile?: string) {
         super(encryptKey, configFile);
+        this.systemLogWatcher = systemLog;
         this.logWatcher = new WatchService(this.redis, this.redisStream, '/logs/config', uniqueName + '/pos',
             new Date().getTime().toString(),
             24 * 60 * 60 * 1000,
@@ -177,7 +182,9 @@ export class RedisConfigService extends ConfigService {
         const trx = pipeline || await this.redis.multi();
 
         await trx.lrem(rpath, val);
-        await this.logWatcher.write({ path: rpath, type: 'del', val: val }, trx);
+        const log = { path: rpath, type: 'del', val: val };
+        await this.logWatcher.write(log, trx);
+        await this.systemLogWatcher.write(log, trx);
         if (!pipeline)
             await trx.exec();
     }
@@ -187,7 +194,9 @@ export class RedisConfigService extends ConfigService {
         if (pushBack)
             await trx.rpush(rpath, [val]);
         else await trx.lpush(rpath, [val]);
-        await this.logWatcher.write({ path: rpath, type: 'put', val: val }, trx);
+        const log = { path: rpath, type: 'put', val: val };
+        await this.logWatcher.write(log, trx);
+        await this.systemLogWatcher.write(log, trx);
         if (!pipeline)
             await trx.exec();
     }
@@ -203,8 +212,9 @@ export class RedisConfigService extends ConfigService {
         if (refPos == 'BEFORE')
             await trx.linsertBefore(rpath, refVal, val);
         else await trx.linsertAfter(rpath, refVal, val);
-
-        await this.logWatcher.write({ path: rpath, type: 'put', val: { id: val, previous: previous, current: current } }, trx);
+        const log = { path: rpath, type: 'put', val: { id: val, previous: previous, current: current } };
+        await this.logWatcher.write(log, trx);
+        await this.systemLogWatcher.write(log, trx);
         if (!pipeline)
             await trx.exec();
     }
@@ -272,8 +282,9 @@ export class RedisConfigService extends ConfigService {
         const lpipeline = pipeline || await this.redis.multi();
         await lpipeline.remove(rpath);
         await lpipeline.incr('/config/revision');
-
-        await this.logWatcher.write({ path: wrpath, type: 'del', val: data }, lpipeline);
+        const log = { path: wrpath, type: 'del', val: data };
+        await this.logWatcher.write(log, lpipeline);
+        await this.systemLogWatcher.write(log, lpipeline);
         if (callback)
             callback(data, lpipeline);
         if (!pipeline)
@@ -304,7 +315,9 @@ export class RedisConfigService extends ConfigService {
         await lpipeline.incr('/config/revision');
         if (extra)
             await extra(before, after, lpipeline);
-        await this.logWatcher.write({ path: wrpath, type: 'put', val: after, before: before }, lpipeline);
+        const log = { path: wrpath, type: 'put', val: after, before: before }
+        await this.logWatcher.write(log, lpipeline);
+        await this.systemLogWatcher.write(log, lpipeline)
         if (!pipeline)
             await lpipeline.exec();
 
