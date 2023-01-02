@@ -79,7 +79,7 @@ export class TunnelService {
         const tunnel = await this.redisService.hgetAll(key) as unknown as Tunnel;
         if (Object.keys(tunnel)) {
             tunnel.is2FA = Util.convertToBoolean(tunnel.is2FA);
-
+            tunnel.trackId = Util.convertToNumber(tunnel.trackId);
             return tunnel;
         }
         return undefined;
@@ -196,5 +196,35 @@ export class TunnelService {
 
     async getTunnelKeys() {
         return await this.redisService.getAllKeys('/tunnel/id/*', 'hash');
+    }
+
+    async getAllValidTunnels(cont: () => boolean) {
+        let page = 0;
+        let pos = '0';
+        let tunnels: Tunnel[] = [];
+        while (cont) {
+            const [cursor, results] = await this.redisService.scan('/tunnel/id/*', pos, 10000, 'hash');
+            pos = cursor;
+            const pipeline = await this.redisService.multi();
+            for (const key of results) {
+                await pipeline.hgetAll(key) as Tunnel;
+            }
+            const tunnels = await pipeline.exec() as Tunnel[];
+            const validTunnels = tunnels.filter(tunnel => {
+                tunnel.is2FA = Util.convertToBoolean(tunnel.is2FA);
+                tunnel.trackId = Util.convertToNumber(tunnel.trackId);
+                return HelperService.isValidTunnelNoException(tunnel) ? false : true;
+            })
+            validTunnels.forEach(x => {
+                if (x.id) {
+                    tunnels.push(x);
+                }
+            });
+
+            if (!cursor || cursor == '0')
+                break;
+            page++;
+        }
+        return tunnels;
     }
 }
