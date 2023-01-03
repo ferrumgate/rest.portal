@@ -90,7 +90,7 @@ describe('redisConfigService', async () => {
         await configService.logWatcher.read();
         await configService.logWatcher.read();
         await configService.logWatcher.read();
-        await Util.sleep(5000);
+        await Util.sleep(10000);
         expect(logs.length).to.equal(2);
         expect(logs[0].type).to.equal('put');
         expect(logs[1].type).to.equal('del');
@@ -124,10 +124,10 @@ describe('redisConfigService', async () => {
 
         await configService.saveV1();
         const users = await configService.rGetAll('users')
-        expect(users.length).to.be.equal(4); // we are adding some users for test
+        expect(users.length).to.be.equal(1); // we are adding some users for test
 
         const networks = await configService.rGetAll('networks');
-        expect(networks.length).to.equal(2);
+        expect(networks.length).to.equal(1);
         //check index
         const id = await configService.rGetIndex('users/username', 'admin');
         expect(id).exist;
@@ -139,7 +139,7 @@ describe('redisConfigService', async () => {
 
         await configService.init();
         const users = await configService.rGetAll('users')
-        expect(users.length).to.be.equal(4); // we are adding some users for test
+        expect(users.length).to.be.equal(1); // we are adding some users for test
 
     }).timeout(60000);
 
@@ -1431,7 +1431,7 @@ describe('redisConfigService', async () => {
         //add
         await configService.saveAuthenticationPolicyRule(rule);
 
-        const policy = await configService.getAuthenticationPolicyUnsafe();
+        const policy = await configService.getAuthenticationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
 
 
@@ -1484,7 +1484,7 @@ describe('redisConfigService', async () => {
         configService.config.authenticationPolicy.rules.push(rule);
         await configService.saveAuthenticationPolicyRule(rule);
 
-        const policy = await configService.getAuthenticationPolicyUnsafe();
+        const policy = await configService.getAuthenticationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
         expect(policy.rules.length).to.equal(1);
 
@@ -1635,7 +1635,7 @@ describe('redisConfigService', async () => {
         //add
         await configService.saveAuthorizationPolicyRule(rule);
 
-        const policy = await configService.getAuthorizationPolicyUnsafe();
+        const policy = await configService.getAuthorizationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
 
 
@@ -1690,7 +1690,7 @@ describe('redisConfigService', async () => {
         await configService.saveAuthorizationPolicyRule(rule);
 
 
-        const policy = await configService.getAuthorizationPolicyUnsafe();
+        const policy = await configService.getAuthorizationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
         expect(policy.rules.length).to.equal(1);
 

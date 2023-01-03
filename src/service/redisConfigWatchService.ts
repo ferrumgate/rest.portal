@@ -91,6 +91,9 @@ export class RedisConfigWatchService extends ConfigService {
     override isWritable(): void {
         throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, ErrorCodes.ErrMethodNotAllowed, 'config is writable');
     }
+    override clone<T>(data: T): T {
+        return data;
+    }
 
     async fillFromRedis(): Promise<void> {
 

@@ -184,6 +184,10 @@ export class ConfigService {
 
     }
 
+    clone<T>(data: T) {
+        return Util.clone(data) as T;
+    }
+
 
 
     protected createDefaultEmail(): EmailSettings {
@@ -304,27 +308,27 @@ export class ConfigService {
     async getUserByUsername(username: string): Promise<User | undefined> {
         this.isReady(); this.isReadable();
         if (!username) return undefined;
-        let user = Util.clone(this.config.users.find(x => x.username == username));
+        let user = this.clone(this.config.users.find(x => x.username == username));
         this.deleteUserSensitiveData(user);
         return user;
     }
     async getUserByUsernameAndSource(username: string, source: string): Promise<User | undefined> {
         this.isReady(); this.isReadable();
         if (!username) return undefined;
-        let user = Util.clone(this.config.users.find(x => x.username == username && x.source == source));
+        let user = this.clone(this.config.users.find(x => x.username == username && x.source == source));
         this.deleteUserSensitiveData(user);
         return user;
     }
     async getUserByApiKey(key: string): Promise<User | undefined> {
         this.isReady(); this.isReadable();
         if (!key) return undefined;
-        let user = Util.clone(this.config.users.find(x => x.apiKey == key));
+        let user = this.clone(this.config.users.find(x => x.apiKey == key));
         this.deleteUserSensitiveData(user);
         return user;
     }
     async getUserById(id: string): Promise<User | undefined> {
         this.isReady(); this.isReadable();
-        let user = Util.clone(this.config.users.find(x => x.id == id));
+        let user = this.clone(this.config.users.find(x => x.id == id));
         this.deleteUserSensitiveData(user);
         return user;
     }
@@ -381,7 +385,7 @@ export class ConfigService {
         if (pageSize)
             filteredUsers = filteredUsers.slice(page * pageSize, (page + 1) * pageSize);
         for (const iterator of filteredUsers) {
-            let user = Util.clone(iterator);
+            let user = this.clone(iterator);
             this.deleteUserSensitiveData(user);
             users.push(user);
         }
@@ -393,7 +397,7 @@ export class ConfigService {
         let users = [];
         const filteredUsers = this.config.users.filter(x => Util.isArrayElementExist(roleIds, x.roleIds))
         for (const iterator of filteredUsers) {
-            let user = Util.clone(iterator);
+            let user = this.clone(iterator);
             this.deleteUserSensitiveData(user);
             users.push(user);
         }
@@ -419,7 +423,7 @@ export class ConfigService {
             .find(x => x.username == username);
 
         if (user && Util.bcryptCompare(pass, user.password || '')) {
-            let cloned = Util.clone(user);
+            let cloned = this.clone(user);
             this.deleteUserSensitiveData(cloned);
             return cloned;
         }
@@ -434,7 +438,7 @@ export class ConfigService {
             .find(x => x.id == id);
 
         if (user && Util.bcryptCompare(pass, user.password || '')) {
-            let cloned = Util.clone(user);
+            let cloned = this.clone(user);
             this.deleteUserSensitiveData(cloned);
             return cloned;
         }
@@ -443,7 +447,7 @@ export class ConfigService {
     }
     async getUserSensitiveData(id: string) {
         this.isReady(); this.isReadable();
-        let user = Util.clone(this.config.users.find(x => x.id == id)) as User;
+        let user = this.clone(this.config.users.find(x => x.id == id)) as User;
         return { twoFASecret: user?.twoFASecret };
     }
 
@@ -454,7 +458,7 @@ export class ConfigService {
         this.config.authenticationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == user.id);
             if (userIdIndex >= 0) {
-                const prev = Util.clone(x);
+                const prev = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
                 rulesAuthnChanged.push({ previous: prev, item: x });
             }
@@ -465,7 +469,7 @@ export class ConfigService {
         this.config.authorizationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == user.id);
             if (userIdIndex >= 0) {
-                const prev = Util.clone(x);
+                const prev = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
                 rulesAuthzChanged.push({ previous: prev, item: x });
             }
@@ -504,7 +508,7 @@ export class ConfigService {
 
     async saveUser(user: User) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(user);
+        let cloned = this.clone(user);
 
         let findedIndex = this.config.users.findIndex(x => x.username == user.username);
         let finded = this.config.users[findedIndex];
@@ -538,7 +542,7 @@ export class ConfigService {
         let finded = this.config.users.find(x => x.username == 'admin');
         if (!finded)
             return;
-        const prev = Util.clone(finded);
+        const prev = this.clone(finded);
         finded.username = email;
         finded.name = email;
         finded.password = Util.bcryptHash(password);
@@ -549,12 +553,12 @@ export class ConfigService {
     }
     async getCaptcha(): Promise<Captcha> {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.captcha);
+        return this.clone(this.config.captcha);
     }
 
     async setCaptcha(captcha: Captcha | {}) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(captcha);
+        let cloned = this.clone(captcha);
         const prev = this.config.captcha;
         this.config.captcha = {
             ...this.config.captcha,
@@ -567,12 +571,12 @@ export class ConfigService {
 
     async getJWTSSLCertificate(): Promise<SSLCertificate> {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.jwtSSLCertificate);
+        return this.clone(this.config.jwtSSLCertificate);
     }
 
     async setJWTSSLCertificate(cert: SSLCertificate | {}) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(cert);
+        let cloned = this.clone(cert);
         const prev = this.config.jwtSSLCertificate;
         this.config.jwtSSLCertificate = {
             ...this.config.jwtSSLCertificate,
@@ -585,12 +589,12 @@ export class ConfigService {
 
     async getSSLCertificate(): Promise<SSLCertificate> {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.sslCertificate);
+        return this.clone(this.config.sslCertificate);
     }
 
     async setSSLCertificate(cert: SSLCertificate | {}) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(cert);
+        let cloned = this.clone(cert);
         const prev = this.config.sslCertificate;
         this.config.sslCertificate = {
             ...this.config.sslCertificate,
@@ -603,7 +607,7 @@ export class ConfigService {
 
     async getCASSLCertificate(): Promise<SSLCertificate> {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.caSSLCertificate);
+        return this.clone(this.config.caSSLCertificate);
     }
     async getCASSLCertificatePublic(): Promise<string | null | undefined> {
         this.isReady(); this.isReadable();
@@ -612,7 +616,7 @@ export class ConfigService {
 
     async setCASSLCertificate(cert: SSLCertificate | {}) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(cert);
+        let cloned = this.clone(cert);
         const prev = this.config.caSSLCertificate;
         this.config.caSSLCertificate = {
             ...this.config.caSSLCertificate,
@@ -626,12 +630,12 @@ export class ConfigService {
 
     async getEmailSettings(): Promise<EmailSettings> {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.email);
+        return this.clone(this.config.email);
     }
 
     async setEmailSettings(options: EmailSettings) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(options);
+        let cloned = this.clone(options);
         let prev = this.config.email;
         this.config.email = {
             ...this.config.email,
@@ -644,11 +648,11 @@ export class ConfigService {
 
     async getLogo(): Promise<LogoSettings> {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.logo);
+        return this.clone(this.config.logo);
     }
     async setLogo(logo: LogoSettings | {}) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(logo);
+        let cloned = this.clone(logo);
         let prev = this.config.logo;
         this.config.logo = {
             ...this.config.logo,
@@ -661,16 +665,16 @@ export class ConfigService {
 
     async getAuthSettings(): Promise<AuthSettings> {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.auth);
+        return this.clone(this.config.auth);
     }
     /* // needs a sync version
     getAuthSettingsSync(): AuthSettings {
-        return Util.clone(this.config.auth);
+        return this.clone(this.config.auth);
     } */
 
     async setAuthSettings(option: AuthSettings | {}) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(option);
+        let cloned = this.clone(option);
         let prev = this.config.auth;
         this.config.auth = {
             ...this.config.auth,
@@ -682,7 +686,7 @@ export class ConfigService {
     }
     async setAuthSettingsCommon(common: AuthCommon) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(common);
+        let cloned = this.clone(common);
         let prev = this.config.auth.common;
         this.config.auth.common = cloned;
         this.emitEvent({ type: 'updated', path: '/auth/common', data: this.createTrackEvent(prev, this.config.auth.common) })
@@ -691,14 +695,14 @@ export class ConfigService {
     }
     async getAuthSettingsCommon() {
         this.isReady(); this.isReadable();
-        const common = Util.clone(this.config.auth.common);
+        const common = this.clone(this.config.auth.common);
         return common;
     }
 
 
     async setAuthSettingsLocal(local: AuthLocal) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(local);
+        let cloned = this.clone(local);
         const prev = this.config.auth.local;
         this.config.auth.local = cloned;
         this.emitEvent({ type: 'updated', path: '/auth/local', data: this.createTrackEvent(prev, this.config.auth.local) })
@@ -707,18 +711,18 @@ export class ConfigService {
     }
     async getAuthSettingsLocal() {
         this.isReady(); this.isReadable();
-        const common = Util.clone(this.config.auth.local);
+        const common = this.clone(this.config.auth.local);
         return common;
     }
 
     async getAuthSettingOAuth() {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.auth.oauth || {}) as AuthOAuth
+        return this.clone(this.config.auth.oauth || {}) as AuthOAuth
     }
 
     async addAuthSettingOAuth(provider: BaseOAuth) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(provider);
+        let cloned = this.clone(provider);
         if (!this.config.auth.oauth)
             this.config.auth.oauth = { providers: [] };
         let index = this.config.auth.oauth.providers.findIndex(x => x.id == cloned.id);
@@ -755,11 +759,11 @@ export class ConfigService {
 
     async getAuthSettingLdap() {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.auth.ldap || {}) as AuthLdap
+        return this.clone(this.config.auth.ldap || {}) as AuthLdap
     }
     async addAuthSettingLdap(provider: BaseLdap) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(provider);
+        let cloned = this.clone(provider);
         if (!this.config.auth.ldap)
             this.config.auth.ldap = { providers: [] };
         let index = this.config.auth.ldap.providers.findIndex(x => x.id == cloned.id);
@@ -793,13 +797,13 @@ export class ConfigService {
 
     async getAuthSettingSaml() {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.auth.saml || {}) as AuthSaml
+        return this.clone(this.config.auth.saml || {}) as AuthSaml
     }
 
 
     async addAuthSettingSaml(provider: BaseSaml) {
         this.isReady(); this.isWritable();
-        let cloned = Util.clone(provider);
+        let cloned = this.clone(provider);
         if (!this.config.auth.saml)
             this.config.auth.saml = { providers: [] };
         let index = this.config.auth.saml.providers.findIndex(x => x.id == cloned.id);
@@ -839,7 +843,7 @@ export class ConfigService {
         if (!network) {
             return network;
         }
-        return Util.clone(network);
+        return this.clone(network);
     }
     async getNetworkCount() {
         this.isReady(); this.isReadable();
@@ -850,7 +854,7 @@ export class ConfigService {
         ////// gateways
         let changedGateways = this.config.gateways.filter(x => x.networkId == net.id);
         changedGateways.forEach(x => {
-            let previous = Util.clone(x);
+            let previous = this.clone(x);
             x.networkId = '';
             this.emitEvent({ type: "updated", path: '/gateways', data: this.createTrackEvent(previous, x) })
         });
@@ -913,7 +917,7 @@ export class ConfigService {
         if (!network) {
             return network;
         }
-        return Util.clone(network);
+        return this.clone(network);
     }
     async getNetworkByGateway(gatewayId: string) {
         this.isReady(); this.isReadable();
@@ -923,7 +927,7 @@ export class ConfigService {
         }
         const network = this.config.networks.find(x => x.id == gateway.networkId);
         if (!network) return null;
-        return Util.clone(network);
+        return this.clone(network);
     }
 
     async getNetworksBy(query: string) {
@@ -939,11 +943,11 @@ export class ConfigService {
                 return true;
             return false;
         });
-        return networks.map(x => Util.clone(x));
+        return networks.map(x => this.clone(x));
     }
     async getNetworksAll() {
         this.isReady(); this.isReadable();
-        return this.config.networks.map(x => Util.clone(x));
+        return this.config.networks.map(x => this.clone(x));
     }
 
 
@@ -951,7 +955,7 @@ export class ConfigService {
         this.isReady(); this.isReadable();
         let findedIndex = this.config.networks.findIndex(x => x.id == network.id);
         let finded = this.config.networks[findedIndex];
-        const cloned = Util.clone(network);
+        const cloned = this.clone(network);
         if (!finded) {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
@@ -989,7 +993,7 @@ export class ConfigService {
         if (!gateway) {
             return gateway;
         }
-        return Util.clone(gateway);
+        return this.clone(gateway);
     }
     async getGatewayCount() {
         this.isReady(); this.isReadable();
@@ -1015,10 +1019,10 @@ export class ConfigService {
         this.isReady(); this.isReadable();
         if (id) {
             const gateways = this.config.gateways.filter(x => x.networkId == id);
-            return gateways.map(x => Util.clone(x));
+            return gateways.map(x => this.clone(x));
         } else {
             const gateways = this.config.gateways.filter(x => !x.networkId);
-            return gateways.map(x => Util.clone(x));
+            return gateways.map(x => this.clone(x));
         }
     }
     async getGatewaysBy(query: string) {
@@ -1035,14 +1039,14 @@ export class ConfigService {
 
     async getGatewaysAll() {
         this.isReady(); this.isReadable();
-        return this.config.gateways.map(x => Util.clone(x));
+        return this.config.gateways.map(x => this.clone(x));
     }
 
     async saveGateway(gateway: Gateway) {
         this.isReady(); this.isWritable();
         let findedIndex = this.config.gateways.findIndex(x => x.id == gateway.id);
         let finded = findedIndex >= 0 ? this.config.gateways[findedIndex] : null;
-        const cloned = Util.clone(gateway);
+        const cloned = this.clone(gateway);
         if (!finded) {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
@@ -1079,7 +1083,7 @@ export class ConfigService {
 
     async getRBAC(): Promise<RBAC> {
 
-        return Util.clone(this.config.rbac);
+        return this.clone(this.config.rbac);
     }
 
     async getIsConfigured(): Promise<number> {
@@ -1099,7 +1103,7 @@ export class ConfigService {
     //// group entity
     async getGroup(id: string): Promise<Group | undefined> {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.groups.find(x => x.id == id));
+        return this.clone(this.config.groups.find(x => x.id == id));
 
     }
     async getGroupCount() {
@@ -1118,11 +1122,11 @@ export class ConfigService {
 
             return false;
         });
-        return groups.map(x => Util.clone(x));
+        return groups.map(x => this.clone(x));
     }
     async getGroupsAll() {
         this.isReady(); this.isReadable();
-        return this.config.groups.map(x => Util.clone(x));
+        return this.config.groups.map(x => this.clone(x));
     }
 
     protected async triggerDeleteGroup(grp: Group) {
@@ -1131,7 +1135,7 @@ export class ConfigService {
         this.config.users.forEach(x => {
             let userGroupIndex = x.groupIds.findIndex(y => y == grp.id)
             if (userGroupIndex >= 0) {
-                let cloned = Util.clone(x);
+                let cloned = this.clone(x);
                 x.groupIds.splice(userGroupIndex, 1);
                 usersChanged.push({ previous: cloned, item: x })
             }
@@ -1143,7 +1147,7 @@ export class ConfigService {
         this.config.authenticationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
             if (userIdIndex >= 0) {
-                let cloned = Util.clone(x);
+                let cloned = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
 
                 rulesAuthnChanged.push({ previous: cloned, item: x });
@@ -1155,7 +1159,7 @@ export class ConfigService {
         this.config.authorizationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
             if (userIdIndex >= 0) {
-                let cloned = Util.clone(x);
+                let cloned = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
 
                 rulesAuthzChanged.push({ previous: cloned, item: x });
@@ -1201,7 +1205,7 @@ export class ConfigService {
         this.isReady(); this.isWritable();
         let findedIndex = this.config.groups.findIndex(x => x.id == group.id);
         let finded = findedIndex >= 0 ? this.config.groups[findedIndex] : null;
-        const cloned = Util.clone(group);
+        const cloned = this.clone(group);
         if (!finded) {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
@@ -1224,7 +1228,7 @@ export class ConfigService {
     //// service entity
     async getService(id: string): Promise<Service | undefined> {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.services.find(x => x.id == id));
+        return this.clone(this.config.services.find(x => x.id == id));
 
     }
     async getServiceCount() {
@@ -1259,18 +1263,18 @@ export class ConfigService {
         services.sort((a, b) => {
             return a.name.localeCompare(b.name)
         })
-        return services.map(x => Util.clone(x));
+        return services.map(x => this.clone(x));
     }
 
     async getServicesByNetworkId(networkId: string) {
         this.isReady(); this.isReadable();
-        return this.config.services.filter(x => x.networkId == networkId).map(x => Util.clone(x));
+        return this.config.services.filter(x => x.networkId == networkId).map(x => this.clone(x));
     }
 
     //// service entity
     async getServicesAll(): Promise<Service[]> {
         this.isReady(); this.isReadable();
-        return this.config.services.map(x => Util.clone(x));
+        return this.config.services.map(x => this.clone(x));
 
     }
 
@@ -1283,8 +1287,8 @@ export class ConfigService {
      */
     createTrackEvent<T>(previous: T, item?: T): { before?: NonNullable<T>, after?: NonNullable<T> } {
         return {
-            before: Util.isUndefinedOrNull(previous) ? undefined : Util.clone(previous),
-            after: Util.isUndefinedOrNull(item) ? undefined : Util.clone(item)
+            before: Util.isUndefinedOrNull(previous) ? undefined : this.clone(previous),
+            after: Util.isUndefinedOrNull(item) ? undefined : this.clone(item)
         } as { before?: NonNullable<T>, after?: NonNullable<T> }
     }
     /**
@@ -1292,7 +1296,7 @@ export class ConfigService {
      */
     createTrackIndexEvent(item: any, iprevious: number, iitem: number) {
         return {
-            item: Util.clone(item),
+            item: this.clone(item),
             iBefore: iprevious,
             iAfter: iitem
         }
@@ -1331,7 +1335,7 @@ export class ConfigService {
         this.isReady(); this.isWritable();
         let findedIndex = this.config.services.findIndex(x => x.id == service.id);
         let finded = findedIndex >= 0 ? this.config.services[findedIndex] : null;
-        const cloned = Util.clone(service);
+        const cloned = this.clone(service);
         if (!finded) {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
@@ -1356,7 +1360,7 @@ export class ConfigService {
 
     async saveAuthenticationPolicyRule(arule: AuthenticationRule) {
         this.isReady(); this.isWritable();
-        const cloned = Util.clone(arule);
+        const cloned = this.clone(arule);
         let ruleIndex = this.config.authenticationPolicy.rules.findIndex(x => x.id == arule.id);
         let previous = this.config.authenticationPolicy.rules[ruleIndex];
 
@@ -1380,17 +1384,13 @@ export class ConfigService {
     }
     async getAuthenticationPolicy() {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.authenticationPolicy);
+        return this.clone(this.config.authenticationPolicy);
     }
 
-    async getAuthenticationPolicyUnsafe() {
-        this.isReady(); this.isReadable();
-        return this.config.authenticationPolicy;
-    }
     async getAuthenticationPolicyRule(id: string) {
         this.isReady(); this.isReadable();
         const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
-        return Util.clone(rule);
+        return this.clone(rule);
     }
     async getAuthenticationPolicyRuleCount() {
         this.isReady(); this.isReadable();
@@ -1436,7 +1436,7 @@ export class ConfigService {
 
     async saveAuthorizationPolicyRule(arule: AuthorizationRule) {
         this.isReady(); this.isWritable();
-        const cloned = Util.clone(arule);
+        const cloned = this.clone(arule);
         let ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == arule.id);
         const previous = this.config.authorizationPolicy.rules[ruleIndex];
         if (ruleIndex >= 0) {
@@ -1459,16 +1459,13 @@ export class ConfigService {
     }
     async getAuthorizationPolicy() {
         this.isReady(); this.isReadable();
-        return Util.clone(this.config.authorizationPolicy);
+        return this.clone(this.config.authorizationPolicy);
     }
-    async getAuthorizationPolicyUnsafe() {
-        this.isReady(); this.isReadable();
-        return this.config.authorizationPolicy;
-    }
+
     async getAuthorizationPolicyRule(id: string) {
         this.isReady(); this.isReadable();
         const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
-        return Util.clone(rule);
+        return this.clone(rule);
     }
 
     async getAuthorizationPolicyRuleCount() {

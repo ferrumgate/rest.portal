@@ -10,7 +10,8 @@ import { AuthorizationRule } from "../model/authorizationPolicy";
 import ip from 'ip-cidr';
 import { HelperService } from "./helperService";
 import { logger } from "../common";
-import { Network } from "../model/network";
+import { Gateway, Network } from "../model/network";
+import { Service } from "../model/service";
 
 
 export interface UserNetworkListResponse {
@@ -254,7 +255,7 @@ export class PolicyService {
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotValid, 'no network');
         }
 
-        const gateway = await this.configService.getNetwork(tunnel.gatewayId);
+        const gateway = await this.configService.getGateway(tunnel.gatewayId);
         if (!gateway) {
             this.authorizeErrorNumber = 9;
 

@@ -340,6 +340,9 @@ export class RedisConfigService extends ConfigService {
 
         return await this.redis.containsKey(rpath);
     }
+    override clone<T>(data: T): T {
+        return data;
+    }
 
 
     override async init() {
@@ -1525,12 +1528,7 @@ export class RedisConfigService extends ConfigService {
         return await super.getAuthenticationPolicy();
     }
 
-    override async getAuthenticationPolicyUnsafe() {
-        this.isReady();
-        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
-        this.config.authenticationPolicy.rulesOrder = await this.rListAll('authenticationPolicy/rulesOrder')
-        return await super.getAuthenticationPolicyUnsafe();
-    }
+
     override async getAuthenticationPolicyRule(id: string) {
         this.isReady();
         this.config.authenticationPolicy.rules = [];
@@ -1623,12 +1621,7 @@ export class RedisConfigService extends ConfigService {
         this.config.authorizationPolicy.rulesOrder = await this.rListAll('authorizationPolicy/rulesOrder');
         return await super.getAuthorizationPolicy();
     }
-    async getAuthorizationPolicyUnsafe() {
-        this.isReady();
-        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
-        this.config.authorizationPolicy.rulesOrder = await this.rListAll('authorizationPolicy/rulesOrder');
-        return await super.getAuthorizationPolicyUnsafe();
-    }
+
     async getAuthorizationPolicyRule(id: string) {
         this.isReady();
         this.config.authorizationPolicy.rules = [];

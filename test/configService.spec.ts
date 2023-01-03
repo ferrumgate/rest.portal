@@ -1026,7 +1026,7 @@ describe('configService', async () => {
         //add
         await configService.saveAuthenticationPolicyRule(rule);
 
-        const policy = await configService.getAuthenticationPolicyUnsafe();
+        const policy = await configService.getAuthenticationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
 
 
@@ -1077,7 +1077,7 @@ describe('configService', async () => {
         configService.config.authenticationPolicy.rules.push(rule);
 
 
-        const policy = await configService.getAuthenticationPolicyUnsafe();
+        const policy = await configService.getAuthenticationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
         expect(policy.rules.length).to.equal(1);
 
@@ -1238,7 +1238,7 @@ describe('configService', async () => {
         //add
         await configService.saveAuthorizationPolicyRule(rule);
 
-        const policy = await configService.getAuthorizationPolicyUnsafe();
+        const policy = await configService.getAuthorizationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
 
 
@@ -1399,7 +1399,7 @@ describe('configService', async () => {
         await configService.saveAuthorizationPolicyRule(rule);
 
 
-        const policy = await configService.getAuthorizationPolicyUnsafe();
+        const policy = await configService.getAuthorizationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
         expect(policy.rules.length).to.equal(1);
 

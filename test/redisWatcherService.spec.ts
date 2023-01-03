@@ -38,6 +38,7 @@ describe('redisWatcherService ', async () => {
         const redis = new RedisWatcherService('localhost:6379');
         expect(redis.isMaster).to.be.false;
         await redis.start();
+
         expect(redis.isMaster).to.be.true;
 
     }).timeout(5000);

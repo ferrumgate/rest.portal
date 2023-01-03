@@ -1,7 +1,7 @@
 import { Util } from "../util";
 import { AuditService } from "./auditService";
 import { CaptchaService } from "./captchaService";
-import { PolicyAuthzListener } from "./system/policyAuthzListener";
+
 import { ConfigService } from "./configService";
 import { EmailService } from "./emailService";
 import { EventService } from "./eventService";
@@ -14,7 +14,6 @@ import { RedisService } from "./redisService";
 import { TemplateService } from "./templateService";
 import { TunnelService } from "./tunnelService";
 import { TwoFAService } from "./twofaService";
-import { SystemWatcherService } from "./system/systemWatcherService";
 import { logger } from "../common";
 import { GatewayService } from "./gatewayService";
 import { ConfigPublicListener } from "./system/configPublicListener";
@@ -120,8 +119,6 @@ export class AppService {
 export class AppSystemService {
 
     public redisSlaveWatcher: RedisWatcherService;
-    public systemWatcherService: SystemWatcherService;
-    public policyAuthzChannel: PolicyAuthzListener;
     public configPublicListener: ConfigPublicListener;
 
 
@@ -129,12 +126,9 @@ export class AppSystemService {
     /**
      *
      */
-    constructor(app: AppService, redisSlaveWatcher?: RedisWatcherService, systemWatcher?: SystemWatcherService,
-        policyAuthzChannel?: PolicyAuthzListener, configPublic?: ConfigPublicListener
+    constructor(app: AppService, redisSlaveWatcher?: RedisWatcherService, configPublic?: ConfigPublicListener
     ) {
         this.redisSlaveWatcher = redisSlaveWatcher || new RedisWatcherService(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS);
-        this.systemWatcherService = systemWatcher || new SystemWatcherService();
-        this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(app.policyService, this.systemWatcherService, app.configService);
         this.configPublicListener = configPublic || new ConfigPublicListener(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
 
 
@@ -144,16 +138,15 @@ export class AppSystemService {
     }
     async start() {
         await this.redisSlaveWatcher.start();
-        await this.systemWatcherService.start();
-        await this.policyAuthzChannel.start();
+
+
         await this.configPublicListener.start();
         //await this.auditLogToES.start();
         //await this.activityLogToES.start();
     }
     async stop() {
         await this.redisSlaveWatcher.stop();
-        await this.systemWatcherService.stop();
-        await this.policyAuthzChannel.stop();
+
         await this.configPublicListener.stop();
         //await this.auditLogToES.stop();
         //await this.activityLogToES.stop();
