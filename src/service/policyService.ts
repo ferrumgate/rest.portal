@@ -253,6 +253,22 @@ export class PolicyService {
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotValid, 'no network');
         }
+
+        const gateway = await this.configService.getNetwork(tunnel.gatewayId);
+        if (!gateway) {
+            this.authorizeErrorNumber = 9;
+
+            if (!throwError) return { error: this.authorizeErrorNumber };
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotFound, 'no gateway');
+        }
+
+        if (!gateway.isEnabled) {
+            this.authorizeErrorNumber = 10;
+
+            if (!throwError) return { error: this.authorizeErrorNumber };
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotValid, 'no gateway');
+        }
+
         const policy = await this.configService.getAuthorizationPolicy();
         const rules = await policy.rules.filter(x => x.serviceId == service.id);
 

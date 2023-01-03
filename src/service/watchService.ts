@@ -83,7 +83,8 @@ export class WatchService {
             }
             while (true) {
                 const items = await this.redisStreamService.xread(this.file, 10000, this.lastPos, 1000);
-                logger.info(`${this.file} logs getted size: ${items.length}`);
+                if (items.length)
+                    logger.info(`${this.file} logs getted size: ${items.length}`);
                 for (const item of items) {
                     try {
                         this.lastPos = item.xreadPos;

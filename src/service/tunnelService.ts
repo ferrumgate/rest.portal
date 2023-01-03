@@ -201,7 +201,7 @@ export class TunnelService {
     async getAllValidTunnels(cont: () => boolean) {
         let page = 0;
         let pos = '0';
-        let tunnels: Tunnel[] = [];
+        let retList: Tunnel[] = [];
         while (cont) {
             const [cursor, results] = await this.redisService.scan('/tunnel/id/*', pos, 10000, 'hash');
             pos = cursor;
@@ -217,7 +217,7 @@ export class TunnelService {
             })
             validTunnels.forEach(x => {
                 if (x.id) {
-                    tunnels.push(x);
+                    retList.push(x);
                 }
             });
 
@@ -225,6 +225,6 @@ export class TunnelService {
                 break;
             page++;
         }
-        return tunnels;
+        return retList;
     }
 }

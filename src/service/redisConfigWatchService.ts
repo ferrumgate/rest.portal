@@ -95,7 +95,7 @@ export class RedisConfigWatchService extends ConfigService {
     async fillFromRedis(): Promise<void> {
 
         if (this.isFilled) return;
-        console.log('filling from redis');
+
         this.config.lastUpdateTime = await this.redisConfig.rGet('lastUpdateTime') || '';
         this.config.revision = await this.redisConfig.rGetDirect('revision');
         this.config.version = await this.redisConfig.rGet('version') || 0;
@@ -129,7 +129,7 @@ export class RedisConfigWatchService extends ConfigService {
         this.config.authorizationPolicy.rules = await this.redisConfig.rGetAll('authorizationPolicy/rules');
         this.config.authorizationPolicy.rulesOrder = await this.redisConfig.rListAll('authorizationPolicy/rulesOrder');
         this.isFilled = true;
-        console.log('is filled');
+
 
     }
     /*  protected findParts(path: string) {
