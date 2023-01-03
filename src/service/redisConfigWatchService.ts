@@ -41,6 +41,7 @@ export class RedisConfigWatchService extends ConfigService {
     interval: any;
     redisConfig: RedisConfigService;
     isFilled = false;
+    isStable = true;
     constructor(private redis: RedisService, private redisStream: RedisService,
         systemlog: SystemLogService,
         private followSystemLog: boolean,
@@ -85,7 +86,9 @@ export class RedisConfigWatchService extends ConfigService {
     override isReady(): void {
         if (!this.isFilled) {
             throw new RestfullException(412, ErrorCodes.ErrSystemIsNotReady, ErrorCodes.ErrSystemIsNotReady, 'config is not ready');
-
+        }
+        if (!this.isStable) {
+            throw new RestfullException(412, ErrorCodes.ErrSystemIsNotReady, ErrorCodes.ErrSystemIsNotReady, 'config is not stable');
         }
     }
     override isWritable(): void {
@@ -171,20 +174,20 @@ export class RedisConfigWatchService extends ConfigService {
  
          throw new Error(`not implemented path ${path}`)
      } */
-    async removeFromArray(arr: ItemWithId[], id: string) {
+    protected async removeFromArray(arr: ItemWithId[], id: string) {
         let index = arr.findIndex(x => x.id == id)
         if (index >= 0) {
             arr.splice(index, 1);
         }
     }
-    async saveToArray(arr: ItemWithId[], item: ItemWithId) {
+    protected async saveToArray(arr: ItemWithId[], item: ItemWithId) {
         let index = arr?.findIndex(x => x.id == item.id)
         if (index >= 0) {
             arr[index] = item;
         }
         else arr.push(item);
     }
-    async processArray(arr: ItemWithId[], path: RPath, item: ConfigWatch<any>, id?: string) {
+    protected async processArray(arr: ItemWithId[], path: RPath, item: ConfigWatch<any>, id?: string) {
         if (item.type == 'del' && id) {
             this.removeFromArray(arr, id);
 
@@ -258,13 +261,13 @@ export class RedisConfigWatchService extends ConfigService {
                             this.config.caSSLCertificate = await this.redisConfig.rGet(path) || {};
                             break;
                         case 'users':
-                            await this.processArray(this.config.auth.ldap.providers, path, item, val.id);
+                            await this.processArray(this.config.users, path, item, val.id);
                             break;
                         case 'groups':
-                            await this.processArray(this.config.auth.ldap.providers, path, item, val.id);
+                            await this.processArray(this.config.groups, path, item, val.id);
                             break;
                         case 'services':
-                            await this.processArray(this.config.auth.ldap.providers, path, item, val.id);
+                            await this.processArray(this.config.services, path, item, val.id);
                             break;
                         case 'captcha':
                             this.config.captcha = await this.redisConfig.rGet(path) || {};
@@ -276,19 +279,19 @@ export class RedisConfigWatchService extends ConfigService {
                             this.config.logo = await this.redisConfig.rGet(path) || {};
                             break;
                         case 'networks':
-                            await this.processArray(this.config.auth.ldap.providers, path, item, val.id);
+                            await this.processArray(this.config.networks, path, item, val.id);
                             break;
                         case 'gateways':
-                            await this.processArray(this.config.auth.ldap.providers, path, item, val.id);
+                            await this.processArray(this.config.gateways, path, item, val.id);
                             break;
                         case 'authenticationPolicy/rules':
-                            await this.processArray(this.config.auth.ldap.providers, path, item, val.id);
+                            await this.processArray(this.config.authenticationPolicy.rules, path, item, val.id);
                             break;
                         case 'authenticationPolicy/rulesOrder':
                             this.config.authenticationPolicy.rulesOrder = await this.redisConfig.rListAll('authenticationPolicy/rulesOrder');
                             break;
                         case 'authorizationPolicy/rules':
-                            await this.processArray(this.config.auth.ldap.providers, path, item, val.id);
+                            await this.processArray(this.config.authorizationPolicy.rules, path, item, val.id);
                             break;
                         case 'authorizationPolicy/rulesOrder':
                             this.config.authorizationPolicy.rulesOrder = await this.redisConfig.rListAll('authorizationPolicy/rulesOrder');
@@ -297,6 +300,7 @@ export class RedisConfigWatchService extends ConfigService {
                             throw new Error(`not implemented path ${item.path}`)
                     }
                     this.executeList.shift();
+                    await this.processConfigChanged(watch);
                     this.watch.emit('configChanged', watch);
                     this.watch.emit('log', watch);
                 } else {
@@ -310,6 +314,10 @@ export class RedisConfigWatchService extends ConfigService {
         } catch (err) {
             logger.error(err);
         }
+    }
+
+    async processConfigChanged(watch: WatchItem<ConfigWatch<any>>) {
+
     }
 
 
