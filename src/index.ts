@@ -38,7 +38,7 @@ const express = require('express');
 
 
 const port = Number(process.env.PORT) | 8181;
-const ports = Number(process.env.PORTS) | 8383;
+//const ports = Number(process.env.PORTS) | 8383;
 
 export const app = express();
 async function init() {
@@ -422,15 +422,16 @@ async function start() {
         await (app.appSystemService as AppSystemService).start();
 
     const httpServer = http.createServer(app);
-    const ssl = await configService.getSSLCertificate();
-    const httpsServer = https.createServer({ cert: ssl.publicKey, key: ssl.privateKey }, app);
-
     httpServer.listen(port, () => {
         logger.info('service started on ', port);
     })
-    httpsServer.listen(ports, () => {
+    //const ssl = await configService.getSSLCertificate();
+    //const httpsServer = https.createServer({ cert: ssl.publicKey, key: ssl.privateKey }, app);
+
+
+    /* httpsServer.listen(ports, () => {
         logger.info('service started on ', ports);
-    })
+    }) */
 
 
 }

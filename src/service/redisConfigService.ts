@@ -374,6 +374,7 @@ export class RedisConfigService extends ConfigService {
             this.isInitCompleted = true;
             await this.logWatcherStart()
             await this.afterInit();
+            logger.info("initted config service");
         } catch (err) {
             logger.error(err);
         } finally {
