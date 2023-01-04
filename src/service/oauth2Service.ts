@@ -27,7 +27,7 @@ export const config = {
 }
 
 /**
- * OAuth2 implementation refresh_token grant types
+ * @summary OAuth2 implementation refresh_token grant types
  */
 export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 

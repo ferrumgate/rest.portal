@@ -119,6 +119,9 @@ class SmtpAccount extends EmailSender {
     }
 }
 
+/**
+ * @summary email sending business
+ */
 export class EmailService {
     protected sender: EmailSender | null;
     constructor(private configService: ConfigService) {

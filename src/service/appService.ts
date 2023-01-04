@@ -24,11 +24,12 @@ import { SummaryService } from "./summaryService";
 import { RedisWatcherService } from "./redisWatcherService";
 import { RedisCachedConfigService, RedisConfigService } from "./redisConfigService";
 import { SystemLog, SystemLogService } from "./systemLogService";
+import { DhcpService } from "./dhcpService";
 
 
 
 /**
- * this is a reference class container for expressjs
+ * @summary this is a reference class container for expressjs
  */
 export class AppService {
     public rateLimit: RateLimitService;
@@ -51,6 +52,7 @@ export class AppService {
     public activityService: ActivityService;
     public summaryService: SummaryService;
     public systemLogService: SystemLogService;
+    public dhcpService: DhcpService;
     /**
      *
      */
@@ -68,10 +70,11 @@ export class AppService {
         session?: SessionService,
         activity?: ActivityService,
         summary?: SummaryService,
-        systemLogService?: SystemLogService
+        dhcp?: DhcpService,
+        systemLog?: SystemLogService
     ) {
         //create self signed certificates for JWT
-        this.systemLogService = systemLogService || new SystemLogService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`)
+        this.systemLogService = systemLog || new SystemLogService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`)
         this.configService = cfg ||
             process.env.CONFIGSERVICE_TYPE === 'CONFIG' ?
             new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), `/tmp/${Util.randomNumberString(16)}_config.yaml`) :
@@ -94,6 +97,7 @@ export class AppService {
         this.policyService = policy || new PolicyService(this.configService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
+        this.dhcpService = dhcp || new DhcpService(this.redisService);
 
 
 
@@ -115,6 +119,10 @@ export class AppService {
     }
 
 }
+/**
+ * @summary a system service that starts other services
+ * @remarks we dont need any more this class
+ */
 
 export class AppSystemService {
 

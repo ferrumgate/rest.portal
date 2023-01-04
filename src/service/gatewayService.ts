@@ -4,11 +4,11 @@ import { Gateway, GatewayDetail } from "../model/network";
 import { ConfigService } from "./configService";
 import { RedisService } from "./redisService";
 
+/**
+ * @summary @see Gateway related business
+ */
 export class GatewayService {
-    /**
-     * @summary execute gateway business
-         *
-         */
+
 
     constructor(private config: ConfigService, private redisService: RedisService) {
     }

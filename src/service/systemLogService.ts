@@ -8,7 +8,9 @@ export interface SystemLog {
     val: any;
     before?: any;
 }
-
+/**
+ * @summary a system logger, with @see WatchService that writes logs to a redis stream
+ */
 export class SystemLogService {
     private key = '/logs/system';
 
@@ -22,19 +24,40 @@ export class SystemLogService {
             encryptKey);
     }
 
+    /**
+     * @summary append log
+     */
     async write(type: SystemLog, pipeline?: RedisPipelineService) {
         await this.logWatcher.write(type, pipeline);
     }
 
+    /**
+     * @summary start logWatcher @see WatchService
+     * @param watch if true starts watching redis stream, else only starts trim functinality
+     */
     async start(watch = true) {
         await this.logWatcher.start(watch);
     }
+
+    /**
+     * @summary stop logWatcher
+     * @param watch if true also stop watching stream
+     */
     async stop(watch = true) {
         await this.logWatcher.stop(watch);
     }
+
+    /**
+     * @summary start only watching stream
+     */
     async startWatch() {
+
         await this.logWatcher.startWatch();
     }
+
+    /**
+     * @summary stop only watching stream
+     */
     async stopWatch() {
         await this.logWatcher.stopWatch();
     }

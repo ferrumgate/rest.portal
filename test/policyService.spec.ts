@@ -196,7 +196,7 @@ describe('policyService ', async () => {
             await redisService.hset(`/tunnel/id/testsession`, tun);
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, tun)
         } catch (err) { }
-        expect(policyService.errorNumber).to.equal(2);
+        expect(policyService.errorNumber).to.equal(3);
 
 
         //no network
@@ -209,7 +209,7 @@ describe('policyService ', async () => {
             await redisService.hset(`/tunnel/id/testsession`, tun);
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, tun)
         } catch (err) { }
-        expect(policyService.errorNumber).to.equal(4);
+        expect(policyService.errorNumber).to.equal(5);
 
         configService.config.gateways = [gateway];
 

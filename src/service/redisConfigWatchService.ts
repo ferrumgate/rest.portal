@@ -33,7 +33,10 @@ export interface ItemWithId {
     [key: string]: any;
 }
 
-
+/**
+ * @summary this is config watcher, that fills config from redis, and follows a change log, and refreshs config
+ * @readonly
+ */
 export class RedisConfigWatchService extends ConfigService {
 
     executeList: WatchItem<ConfigWatch<any>>[] = [];
@@ -52,6 +55,10 @@ export class RedisConfigWatchService extends ConfigService {
     }
 
 
+
+    /**
+     * @summary stars log watching and execute config changes
+     */
     override async start(): Promise<void> {
         if (this.followSystemLog) {
             await this.redisConfig.systemLogWatcher.logWatcher.events.on('data', (data: WatchItem<ConfigWatch<any>>) => {
@@ -72,6 +79,9 @@ export class RedisConfigWatchService extends ConfigService {
         }, 500);
 
     }
+    /**
+     * @summary stop log watching, and stop config change
+     */
     override async stop(): Promise<void> {
         await this.redisConfig.systemLogWatcher.logWatcher.stopWatch();
         await this.redisConfig.logWatcher.stopWatch();
@@ -96,6 +106,12 @@ export class RedisConfigWatchService extends ConfigService {
     }
     override clone<T>(data: T): T {
         return data;
+    }
+    override loadConfigFromFile(): void {
+
+    }
+    override async saveConfigToFile(): Promise<void> {
+
     }
 
     async fillFromRedis(): Promise<void> {

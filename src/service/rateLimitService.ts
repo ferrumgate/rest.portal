@@ -6,7 +6,7 @@ import { ConfigService } from "./configService";
 import { RedisService } from "./redisService";
 
 /**
- * ratelimit check with redis
+ * @summary ratelimit check with redis
  */
 export class RateLimitService {
     protected redis: RedisService;

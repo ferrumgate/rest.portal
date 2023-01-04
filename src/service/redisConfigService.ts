@@ -78,6 +78,9 @@ export interface ConfigWatch<T> {
     path: string, type: 'del' | 'put', val: T, before?: T
 }
 
+/**
+ * @summary save all config to rdis
+ */
 export class RedisConfigService extends ConfigService {
 
     isInitCompleted = false;

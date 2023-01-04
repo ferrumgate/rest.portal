@@ -25,7 +25,9 @@ import EventEmitter from "node:events";
 
 
 
-
+/**
+ * @summary system config implementation base class
+ */
 export class ConfigService {
 
     events: EventEmitter = new EventEmitter();

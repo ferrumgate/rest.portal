@@ -25,3 +25,6 @@ export { PingService } from './service/pingService';
 export { SystemLogService, SystemLog } from './service/systemLogService';
 export { RedisConfigWatchService } from './service/redisConfigWatchService';
 export { PolicyService } from './service/policyService';
+export { AuthenticationRule, AuthenticationPolicy } from './model/authenticationPolicy';
+export { AuthorizationRule, AuthorizationPolicy } from './model/authorizationPolicy';
+export { InputService } from './service/inputService';

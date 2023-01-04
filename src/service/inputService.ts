@@ -7,7 +7,7 @@ import isCidr from 'ip-cidr';
 import validator from 'validator';
 
 /**
- * checks input data
+ * @summary checks input data
  */
 export class InputService {
 

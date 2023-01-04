@@ -1,7 +1,7 @@
 
 import * as IORedis from 'ioredis';
 /**
- * redis wrappers
+ * @summary redis pipeline wrapper
  */
 export class RedisPipelineService {
     protected pipeline: IORedis.ChainableCommander;
@@ -173,6 +173,10 @@ export class RedisPipelineService {
 
 
 }
+
+/**
+ * @summary redis functions wrapper
+ */
 export class RedisService {
 
 

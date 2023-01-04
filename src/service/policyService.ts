@@ -55,7 +55,9 @@ export interface PolicyAuthzResult {
 
     error: number, index?: number, rule?: AuthorizationRule
 }
-
+/**
+ * @summary executes authentication and authorization policy rules, and returns a result
+ */
 export class PolicyService {
     /**
      *
@@ -97,6 +99,13 @@ export class PolicyService {
 
     }
     errorNumber = PolicyAuthnErrors.NoError;
+    /**
+     * @summary check user can create a tunnel, check ips, etc...
+     * @param user 
+     * @param is2FAValidated user logined with 2FA
+     * @param tunnel 
+     * @returns 
+     */
     async authenticate(user: User, is2FAValidated: boolean, tunnel: Tunnel | undefined) {
         //get tunnel basic information
         this.errorNumber = PolicyAuthnErrors.NoError;
@@ -221,6 +230,13 @@ export class PolicyService {
 
 
     authorizeErrorNumber = PolicyAuthzErrors.NoError;
+    /**
+     * @summary calculate policy if this tunnel user, can use this service
+     * @param tunnel which tunnel
+     * @param serviceId to which service
+     * @param throwError dont throw errors use c style error return
+     * @returns 
+     */
     async authorize(tunnel: Tunnel, serviceId: string, throwError: boolean = true): Promise<PolicyAuthzResult> {
 
 

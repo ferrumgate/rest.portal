@@ -6,6 +6,10 @@ import { Util } from "../util";
 import { RedisService } from "./redisService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
+/**
+ * @summary A simple RedLock implementation
+ * 
+ */
 export class RedLockService {
 
 
@@ -25,6 +29,14 @@ export class RedLockService {
         return this.randomKey;
     }
 
+    /**
+     * @summary start a try for locking, and continue to try or refresh lock
+     * @param resource name like /lock/leader/election/for/elastic/logs
+     * @param ttl resource expire time in ms
+     * @param check every ms, try to acquire or refresh if acquired
+     * @param tryCount if lock is aquired, then try this count and check again if we really locked
+     * @param tryTTL try every ms we really locked
+     */
     async lock(resource: string, ttl = 10000, check = 5000, tryCount = 4, tryTTL = 500) {
         if (!this.interval) {
             await this.tryLock(resource, ttl, false, tryCount, tryTTL);
@@ -33,6 +45,14 @@ export class RedLockService {
             }, check);
         }
     }
+    /**
+     * @summary just try to lock once , if success then emits acquired
+     * @param resource name like /lock/leader/election/for/elastic/logs
+     * @param ttl resource expire time in ms
+     * @param check every ms, try to acquire or refresh if acquired
+     * @param tryCount if lock is aquired, then try this count and check again if we really locked
+     * @param tryTTL try every ms we really locked
+     */
     async tryLock(resource: string, ttl: number, throwErr = false, tryCount = 4, tryTTL = 500) {
         try {
             this.resourceKey = resource;
@@ -68,6 +88,10 @@ export class RedLockService {
                 throw err;
         }
     }
+    /**
+     * @summary release lock if we acquired
+     * @param stop 
+     */
     async release(stop = true) {
         try {
             if (stop) {

@@ -11,7 +11,10 @@ export interface WatchItem<T> {
     time: number,
     encoding?: EncodingOption;
 }
-
+/**
+ * @summary this class works like `tail -f ` on a queue,
+ * read and writes datas to a queue and watches 
+ */
 export class WatchService {
     events: EventEmitter;
     private interval: any;
@@ -28,6 +31,7 @@ export class WatchService {
 
     }
 
+    // start tail -f
     async startWatch() {
 
         this.intervalRead = await setIntervalAsync(async () => {
@@ -35,6 +39,7 @@ export class WatchService {
         }, 100);
 
     }
+    // start tail -f and trim
     async start(startWatch = true) {
         this.interval = await setIntervalAsync(async () => {
             await this.trim();
@@ -42,6 +47,7 @@ export class WatchService {
         if (startWatch)
             await this.startWatch();
     }
+    // stop tail and trim
     async stop(stopWatch = true) {
         if (this.interval)
             clearIntervalAsync(this.interval);
@@ -50,12 +56,16 @@ export class WatchService {
             await this.stopWatch();
         }
     }
+    // stop tail -f 
     async stopWatch() {
         if (this.intervalRead)
             clearIntervalAsync(this.intervalRead);
         this.intervalRead = null;
     }
 
+    /**
+     * @summary write any data to the end of queue
+     */
     async write(data: any, redisPipeLine?: RedisPipelineService) {
         if (data == null || data == undefined) return;
         let dataStr = JSON.stringify(data);
@@ -75,6 +85,10 @@ export class WatchService {
     private posKey() {
         return `${this.file}${this.posFollowKey.startsWith('/') ? this.posFollowKey : '/' + this.posFollowKey}`;
     }
+
+    /**
+     * @summary  read elements from last position 
+     */
     async read() {
         try {
             if (!this.lastPostReaded) {
@@ -111,6 +125,10 @@ export class WatchService {
             logger.error(err);
         }
     }
+
+    /**
+     * @summary trims queue with @param trimTime
+     */
     async trim(min = 0) {
         try {
             logger.info(`trimming log file ${this.file}`);
