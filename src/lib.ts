@@ -10,7 +10,7 @@ export { ActivityService } from './service/activityService';
 export { AuditLog } from './model/auditLog';
 export { AuditService } from './service/auditService';
 export { Util } from './util';
-export { WatchService, WatchItem } from './service/watchService'
+export { WatchService, WatchItem, WatchBufferedWriteService } from './service/watchService'
 export { ConfigEvent } from './model/config';
 export { Service } from './model/service';
 export { Tunnel } from './model/tunnel';

@@ -16,6 +16,7 @@ import ChildProcess from 'child_process';
 import fsp from 'fs/promises'
 import https from 'https';
 import { X509Certificate } from 'crypto';
+import { decode, encode } from '@msgpack/msgpack';
 
 export interface IpRange {
     start: string;
@@ -435,6 +436,18 @@ export const Util = {
     },
     now() {
         return new Date().getTime();
+    },
+    jencode(val: any) {
+        if (process.env.NODE == 'development')
+            return Buffer.from(JSON.stringify(val))
+        else
+            return Buffer.from(encode(val))
+    },
+    jdecode(val: Buffer | string) {
+        if (process.env.NODE == 'development')
+            return JSON.parse(val.toString())
+        else
+            return decode(typeof (val) === 'string' ? Buffer.from(val) : val);
     }
 
 
