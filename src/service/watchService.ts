@@ -24,8 +24,8 @@ export class WatchService {
         private file: string, private posFollowKey = 'pos',
         private lastPos = new Date().getTime().toString(),
         private trimTime = 24 * 60 * 60 * 1000,
-        private encKey?: string
-
+        private encKey?: string,
+        private readWait = 1000
     ) {
         this.events = new EventEmitter();
 
@@ -96,7 +96,7 @@ export class WatchService {
                 this.lastPostReaded = true;
             }
             while (true) {
-                const items = await this.redisStreamService.xread(this.file, 10000, this.lastPos, 1000);
+                const items = await this.redisStreamService.xread(this.file, 10000, this.lastPos, this.readWait);
                 if (items.length)
                     logger.info(`${this.file} logs getted size: ${items.length}`);
                 for (const item of items) {

@@ -16,12 +16,12 @@ export class SystemLogService {
 
     logWatcher: WatchService;
     constructor(private redis: RedisService, private redisStream: RedisService,
-        encryptKey: string = '', uniqueName = 'systemlog') {
+        encryptKey: string = '', uniqueName = 'systemlog', logReadWaitMS = 1000) {
 
         this.logWatcher = new WatchService(this.redis, this.redisStream, this.key, uniqueName + '/pos',
             new Date().getTime().toString(),
             24 * 60 * 60 * 1000,
-            encryptKey);
+            encryptKey, logReadWaitMS);
     }
 
     /**
