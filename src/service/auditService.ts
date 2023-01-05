@@ -57,7 +57,7 @@ export class AuditService {
 
     async saveToRedis(auditLog: AuditLog) {
 
-        const strHex = Util.encrypt(this.encKey, JSON.stringify(auditLog), 'base64')
+        const strHex = Util.jencrypt(this.encKey, Util.jencode(auditLog)).toString('base64') //Util.encrypt(this.encKey, JSON.stringify(auditLog), 'base64')
         await this.redisService.xadd('/logs/audit', { data: strHex });
 
     }

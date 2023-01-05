@@ -26,7 +26,8 @@ export class EventService {
                             simple.id = data.data.before.id;
                 }
                 let simpleEvent: ConfigEvent = { type: data.type, path: data.path, data: simple }
-                await this.redisService.publish(`/config/changed`, Buffer.from(JSON.stringify(simpleEvent)).toString('base64'));
+                //await this.redisService.publish(`/config/changed`, Buffer.from(JSON.stringify(simpleEvent)).toString('base64'));
+                await this.redisService.publish(`/config/changed`, Util.jencode(simpleEvent).toString('base64'));
             } catch (err) {
                 logger.error(err);
             }

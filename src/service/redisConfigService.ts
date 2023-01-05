@@ -101,7 +101,7 @@ export class RedisConfigService extends ConfigService {
         this.logWatcher = new WatchService(this.redis, this.redisStream, '/logs/config', uniqueName + '/pos',
             new Date().getTime().toString(),
             24 * 60 * 60 * 1000,
-            encryptKey);
+            encryptKey, 1000);
         this.redLock = new RedLockService(this.redis);
     }
 
@@ -146,11 +146,11 @@ export class RedisConfigService extends ConfigService {
             }
             let items = await pipe.exec();
             let elements: T[] = items.map((x: string) => {
-                let decrypted = x;
-                if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
-                    decrypted = Util.decrypt(this.getEncKey(), x, 'base64');
+                let decrypted = Buffer.from(x, 'base64');// x;
+                if (this.getEncKey()) {
+                    decrypted = Util.jdecrypt(this.getEncKey(), decrypted);// Util.decrypt(this.getEncKey(), x, 'base64');
                 }
-                let val = JSON.parse(decrypted) as T;
+                let val = Util.jdecode(decrypted) as T;// JSON.parse(decrypted) as T;
                 return val;
             })
             if (callback)
@@ -246,11 +246,11 @@ export class RedisConfigService extends ConfigService {
 
         let dataStr = await this.redis.get(rpath, false) as any;
         if (dataStr) {
-            let decrypted = dataStr;
-            if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
-                decrypted = Util.decrypt(this.getEncKey(), dataStr, 'base64');
+            let decrypted = Buffer.from(dataStr, 'base64');
+            if (this.getEncKey()) {
+                decrypted = Util.jdecrypt(this.getEncKey(), decrypted);// Util.decrypt(this.getEncKey(), dataStr, 'base64');
             }
-            let val = JSON.parse(decrypted) as Nullable;
+            let val = Util.jdecode(decrypted) as Nullable;//JSON.parse(decrypted) as Nullable;
             if (callback)
                 return callback(val);
             return val;
@@ -267,8 +267,8 @@ export class RedisConfigService extends ConfigService {
     async rGetIndex<Nullable>(path: string, search: string) {
 
         let dataStr = search;
-        if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
-            dataStr = Util.encrypt(this.getEncKey(), dataStr, 'base64');
+        if (this.getEncKey()) {
+            dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64'); //Util.encrypt(this.getEncKey(), dataStr, 'base64');
         }
         const rpath = `/index/config/${path}/${dataStr}`;
         return await this.redis.get(rpath, false) as Nullable;
@@ -302,19 +302,19 @@ export class RedisConfigService extends ConfigService {
         let wrpath = `/config/${path}`;
         if (typeof (after) == 'object' && (after as any).id)
             rpath += `/${(after as any).id}`;
-        let dataStr = '';
+        let dataStr;// = '';
         if (typeof (after) == 'boolean' || typeof (after) == 'number'
             || typeof (after) == 'string' || typeof (after) == 'object')
-            dataStr = JSON.stringify(after);
+            dataStr = Util.jencode(after);// JSON.stringify(after);
         else
             throw new Error('not implemented');
         let encrypted = dataStr;
-        if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
-            encrypted = Util.encrypt(this.getEncKey(), dataStr, 'base64');
+        if (this.getEncKey()) {
+            encrypted = Util.jencrypt(this.getEncKey(), dataStr);//Util.encrypt(this.getEncKey(), dataStr, 'base64');
         }
 
         const lpipeline = pipeline || await this.redis.multi();
-        await lpipeline.set(rpath, encrypted);
+        await lpipeline.set(rpath, encrypted.toString('base64'));
         await lpipeline.incr('/config/revision');
         if (extra)
             await extra(before, after, lpipeline);
@@ -392,14 +392,14 @@ export class RedisConfigService extends ConfigService {
         const trx = pipeline || await this.redis.multi();
 
         let dataStr = user.username;
-        if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
-            dataStr = Util.encrypt(this.getEncKey(), dataStr, 'base64')
+        if (this.getEncKey()) {
+            dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64');//Util.encrypt(this.getEncKey(), dataStr, 'base64')
         }
         await trx.set(`/index/config/users/username/${dataStr}`, user.id);
         if (user.apiKey) {
             let dataStr = user.apiKey;
-            if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
-                dataStr = Util.encrypt(this.getEncKey(), dataStr, 'base64')
+            if (this.getEncKey()) {
+                dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64');//  Util.encrypt(this.getEncKey(), dataStr, 'base64')
             }
             await trx.set(`/index/config/users/apiKey/${dataStr}`, user.id);
         }
@@ -647,14 +647,14 @@ export class RedisConfigService extends ConfigService {
     private async deleteUserIndexes(user: User, pipeline?: RedisPipelineService) {
         const trx = pipeline || await this.redis.multi();
         let dataStr = user.username;
-        if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
-            dataStr = Util.encrypt(this.getEncKey(), dataStr, 'base64')
+        if (this.getEncKey()) {
+            dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64');// Util.encrypt(this.getEncKey(), dataStr, 'base64')
         }
         await trx.remove(`/index/config/users/username/${dataStr}`);
         if (user.apiKey) {
             let dataStr = user.apiKey;
-            if (this.getEncKey() && process.env.NODE_ENV !== 'development') {
-                dataStr = Util.encrypt(this.getEncKey(), dataStr, 'base64')
+            if (this.getEncKey()) {
+                dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64');//Util.encrypt(this.getEncKey(), dataStr, 'base64')
             }
             await trx.remove(`/index/config/users/apiKey/${dataStr}`);
         }

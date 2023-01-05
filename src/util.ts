@@ -438,17 +438,46 @@ export const Util = {
         return new Date().getTime();
     },
     jencode(val: any) {
-        if (process.env.NODE == 'development')
-            return Buffer.from(JSON.stringify(val))
+        if (process.env.JENCODE == 'json')
+            return Buffer.from(JSON.stringify(val));
         else
             return Buffer.from(encode(val))
     },
-    jdecode(val: Buffer | string) {
-        if (process.env.NODE == 'development')
-            return JSON.parse(val.toString())
+    jdecode(val: Buffer) {
+        if (process.env.JENCODE == 'json')
+            return JSON.parse(val.toString());
         else
-            return decode(typeof (val) === 'string' ? Buffer.from(val) : val);
-    }
+            return decode(val);
+    },
+    jencrypt(key: string, data: string | Buffer): Buffer {
+
+        const keyBuffer = Buffer.from(key).subarray(0, 32); //8f7403c9bb5eb04f
+
+        const iv = Buffer.from("5d97bf41edc9285f0ed88caa9e47218f", 'hex');
+        //const pass=crypto.scryptSync(key,initVector,initVector.length);
+        const algoritm = 'aes-256-cbc'
+        const cipher = crypto.createCipheriv(algoritm, keyBuffer, iv);
+        const buf = typeof (data) == 'string' ? Buffer.from(data, 'utf-8') : data;
+        const encrypted = Buffer.concat([cipher.update(buf), cipher.final()]);
+
+        return encrypted;
+
+
+    },
+    jdecrypt(key: string, data: string | Buffer): Buffer {
+
+        const keyBuffer = Buffer.from(key).subarray(0, 32); //8f7403c9bb5eb04f
+
+        const iv = Buffer.from("5d97bf41edc9285f0ed88caa9e47218f", 'hex');
+        //const pass=crypto.scryptSync(key,initVector,initVector.length);
+        const algoritm = 'aes-256-cbc'
+        const cipher = crypto.createDecipheriv(algoritm, keyBuffer, iv);
+        const buf = typeof (data) == 'string' ? Buffer.from(data, 'utf-8') : data;
+        const decrpted = Buffer.concat([cipher.update(buf), cipher.final()]);
+
+        return decrpted;
+    },
+
 
 
 

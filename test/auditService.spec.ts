@@ -72,9 +72,9 @@ describe('auditService ', async () => {
         const items = await redis.xread(streamKey, 10, '0', 1000);
         expect(items.length).to.equal(1);
         const item = items[0];
-        const data = Util.decrypt(auditService.encKey, item.data, 'base64');
+        const data = Util.jdecrypt(auditService.encKey, Buffer.from(item.data, 'base64'));//  Util.decrypt(auditService.encKey, item.data, 'base64');
         expect(data).exist;
-        const obj = JSON.parse(data);
+        const obj = Util.jdecode(data);// JSON.parse(data);
         expect(obj).deep.equal(audit);
         await auditService.stop();
 
@@ -120,9 +120,9 @@ describe('auditService ', async () => {
         const items = await redis.xread(streamKey, 10, '0', 1000);
         expect(items.length).to.equal(1);
         const item = items[0];
-        const data = Util.decrypt(auditService.encKey, item.data, 'base64');
+        const data = Util.jdecrypt(auditService.encKey, Buffer.from(item.data, 'base64'));;// Util.decrypt(auditService.encKey, item.data, 'base64');
         expect(data).exist;
-        const obj = JSON.parse(data);
+        const obj = Util.jdecode(data) as any;// JSON.parse(data);
         expect(obj.ip).to.equal('1.2.3.4');
         expect(obj.insertDate).exist;
         expect(obj.userId).to.equal('someid');
@@ -162,9 +162,9 @@ describe('auditService ', async () => {
         const items = await redis.xread(streamKey, 10, '0', 1000);
         expect(items.length).to.equal(1);
         const item = items[0];
-        const data = Util.decrypt(auditService.encKey, item.data, 'base64');
+        const data = Util.jdecrypt(auditService.encKey, Buffer.from(item.data, 'base64'));;;//  Util.decrypt(auditService.encKey, item.data, 'base64');
         expect(data).exist;
-        const obj = JSON.parse(data);
+        const obj = Util.jdecode(data) as any;// JSON.parse(data);
         expect(obj.ip).to.equal('1.2.3.4');
         expect(obj.insertDate).exist;
         expect(obj.userId).to.equal('someid');

@@ -20,13 +20,13 @@ export class WatchService {
     private interval: any;
     private intervalRead: any;
     private lastPostReaded = false;
+    isWorking = true;
     constructor(protected redis: RedisService, protected redisStreamService: RedisService,
         protected file: string, private posFollowKey = 'pos',
         protected lastPos = new Date().getTime().toString(),
         protected trimTime = 24 * 60 * 60 * 1000,
         protected encKey?: string,
-        protected readWriteWait = 1000,
-        protected isEncrypted = true
+        protected readWriteWait = 1000
     ) {
         this.events = new EventEmitter();
 
@@ -62,6 +62,7 @@ export class WatchService {
         if (this.intervalRead)
             clearIntervalAsync(this.intervalRead);
         this.intervalRead = null;
+        this.isWorking = false;
     }
 
     /**
@@ -69,13 +70,13 @@ export class WatchService {
      */
     async write(data: any, redisPipeLine?: RedisPipelineService) {
         if (data == null || data == undefined) return;
-        let dataStr = JSON.stringify(data);
+        let dataStr = Util.jencode(data);//  JSON.stringify(data);
         let base64 = '';
-        if (this.isEncrypted && this.encKey && process.env.NODE_ENV !== 'development') {
-            base64 = Util.encrypt(this.encKey, dataStr, 'base64');
+        if (this.encKey) {
+            base64 = Util.jencrypt(this.encKey, dataStr).toString('base64');
 
         } else {
-            base64 = Buffer.from(dataStr).toString('base64');;
+            base64 = dataStr.toString('base64');
         }
         if (redisPipeLine)
             await redisPipeLine.xadd(this.file, { val: base64, time: new Date().getTime(), encoding: 'base64' } as WatchItem<string>);
@@ -96,15 +97,16 @@ export class WatchService {
                 this.lastPos = await this.redis.get(this.posKey(), false) || this.lastPos;
                 this.lastPostReaded = true;
             }
-            while (true) {
+            while (this.isWorking) {
                 const items = await this.redisStreamService.xread(this.file, 10000, this.lastPos, this.readWriteWait);
                 if (items.length)
                     logger.info(`${this.file} logs getted size: ${items.length}`);
                 for (const item of items) {
                     try {
                         this.lastPos = item.xreadPos;
-                        let dataStr = (this.isEncrypted && this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.val, 'base64') : Buffer.from(item.val, 'base64').toString();
-                        const data = JSON.parse(dataStr);
+                        //let dataStr = (this.isEncrypted && this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.val, 'base64') : Buffer.from(item.val, 'base64').toString();
+                        let dataStr = (this.encKey) ? Util.jdecrypt(this.encKey, Buffer.from(item.val, 'base64')) : Buffer.from(item.val, 'base64');
+                        const data = Util.jdecode(dataStr);// JSON.parse(dataStr);
                         const time = Number(item.time);
                         this.events.emit('data', { val: data, time: time } as WatchItem<any>)
 

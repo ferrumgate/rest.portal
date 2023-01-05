@@ -19,7 +19,8 @@ describe('systemLogService', async () => {
     const redis = new RedisService();
     const redisStream = new RedisService();
     beforeEach(async () => {
-        await (app.appService as AppService).redisService.flushAll();
+
+        await redis.flushAll();
     })
     it('write/read', async () => {
 
@@ -28,15 +29,36 @@ describe('systemLogService', async () => {
         log.logWatcher.events.on('data', (data: any) => {
             readedData = data;
         })
-        await log.logWatcher.start();
+        await log.startWatch();
         await log.start();
         await log.write({ 'path': '/test', type: 'put', 'val': { id: 1 } });
         await Util.sleep(2000);
         expect(readedData).exist;
         console.log(readedData);
         expect((readedData as any).val.type).to.equal('put');
+        await log.stopWatch()
+        await Util.sleep(3000);
 
-    }).timeout(5000);
+    }).timeout(10000);
+
+    it('write/read encrypted', async () => {
+
+        const log = new SystemLogService(redis, redisStream, 'es7lcqz73ftr5f846oy8evpmivhzkvqb', 'test2');
+        let readedData = null;
+        log.logWatcher.events.on('data', (data: any) => {
+            readedData = data;
+        })
+        await log.startWatch();
+        await log.start();
+        await log.write({ 'path': '/test', type: 'put', 'val': { id: 1 } });
+        await Util.sleep(5000);
+        expect(readedData).exist;
+        console.log(readedData);
+        expect((readedData as any).val.type).to.equal('put');
+        await log.stopWatch()
+        await Util.sleep(3000);
+
+    }).timeout(50000);
 
 })
 

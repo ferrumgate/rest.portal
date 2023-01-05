@@ -500,6 +500,39 @@ describe('util ', () => {
     }).timeout(120000);
 
 
+    it('jencrypt ', (done) => {
+        const str = 'DENEME';
+        const encrypted = Util.jencrypt('Et2vSy5Pa98o2wdc9HH2SyQXjRdEKsDI', str);
+        expect(encrypted.toString('hex')).to.equal('28cdbbf646f6fdb0a56704aba6105727');
+
+        done();
+    });
+
+    it('jdecrypt ', (done) => {
+        const str = '28cdbbf646f6fdb0a56704aba6105727';
+        const encrypted = Util.jdecrypt('Et2vSy5Pa98o2wdc9HH2SyQXjRdEKsDI', Buffer.from(str, 'hex')).toString('utf-8');
+        expect(encrypted).to.equal('DENEME');
+
+        done();
+    });
+
+    it('jencode/jdecode ', (done) => {
+        const val = {
+            id: 1, name: 'string', arr: [1]
+        }
+        const json = Util.jencode(val);
+        const val2 = Util.jdecode(json) as any;
+        expect(val2.id).to.equal(1);
+        expect(val2.name).to.equal('string');
+        expect(val2.arr[0]).to.equal(1);
+
+
+        done();
+    });
+
+
+
+
 
 
 

@@ -42,6 +42,24 @@ describe('watchService ', async () => {
 
     }).timeout(15000);
 
+    it('read/write encrytped', async () => {
+        const watcher = new WatchService(redis, redisStream, 'pos', '/log/abc', undefined, undefined, 'x4dzssxovbrlfbs45y0rzvg9fw3fnjdg', 1000);
+        await watcher.write('test');
+
+        const watcher2 = new WatchService(redis, redisStream, 'pos', '/log/abc', '0', undefined, 'x4dzssxovbrlfbs45y0rzvg9fw3fnjdg', 1000);
+        let written = '';
+        let time = 0;
+        watcher2.events.on('data', (data: WatchItem<string>) => {
+            written = data.val;
+            time = data.time;
+        })
+        const data = await watcher2.read();
+        expect(written).to.equal('test');
+        expect(time).exist;
+
+    }).timeout(15000);
+
+
     it('trim', async () => {
         const watcher = new WatchService(redis, redisStream, 'pos', '/log/abc', '$', 1000);
         await watcher.write('test');

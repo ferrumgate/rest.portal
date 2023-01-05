@@ -692,7 +692,7 @@ describe('redisConfigService', async () => {
         expect(returned3.providers.length).to.equal(1);
 
 
-    });
+    }).timeout(60000);
 
     it('setAuthSettingsLocal/getAuthSettingsLocal', async () => {
 
