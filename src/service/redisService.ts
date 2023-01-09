@@ -530,6 +530,45 @@ export class RedisService {
         return keyList;
     }
 
+    async xgroupCreate(stream: string, grpname: string, pos = '$') {
+        await this.redis.xgroup('CREATE', stream, grpname, pos, 'MKSTREAM')
+    }
+    async xinfoGroups(stream: string) {
+        let arr = await this.redis.xinfo('GROUPS', stream) as [];
+        let results = [];
+        for (const aitem of arr) {
+            let arrItem = aitem as [];
+            let info = {} as { [key: string]: any; };
+            for (let i = 0; i < arrItem.length; i += 2) {
+                if (i + 1 < arrItem.length) {
+                    info[arrItem[i]] = arrItem[i + 1];
+                }
+            }
+            results.push(info);
+        }
+        return results;
+    }
+
+    async xreadGroup(stream: string, groupname: string, consumername: string, count: number, readtimeout: number) {
+        const result = await this.redis.xreadgroup('GROUP', groupname, consumername, 'COUNT', count, 'BLOCK', readtimeout, 'STREAMS', stream, '>') as any;
+        if (!result?.length || !result[0][1]) return [];
+        const items = result[0][1];
+        return items.map((x: any) => {
+            let obj = {
+                xreadPos: x[0],
+            } as any;
+            for (let i = 0; i < x[1].length; i += 2) {
+                if (i + 1 < x[1].length) {
+                    obj[x[1][i]] = x[1][i + 1];
+                }
+            }
+            return obj;
+        })
+    }
+    async xack(stream: string, groupname: string, ids: string[]) {
+        await this.redis.xack(stream, groupname, ...ids);
+    }
+
 
 
 }

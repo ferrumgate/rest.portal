@@ -22,7 +22,7 @@ export class WatchService {
     private lastPostReaded = false;
     isWorking = true;
     constructor(protected redis: RedisService, protected redisStreamService: RedisService,
-        protected file: string, private posFollowKey = 'pos',
+        protected file: string, protected posFollowKey = 'pos',
         protected lastPos = new Date().getTime().toString(),
         protected trimTime = 24 * 60 * 60 * 1000,
         protected encKey?: string,
@@ -179,6 +179,90 @@ export class WatchBufferedWriteService extends WatchService {
             logger.error(err);
         }
     }
+
+
+}
+
+
+export class WatchGroupService extends WatchService {
+    /**
+     *
+     */
+    private groupCreated = false;
+    constructor(
+        protected redis: RedisService, protected redisStreamService: RedisService,
+        protected readGroupName = 'watchGroup',
+        protected readConsumerName = 'watchConsumer',
+        protected file: string,
+        protected lastPos = new Date().getTime().toString(),
+        protected trimTime = 24 * 60 * 60 * 1000,
+        protected encKey: string = '',
+        protected readWriteWait = 1000,
+        protected onData?: (data: any[]) => Promise<void>
+
+    ) {
+        super(
+            redis, redisStreamService, file, '', lastPos, trimTime, encKey, readWriteWait
+
+        )
+
+    }
+
+
+    async createConsumerGroup() {
+        try {
+            if (this.groupCreated) return;
+            const groups = await this.redis.xinfoGroups(this.file);
+            if (!groups.find(x => x.name == this.readGroupName))
+                await this.redis.xgroupCreate(this.file, this.readGroupName, '0');
+            this.groupCreated = true;
+        } catch (err) {
+            logger.error(err);
+        }
+    }
+
+    /**
+     * @summary  read elements from last position 
+     */
+    override async read() {
+        try {
+            await this.createConsumerGroup();
+            while (this.isWorking) {
+                const items = await this.redisStreamService.xreadGroup(this.file, this.readGroupName, this.readConsumerName, 10000, this.readWriteWait);
+                if (items.length)
+                    logger.info(`${this.file} logs getted size: ${items.length}`);
+                let ids = [];
+                let retItems = [];
+                for (const item of items) {
+                    try {
+                        this.lastPos = item.xreadPos;
+                        ids.push(item.xreadPos);
+                        //let dataStr = (this.isEncrypted && this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.val, 'base64') : Buffer.from(item.val, 'base64').toString();
+                        let dataStr = (this.encKey) ? Util.jdecrypt(this.encKey, Buffer.from(item.val, 'base64')) : Buffer.from(item.val, 'base64');
+                        const data = Util.jdecode(dataStr);// JSON.parse(dataStr);
+                        const time = Number(item.time);
+                        let retItem = { val: data, time: time } as WatchItem<any>;
+                        this.events.emit('data', retItem)
+                        retItems.push(retItem);
+
+                    } catch (err) {
+                        logger.error(err);
+                    }
+                }
+                if (ids.length) {
+                    if (retItems.length && this.onData)
+                        await this.onData(retItems);
+                    await this.redis.xack(this.file, this.readGroupName, ids);
+                }
+                if (!items.length)
+                    break;
+            }
+        } catch (err) {
+            logger.error(err);
+        }
+    }
+
+
 
 
 }

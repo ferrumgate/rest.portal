@@ -207,7 +207,7 @@ export class TunnelService {
             pos = cursor;
             const pipeline = await this.redisService.multi();
             for (const key of results) {
-                await pipeline.hgetAll(key) as Tunnel;
+                await pipeline.hgetAll(key);
             }
             const tunnels = await pipeline.exec() as Tunnel[];
             const validTunnels = tunnels.filter(tunnel => {

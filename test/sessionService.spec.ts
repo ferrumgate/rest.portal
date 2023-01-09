@@ -172,4 +172,19 @@ describe('sessionService', () => {
 
 
     }).timeout(10000)
+
+    it('getAllValidSessions', async () => {
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
+        const sessionService = new SessionService(configService, simpleRedis);
+        const { user } = createSampleData();
+        const session1 = await sessionService.createSession(user, true, '1.2.3.4', 'local');
+        const session2 = await sessionService.createSession(user, true, '1.2.3.5', 'local');
+        const session3 = await sessionService.createSession(user, true, '1.2.3.6', 'local');
+
+        const keys = await sessionService.getAllValidSessions(() => true);
+        expect(keys.length).to.equal(3);
+
+
+    }).timeout(10000);
 })

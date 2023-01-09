@@ -36,7 +36,12 @@ export enum PolicyAuthzErrors {
     NetworkNotValid,
     GatewayNotFound,
     GatewayNotValid,
-    NoRuleMatch = 100
+    NoRuleMatch = 100,
+    ClientNotFound = 10000,//ferrum.io project ferrum_policy.h 
+    InvalidData = 10001,
+    NotFound = 10002,
+    ExecuteFailed = 10003,
+    DisabledPolicy = 10004
 }
 export enum PolicyAuthnErrors {
     NoError,

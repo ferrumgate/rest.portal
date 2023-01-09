@@ -10,7 +10,7 @@ export { ActivityService } from './service/activityService';
 export { AuditLog } from './model/auditLog';
 export { AuditService } from './service/auditService';
 export { Util } from './util';
-export { WatchService, WatchItem, WatchBufferedWriteService } from './service/watchService'
+export { WatchService, WatchItem, WatchBufferedWriteService, WatchGroupService } from './service/watchService'
 export { ConfigEvent } from './model/config';
 export { Service } from './model/service';
 export { Tunnel } from './model/tunnel';
@@ -18,13 +18,15 @@ export { Group } from './model/group';
 export { User } from './model/user';
 export { Network, Gateway, GatewayDetail, cloneGateway, cloneNetwork } from './model/network';
 export { RedisConfigService, RedisCachedConfigService } from './service/redisConfigService';
+export { RedisConfigWatchCachedService } from './service/redisConfigWatchCachedService'
+export { RedisConfigWatchService } from './service/redisConfigWatchService';
 export { HelperService } from './service/helperService';
 export { TunnelService } from './service/tunnelService';
 export { ActivityLog, ActivityStatus } from './model/activityLog';
 export { PingService } from './service/pingService';
 export { SystemLogService, SystemLog } from './service/systemLogService';
-export { RedisConfigWatchService } from './service/redisConfigWatchService';
 export { PolicyService } from './service/policyService';
 export { AuthenticationRule, AuthenticationPolicy } from './model/authenticationPolicy';
 export { AuthorizationRule, AuthorizationPolicy } from './model/authorizationPolicy';
 export { InputService } from './service/inputService';
+export { SessionService } from './service/sessionService';

@@ -42,7 +42,7 @@ export class ActivityService {
 
     async save(act: ActivityLog) {
         const base64 = Util.jencode(act).toString('base64');// Buffer.from(JSON.stringify(act)).toString('base64')
-        await this.redisService.xadd('/logs/activity', { data: base64, type: 'b64' });
+        await this.redisService.xadd('/logs/activity', { val: base64, type: 'b64' });
     }
 
 

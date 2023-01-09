@@ -446,6 +446,37 @@ describe('redisService', () => {
     }).timeout(20000);
 
 
+    it('redis xinfoGroups', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+        let key = '/test/stream';
+        await simpleRedis.xgroupCreate(key, 'test1', `0`);
+        await simpleRedis.xgroupCreate(key, 'test2', `0`);
+        await simpleRedis.xgroupCreate(key, 'test3', `0`);
+
+        const result = await simpleRedis.xinfoGroups(key);
+        expect(result.length).to.be.equal(3);
+        expect(result[0].name).to.be.equal('test1');
+
+
+
+    }).timeout(20000);
+
+
+    it('redis xreadGroup', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+        let key = '/test/stream';
+        await simpleRedis.xadd(key, { id: 1 });
+        await simpleRedis.xgroupCreate(key, 'test1', `0`);
+
+        const result = await simpleRedis.xreadGroup(key, 'test1', '12', 10, 1000);
+        expect(result.length).to.be.equal(1);
+
+
+    }).timeout(20000);
+
+
 
     it('redis onClose manuel stop', async () => {
         let called = false;

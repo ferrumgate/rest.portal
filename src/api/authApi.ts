@@ -215,6 +215,7 @@ routerAuth.post('/accesstoken',
             const policyService = appService.policyService;
             const sessionService = appService.sessionService;
             const inputService = appService.inputService;
+            const systemlogService = appService.systemLogService;
             //tunnel field is the tunnel tunnel key
             const request = req.body as { key: string, exchangeKey?: string };
             if (!request.key) {
@@ -239,6 +240,7 @@ routerAuth.post('/accesstoken',
 
             //create a session
             const authSession = await sessionService.createSession(req.currentUser, access.is2FA, req.clientIp, req.activity?.authSource || 'unknown');
+            await systemlogService.write({ path: '/system/sessions/create', type: 'put', val: authSession });
             req.currentSession = authSession;
             attachActivitySession(req, authSession);
             //attachActivityTunnelId(req, request.tunnelKey);
@@ -297,6 +299,7 @@ routerAuth.post('/refreshtoken',
             const redisService = appService.redisService;
             const oauth2Service = appService.oauth2Service;
             const sessionService = appService.sessionService;
+            const systemlogService = appService.systemLogService;
             const request = req.body as { refreshToken: string };
             if (!request.refreshToken) {
                 throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs parameters");
@@ -338,6 +341,7 @@ routerAuth.post('/refreshtoken',
 
             await sessionService.setSession(sid, { lastSeen: new Date().toISOString() })
             await sessionService.setExpire(sid);
+            await systemlogService.write({ path: '/system/sessions/alive', type: 'put', val: authSession });
 
             const accessTokenStr = await oauth2Service.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum')
             const accessToken = await oauth2Service.getAccessToken(accessTokenStr);

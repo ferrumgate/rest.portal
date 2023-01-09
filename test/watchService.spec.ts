@@ -9,7 +9,7 @@ import { Util } from '../src/util';
 import { ESService } from '../src/service/esService';
 import { ConfigService } from '../src/service/configService';
 import { RedLockService } from '../src/service/redLockService';
-import { WatchItem, WatchService } from '../src/service/watchService';
+import { WatchGroupService, WatchItem, WatchService } from '../src/service/watchService';
 
 
 
@@ -76,6 +76,42 @@ describe('watchService ', async () => {
         expect(written).to.equal('');//nothing readed
 
     }).timeout(15000);
+
+
+})
+
+
+
+
+
+
+describe('watchGroupService ', async () => {
+    const redis = new RedisService();
+    const redisStream = new RedisService();
+    beforeEach(async () => {
+        await redis.flushAll();
+    })
+    it('read/write', async () => {
+
+        const watcher = new WatchService(redis, redisStream, '/log/abc', 'pos', '0');
+        await watcher.write('test');
+        let written = '';
+        let time = 0;
+        const watcher2 = new WatchGroupService(redis, redisStream, 'de', 'de', '/log/abc');
+        watcher2.events.on('data', (data: WatchItem<string>) => {
+            written = data.val;
+            time = data.time;
+        })
+
+
+
+        const data = await watcher2.read();
+        expect(written).to.equal('test');
+        expect(time).exist;
+
+    }).timeout(15000);
+
+
 
 
 })
