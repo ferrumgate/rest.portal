@@ -1,5 +1,5 @@
 import NodeCache from "node-cache";
-import { WatchItem } from "../lib";
+import { AuthenticationRule, AuthorizationRule, WatchItem } from "../lib";
 import { Group } from "../model/group";
 import { Gateway } from "../model/network";
 import { Network } from "../model/network";
@@ -36,6 +36,8 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
         this.config.users.forEach(x => this.nodeCache.set(x.id, x));
         this.config.groups.forEach(x => this.nodeCache.set(x.id, x));
         this.config.services.forEach(x => this.nodeCache.set(x.id, x));
+        this.config.authorizationPolicy.rules.forEach(x => this.nodeCache.set(x.id, x));
+        this.config.authenticationPolicy.rules.forEach(x => this.nodeCache.set(x.id, x));
 
     }
 
@@ -64,6 +66,12 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
     override async getGroup(id: string): Promise<Group | undefined> {
         return await this.nodeCache.get(id);
     }
+    override async getAuthorizationPolicyRule(id: string): Promise<AuthorizationRule | undefined> {
+        return await this.nodeCache.get(id);
+    }
+    override async getAuthenticationPolicyRule(id: string): Promise<AuthenticationRule | undefined> {
+        return await this.nodeCache.get(id);
+    }
 
 
     override async processConfigChanged(watch: WatchItem<ConfigWatch<any>>) {
@@ -73,6 +81,15 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
                 sortMap.set(val, index);
             })
             this.config.authorizationPolicy.rules.sort((a, b) => {
+                return (sortMap.get(a) || 0) - (sortMap.get(b) || 0)
+            })
+        }
+        if (watch.val.path.includes('authenticationPolicy')) {
+            let sortMap = new Map();
+            this.config.authenticationPolicy.rulesOrder.forEach((val, index) => {
+                sortMap.set(val, index);
+            })
+            this.config.authenticationPolicy.rules.sort((a, b) => {
                 return (sortMap.get(a) || 0) - (sortMap.get(b) || 0)
             })
         }

@@ -376,6 +376,7 @@ export const Util = {
         if (this.isUndefinedOrNull(val)) return false;
         if (typeof (val) == 'string') return val == 'true';
         if (typeof (val) == 'number') return Boolean(val).valueOf();
+        if (typeof (val) == 'boolean') return val;
         if (Array.isArray(val)) return true;
         if (typeof (val) == 'object') return true;
         return false;
