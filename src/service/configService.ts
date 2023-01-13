@@ -252,7 +252,7 @@ export class ConfigService {
          fs.mkdirSync(path, { recursive: true });
          if (type && base64Image) {
              path = `${path}/${name}.${type}`;
-             fs.writeFileSync(path, base64Image, { encoding: 'base64' });
+             fs.writeFileSync(path, base64Image, { encoding: 'base64url' });
          }
          return path;
      }
@@ -270,7 +270,7 @@ export class ConfigService {
             if (process.env.NODE_ENV == 'development') {
                 this.config = yaml.parse(content);
             } else {
-                const decrpted = Util.decrypt(this.secretKey, content, 'base64');
+                const decrpted = Util.decrypt(this.secretKey, content, 'base64url');
                 this.config = yaml.parse(decrpted);
             }
         }
@@ -282,7 +282,7 @@ export class ConfigService {
 
             fs.writeFileSync(this.configfile, str, { encoding: 'utf-8' });
         } else {
-            const encrypted = Util.encrypt(this.secretKey, str, 'base64');
+            const encrypted = Util.encrypt(this.secretKey, str, 'base64url');
             fs.writeFileSync(this.configfile, encrypted, { encoding: 'utf-8' });
         }
         await this.saveLastUpdateTime();
@@ -294,7 +294,7 @@ export class ConfigService {
         if (process.env.NODE_ENV == 'development') {
             return str;
         } else {
-            const encrypted = Util.encrypt(this.secretKey, str, 'base64');
+            const encrypted = Util.encrypt(this.secretKey, str, 'base64url');
             return encrypted;
         }
     }

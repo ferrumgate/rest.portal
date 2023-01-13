@@ -73,15 +73,15 @@ export class WatchService {
         let dataStr = Util.jencode(data);//  JSON.stringify(data);
         let base64 = '';
         if (this.encKey) {
-            base64 = Util.jencrypt(this.encKey, dataStr).toString('base64');
+            base64 = Util.jencrypt(this.encKey, dataStr).toString('base64url');
 
         } else {
-            base64 = dataStr.toString('base64');
+            base64 = dataStr.toString('base64url');
         }
         if (redisPipeLine)
-            await redisPipeLine.xadd(this.file, { val: base64, time: new Date().getTime(), encoding: 'base64' } as WatchItem<string>);
+            await redisPipeLine.xadd(this.file, { val: base64, time: new Date().getTime(), encoding: 'base64url' } as WatchItem<string>);
         else
-            await this.redis.xadd(this.file, { val: base64, time: new Date().getTime(), encoding: 'base64' } as WatchItem<string>);
+            await this.redis.xadd(this.file, { val: base64, time: new Date().getTime(), encoding: 'base64url' } as WatchItem<string>);
     }
     //position key
     private posKey() {
@@ -104,8 +104,8 @@ export class WatchService {
                 for (const item of items) {
                     try {
                         this.lastPos = item.xreadPos;
-                        //let dataStr = (this.isEncrypted && this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.val, 'base64') : Buffer.from(item.val, 'base64').toString();
-                        let dataStr = (this.encKey) ? Util.jdecrypt(this.encKey, Buffer.from(item.val, 'base64')) : Buffer.from(item.val, 'base64');
+                        //let dataStr = (this.isEncrypted && this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.val, 'base64url') : Buffer.from(item.val, 'base64url').toString();
+                        let dataStr = (this.encKey) ? Util.jdecrypt(this.encKey, Buffer.from(item.val, 'base64url')) : Buffer.from(item.val, 'base64url');
                         const data = Util.jdecode(dataStr);// JSON.parse(dataStr);
                         const time = Number(item.time);
                         this.events.emit('data', { val: data, time: time } as WatchItem<any>)
@@ -237,8 +237,8 @@ export class WatchGroupService extends WatchService {
                     try {
                         this.lastPos = item.xreadPos;
                         ids.push(item.xreadPos);
-                        //let dataStr = (this.isEncrypted && this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.val, 'base64') : Buffer.from(item.val, 'base64').toString();
-                        let dataStr = (this.encKey) ? Util.jdecrypt(this.encKey, Buffer.from(item.val, 'base64')) : Buffer.from(item.val, 'base64');
+                        //let dataStr = (this.isEncrypted && this.encKey && process.env.NODE_ENV !== 'development') ? Util.decrypt(this.encKey, item.val, 'base64url') : Buffer.from(item.val, 'base64url').toString();
+                        let dataStr = (this.encKey) ? Util.jdecrypt(this.encKey, Buffer.from(item.val, 'base64url')) : Buffer.from(item.val, 'base64url');
                         const data = Util.jdecode(dataStr);// JSON.parse(dataStr);
                         const time = Number(item.time);
                         let retItem = { val: data, time: time } as WatchItem<any>;

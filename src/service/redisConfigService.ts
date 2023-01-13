@@ -146,9 +146,9 @@ export class RedisConfigService extends ConfigService {
             }
             let items = await pipe.exec();
             let elements: T[] = items.map((x: string) => {
-                let decrypted = Buffer.from(x, 'base64');// x;
+                let decrypted = Buffer.from(x, 'base64url');// x;
                 if (this.getEncKey()) {
-                    decrypted = Util.jdecrypt(this.getEncKey(), decrypted);// Util.decrypt(this.getEncKey(), x, 'base64');
+                    decrypted = Util.jdecrypt(this.getEncKey(), decrypted);// Util.decrypt(this.getEncKey(), x, 'base64url');
                 }
                 let val = Util.jdecode(decrypted) as T;// JSON.parse(decrypted) as T;
                 return val;
@@ -246,9 +246,9 @@ export class RedisConfigService extends ConfigService {
 
         let dataStr = await this.redis.get(rpath, false) as any;
         if (dataStr) {
-            let decrypted = Buffer.from(dataStr, 'base64');
+            let decrypted = Buffer.from(dataStr, 'base64url');
             if (this.getEncKey()) {
-                decrypted = Util.jdecrypt(this.getEncKey(), decrypted);// Util.decrypt(this.getEncKey(), dataStr, 'base64');
+                decrypted = Util.jdecrypt(this.getEncKey(), decrypted);// Util.decrypt(this.getEncKey(), dataStr, 'base64url');
             }
             let val = Util.jdecode(decrypted) as Nullable;//JSON.parse(decrypted) as Nullable;
             if (callback)
@@ -268,7 +268,7 @@ export class RedisConfigService extends ConfigService {
 
         let dataStr = search;
         if (this.getEncKey()) {
-            dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64'); //Util.encrypt(this.getEncKey(), dataStr, 'base64');
+            dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url'); //Util.encrypt(this.getEncKey(), dataStr, 'base64url');
         }
         const rpath = `/index/config/${path}/${dataStr}`;
         return await this.redis.get(rpath, false) as Nullable;
@@ -310,11 +310,11 @@ export class RedisConfigService extends ConfigService {
             throw new Error('not implemented');
         let encrypted = dataStr;
         if (this.getEncKey()) {
-            encrypted = Util.jencrypt(this.getEncKey(), dataStr);//Util.encrypt(this.getEncKey(), dataStr, 'base64');
+            encrypted = Util.jencrypt(this.getEncKey(), dataStr);//Util.encrypt(this.getEncKey(), dataStr, 'base64url');
         }
 
         const lpipeline = pipeline || await this.redis.multi();
-        await lpipeline.set(rpath, encrypted.toString('base64'));
+        await lpipeline.set(rpath, encrypted.toString('base64url'));
         await lpipeline.incr('/config/revision');
         if (extra)
             await extra(before, after, lpipeline);
@@ -393,13 +393,13 @@ export class RedisConfigService extends ConfigService {
 
         let dataStr = user.username;
         if (this.getEncKey()) {
-            dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64');//Util.encrypt(this.getEncKey(), dataStr, 'base64')
+            dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//Util.encrypt(this.getEncKey(), dataStr, 'base64url')
         }
         await trx.set(`/index/config/users/username/${dataStr}`, user.id);
         if (user.apiKey) {
             let dataStr = user.apiKey;
             if (this.getEncKey()) {
-                dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64');//  Util.encrypt(this.getEncKey(), dataStr, 'base64')
+                dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//  Util.encrypt(this.getEncKey(), dataStr, 'base64url')
             }
             await trx.set(`/index/config/users/apiKey/${dataStr}`, user.id);
         }
@@ -648,13 +648,13 @@ export class RedisConfigService extends ConfigService {
         const trx = pipeline || await this.redis.multi();
         let dataStr = user.username;
         if (this.getEncKey()) {
-            dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64');// Util.encrypt(this.getEncKey(), dataStr, 'base64')
+            dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');// Util.encrypt(this.getEncKey(), dataStr, 'base64url')
         }
         await trx.remove(`/index/config/users/username/${dataStr}`);
         if (user.apiKey) {
             let dataStr = user.apiKey;
             if (this.getEncKey()) {
-                dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64');//Util.encrypt(this.getEncKey(), dataStr, 'base64')
+                dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//Util.encrypt(this.getEncKey(), dataStr, 'base64url')
             }
             await trx.remove(`/index/config/users/apiKey/${dataStr}`);
         }

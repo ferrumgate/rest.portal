@@ -173,7 +173,7 @@ export class ConfigPublicRoom {
                     }
                     try {
                         const json = Util.jencode(response);// JSON.stringify(response);
-                        const b64 = json.toString('base64');// Buffer.from(json).toString('base64');
+                        const b64 = json.toString('base64url');// Buffer.from(json).toString('base64url');
                         await pipeline.xadd(this.redisStreamKey, { data: b64 });
                     } catch (err) {
                         logger.error(err);
@@ -257,7 +257,7 @@ export class ConfigPublicListener {
             if (!this.redisWatcher.isMaster) {
                 return;
             }
-            const query = Util.jdecode(Buffer.from(msg, 'base64')) as ConfigRequest;//  JSON.parse(Buffer.from(msg, 'base64').toString()) as ConfigRequest;
+            const query = Util.jdecode(Buffer.from(msg, 'base64url')) as ConfigRequest;//  JSON.parse(Buffer.from(msg, 'base64url').toString()) as ConfigRequest;
             logger.info(`config public config query received from gateway:${query.gatewayId} func:${query.func}`)
             if (query.gatewayId) {
                 let room = this.cache.get(query.gatewayId) as ConfigPublicRoom;

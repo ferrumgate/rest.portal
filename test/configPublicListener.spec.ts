@@ -204,7 +204,7 @@ describe('configPublicRoom ', async () => {
         const result = await simpleRedis.xread('/query/gateway/231a0932', 100, pos, 1000);
         expect(result.length).to.be.equal(1);
         pos = result[0].xreadPos;
-        const response = Util.jdecode(Buffer.from(result[0].data, 'base64')) as ConfigResponse;// JSON.parse(Buffer.from(result[0].data, 'base64').toString()) as ConfigResponse;
+        const response = Util.jdecode(Buffer.from(result[0].data, 'base64url')) as ConfigResponse;// JSON.parse(Buffer.from(result[0].data, 'base64url').toString()) as ConfigResponse;
         expect(response.id).to.equal('10');
         expect(response.isError).to.undefined;
         expect(response.result.serviceNetwork).to.equal('172.16.0.0/24');
@@ -233,8 +233,8 @@ describe('configPublicListener ', async () => {
         const msg: ConfigRequest = {
             id: 'adfaf', func: 'getServiceId', gatewayId: 'somehost', params: []
         }
-        //await listener.executeMessage('channe;', Buffer.from(JSON.stringify(msg)).toString('base64'));
-        await listener.executeMessage('channe;', Util.jencode(msg).toString('base64'));// Buffer.from(JSON.stringify(msg)).toString('base64'));
+        //await listener.executeMessage('channe;', Buffer.from(JSON.stringify(msg)).toString('base64url'));
+        await listener.executeMessage('channe;', Util.jencode(msg).toString('base64url'));// Buffer.from(JSON.stringify(msg)).toString('base64url'));
         expect(listener.roomList.size).to.equal(1);
         expect(listener.cache.get('somehost')).exist;
 

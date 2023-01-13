@@ -41,7 +41,7 @@ describe('activityService', async () => {
         const items = await redis.xread(streamKey, 10, '0', 1000);
         expect(items.length).to.equal(1);
         const item = items[0];
-        const data = Buffer.from(item.val, 'base64')
+        const data = Buffer.from(item.val, 'base64url')
         expect(data).exist;
         const obj = Util.jdecode(data);// JSON.parse(data);
         expect(obj).deep.equal(log);
