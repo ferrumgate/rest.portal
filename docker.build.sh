@@ -8,6 +8,7 @@ docker tag rest.portal rest.portal:$version
 echo "rest.portal:$version builded"
 docker tag rest.portal registry.ferrumgate.local/ferrumgate/rest.portal:$version
 docker tag rest.portal registry.ferrumgate.local/ferrumgate/rest.portal:latest
+docker tag rest.portal ferrumgate/rest.portal:$version
 
 while true; do
     read -p "do you want to push to local registry y/n " yn
