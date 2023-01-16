@@ -1,7 +1,7 @@
 import { Util } from "../util";
 import { AuditService } from "./auditService";
 import { CaptchaService } from "./captchaService";
-import { PolicyAuthzListener } from "./system/policyAuthzListener";
+
 import { ConfigService } from "./configService";
 import { EmailService } from "./emailService";
 import { EventService } from "./eventService";
@@ -14,22 +14,22 @@ import { RedisService } from "./redisService";
 import { TemplateService } from "./templateService";
 import { TunnelService } from "./tunnelService";
 import { TwoFAService } from "./twofaService";
-import { SystemWatcherService } from "./system/systemWatcherService";
 import { logger } from "../common";
 import { GatewayService } from "./gatewayService";
 import { ConfigPublicListener } from "./system/configPublicListener";
 import { ESService } from "./esService";
-import { AuditLogToES } from "./system/auditLogToES";
 import { SessionService } from "./sessionService";
 import { ActivityService } from "./activityService";
-import { ActivityLogToES } from "./system/activityLogToES";
 import { SummaryService } from "./summaryService";
-import { RedisWatcher } from "./system/redisWatcher";
-import { ConfigReplicator } from "./system/configReplicator";
+import { RedisWatcherService } from "./redisWatcherService";
+import { RedisCachedConfigService, RedisConfigService } from "./redisConfigService";
+import { SystemLog, SystemLogService } from "./systemLogService";
+import { DhcpService } from "./dhcpService";
+
 
 
 /**
- * this is a reference class container for expressjs
+ * @summary this is a reference class container for expressjs
  */
 export class AppService {
     public rateLimit: RateLimitService;
@@ -51,6 +51,8 @@ export class AppService {
     public sessionService: SessionService;
     public activityService: ActivityService;
     public summaryService: SummaryService;
+    public systemLogService: SystemLogService;
+    public dhcpService: DhcpService;
     /**
      *
      */
@@ -67,12 +69,17 @@ export class AppService {
         gateway?: GatewayService,
         session?: SessionService,
         activity?: ActivityService,
-        summary?: SummaryService
+        summary?: SummaryService,
+        dhcp?: DhcpService,
+        systemLog?: SystemLogService
     ) {
         //create self signed certificates for JWT
-
-        this.configService = cfg || new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), process.env.NODE_ENV == 'development' ? `/tmp/${Util.randomNumberString(16)}_config.yaml` : '/etc/ferrumgate/config.yaml');
-        this.redisService = redis || new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS)
+        this.systemLogService = systemLog || new SystemLogService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`)
+        this.configService = cfg ||
+            process.env.CONFIGSERVICE_TYPE === 'CONFIG' ?
+            new ConfigService(process.env.ENCRYPT_KEY || Util.randomNumberString(32), `/tmp/${Util.randomNumberString(16)}_config.yaml`) :
+            new RedisCachedConfigService(AppService.createRedisService(), AppService.createRedisService(), this.systemLogService, process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`, '/etc/ferrumgate/config.yaml');
+        this.redisService = redis || AppService.createRedisService()
         this.rateLimit = rateLimit || new RateLimitService(this.configService, this.redisService);
         this.inputService = input || new InputService();
         this.captchaService = captcha || new CaptchaService(this.configService);
@@ -87,38 +94,51 @@ export class AppService {
         this.esService = es || new ESService(process.env.ES_HOST, process.env.ES_USER, process.env.ES_PASS);
         this.activityService = activity || new ActivityService(this.redisService, this.esService);
         this.auditService = audit || new AuditService(this.configService, this.redisService, this.esService);
-        this.policyService = policy || new PolicyService(this.configService, this.tunnelService);
+        this.policyService = policy || new PolicyService(this.configService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
+        this.dhcpService = dhcp || new DhcpService(this.redisService);
+
+
 
 
     }
 
+    static createRedisService() {
+        return new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
+    }
+
+    async start() {
+        await this.configService.start();
+        await this.systemLogService.start(false);
+
+    }
+    async stop() {
+        await this.configService.stop();
+        await this.systemLogService.stop(false);
+    }
+
 }
+/**
+ * @summary a system service that starts other services
+ * @remarks we dont need any more this class
+ */
 
 export class AppSystemService {
 
-    public redisSlaveWatcher: RedisWatcher;
-    public systemWatcherService: SystemWatcherService;
-    public policyAuthzChannel: PolicyAuthzListener;
+    public redisSlaveWatcher: RedisWatcherService;
     public configPublicListener: ConfigPublicListener;
-    public auditLogToES: AuditLogToES;
-    public activityLogToES: ActivityLogToES;
-    public configReplicator: ConfigReplicator;
+
+
 
     /**
      *
      */
-    constructor(app: AppService, redisSlaveWatcher?: RedisWatcher, systemWatcher?: SystemWatcherService,
-        policyAuthzChannel?: PolicyAuthzListener, configPublic?: ConfigPublicListener,
-        auditLogES?: AuditLogToES, activityLogToES?: ActivityLogToES, configReplicator?: ConfigReplicator) {
-        this.redisSlaveWatcher = redisSlaveWatcher || new RedisWatcher(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS);
-        this.systemWatcherService = systemWatcher || new SystemWatcherService();
-        this.configReplicator = configReplicator || new ConfigReplicator(app.configService, this.redisSlaveWatcher, this.createRedisSlave(), this.createRedisSlave())
-        this.policyAuthzChannel = policyAuthzChannel || new PolicyAuthzListener(app.policyService, this.systemWatcherService, app.configService);
+    constructor(app: AppService, redisSlaveWatcher?: RedisWatcherService, configPublic?: ConfigPublicListener
+    ) {
+        this.redisSlaveWatcher = redisSlaveWatcher || new RedisWatcherService(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS);
         this.configPublicListener = configPublic || new ConfigPublicListener(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
-        this.auditLogToES = auditLogES || new AuditLogToES(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
-        this.activityLogToES = activityLogToES || new ActivityLogToES(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
+
 
     }
     createRedisSlave() {
@@ -126,20 +146,17 @@ export class AppSystemService {
     }
     async start() {
         await this.redisSlaveWatcher.start();
-        await this.configReplicator.start();
-        await this.systemWatcherService.start();
-        await this.policyAuthzChannel.start();
+
+
         await this.configPublicListener.start();
-        await this.auditLogToES.start();
-        await this.activityLogToES.start();
+        //await this.auditLogToES.start();
+        //await this.activityLogToES.start();
     }
     async stop() {
         await this.redisSlaveWatcher.stop();
-        await this.configReplicator.stop();
-        await this.systemWatcherService.stop();
-        await this.policyAuthzChannel.stop();
+
         await this.configPublicListener.stop();
-        await this.auditLogToES.stop();
-        await this.activityLogToES.stop();
+        //await this.auditLogToES.stop();
+        //await this.activityLogToES.stop();
     }
 }

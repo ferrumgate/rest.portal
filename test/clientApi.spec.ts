@@ -131,8 +131,8 @@ describe('clientApi ', async () => {
         })
 
         expect(response.status).to.equal(200);
-        const result = await redisService.sismember(`/tunnel/configure/${tunnel.gatewayId}`, 'akey');
-        expect(result == 1).to.be.true;
+        //const result = await redisService.sismember(`/tunnel/configure/${tunnel.gatewayId}`, 'akey');
+        //expect(result == 1).to.be.true;
 
     }).timeout(50000);
 

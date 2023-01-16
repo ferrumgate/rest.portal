@@ -12,7 +12,7 @@ import { group } from 'console';
 import { ErrorCodes, RestfullException } from '../../restfullException';
 import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
 import { stringify } from 'querystring';
-import { ActivitiyStatus } from '../../model/activityLog';
+import { ActivityStatus } from '../../model/activityLog';
 
 
 function findGroups(groups: string[]) {

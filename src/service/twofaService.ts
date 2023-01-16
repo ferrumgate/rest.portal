@@ -3,7 +3,9 @@ import * as twofactor from 'node-2fa';
 import { Util } from '../util';
 import { ErrorCodes, RestfullException } from '../restfullException';
 
-
+/**
+ * @summary 2FA releated functions
+ */
 export class TwoFAService {
     generateSecret() {
         return twofactor.generateSecret({ name: Util.randomNumberString(16), account: Util.randomNumberString(16) }).secret;

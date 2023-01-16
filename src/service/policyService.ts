@@ -3,14 +3,15 @@ import { User } from "../model/user";
 import { ConfigService } from "./configService";
 import { TunnelService } from "./tunnelService";
 import { AuditService } from "./auditService";
-import { RedisService } from "./redisService";
+import { RedisService } from "../service/redisService";
 import { Tunnel } from "../model/tunnel";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import ip from 'ip-cidr';
 import { HelperService } from "./helperService";
 import { logger } from "../common";
-import { Network } from "../model/network";
+import { Gateway, Network } from "../model/network";
+import { Service } from "../model/service";
 
 
 export interface UserNetworkListResponse {
@@ -23,17 +24,50 @@ export interface UserNetworkListResponse {
 }
 
 
+export enum PolicyAuthzErrors {
+    NoError,
+    TunnelNotFound,
+    TunnelNotValid,
+    UserNotFound,
+    UserNotValid,
+    ServiceNotFound,
+    ServiceNotValid,
+    NetworkNotFound,
+    NetworkNotValid,
+    GatewayNotFound,
+    GatewayNotValid,
+    NoRuleMatch = 100,
+    ClientNotFound = 10000,//ferrum.io project ferrum_policy.h 
+    InvalidData = 10001,
+    NotFound = 10002,
+    ExecuteFailed = 10003,
+    DisabledPolicy = 10004
+}
+export enum PolicyAuthnErrors {
+    NoError,
+    TunnelNotFound,
+    TunnelNotValid,
+    GatewayNotFound,
+    GatewayNotValid,
+    NetworkNotFound,
+    NetworkNotValid,
+    RuleDenyMatch = 10,
+    NoRuleMatch = 100
+}
+
+
 export interface PolicyAuthzResult {
 
     error: number, index?: number, rule?: AuthorizationRule
 }
-
+/**
+ * @summary executes authentication and authorization policy rules, and returns a result
+ */
 export class PolicyService {
     /**
      *
      */
     constructor(private configService: ConfigService,
-        private tunnelService: TunnelService,
     ) {
 
 
@@ -69,38 +103,50 @@ export class PolicyService {
         return false;
 
     }
-    errorNumber = 0;
-    // TODO  make this errors  most meaning full
-    async authenticate(user: User, is2FAValidated: boolean, tunnelKey: string) {
+    errorNumber = PolicyAuthnErrors.NoError;
+    /**
+     * @summary check user can create a tunnel, check ips, etc...
+     * @param user 
+     * @param is2FAValidated user logined with 2FA
+     * @param tunnel 
+     * @returns 
+     */
+    async authenticate(user: User, is2FAValidated: boolean, tunnel: Tunnel | undefined) {
         //get tunnel basic information
-        this.errorNumber = 0;
-        const tunnel = await this.tunnelService.getTunnel(tunnelKey);
-        if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.gatewayId) {
-            this.errorNumber = 1;
+        this.errorNumber = PolicyAuthnErrors.NoError;
+        //const tunnel = await this.tunnelService.getTunnel(tunnelKey);
+        if (!tunnel) {
+            this.errorNumber = PolicyAuthnErrors.TunnelNotFound;
+
+            throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'secure tunnel failed');
+        }
+        if (!tunnel.id || !tunnel.clientIp || !tunnel.gatewayId) {
+            this.errorNumber = PolicyAuthnErrors.TunnelNotValid;
 
             throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'secure tunnel failed');
         }
 
+
         const gateway = await this.configService.getGateway(tunnel.gatewayId);
         if (!gateway) {
-            this.errorNumber = 2;
+            this.errorNumber = PolicyAuthnErrors.GatewayNotFound;
 
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrGatewayNotFound, 'no gateway');
         }
         if (!gateway.isEnabled) {
-            this.errorNumber = 3;
+            this.errorNumber = PolicyAuthnErrors.GatewayNotValid;
 
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrGatewayNotValid, 'no gateway');
         }
         const network = await this.configService.getNetwork(gateway.networkId || '');
         if (!network) {
-            this.errorNumber = 4;
+            this.errorNumber = PolicyAuthnErrors.NetworkNotFound;
 
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotFound, 'no network');
         }
 
         if (!network.isEnabled) {
-            this.errorNumber = 5;
+            this.errorNumber = PolicyAuthnErrors.NetworkNotValid;
 
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotValid, 'no network');
         }
@@ -117,7 +163,7 @@ export class PolicyService {
                     return rule;
                 }
                 else {
-                    this.errorNumber = 10;
+                    this.errorNumber = PolicyAuthnErrors.RuleDenyMatch;
                     throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrRuleDenyMatch, 'not authenticated');
                 }
 
@@ -125,7 +171,7 @@ export class PolicyService {
 
         }
         //no rule match
-        this.errorNumber = 100;
+        this.errorNumber = PolicyAuthnErrors.NoRuleMatch;
 
         throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrNoRuleMatch, 'not authenticated');
     }
@@ -187,30 +233,30 @@ export class PolicyService {
     }
 
 
-    //TODO
-    authorizeErrorNumber = 0;
-    async authorize(trackId: number, serviceId: string, throwError: boolean = true, tun?: Tunnel): Promise<PolicyAuthzResult> {
-        //TODO make this so fast
-        logger.debug(`policy authz calculate trackId: ${trackId} serviceId:${serviceId}`);
-        this.authorizeErrorNumber = 0;
-        const tunnelKey = tun ? `/tunnel/id/${tun.id}` : await this.tunnelService.getTunnelKeyFromTrackId(trackId);
-        if (!tunnelKey) {
 
-            this.authorizeErrorNumber = 1;
-            if (!throwError) return { error: this.authorizeErrorNumber };
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'key not found');
-        }
-        const tunnel = tun || await this.tunnelService.getTunnel(tunnelKey);
+    authorizeErrorNumber = PolicyAuthzErrors.NoError;
+    /**
+     * @summary calculate policy if this tunnel user, can use this service
+     * @param tunnel which tunnel
+     * @param serviceId to which service
+     * @param throwError dont throw errors use c style error return
+     * @returns 
+     */
+    async authorize(tunnel: Tunnel, serviceId: string, throwError: boolean = true): Promise<PolicyAuthzResult> {
+
+
+        this.authorizeErrorNumber = PolicyAuthzErrors.NoError;
         if (!tunnel) {
 
-            this.authorizeErrorNumber = 2;
+            this.authorizeErrorNumber = PolicyAuthzErrors.TunnelNotFound;
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'tunnel found');
         }
+        logger.debug(`policy authz calculate trackId: ${tunnel.trackId} serviceId:${serviceId}`);
 
 
-        if (!tunnel || !tunnel.id || !tunnel.clientIp || !tunnel.gatewayId || !tunnel.trackId || tunnel.trackId != trackId) {
-            this.authorizeErrorNumber = 3;
+        if (!tunnel.id || !tunnel.clientIp || !tunnel.gatewayId || !tunnel.trackId) {
+            this.authorizeErrorNumber = PolicyAuthzErrors.TunnelNotValid;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'secure tunnel failed');
@@ -218,14 +264,14 @@ export class PolicyService {
         const user = await this.configService.getUserById(tunnel.userId || '')
         if (!user) {
 
-            this.authorizeErrorNumber = 4;
+            this.authorizeErrorNumber = PolicyAuthzErrors.UserNotFound;
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrUserNotFound, 'not found');
         }
         try {
             await HelperService.isValidUser(user);
         } catch (err) {
-            this.authorizeErrorNumber = 4;
+            this.authorizeErrorNumber = PolicyAuthzErrors.UserNotValid;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw err;
@@ -234,13 +280,13 @@ export class PolicyService {
 
         const service = await this.configService.getService(serviceId);
         if (!service) {
-            this.authorizeErrorNumber = 5;
+            this.authorizeErrorNumber = PolicyAuthzErrors.ServiceNotFound;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrServiceNotFound, 'no service');
         }
         if (!service.isEnabled) {
-            this.authorizeErrorNumber = 6;
+            this.authorizeErrorNumber = PolicyAuthzErrors.ServiceNotValid;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrServiceNotValid, 'service is not enabled');
@@ -249,18 +295,34 @@ export class PolicyService {
 
         const network = await this.configService.getNetwork(service.networkId);
         if (!network) {
-            this.authorizeErrorNumber = 7;
+            this.authorizeErrorNumber = PolicyAuthzErrors.NetworkNotFound;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotFound, 'no network');
         }
 
         if (!network.isEnabled) {
-            this.authorizeErrorNumber = 8;
+            this.authorizeErrorNumber = PolicyAuthzErrors.NetworkNotValid;
 
             if (!throwError) return { error: this.authorizeErrorNumber };
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotValid, 'no network');
         }
+
+        const gateway = await this.configService.getGateway(tunnel.gatewayId);
+        if (!gateway) {
+            this.authorizeErrorNumber = PolicyAuthzErrors.GatewayNotFound;
+
+            if (!throwError) return { error: this.authorizeErrorNumber };
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotFound, 'no gateway');
+        }
+
+        if (!gateway.isEnabled) {
+            this.authorizeErrorNumber = PolicyAuthzErrors.GatewayNotValid;
+
+            if (!throwError) return { error: this.authorizeErrorNumber };
+            throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotValid, 'no gateway');
+        }
+
         const policy = await this.configService.getAuthorizationPolicy();
         const rules = await policy.rules.filter(x => x.serviceId == service.id);
 
@@ -273,13 +335,13 @@ export class PolicyService {
             let f2 = await this.check2FA(rule, tunnel.is2FA || false);
             if (f1 && f2) {
 
-                logger.debug(`policy authz calculate trackId: ${trackId} serviceId:${serviceId} rule matched: ${rule.id}`);
+                logger.debug(`policy authz calculate trackId: ${tunnel.trackId} serviceId:${serviceId} rule matched: ${rule.id}`);
                 return { error: 0, index: i, rule: rule };
             }
 
         }
         //no rule match
-        this.authorizeErrorNumber = 100;
+        this.authorizeErrorNumber = PolicyAuthzErrors.NoRuleMatch;
 
 
         if (!throwError) return { error: this.authorizeErrorNumber };

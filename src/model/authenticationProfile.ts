@@ -170,6 +170,7 @@ export interface AuthenticationProfile {
 export function cloneAuthenticatonProfile(pr: AuthenticationProfile): AuthenticationProfile {
 
     return {
+        is2FA: pr.is2FA,
         app: pr.app ? { version: pr.app?.version } : undefined,
         ips: pr.ips ? Array.from(pr.ips.map(x => cloneIpProfile(x))) : undefined,
         days: pr.days ? Array.from(pr.days.map(x => cloneDayProfile(x))) : undefined,

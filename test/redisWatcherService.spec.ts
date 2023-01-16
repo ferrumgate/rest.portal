@@ -10,14 +10,14 @@ import { ConfigPublicRoom, ConfigPublicListener, ConfigRequest, ConfigResponse }
 import { Service } from '../src/model/service';
 
 import chaiExclude from 'chai-exclude';
-import { RedisWatcher } from '../src/service/system/redisWatcher';
+import { RedisWatcherService } from '../src/service/redisWatcherService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
 
-describe('redisWatcher ', async () => {
+describe('redisWatcherService ', async () => {
 
     beforeEach(async () => {
         const simpleRedis = new RedisService('localhost:6379');
@@ -26,7 +26,7 @@ describe('redisWatcher ', async () => {
 
 
     it('isMaster', async () => {
-        const redis = new RedisWatcher('localhost:6379');
+        const redis = new RedisWatcherService('localhost:6379');
         expect(redis.isMaster).to.be.false;
         await redis.checkRedisIsMaster();
         expect(redis.isMaster).to.be.true;
@@ -35,9 +35,10 @@ describe('redisWatcher ', async () => {
 
     it('start', async () => {
 
-        const redis = new RedisWatcher('localhost:6379');
+        const redis = new RedisWatcherService('localhost:6379');
         expect(redis.isMaster).to.be.false;
         await redis.start();
+
         expect(redis.isMaster).to.be.true;
 
     }).timeout(5000);

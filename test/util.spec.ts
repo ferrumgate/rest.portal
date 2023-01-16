@@ -3,7 +3,7 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
 import fs from 'fs';
-import del from 'del';
+
 import nock from 'nock';
 
 
@@ -11,7 +11,6 @@ import nock from 'nock';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 const token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVzIjoxNTU0MDExMjc4NzU5LCJ1c2VyIjp7ImlkIjoiNzQwIn0sImNsaWVudCI6eyJpZCI6ImlmIHlvdSBzZWUgbWUifSwiaXNzIjoib2F1dGgyc2VydmljZSIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE1NTQwMDc2Nzh9.j5B85up9q0gNrjxS8IhzYA7_X6wnwAM0tNSkXNK2Zz6BUt1gL0DqWg-l39CThmSWSInkjoV4d1YopXW8n2uaUmY1j0vldee49S_Cma7BDcmSoU0k_wkYqYlqUXa0G3KF0PAjnKOHFTWp3in4m0fT3BRtCFYQVeqhz11wVCIMGclaN8rmW5FrqJ6TzhyIjsySyRNEBd7Es-GyM9ngxLcB1KXJj2SCVTuwLPP7B8WLoxSkZNDTIBU3sh2hqwFGfYUJ8hHq2xY5HYlxGt8zlDggWGBYVTIs2ADQTtPzQ3_WM_n3zx27dkNNqM2HDrh73NFI27_9nTeUp18aepSm9fLbyA";
 const key = `-----BEGIN CERTIFICATE-----
@@ -132,7 +131,7 @@ describe('util ', () => {
 
         let tmpFolder = `/tmp/${Util.randomNumberString()}`;
         if (fs.existsSync(tmpFolder))
-            del.sync(tmpFolder, { force: true });
+            fs.rmSync(tmpFolder, { recursive: true, force: true });
         fs.mkdirSync(tmpFolder);
         let path = tmpFolder + '/' + Util.randomNumberString() + '.zip'
         await Util.downloadFile('http://ferrumgate.com/test.zip', path);
@@ -148,7 +147,7 @@ describe('util ', () => {
 
         let tmpFolder = `/tmp/${Util.randomNumberString()}`;
         if (fs.existsSync(tmpFolder))
-            await del(tmpFolder, { force: true });
+            fs.rmSync(tmpFolder, { recursive: true, force: true });
         fs.mkdirSync(tmpFolder);
         let path = tmpFolder + '/' + Util.randomNumberString() + '.zip'
         await Util.downloadFile('http://ferrumgate.com/test.zip', path);
@@ -168,7 +167,7 @@ describe('util ', () => {
 
         let tmpFolder = `/tmp/${Util.randomNumberString()}`;
         if (fs.existsSync(tmpFolder))
-            await del(tmpFolder, { force: true });
+            fs.rmSync(tmpFolder, { recursive: true, force: true });
         fs.mkdirSync(tmpFolder);
         let path = tmpFolder + '/' + Util.randomNumberString() + '.txt'
         fs.writeFileSync(path, 'deneme');
@@ -499,6 +498,39 @@ describe('util ', () => {
 
 
     }).timeout(120000);
+
+
+    it('jencrypt ', (done) => {
+        const str = 'DENEME';
+        const encrypted = Util.jencrypt('Et2vSy5Pa98o2wdc9HH2SyQXjRdEKsDI', str);
+        expect(encrypted.toString('hex')).to.equal('28cdbbf646f6fdb0a56704aba6105727');
+
+        done();
+    });
+
+    it('jdecrypt ', (done) => {
+        const str = '28cdbbf646f6fdb0a56704aba6105727';
+        const encrypted = Util.jdecrypt('Et2vSy5Pa98o2wdc9HH2SyQXjRdEKsDI', Buffer.from(str, 'hex')).toString('utf-8');
+        expect(encrypted).to.equal('DENEME');
+
+        done();
+    });
+
+    it('jencode/jdecode ', (done) => {
+        const val = {
+            id: 1, name: 'string', arr: [1]
+        }
+        const json = Util.jencode(val);
+        const val2 = Util.jdecode(json) as any;
+        expect(val2.id).to.equal(1);
+        expect(val2.name).to.equal('string');
+        expect(val2.arr[0]).to.equal(1);
+
+
+        done();
+    });
+
+
 
 
 

@@ -1,10 +1,10 @@
-import { logger } from "../../common";
-import { RedisService } from "../redisService";
+import { logger } from "../common";
+import { RedisService } from "./redisService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /**
  * @check if redis is master or slave
  */
-export class RedisWatcher {
+export class RedisWatcherService {
 
     timer: any;
     isMaster = false;

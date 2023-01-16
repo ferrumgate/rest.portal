@@ -75,13 +75,12 @@ describe('authApi', async () => {
     }
 
     beforeEach(async () => {
-        configService.resetUpdateTime();
+
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         await configService.setConfigPath(filename);
         const auth: AuthSettings = {
             common: {},
             local: {
-                id: Util.randomNumberString(),
                 type: 'local',
                 baseType: 'local',
                 name: 'Local',
@@ -733,7 +732,7 @@ describe('authApi', async () => {
     it('POST /auth/exchangetoken with result 200', async () => {
         await redisService.hset('/session/id/abc', { userId: 'someid', id: 'abc' })
         await redisService.set(`/exchange/id/12`, 'abc');
-        const ex = Util.encrypt(configService.getEncKey2(), '12')
+        const ex = Util.encrypt(configService.getEncKey(), '12')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth/exchangetoken')

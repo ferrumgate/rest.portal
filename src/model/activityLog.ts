@@ -1,11 +1,11 @@
-export const ActivitiyStatus = {
+export const ActivityStatus = {
     Success: 200,
     AuthenticationFailed: 1,
 }
 export interface ActivityLog {
     insertDate: string;
     requestId: string;
-    type: string;//'login try','login success','login deny','service success','service deny','pam activated'
+    type: string;//'login try','login allow','login deny','service allow','service deny','pam activated'
     authSource: string;//google, apikey
     ip: string;
     status: number;//200 success;

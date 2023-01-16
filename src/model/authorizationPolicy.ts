@@ -29,6 +29,6 @@ export function cloneAuthorizationRule(val: AuthorizationRule): AuthorizationRul
 
 export interface AuthorizationPolicy {
     rules: AuthorizationRule[];
-
+    rulesOrder: string[];
 
 }

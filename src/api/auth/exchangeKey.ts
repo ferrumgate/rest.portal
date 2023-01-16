@@ -34,7 +34,7 @@ export function exchangeKeyInit() {
                 const tunnelService = appService.tunnelService;
                 const sessionService = appService.sessionService;
 
-                const exchangeKey = Util.decrypt(configService.getEncKey2(), exchangeKeyEnc)
+                const exchangeKey = Util.decrypt(configService.getEncKey(), exchangeKeyEnc)
 
                 //key decrypted, check if too much try occured, client checks every 2 seconds
                 try {

@@ -16,6 +16,7 @@ import ChildProcess from 'child_process';
 import fsp from 'fs/promises'
 import https from 'https';
 import { X509Certificate } from 'crypto';
+import { decode, encode } from '@msgpack/msgpack';
 
 export interface IpRange {
     start: string;
@@ -173,41 +174,40 @@ export const Util = {
     },
     findClientIpAddress: (req: any) => {
         let ip = req.get('x-real-ip');
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('client-ip');
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('Proxy-Client-IP');
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('WL-Proxy-Client-IP');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_X_FORWARDED_FOR');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_X_FORWARDED');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_X_CLUSTER_CLIENT_IP');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_CLIENT_IP');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_FORWARDED_FOR');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_FORWARDED');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_VIA');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('REMOTE_ADDR');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.ip;
-
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.connection.remoteAddress;
 
         if (ip && ip.substr(0, 7) == "::ffff:") {
@@ -229,7 +229,7 @@ export const Util = {
         //logger.info("http headers:" + JSON.stringify(req.headers))
         return req.protocol || 'not found';
     },
-    encrypt(key: string, data: string): string {
+    encrypt(key: string, data: string, encoding: BufferEncoding = 'hex'): string {
 
         const keyBuffer = Buffer.from(key).slice(0, 32); //8f7403c9bb5eb04f
 
@@ -239,12 +239,12 @@ export const Util = {
         const cipher = crypto.createCipheriv(algoritm, keyBuffer, iv);
         const encrypted = Buffer.concat([cipher.update(Buffer.from(data, 'utf-8')), cipher.final()]);
 
-        return encrypted.toString('hex');
+        return encrypted.toString(encoding);
 
 
     },
 
-    decrypt(key: string, data: string): string {
+    decrypt(key: string, data: string, encoding: BufferEncoding = 'hex'): string {
 
         const keyBuffer = Buffer.from(key).slice(0, 32); //8f7403c9bb5eb04f
 
@@ -252,7 +252,7 @@ export const Util = {
         //const pass=crypto.scryptSync(key,initVector,initVector.length);
         const algoritm = 'aes-256-cbc'
         const cipher = crypto.createDecipheriv(algoritm, keyBuffer, iv);
-        const decrpted = Buffer.concat([cipher.update(Buffer.from(data, 'hex')), cipher.final()]);
+        const decrpted = Buffer.concat([cipher.update(Buffer.from(data, encoding)), cipher.final()]);
 
         let value = decrpted.toString('utf-8');
         return value;
@@ -375,6 +375,7 @@ export const Util = {
         if (this.isUndefinedOrNull(val)) return false;
         if (typeof (val) == 'string') return val == 'true';
         if (typeof (val) == 'number') return Boolean(val).valueOf();
+        if (typeof (val) == 'boolean') return val;
         if (Array.isArray(val)) return true;
         if (typeof (val) == 'object') return true;
         return false;
@@ -421,7 +422,63 @@ export const Util = {
             })
         }
         return val;
-    }
+    },
+
+    any(val: any) {
+        if (val == null) return null;
+        if (val == undefined) return undefined;
+        return val as any;
+    },
+    nanosecond() {
+        const NS_PER_SEC = 1e9;
+        const [second, nanosecond] = process.hrtime();
+        return second * NS_PER_SEC + nanosecond;
+    },
+    now() {
+        return new Date().getTime();
+    },
+    jencode(val: any) {
+        if (process.env.JENCODE == 'json')
+            return Buffer.from(JSON.stringify(val));
+        else
+            return Buffer.from(encode(val))
+    },
+    jdecode(val: Buffer) {
+        if (process.env.JENCODE == 'json')
+            return JSON.parse(val.toString());
+        else
+            return decode(val);
+    },
+    jencrypt(key: string, data: string | Buffer): Buffer {
+
+        const keyBuffer = Buffer.from(key).subarray(0, 32); //8f7403c9bb5eb04f
+
+        const iv = Buffer.from("5d97bf41edc9285f0ed88caa9e47218f", 'hex');
+        //const pass=crypto.scryptSync(key,initVector,initVector.length);
+        const algoritm = 'aes-256-cbc'
+        const cipher = crypto.createCipheriv(algoritm, keyBuffer, iv);
+        const buf = typeof (data) == 'string' ? Buffer.from(data, 'utf-8') : data;
+        const encrypted = Buffer.concat([cipher.update(buf), cipher.final()]);
+
+        return encrypted;
+
+
+    },
+    jdecrypt(key: string, data: string | Buffer): Buffer {
+
+        const keyBuffer = Buffer.from(key).subarray(0, 32); //8f7403c9bb5eb04f
+
+        const iv = Buffer.from("5d97bf41edc9285f0ed88caa9e47218f", 'hex');
+        //const pass=crypto.scryptSync(key,initVector,initVector.length);
+        const algoritm = 'aes-256-cbc'
+        const cipher = crypto.createDecipheriv(algoritm, keyBuffer, iv);
+        const buf = typeof (data) == 'string' ? Buffer.from(data, 'utf-8') : data;
+        const decrpted = Buffer.concat([cipher.update(buf), cipher.final()]);
+
+        return decrpted;
+    },
+
+
 
 
 

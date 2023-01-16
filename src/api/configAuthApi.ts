@@ -90,7 +90,7 @@ routerConfigAuthAuthenticated.get('/local',
 
 function copyAuthLocal(auth: AuthLocal): AuthLocal {
     return {
-        id: auth.id, baseType: auth.baseType, name: auth.name,
+        baseType: auth.baseType, name: auth.name,
         type: auth.type, isForgotPassword: auth.isForgotPassword,
         isRegister: auth.isRegister, tags: auth.tags,
         isEnabled: auth.isEnabled,

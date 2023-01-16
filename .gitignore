@@ -90,3 +90,5 @@ node_modules
 package-lock.json
 *.com.crt
 *.com.key
+configServiceTestData.ts
+configServiceTestData.js

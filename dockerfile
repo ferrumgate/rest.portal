@@ -1,4 +1,4 @@
-FROM node:16.13.2-bullseye-slim
+FROM node:18.12.1-bullseye-slim
 RUN apt update &&\
     apt install --assume-yes --no-install-recommends openssl \
     ca-certificates gnupg
@@ -19,10 +19,10 @@ ADD build/src /usr/src/app/build/src
 WORKDIR /usr/src/app
 #RUN chown -R  node /usr/src/app
 ### delete sensitive test data
-RUN  start=$(grep -n 'start point for delete' build/src/service/configService.js |cut -d':' -f1); \
-    end=$(grep -n 'end point for delete' build/src/service/configService.js |cut -d':' -f1); \
-    sed -i "${start},${end}d" build/src/service/configService.js
+###RUN  start=$(grep -n 'start point for delete' build/src/service/configService.js |cut -d':' -f1); \
+###    end=$(grep -n 'end point for delete' build/src/service/configService.js |cut -d':' -f1); \
+###    sed -i "${start},${end}d" build/src/service/configService.js
 
 
-#USER node
+USER node
 CMD ["npm","run","startdocker"]

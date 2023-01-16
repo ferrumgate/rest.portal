@@ -14,25 +14,27 @@ import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthSaml, AuthSettings, Bas
 import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
 import { Gateway, Network } from "../model/network";
-import { isAbsolute } from "path";
 import { Group } from "../model/group";
-import { util } from "chai";
 import { Service } from "../model/service";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
-import { urlToHttpOptions } from "url";
-import { EventEmitter } from "stream";
-import { runInThisContext } from "vm";
+import EventEmitter from "node:events";
 
 
 
+
+
+
+/**
+ * @summary system config implementation base class
+ */
 export class ConfigService {
 
     events: EventEmitter = new EventEmitter();
     config: Config;
     protected configfile = `/etc/ferrumgate/config.yaml`;
     private secretKey = '';
-    lastUpdateTime = '';
+
 
     /**
      *
@@ -41,10 +43,7 @@ export class ConfigService {
         if (!encryptKey)
             throw new Error('needs and encyption key with lenght 32');
         //default user
-        const adminUser = HelperService.createUser('local-local', 'admin', 'default admin', 'ferrumgate');
-        adminUser.isVerified = true;
-        adminUser.roleIds = ['Admin'];
-
+        const adminUser = this.createAdminUser();
 
         //default network
         const defaultNetwork: Network = {
@@ -62,7 +61,9 @@ export class ConfigService {
         if (configFile)
             this.configfile = configFile;
         this.config = {
-            encKey: Util.randomNumberString(32),
+            lastUpdateTime: new Date().toISOString(),
+            revision: 0,
+            version: 1,
             isConfigured: 0,
             users: [
                 adminUser
@@ -75,26 +76,11 @@ export class ConfigService {
             caSSLCertificate: {},
             domain: 'ferrumgate.local',
             url: 'https://secure.yourdomain.com',
-            email: {
-                type: 'empty',
-                fromname: '', pass: '', user: ''
-            },
+            email: this.createDefaultEmail(),
             logo: {},
             auth: {
                 common: {},
-                local: {
-                    id: Util.randomNumberString(16),
-                    type: 'local',
-                    baseType: 'local',
-                    name: 'Local',
-                    tags: [],
-                    isForgotPassword: false,
-                    isRegister: false,
-                    isEnabled: true,
-                    insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-
-                },
+                local: this.createAuthLocal(),
                 ldap: { providers: [] },
                 oauth: { providers: [] },
                 saml: { providers: [] }
@@ -110,254 +96,30 @@ export class ConfigService {
             gateways: [],
 
             authenticationPolicy: {
-                rules: [
-                ],
+                rules: [], rulesOrder: []
+
             },
-            authorizationPolicy: { rules: [] }
+            authorizationPolicy: { rules: [], rulesOrder: [] }
 
 
         }
         // start point for delete
         //for testing start
         //dont delete aboveline
-        if (process.env.NODE_ENV == 'development') {
-            this.config.auth.oauth = {
-                providers: [
-                    {
-                        baseType: 'oauth',
-                        type: 'google',
-                        id: Util.randomNumberString(16),
-                        name: 'Google/OAuth2',
-                        tags: [],
-                        clientId: '920409807691-jp82nth4a4ih9gv2cbnot79tfddecmdq.apps.googleusercontent.com',
-                        clientSecret: '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',
-                        isEnabled: true,
-                        insertDate: new Date().toISOString(),
-                        updateDate: new Date().toISOString()
-                    },
-                    {
-                        baseType: 'oauth',
-                        type: 'linkedin',
-                        id: Util.randomNumberString(16),
-                        name: 'Linkedin/OAuth2',
-                        tags: [],
-                        clientId: '866dr29tuc5uy5',
-                        clientSecret: '1E3DHw0FJFUsp1Um',
-                        isEnabled: true,
-                        insertDate: new Date().toISOString(),
-                        updateDate: new Date().toISOString()
-                    }
-                ]
+        try {
+            if (process.env.LOAD_TEST_DATA) {
+                var m = require('../../test/configServiceTestData');
+                m.loadTestData(this.config);
             }
-            this.config.auth.ldap = {
-                providers: [
-                    {
-                        baseType: 'ldap',
-                        type: 'activedirectory',
-                        id: Util.randomNumberString(16),
-                        name: 'Active Directory/Ldap',
-                        tags: [],
-                        host: 'ldap://192.168.88.254:389',
-                        bindDN: 'CN=myadmin,CN=users,DC=testad,DC=local',
-                        bindPass: 'Qa12345678',
-                        searchBase: 'CN=users,DC=testad,DC=local',
-                        groupnameField: 'memberOf',
-                        usernameField: 'sAMAccountName',
-                        isEnabled: true,
-                        insertDate: new Date().toISOString(),
-                        updateDate: new Date().toISOString()
-
-
-
-                    },
-                ]
-            }
-
-            this.config.auth.saml = {
-                providers: [
-                    {
-                        baseType: 'saml',
-                        type: 'auth0',
-                        id: Util.randomNumberString(16),
-                        name: 'Auth0/Saml',
-                        tags: [],
-                        issuer: 'urn:dev-24wm8m7g.us.auth0.com',
-                        loginUrl: 'https://dev-24wm8m7g.us.auth0.com/samlp/pryXTgkqDprtoGOg0RRH26ylKV0zg4xV',
-                        fingerPrint: '96:39:6C:F6:ED:DF:07:30:F0:2E:45:95:02:B6:F6:68:B7:2C:11:37',
-                        cert: `MIIDDTCCAfWgAwIBAgIJDVrH9KeUS+k8MA0GCSqGSIb3DQEBCwUAMCQxIjAgBgNVBAMTGWRldi0yNHdtOG03Zy51cy5hdXRoMC5jb20wHhcNMjIxMDEwMjIzOTA2WhcNMzYwNjE4MjIzOTA2WjAkMSIwIAYDVQQDExlkZXYtMjR3bThtN2cudXMuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA14riTBaUOB2+OZiEbpL5Cjy4MVl78Qi+Msi6IbmIs8nIGRav2hYsI3/mUex6+dCeqwoKCALByRySTEWhUCRWNsi86ae5CSsRikVBAPtEZqKBuoSthrjXUQT5/UBBOHc+EVUAiNrAEE1DBjpkFPkZfGk974ZukK8MyfliajjmFHGj23vwxJncxfx49kOEalz10M500MNldl+Kl628i//y3QiojTsNvPK4SiORFBR89DnWJoB/m6npsm9tkRKUFuYNedVEDru+8aac6LVrKkimDOUzXecAbCm7+td4rXCyV25cc3Pp0sHUYFYk4NoqzW6kJtddFcRQi+xo5JqcPjtunwIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBRZYMCT4GSETh+A4Ji9wWJxlcv53zAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBACNDPiTHjyeFUIOTWnnZbTZil0nf+yrA6QVesV5+KJ9Ek+YgMrnZ4KdXEZZozUgiGsER1RjetWVYnv3AmEvML0CY/+xJu2bCfwQssSXFLQGdv079V81Mk2+Hz8gQgruLpJpfENQCsbWm3lXQP4F3avFw68HB62rr6jfyEIPb9n8rw/pj57y5ZILl97sb3QikgRh1pTEKVz05WLeHdGPE30QWklGDYxqv2/TbRWOUsdXjjbpE6pIfTUX5OLqGRbrtdHL9fHbhVOfqczALtneEjv5o/TpB3Jo2w9RU9AgMYwWT2Hpqop/fe9fyDQ+u5Hz7ZnADi/oktGBzm8/Y03WpkuM=`,
-                        usernameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
-                        nameField: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
-                        isEnabled: true,
-                        insertDate: new Date().toISOString(),
-                        updateDate: new Date().toISOString()
-
-                    },
-                ]
-            }
-
-            this.config.email = { fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: 'nqquxankumksakon' };
-            this.config.url = 'http://localhost:4200';
-            this.config.captcha = {
-                client: '6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH',
-                server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
-            }
-
-            this.config.jwtSSLCertificate.privateKey = fs.readFileSync(`./ferrumgate.com.key`).toString();
-            this.config.jwtSSLCertificate.publicKey = fs.readFileSync(`./ferrumgate.com.crt`).toString();
-            if (fs.existsSync('/tmp/config.yaml') && !process.env.LOCAL_TEST)
-                fs.rmSync('/tmp/config.yaml');
-            const adminUser = HelperService.createUser('local-local', 'hamza1@hamzakilic.com', 'hamzaadmin', 'Deneme123');
-            adminUser.isLocked = false;
-            adminUser.isVerified = true;
-            adminUser.roleIds = ['Admin'];
-            adminUser.is2FA = true;
-            adminUser.twoFASecret = 'GZTM2CLFZFQA4W3QSCOGG53QKU23CAZW';
-            this.config.users.push(adminUser);
-
-            const standartUser = HelperService.createUser('local-local', 'hamzauser@hamzakilic.com', 'hamzauser', 'Deneme123');
-            standartUser.isLocked = false;
-            standartUser.isVerified = true;
-            standartUser.roleIds = ['User'];
-            this.config.users.push(standartUser);
-
-            const reporterUser = HelperService.createUser('local-local', 'hamzareporter@hamzakilic.com', 'hamzareporter', 'Deneme123');
-            reporterUser.isLocked = false;
-            reporterUser.isVerified = true;
-            reporterUser.roleIds = ['Reporter'];
-            this.config.users.push(reporterUser);
-
-            this.config.groups.push({
-                id: Util.randomNumberString(16),
-                name: 'north',
-                isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
-            })
-            this.config.groups.push({
-                id: Util.randomNumberString(16),
-                name: 'south',
-                isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
-            })
-            // some networks
-            let net: Network = {
-
-                id: Util.randomNumberString(16), name: 'ops', labels: ['deneme2'],
-                serviceNetwork: '1.1.1.1/16',
-                clientNetwork: '1.2.3.4/24',
-                insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString()
-            }
-            this.config.networks.push(net);
-
-
-            let gateways: Gateway[] = [
-                {
-                    id: '123', networkId: net.id, name: 'blac1', labels: ['testme'], isEnabled: true, insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-                },
-                {
-                    id: '1234', networkId: net.id, name: 'blac2', labels: ['testme2'], isEnabled: true, insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-                },
-                {
-                    id: '12345', networkId: net.id, name: 'blac3', labels: ['testme3', 'testme2'], isEnabled: false, insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-                },
-                {
-                    id: '123456', networkId: '', name: 'blac4', labels: ['testme3'], isEnabled: false, insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-                },
-                {
-                    id: '1234567', networkId: '', name: 'blac5', labels: ['testme5'], isEnabled: false, insertDate: new Date().toISOString(),
-                    updateDate: new Date().toISOString()
-                }
-            ];
-            gateways.forEach(x => this.config.gateways.push(x));
-            const service1 = {
-                id: Util.randomNumberString(16),
-                name: 'mysql-dev', host: '10.0.0.12', protocol: 'raw', tcp: 3306,
-                assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
-                insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), isSystem: true, count: 1
-            }
-            this.config.services.push(service1);
-
-            const service2 = {
-                id: Util.randomNumberString(16),
-                name: 'ssh-dev', host: '10.0.0.12', protocol: 'raw', tcp: 22,
-                assignedIp: '10.3.4.4', isEnabled: true, networkId: net.id, labels: [],
-                insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), count: 1
-            }
-
-            this.config.services.push(service2);
-
-            const service3 = {
-                id: Util.randomNumberString(16),
-                name: 'mysql-prod', host: '10.0.0.12', protocol: 'raw', tcp: 22,
-                assignedIp: '10.3.4.4', isEnabled: true, networkId: defaultNetwork.id, labels: [], count: 1,
-                insertDate: new Date().toISOString(), updateDate: new Date().toISOString()
-            }
-            this.config.services.push(service3);
-
-
-            //authiraziton policy
-            this.config.authorizationPolicy.rules.push({
-                id: Util.randomNumberString(16),
-                name: 'tst1',
-                isEnabled: true,
-                networkId: net.id,
-                serviceId: service1.id,
-                userOrgroupIds: [standartUser.id],
-                profile: { is2FA: false },
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-            })
-
-            //
-            this.config.authenticationPolicy.rules.push({
-
-                id: Util.randomNumberString(16),
-                name: 'abc rule',
-                networkId: net.id,
-                userOrgroupIds: [standartUser.id],
-                action: 'allow',
-                profile: { is2FA: true },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-
-            })
-
-            this.config.authenticationPolicy.rules.push({
-
-                id: Util.randomNumberString(16),
-                name: 'abc2',
-                networkId: net.id,
-                userOrgroupIds: [adminUser.id],
-                action: 'deny',
-                profile: { is2FA: true },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-
-            })
-            this.config.authenticationPolicy.rules.push({
-
-                id: Util.randomNumberString(16),
-                name: 'def2',
-                networkId: net.id,
-                userOrgroupIds: [adminUser.id],
-                action: 'deny',
-                profile: { is2FA: true },
-                isEnabled: true,
-                updateDate: new Date().toISOString(),
-                insertDate: new Date().toISOString()
-
-            })
-
+        } catch (err) {
+            logger.error(err);
         }
 
 
         //dont delete below line
         //for testing end
         // end point for delete
+        this.config.lastUpdateTime = new Date().toISOString();
         this.loadConfigFromFile();
         if (process.env.LIMITED_MODE == 'true') {
             if (!this.config.groups.find(x => x.id == 'hb16ldst577l9mkf'))
@@ -374,17 +136,103 @@ export class ConfigService {
                 })
         }
 
-        this.lastUpdateTime = new Date().toISOString();
 
+
+    }
+    async init() {
+        await this.createCerts();
+    }
+    async start() {
+        await this.init();
+
+    }
+    protected async createCerts() {
+
+        if (!(await this.getJWTSSLCertificate()).privateKey) {
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.com");
+            await this.setJWTSSLCertificate({
+                privateKey: privateKey,
+                publicKey: publicKey,
+            });
+        }
+        //create ca ssl certificate if not exists;
+        if (!(await this.getCASSLCertificate()).privateKey) {
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.local");
+            await this.setSSLCertificate({
+                privateKey: privateKey,
+                publicKey: publicKey,
+            });
+        }
+        //create ssl certificates if not exists
+        if (!(await this.getSSLCertificate()).privateKey) {
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("secure.ferrumgate.local");
+            await this.setSSLCertificate({
+                privateKey: privateKey,
+                publicKey: publicKey,
+            });
+        }
+    }
+    async stop() {
+
+    }
+
+    isReady() {
+
+    }
+    isWritable() {
+
+    }
+    isReadable() {
+
+    }
+
+    clone<T>(data: T) {
+        return Util.clone(data) as T;
+    }
+
+
+
+    protected createDefaultEmail(): EmailSettings {
+        return {
+            type: 'empty',
+            fromname: '', pass: '', user: ''
+        }
+    }
+
+    protected createAuthLocal() {
+        let local: AuthLocal = {
+            type: 'local',
+            baseType: 'local',
+            name: 'Local',
+            tags: [],
+            isForgotPassword: false,
+            isRegister: false,
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        return local
+    }
+
+    protected createAdminUser() {
+        let adminUser = HelperService.createUser('local-local', 'admin', 'default admin', 'ferrumgate');
+        adminUser.isVerified = true;
+        adminUser.roleIds = ['Admin'];
+        return adminUser;
     }
     getEncKey() {
         return this.secretKey;
     }
-    getEncKey2() {
-        return this.config.encKey;
+
+
+    async getLastUpdateTime() {
+        this.isReady(); this.isReadable();
+        return this.config.lastUpdateTime;
     }
-    resetUpdateTime() {
-        this.lastUpdateTime = new Date(1900, 1, 1).toISOString();
+    async saveLastUpdateTime() {
+        this.isReady(); this.isWritable();
+        this.config.lastUpdateTime = new Date().toISOString();
     }
     setConfigPath(path: string) {
         this.configfile = path;
@@ -394,26 +242,26 @@ export class ConfigService {
      */
     emitEvent(event: ConfigEvent) {
         this.events.emit('changed', event);
-        return event;
+        //return event;
     }
 
-    private writeAsset(name: string, image: string) {
-        const type = image.substring(image.indexOf('/') + 1, image.indexOf(';'));
-        const base64Image = image.split(';base64,').pop();
-        let path = `./dassets/img`;
-        fs.mkdirSync(path, { recursive: true });
-        if (type && base64Image) {
-            path = `${path}/${name}.${type}`;
-            fs.writeFileSync(path, base64Image, { encoding: 'base64' });
-        }
-        return path;
-    }
-    saveAssets() {
-        if (this.config.logo.default) {
-            this.config.logo.defaultPath = this.writeAsset('logo', this.config.logo.default);
-
-        }
-    }
+    /* private writeAsset(name: string, image: string) {
+         const type = image.substring(image.indexOf('/') + 1, image.indexOf(';'));
+         const base64Image = image.split(';base64,').pop();
+         let path = `./dassets/img`;
+         fs.mkdirSync(path, { recursive: true });
+         if (type && base64Image) {
+             path = `${path}/${name}.${type}`;
+             fs.writeFileSync(path, base64Image, { encoding: 'base64url' });
+         }
+         return path;
+     }
+     saveAssets() {
+         if (this.config.logo.default) {
+             this.config.logo.defaultPath = this.writeAsset('logo', this.config.logo.default);
+ 
+         }
+     } */
 
     loadConfigFromFile() {
         logger.info(`loading configuration from ${this.configfile}`);
@@ -422,34 +270,36 @@ export class ConfigService {
             if (process.env.NODE_ENV == 'development') {
                 this.config = yaml.parse(content);
             } else {
-                const decrpted = Util.decrypt(this.secretKey, content);
+                const decrpted = Util.decrypt(this.secretKey, content, 'base64url');
                 this.config = yaml.parse(decrpted);
             }
         }
-        this.saveAssets();
+        //this.saveAssets();
     }
-    saveConfigToFile() {
+    async saveConfigToFile() {
         const str = yaml.stringify(this.config);
         if (process.env.NODE_ENV == 'development') {
 
             fs.writeFileSync(this.configfile, str, { encoding: 'utf-8' });
         } else {
-            const encrypted = Util.encrypt(this.secretKey, str);
+            const encrypted = Util.encrypt(this.secretKey, str, 'base64url');
             fs.writeFileSync(this.configfile, encrypted, { encoding: 'utf-8' });
         }
-        this.lastUpdateTime = new Date().toISOString();
+        await this.saveLastUpdateTime();
+
+
     }
-    saveConfigToString() {
+    async saveConfigToString() {
         const str = yaml.stringify(this.config);
         if (process.env.NODE_ENV == 'development') {
             return str;
         } else {
-            const encrypted = Util.encrypt(this.secretKey, str);
+            const encrypted = Util.encrypt(this.secretKey, str, 'base64url');
             return encrypted;
         }
     }
 
-    private deleteUserSensitiveData(user?: User) {
+    protected deleteUserSensitiveData(user?: User) {
         delete user?.apiKey;
         delete user?.twoFASecret;
         delete user?.password;
@@ -458,29 +308,34 @@ export class ConfigService {
 
 
     async getUserByUsername(username: string): Promise<User | undefined> {
+        this.isReady(); this.isReadable();
         if (!username) return undefined;
-        let user = Util.clone(this.config.users.find(x => x.username == username));
+        let user = this.clone(this.config.users.find(x => x.username == username));
         this.deleteUserSensitiveData(user);
         return user;
     }
     async getUserByUsernameAndSource(username: string, source: string): Promise<User | undefined> {
+        this.isReady(); this.isReadable();
         if (!username) return undefined;
-        let user = Util.clone(this.config.users.find(x => x.username == username && x.source == source));
+        let user = this.clone(this.config.users.find(x => x.username == username && x.source == source));
         this.deleteUserSensitiveData(user);
         return user;
     }
     async getUserByApiKey(key: string): Promise<User | undefined> {
+        this.isReady(); this.isReadable();
         if (!key) return undefined;
-        let user = Util.clone(this.config.users.find(x => x.apiKey == key));
+        let user = this.clone(this.config.users.find(x => x.apiKey == key));
         this.deleteUserSensitiveData(user);
         return user;
     }
     async getUserById(id: string): Promise<User | undefined> {
-        let user = Util.clone(this.config.users.find(x => x.id == id));
+        this.isReady(); this.isReadable();
+        let user = this.clone(this.config.users.find(x => x.id == id));
         this.deleteUserSensitiveData(user);
         return user;
     }
     async getUser(id: string) {
+        this.isReady(); this.isReadable();
         return await this.getUserById(id);
     }
 
@@ -488,7 +343,7 @@ export class ConfigService {
         ids?: string[], groupIds?: string[], roleIds?: string[],
         is2FA?: boolean, isVerified?: boolean, isLocked?: boolean,
         isEmailVerified?: boolean, isOnlyApiKey?: boolean) {
-
+        this.isReady(); this.isReadable();
         let users = [];
         let filteredUsers = !search ? this.config.users :
             this.config.users.filter(x => {
@@ -532,7 +387,7 @@ export class ConfigService {
         if (pageSize)
             filteredUsers = filteredUsers.slice(page * pageSize, (page + 1) * pageSize);
         for (const iterator of filteredUsers) {
-            let user = Util.clone(iterator);
+            let user = this.clone(iterator);
             this.deleteUserSensitiveData(user);
             users.push(user);
         }
@@ -540,10 +395,11 @@ export class ConfigService {
         return { items: users, total: totalSize };
     }
     async getUserByRoleIds(roleIds: string[]): Promise<User[]> {
+        this.isReady(); this.isReadable();
         let users = [];
         const filteredUsers = this.config.users.filter(x => Util.isArrayElementExist(roleIds, x.roleIds))
         for (const iterator of filteredUsers) {
-            let user = Util.clone(iterator);
+            let user = this.clone(iterator);
             this.deleteUserSensitiveData(user);
             users.push(user);
         }
@@ -551,6 +407,7 @@ export class ConfigService {
         return users;
     }
     async getUserCount() {
+        this.isReady(); this.isReadable();
         return this.config.users.length;
     }
 
@@ -561,13 +418,14 @@ export class ConfigService {
         return RBACDefault.convert2RoleList(rbac, user.roleIds);
     }
     async getUserByUsernameAndPass(username: string, pass: string): Promise<User | undefined> {
+        this.isReady(); this.isReadable();
         if (!username) return undefined;
         if (!username.trim()) return undefined;
         let user = this.config.users
             .find(x => x.username == username);
 
         if (user && Util.bcryptCompare(pass, user.password || '')) {
-            let cloned = Util.clone(user);
+            let cloned = this.clone(user);
             this.deleteUserSensitiveData(cloned);
             return cloned;
         }
@@ -575,13 +433,14 @@ export class ConfigService {
 
     }
     async getUserByIdAndPass(id: string, pass: string): Promise<User | undefined> {
+        this.isReady(); this.isReadable();
         if (!id) return undefined;
         if (!id.trim()) return undefined;
         let user = this.config.users
             .find(x => x.id == id);
 
         if (user && Util.bcryptCompare(pass, user.password || '')) {
-            let cloned = Util.clone(user);
+            let cloned = this.clone(user);
             this.deleteUserSensitiveData(cloned);
             return cloned;
         }
@@ -589,18 +448,19 @@ export class ConfigService {
 
     }
     async getUserSensitiveData(id: string) {
-        let user = Util.clone(this.config.users.find(x => x.id == id)) as User;
+        this.isReady(); this.isReadable();
+        let user = this.clone(this.config.users.find(x => x.id == id)) as User;
         return { twoFASecret: user?.twoFASecret };
     }
 
-    async triggerUserDeleted(user: User) {
+    protected async triggerUserDeleted(user: User) {
         //check policy authentication
 
         let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
         this.config.authenticationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == user.id);
             if (userIdIndex >= 0) {
-                const prev = Util.clone(x);
+                const prev = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
                 rulesAuthnChanged.push({ previous: prev, item: x });
             }
@@ -611,7 +471,7 @@ export class ConfigService {
         this.config.authorizationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == user.id);
             if (userIdIndex >= 0) {
-                const prev = Util.clone(x);
+                const prev = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
                 rulesAuthzChanged.push({ previous: prev, item: x });
             }
@@ -635,6 +495,7 @@ export class ConfigService {
 
     }
     async deleteUser(id: string) {
+        this.isReady(); this.isWritable();
         const indexId = this.config.users.findIndex(x => x.id == id);
         const user = this.config.users[indexId];
         if (indexId >= 0 && user) {
@@ -648,8 +509,8 @@ export class ConfigService {
 
 
     async saveUser(user: User) {
-        let cloned = Util.clone(user);
-
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(user);
 
         let findedIndex = this.config.users.findIndex(x => x.username == user.username);
         let finded = this.config.users[findedIndex];
@@ -664,11 +525,7 @@ export class ConfigService {
         }
         else {
             cloned.id = finded.id;//security
-            /* let newone = {
-                ...finded,
-                ...cloned
-            }
-            Object.assign(finded, newone) */
+
             this.config.users[findedIndex] = {
                 ...finded,
                 ...cloned,
@@ -683,10 +540,11 @@ export class ConfigService {
 
     }
     async changeAdminUser(email: string, password: string) {
+        this.isReady(); this.isWritable();
         let finded = this.config.users.find(x => x.username == 'admin');
         if (!finded)
             return;
-        const prev = Util.clone(finded);
+        const prev = this.clone(finded);
         finded.username = email;
         finded.name = email;
         finded.password = Util.bcryptHash(password);
@@ -696,11 +554,13 @@ export class ConfigService {
         return this.createTrackEvent(prev, finded);
     }
     async getCaptcha(): Promise<Captcha> {
-        return Util.clone(this.config.captcha);
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.captcha);
     }
 
     async setCaptcha(captcha: Captcha | {}) {
-        let cloned = Util.clone(captcha);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(captcha);
         const prev = this.config.captcha;
         this.config.captcha = {
             ...this.config.captcha,
@@ -712,11 +572,13 @@ export class ConfigService {
     }
 
     async getJWTSSLCertificate(): Promise<SSLCertificate> {
-        return Util.clone(this.config.jwtSSLCertificate);
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.jwtSSLCertificate);
     }
 
     async setJWTSSLCertificate(cert: SSLCertificate | {}) {
-        let cloned = Util.clone(cert);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(cert);
         const prev = this.config.jwtSSLCertificate;
         this.config.jwtSSLCertificate = {
             ...this.config.jwtSSLCertificate,
@@ -728,11 +590,13 @@ export class ConfigService {
     }
 
     async getSSLCertificate(): Promise<SSLCertificate> {
-        return Util.clone(this.config.sslCertificate);
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.sslCertificate);
     }
 
     async setSSLCertificate(cert: SSLCertificate | {}) {
-        let cloned = Util.clone(cert);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(cert);
         const prev = this.config.sslCertificate;
         this.config.sslCertificate = {
             ...this.config.sslCertificate,
@@ -744,16 +608,19 @@ export class ConfigService {
     }
 
     async getCASSLCertificate(): Promise<SSLCertificate> {
-        return Util.clone(this.config.caSSLCertificate);
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.caSSLCertificate);
     }
     async getCASSLCertificatePublic(): Promise<string | null | undefined> {
+        this.isReady(); this.isReadable();
         return this.config.caSSLCertificate.publicKey;
     }
 
     async setCASSLCertificate(cert: SSLCertificate | {}) {
-        let cloned = Util.clone(cert);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(cert);
         const prev = this.config.caSSLCertificate;
-        this.config.sslCertificate = {
+        this.config.caSSLCertificate = {
             ...this.config.caSSLCertificate,
             ...cloned
         }
@@ -764,11 +631,13 @@ export class ConfigService {
 
 
     async getEmailSettings(): Promise<EmailSettings> {
-        return Util.clone(this.config.email);
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.email);
     }
 
     async setEmailSettings(options: EmailSettings) {
-        let cloned = Util.clone(options);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(options);
         let prev = this.config.email;
         this.config.email = {
             ...this.config.email,
@@ -780,10 +649,12 @@ export class ConfigService {
     }
 
     async getLogo(): Promise<LogoSettings> {
-        return Util.clone(this.config.logo);
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.logo);
     }
     async setLogo(logo: LogoSettings | {}) {
-        let cloned = Util.clone(logo);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(logo);
         let prev = this.config.logo;
         this.config.logo = {
             ...this.config.logo,
@@ -795,14 +666,17 @@ export class ConfigService {
     }
 
     async getAuthSettings(): Promise<AuthSettings> {
-        return Util.clone(this.config.auth);
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.auth);
     }
-    // needs a sync version
+    /* // needs a sync version
     getAuthSettingsSync(): AuthSettings {
-        return Util.clone(this.config.auth);
-    }
+        return this.clone(this.config.auth);
+    } */
+
     async setAuthSettings(option: AuthSettings | {}) {
-        let cloned = Util.clone(option);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(option);
         let prev = this.config.auth;
         this.config.auth = {
             ...this.config.auth,
@@ -813,7 +687,8 @@ export class ConfigService {
         return this.createTrackEvent(prev, this.config.auth);
     }
     async setAuthSettingsCommon(common: AuthCommon) {
-        let cloned = Util.clone(common);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(common);
         let prev = this.config.auth.common;
         this.config.auth.common = cloned;
         this.emitEvent({ type: 'updated', path: '/auth/common', data: this.createTrackEvent(prev, this.config.auth.common) })
@@ -821,13 +696,15 @@ export class ConfigService {
         return this.createTrackEvent(prev, this.config.auth.common);
     }
     async getAuthSettingsCommon() {
-        const common = Util.clone(this.config.auth.common);
+        this.isReady(); this.isReadable();
+        const common = this.clone(this.config.auth.common);
         return common;
     }
 
 
     async setAuthSettingsLocal(local: AuthLocal) {
-        let cloned = Util.clone(local);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(local);
         const prev = this.config.auth.local;
         this.config.auth.local = cloned;
         this.emitEvent({ type: 'updated', path: '/auth/local', data: this.createTrackEvent(prev, this.config.auth.local) })
@@ -835,16 +712,19 @@ export class ConfigService {
         return this.createTrackEvent(prev, this.config.auth.local);
     }
     async getAuthSettingsLocal() {
-        const common = Util.clone(this.config.auth.local);
+        this.isReady(); this.isReadable();
+        const common = this.clone(this.config.auth.local);
         return common;
     }
 
     async getAuthSettingOAuth() {
-        return Util.clone(this.config.auth.oauth || {}) as AuthOAuth
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.auth.oauth || {}) as AuthOAuth
     }
 
     async addAuthSettingOAuth(provider: BaseOAuth) {
-        let cloned = Util.clone(provider);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(provider);
         if (!this.config.auth.oauth)
             this.config.auth.oauth = { providers: [] };
         let index = this.config.auth.oauth.providers.findIndex(x => x.id == cloned.id);
@@ -867,6 +747,7 @@ export class ConfigService {
     }
 
     async deleteAuthSettingOAuth(id: string) {
+        this.isReady(); this.isWritable();
         const index = this.config.auth?.oauth?.providers.findIndex(x => x.id == id);
         const provider = this.config.auth?.oauth?.providers.find(x => x.id == id);
         if (Number(index) >= 0 && provider) {
@@ -879,10 +760,12 @@ export class ConfigService {
     }
 
     async getAuthSettingLdap() {
-        return Util.clone(this.config.auth.ldap || {}) as AuthLdap
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.auth.ldap || {}) as AuthLdap
     }
     async addAuthSettingLdap(provider: BaseLdap) {
-        let cloned = Util.clone(provider);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(provider);
         if (!this.config.auth.ldap)
             this.config.auth.ldap = { providers: [] };
         let index = this.config.auth.ldap.providers.findIndex(x => x.id == cloned.id);
@@ -903,6 +786,7 @@ export class ConfigService {
         return this.createTrackEvent(previous, this.config.auth.ldap.providers[index]);
     }
     async deleteAuthSettingLdap(id: string) {
+        this.isReady(); this.isWritable();
         const index = this.config.auth?.ldap?.providers.findIndex(x => x.id == id);
         const provider = this.config.auth?.ldap?.providers.find(x => x.id == id);
         if (Number(index) >= 0 && provider) {
@@ -914,12 +798,14 @@ export class ConfigService {
     }
 
     async getAuthSettingSaml() {
-        return Util.clone(this.config.auth.saml || {}) as AuthSaml
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.auth.saml || {}) as AuthSaml
     }
 
 
     async addAuthSettingSaml(provider: BaseSaml) {
-        let cloned = Util.clone(provider);
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(provider);
         if (!this.config.auth.saml)
             this.config.auth.saml = { providers: [] };
         let index = this.config.auth.saml.providers.findIndex(x => x.id == cloned.id);
@@ -942,6 +828,7 @@ export class ConfigService {
 
 
     async deleteAuthSettingSaml(id: string) {
+        this.isReady(); this.isWritable();
         const index = this.config.auth?.saml?.providers.findIndex(x => x.id == id);
         const provider = this.config.auth?.saml?.providers.find(x => x.id == id);
         if (Number(index) >= 0 && provider) {
@@ -953,21 +840,23 @@ export class ConfigService {
     }
 
     async getNetwork(id: string) {
+        this.isReady(); this.isReadable();
         const network = this.config.networks.find(x => x.id == id);
         if (!network) {
             return network;
         }
-        return Util.clone(network);
+        return this.clone(network);
     }
     async getNetworkCount() {
+        this.isReady(); this.isReadable();
         return this.config.networks.length;
     }
 
-    async triggerNetworkDeleted(net: Network) {
+    protected async triggerNetworkDeleted(net: Network) {
         ////// gateways
         let changedGateways = this.config.gateways.filter(x => x.networkId == net.id);
         changedGateways.forEach(x => {
-            let previous = Util.clone(x);
+            let previous = this.clone(x);
             x.networkId = '';
             this.emitEvent({ type: "updated", path: '/gateways', data: this.createTrackEvent(previous, x) })
         });
@@ -1012,6 +901,7 @@ export class ConfigService {
     }
 
     async deleteNetwork(id: string) {
+        this.isReady(); this.isWritable();
         const indexId = this.config.networks.findIndex(x => x.id == id);
         const network = this.config.networks.find(x => x.id == id);
         if (indexId >= 0 && network) {
@@ -1024,23 +914,26 @@ export class ConfigService {
     }
 
     async getNetworkByName(name: string) {
+        this.isReady(); this.isReadable();
         const network = this.config.networks.find(x => x.name == name);
         if (!network) {
             return network;
         }
-        return Util.clone(network);
+        return this.clone(network);
     }
     async getNetworkByGateway(gatewayId: string) {
+        this.isReady(); this.isReadable();
         const gateway = this.config.gateways.find(x => x.id == gatewayId);
         if (!gateway || !gateway.networkId) {
             return null;
         }
         const network = this.config.networks.find(x => x.id == gateway.networkId);
         if (!network) return null;
-        return Util.clone(network);
+        return this.clone(network);
     }
 
     async getNetworksBy(query: string) {
+        this.isReady(); this.isReadable();
         const networks = this.config.networks.filter(x => {
             if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(query)))
                 return true;
@@ -1052,17 +945,19 @@ export class ConfigService {
                 return true;
             return false;
         });
-        return networks.map(x => Util.clone(x));
+        return networks.map(x => this.clone(x));
     }
     async getNetworksAll() {
-        return this.config.networks.map(x => Util.clone(x));
+        this.isReady(); this.isReadable();
+        return this.config.networks.map(x => this.clone(x));
     }
 
 
     async saveNetwork(network: Network) {
+        this.isReady(); this.isReadable();
         let findedIndex = this.config.networks.findIndex(x => x.id == network.id);
         let finded = this.config.networks[findedIndex];
-        const cloned = Util.clone(network);
+        const cloned = this.clone(network);
         if (!finded) {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
@@ -1081,24 +976,37 @@ export class ConfigService {
         return this.createTrackEvent(finded, this.config.networks[findedIndex]);
     }
     async getDomain(): Promise<string> {
+        this.isReady(); this.isReadable();
         return this.config.domain;
     }
 
+    async setDomain(domain: string) {
+        this.isReady(); this.isWritable();
+        let previous = this.config.domain;
+        this.config.domain = domain;
+        this.emitEvent({ type: 'updated', path: '/domain', data: this.createTrackEvent(previous, this.config.domain) })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.domain);
+    }
+
     async getGateway(id: string) {
+        this.isReady(); this.isReadable();
         const gateway = this.config.gateways.find(x => x.id == id);
         if (!gateway) {
             return gateway;
         }
-        return Util.clone(gateway);
+        return this.clone(gateway);
     }
     async getGatewayCount() {
+        this.isReady(); this.isReadable();
         return this.config.gateways.length;
     }
-    async triggerGatewayDeleted(gate: Gateway) {
+    protected async triggerGatewayDeleted(gate: Gateway) {
         this.emitEvent({ type: 'deleted', path: '/gateways', data: this.createTrackEvent(gate) });
     }
 
     async deleteGateway(id: string) {
+        this.isReady(); this.isWritable();
         const indexId = this.config.gateways.findIndex(x => x.id == id);
         const gateway = this.config.gateways.find(x => x.id == id);
         if (indexId >= 0 && gateway) {
@@ -1110,15 +1018,17 @@ export class ConfigService {
 
     }
     async getGatewaysByNetworkId(id: string) {
+        this.isReady(); this.isReadable();
         if (id) {
             const gateways = this.config.gateways.filter(x => x.networkId == id);
-            return gateways.map(x => Util.clone(x));
+            return gateways.map(x => this.clone(x));
         } else {
             const gateways = this.config.gateways.filter(x => !x.networkId);
-            return gateways.map(x => Util.clone(x));
+            return gateways.map(x => this.clone(x));
         }
     }
     async getGatewaysBy(query: string) {
+        this.isReady(); this.isReadable();
         const gateways = this.config.gateways.filter(x => {
             if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(query)))
                 return true;
@@ -1130,13 +1040,15 @@ export class ConfigService {
     }
 
     async getGatewaysAll() {
-        return this.config.gateways.map(x => Util.clone(x));
+        this.isReady(); this.isReadable();
+        return this.config.gateways.map(x => this.clone(x));
     }
 
     async saveGateway(gateway: Gateway) {
+        this.isReady(); this.isWritable();
         let findedIndex = this.config.gateways.findIndex(x => x.id == gateway.id);
         let finded = findedIndex >= 0 ? this.config.gateways[findedIndex] : null;
-        const cloned = Util.clone(gateway);
+        const cloned = this.clone(gateway);
         if (!finded) {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
@@ -1155,19 +1067,15 @@ export class ConfigService {
         return await this.createTrackEvent(finded, this.config.gateways[findedIndex]);
     }
 
-    async setDomain(domain: string) {
-        let previous = this.config.domain;
-        this.config.domain = domain;
-        this.emitEvent({ type: 'updated', path: '/domain', data: this.createTrackEvent(previous, this.config.domain) })
-        await this.saveConfigToFile();
-        return this.createTrackEvent(previous, this.config.domain);
-    }
+
 
 
     async getUrl(): Promise<string> {
+        this.isReady(); this.isReadable();
         return this.config.url;
     }
     async setUrl(url: string) {
+        this.isReady(); this.isWritable();
         let previous = this.config.url;
         this.config.url = url;
         this.emitEvent({ type: 'updated', path: '/url', data: this.createTrackEvent(previous, this.config.url) })
@@ -1176,14 +1084,17 @@ export class ConfigService {
     }
 
     async getRBAC(): Promise<RBAC> {
-        return Util.clone(this.config.rbac);
+
+        return this.clone(this.config.rbac);
     }
 
     async getIsConfigured(): Promise<number> {
+        this.isReady(); this.isReadable();
         return this.config.isConfigured;
     }
 
     async setIsConfigured(val: number) {
+        this.isReady(); this.isWritable();
         let previous = this.config.isConfigured;
         this.config.isConfigured = val;
         this.emitEvent({ type: 'updated', path: '/isConfigured', data: this.createTrackEvent(previous, this.config.isConfigured) })
@@ -1193,14 +1104,17 @@ export class ConfigService {
 
     //// group entity
     async getGroup(id: string): Promise<Group | undefined> {
-        return Util.clone(this.config.groups.find(x => x.id == id));
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.groups.find(x => x.id == id));
 
     }
     async getGroupCount() {
+        this.isReady(); this.isReadable();
         return this.config.groups.length;
     }
 
     async getGroupsBySearch(query: string) {
+        this.isReady(); this.isReadable();
         const search = query.toLowerCase();
         const groups = this.config.groups.filter(x => {
             if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(search)))
@@ -1210,19 +1124,20 @@ export class ConfigService {
 
             return false;
         });
-        return groups.map(x => Util.clone(x));
+        return groups.map(x => this.clone(x));
     }
     async getGroupsAll() {
-        return this.config.groups.map(x => Util.clone(x));
+        this.isReady(); this.isReadable();
+        return this.config.groups.map(x => this.clone(x));
     }
 
-    async triggerDeleteGroup(grp: Group) {
+    protected async triggerDeleteGroup(grp: Group) {
 
         let usersChanged: { previous: User, item: User }[] = [];
         this.config.users.forEach(x => {
             let userGroupIndex = x.groupIds.findIndex(y => y == grp.id)
             if (userGroupIndex >= 0) {
-                let cloned = Util.clone(x);
+                let cloned = this.clone(x);
                 x.groupIds.splice(userGroupIndex, 1);
                 usersChanged.push({ previous: cloned, item: x })
             }
@@ -1234,7 +1149,7 @@ export class ConfigService {
         this.config.authenticationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
             if (userIdIndex >= 0) {
-                let cloned = Util.clone(x);
+                let cloned = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
 
                 rulesAuthnChanged.push({ previous: cloned, item: x });
@@ -1246,7 +1161,7 @@ export class ConfigService {
         this.config.authorizationPolicy.rules.forEach(x => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
             if (userIdIndex >= 0) {
-                let cloned = Util.clone(x);
+                let cloned = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
 
                 rulesAuthzChanged.push({ previous: cloned, item: x });
@@ -1275,6 +1190,7 @@ export class ConfigService {
     }
 
     async deleteGroup(id: string) {
+        this.isReady(); this.isWritable();
         const indexId = this.config.groups.findIndex(x => x.id == id);
         const group = this.config.groups.find(x => x.id == id);
         if (indexId >= 0 && group) {
@@ -1288,9 +1204,10 @@ export class ConfigService {
     }
 
     async saveGroup(group: Group) {
+        this.isReady(); this.isWritable();
         let findedIndex = this.config.groups.findIndex(x => x.id == group.id);
         let finded = findedIndex >= 0 ? this.config.groups[findedIndex] : null;
-        const cloned = Util.clone(group);
+        const cloned = this.clone(group);
         if (!finded) {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
@@ -1312,15 +1229,17 @@ export class ConfigService {
 
     //// service entity
     async getService(id: string): Promise<Service | undefined> {
-
-        return Util.clone(this.config.services.find(x => x.id == id));
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.services.find(x => x.id == id));
 
     }
     async getServiceCount() {
+        this.isReady(); this.isReadable();
         return this.config.services.length;
     }
 
     async getServicesBy(query?: string, networkIds?: string[], ids?: string[]) {
+        this.isReady(); this.isReadable();
         const search = query?.toLowerCase();
         let services = !search ? this.config.services : this.config.services.filter(x => {
             if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(search)))
@@ -1346,19 +1265,21 @@ export class ConfigService {
         services.sort((a, b) => {
             return a.name.localeCompare(b.name)
         })
-        return services.map(x => Util.clone(x));
+        return services.map(x => this.clone(x));
     }
 
     async getServicesByNetworkId(networkId: string) {
-        return this.config.services.filter(x => x.networkId == networkId).map(x => Util.clone(x));
+        this.isReady(); this.isReadable();
+        return this.config.services.filter(x => x.networkId == networkId).map(x => this.clone(x));
     }
 
     //// service entity
     async getServicesAll(): Promise<Service[]> {
-
-        return this.config.services.map(x => Util.clone(x));
+        this.isReady(); this.isReadable();
+        return this.config.services.map(x => this.clone(x));
 
     }
+
 
     /**
      * @summary create tracking items
@@ -1366,25 +1287,24 @@ export class ConfigService {
      * @param item 
      * @returns 
      */
-    createTrackEvent(previous?: any, item?: any) {
+    createTrackEvent<T>(previous: T, item?: T): { before?: NonNullable<T>, after?: NonNullable<T> } {
         return {
-            before: Util.isUndefinedOrNull(previous) ? undefined : Util.clone(previous),
-            after: Util.isUndefinedOrNull(item) ? undefined : Util.clone(item)
-
-        }
+            before: Util.isUndefinedOrNull(previous) ? undefined : this.clone(previous),
+            after: Util.isUndefinedOrNull(item) ? undefined : this.clone(item)
+        } as { before?: NonNullable<T>, after?: NonNullable<T> }
     }
     /**
      * @summary tracks an array object, if something changes
      */
     createTrackIndexEvent(item: any, iprevious: number, iitem: number) {
         return {
-            item: Util.clone(item),
+            item: this.clone(item),
             iBefore: iprevious,
             iAfter: iitem
         }
     }
 
-    async triggerServiceDeleted(svc: Service) {
+    protected async triggerServiceDeleted(svc: Service) {
 
         //check authorization
         let rulesAuthzChanged = this.config.authorizationPolicy.rules.filter(x => x.serviceId == svc.id);
@@ -1401,6 +1321,7 @@ export class ConfigService {
     }
 
     async deleteService(id: string) {
+        this.isReady(); this.isWritable();
         const indexId = this.config.services.findIndex(x => x.id == id);
         const svc = this.config.services.find(x => x.id == id);
         if (indexId >= 0 && svc) {
@@ -1413,9 +1334,10 @@ export class ConfigService {
     }
 
     async saveService(service: Service) {
+        this.isReady(); this.isWritable();
         let findedIndex = this.config.services.findIndex(x => x.id == service.id);
         let finded = findedIndex >= 0 ? this.config.services[findedIndex] : null;
-        const cloned = Util.clone(service);
+        const cloned = this.clone(service);
         if (!finded) {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
@@ -1439,7 +1361,8 @@ export class ConfigService {
     //authenticaton  policy
 
     async saveAuthenticationPolicyRule(arule: AuthenticationRule) {
-        const cloned = Util.clone(arule);
+        this.isReady(); this.isWritable();
+        const cloned = this.clone(arule);
         let ruleIndex = this.config.authenticationPolicy.rules.findIndex(x => x.id == arule.id);
         let previous = this.config.authenticationPolicy.rules[ruleIndex];
 
@@ -1452,6 +1375,7 @@ export class ConfigService {
             cloned.updateDate = new Date().toISOString();
 
             this.config.authenticationPolicy.rules.push(cloned);
+            this.config.authenticationPolicy.rulesOrder.push(cloned.id);
             ruleIndex = this.config.authenticationPolicy.rules.length - 1;
             this.emitEvent({ type: 'saved', path: '/authenticationPolicy/rules', data: this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex]) })
         }
@@ -1461,46 +1385,50 @@ export class ConfigService {
         return this.createTrackEvent(previous, this.config.authenticationPolicy.rules[ruleIndex])
     }
     async getAuthenticationPolicy() {
-        return Util.clone(this.config.authenticationPolicy);
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.authenticationPolicy);
     }
 
-    async getAuthenticationPolicyUnsafe() {
-        return this.config.authenticationPolicy;
-    }
     async getAuthenticationPolicyRule(id: string) {
+        this.isReady(); this.isReadable();
         const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
-        return Util.clone(rule);
+        return this.clone(rule);
     }
     async getAuthenticationPolicyRuleCount() {
+        this.isReady(); this.isReadable();
         return this.config.authenticationPolicy.rules.length;
     }
 
     async deleteAuthenticationPolicyRule(id: string) {
+        this.isReady(); this.isWritable();
         const ruleIndex = this.config.authenticationPolicy.rules.findIndex(x => x.id == id);
         const rule = this.config.authenticationPolicy.rules.find(x => x.id == id);
         if (ruleIndex >= 0 && rule) {
             this.config.authenticationPolicy.rules.splice(ruleIndex, 1);
+            this.config.authenticationPolicy.rulesOrder.splice(ruleIndex, 1);
             this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(rule) })
             this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
             await this.saveConfigToFile();
         }
         return this.createTrackEvent(rule);
     }
-    /* async updateAuthenticationPolicyUpdateTime() {
-        this.config.authenticationPolicy.updateDate = new Date().toISOString();
-        await this.saveConfigToFile();
-    } */
-    async updateAuthenticationRulePos(id: string, previous: number, index: number) {
+
+    async updateAuthenticationRulePos(id: string, previous: number, next: string, index: number) {
+        this.isReady(); this.isWritable();
         const currentRule = this.config.authenticationPolicy.rules[previous];
         if (currentRule.id != id)
-            throw new Error('no rule found at this position');
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
         if (previous < 0)
             throw new Error('array index can be negative');
 
+        if (this.config.authenticationPolicy.rulesOrder[index] != next)
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
 
         this.config.authenticationPolicy.rules.splice(previous, 1);
         this.config.authenticationPolicy.rules.splice(index, 0, currentRule);
-        //TODO how to manage
+        this.config.authenticationPolicy.rulesOrder.splice(previous, 1);
+        this.config.authenticationPolicy.rulesOrder.splice(index, 0, currentRule.id);
+
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
         this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
         return this.createTrackIndexEvent(currentRule, previous, index);
@@ -1509,7 +1437,8 @@ export class ConfigService {
     //authorization policy
 
     async saveAuthorizationPolicyRule(arule: AuthorizationRule) {
-        const cloned = Util.clone(arule);
+        this.isReady(); this.isWritable();
+        const cloned = this.clone(arule);
         let ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == arule.id);
         const previous = this.config.authorizationPolicy.rules[ruleIndex];
         if (ruleIndex >= 0) {
@@ -1520,7 +1449,8 @@ export class ConfigService {
             cloned.insertDate = new Date().toISOString();
             cloned.updateDate = new Date().toISOString();
             this.config.authorizationPolicy.rules.push(cloned);
-            ruleIndex = this.config.authenticationPolicy.rules.length - 1;
+            this.config.authorizationPolicy.rulesOrder.push(cloned.id);
+            ruleIndex = this.config.authorizationPolicy.rules.length - 1;
             this.emitEvent({ type: 'saved', path: '/authorizationPolicy/rules', data: this.createTrackEvent(previous, this.config.authorizationPolicy.rules[ruleIndex]) })
         }
 
@@ -1530,34 +1460,54 @@ export class ConfigService {
 
     }
     async getAuthorizationPolicy() {
-        return Util.clone(this.config.authorizationPolicy);
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.authorizationPolicy);
     }
-    async getAuthorizationPolicyUnsafe() {
-        return this.config.authorizationPolicy;
-    }
+
     async getAuthorizationPolicyRule(id: string) {
+        this.isReady(); this.isReadable();
         const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
-        return Util.clone(rule);
+        return this.clone(rule);
     }
 
     async getAuthorizationPolicyRuleCount() {
+        this.isReady(); this.isReadable();
         return this.config.authorizationPolicy.rules.length;
     }
     async deleteAuthorizationPolicyRule(id: string) {
+        this.isReady(); this.isWritable();
         const ruleIndex = this.config.authorizationPolicy.rules.findIndex(x => x.id == id);
         const rule = this.config.authorizationPolicy.rules.find(x => x.id == id);
         if (ruleIndex >= 0 && rule) {
             this.config.authorizationPolicy.rules.splice(ruleIndex, 1);
+            this.config.authorizationPolicy.rulesOrder.splice(ruleIndex, 1);
             this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(rule) })
             this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
             await this.saveConfigToFile();
         }
         return this.createTrackEvent(rule);
     }
-    /*   async updateAuthorizationPolicyUpdateTime() {
-          this.config.authorizationPolicy.updateDate = new Date().toISOString();
-          await this.saveConfigToFile();
-      } */
+
+    async updateAuthorizationRulePos(id: string, previous: number, next: string, index: number) {
+        this.isReady(); this.isWritable();
+        const currentRule = this.config.authorizationPolicy.rules[previous];
+        if (currentRule.id != id)
+            throw new RestfullException(409, ErrorCodes.ErrConflictData, ErrorCodes.ErrConflictData, "no rule");
+        if (previous < 0)
+            throw new Error('array index can be negative');
+
+
+        this.config.authorizationPolicy.rules.splice(previous, 1);
+        this.config.authorizationPolicy.rules.splice(index, 0, currentRule);
+        this.config.authorizationPolicy.rulesOrder.splice(previous, 1);
+        this.config.authorizationPolicy.rulesOrder.splice(index, 0, currentRule.id);
+
+        this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
+        this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
+        return this.createTrackIndexEvent(currentRule, previous, index);
+
+    }
+
 
 
 

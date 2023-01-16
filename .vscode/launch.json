@@ -26,7 +26,8 @@
                 "ES_USER": "elastic",
                 "ES_PASS": "123456",
                 "GATEWAY_ID": "12edf",
-                "LIMITED_MODE": "true"
+                "LIMITED_MODE": "true22",
+                "LOAD_TEST_DATA": "true"
             },
             "outputCapture": "console",
             "console": "integratedTerminal",
@@ -56,7 +57,7 @@
                 "ES_USER": "elastic",
                 "ES_PASS": "ux4eyrkbr47z6sckyf9zmavvgzxgvrzebsh082dumfk59j3b5ti9fvy95s7sybmx",
                 "GATEWAY_ID": "4s6ro4xte8009p96",
-                "LIMITED_MODE": "true"
+                "LIMITED_MODE": "true",
             },
             "outputCapture": "console",
             "console": "integratedTerminal",

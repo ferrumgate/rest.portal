@@ -4,10 +4,20 @@ docker stop redis
 set -e
 docker run --net=host --name redis --rm -d redis
 
-set +e
-docker stop redis2
-set -e
-docker run --name redis2 --rm -d -p 6600:6379 redis
+#set +e
+#docker stop redis2
+#set -e
+#docker run --name redis2 --rm -d -p 6600:6379 redis
+
+#set +e
+#docker stop redisstack
+#set -e
+#docker run --name redisstack --rm -d -p 6380:6379 redis/redis-stack-server
+
+#set +e
+#docker stop redisgears
+#set -e
+#docker run --name redisgears --rm -d -p 6381:6379 redislabs/redisgears:latest
 
 set +e
 #docker stop es

@@ -4,11 +4,11 @@ import { Gateway, GatewayDetail } from "../model/network";
 import { ConfigService } from "./configService";
 import { RedisService } from "./redisService";
 
+/**
+ * @summary @see Gateway related business
+ */
 export class GatewayService {
-    /**
-     * @summary execute gateway business
-         *
-         */
+
 
     constructor(private config: ConfigService, private redisService: RedisService) {
     }
@@ -26,32 +26,23 @@ export class GatewayService {
         return x;
     }
     async getAllAlive(): Promise<GatewayDetail[]> {
-        let pos = '0';
-        let items: GatewayDetail[] = [];
-        while (true) {
-            const [cursor, elements] = await this.redisService.scan(`/gateway/alive/id/*`, pos, 10000, 'hash');
-            pos = cursor;
 
-            const pipeline = await this.redisService.multi();
-            for (const key of elements) {
-                await pipeline.hgetAll(key);
-            }
-            const gdetails = await pipeline.exec() as GatewayDetail[];
-            //parse string values to numbers
-            gdetails.forEach(x => {
-                this.normalize(x);
-
-            })
-            items = items.concat(gdetails)
-            if (!cursor || cursor == '0')
-                break;
-
+        const keys = await this.redisService.getAllKeys('/alive/gateway/id/*', 'hash');
+        const pipeline = await this.redisService.multi();
+        for (const key of keys) {
+            await pipeline.hgetAll(key);
         }
-        return items;
+        const gdetails = await pipeline.exec() as GatewayDetail[];
+        //parse string values to numbers
+        gdetails.filter(x => x).forEach(x => {
+            this.normalize(x);
+
+        })
+        return gdetails;
     }
 
     async getAliveById(id: string) {
-        let key = `/gateway/alive/id/${id}`;
+        let key = `/alive/gateway/id/${id}`;
         const isExists = await this.redisService.containsKey(key);
         if (!isExists) return null;
         const gatewayDetail = await this.redisService.hgetAll(key) as unknown as GatewayDetail;

@@ -306,8 +306,8 @@ describe('tunnelService', () => {
         const hostExits = await simpleRedis.containsKey(`/gateway/12345/tun/tun0`);
         expect(hostExits).to.be.true
 
-        let exists = await simpleRedis.sismember(`/tunnel/configure/12345`, 'randomtunnelid');
-        expect(exists == 1).to.be.true;
+        //let exists = await simpleRedis.sismember(`/tunnel/configure/12345`, 'randomtunnelid');
+        //expect(exists == 1).to.be.true;
 
 
     }).timeout(10000)

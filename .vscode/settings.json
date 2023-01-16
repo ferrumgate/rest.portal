@@ -1,3 +1,4 @@
 {
-    "mochaExplorer.logpanel": true
+    "mochaExplorer.logpanel": true,
+    "mochaExplorer.envPath": "mocha.env"
 }

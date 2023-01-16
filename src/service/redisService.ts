@@ -1,7 +1,7 @@
 
 import * as IORedis from 'ioredis';
 /**
- * redis wrappers
+ * @summary redis pipeline wrapper
  */
 export class RedisPipelineService {
     protected pipeline: IORedis.ChainableCommander;
@@ -11,6 +11,8 @@ export class RedisPipelineService {
     }
     async exec(): Promise<any> {
         const results = await this.pipeline.exec();
+        if (results == null)
+            throw new Error("redis exec failed");
         return results?.map(x => x[1]);
     }
 
@@ -131,7 +133,50 @@ export class RedisPipelineService {
         return this.pipeline;
     }
 
+    async lpush(key: string, values: (string | number)[]) {
+        this.pipeline = await this.pipeline.lpush(key, ...values);
+        return this.pipeline;
+    }
+    async rpush(key: string, values: (string | number)[]) {
+        this.pipeline = await this.pipeline.rpush(key, ...values);
+        return this.pipeline;
+    }
+    async llen(key: string) {
+        this.pipeline = await this.pipeline.llen(key);
+        return this.pipeline;
+    }
+    async lrange(key: string, start: number, stop: number) {
+        this.pipeline = await this.pipeline.lrange(key, start, stop);
+        return this.pipeline;
+    }
+    async lrem(key: string, val: string | number, count = 1) {
+        this.pipeline = await this.pipeline.lrem(key, count, val);
+        return this.pipeline;
+    }
+
+    async lindex(key: string, val: string | number) {
+        this.pipeline = await this.pipeline.lindex(key, val)
+        return this.pipeline;
+    }
+    async lset(key: string, index: number, val: string | number) {
+        this.pipeline = await this.pipeline.lset(key, index, val)
+        return this.pipeline;
+    }
+    async linsertBefore(key: string, ref: string | number, val: string | number) {
+        this.pipeline = await this.pipeline.linsert(key, 'BEFORE', ref, val);
+        return this.pipeline;
+    }
+    async linsertAfter(key: string, ref: string | number, val: string | number) {
+        this.pipeline = await this.pipeline.linsert(key, 'AFTER', ref, val);
+        return this.pipeline;
+    }
+
+
 }
+
+/**
+ * @summary redis functions wrapper
+ */
 export class RedisService {
 
 
@@ -210,6 +255,19 @@ export class RedisService {
             await this.redis.set(key, valueStr)
         else
             await this.redis.set(key, valueStr, 'PX', options.ttl);
+    }
+    async setnx(key: string, value: any, ttl?: number): Promise<void> {
+
+        let valueStr = value;
+        if (typeof value !== 'string' && typeof value !== 'number') {
+            valueStr = JSON.stringify(value);
+        }
+        if (!ttl)
+            await this.redis.set(key, valueStr, 'NX');
+        else {
+            await this.redis.set(key, valueStr, 'PX', ttl, 'NX')
+
+        }
 
     }
     async get<T>(key: string, parse = true): Promise<T | null | undefined> {
@@ -427,12 +485,90 @@ export class RedisService {
         return await this.redis.xtrim(key, 'MINID', pos);
     }
 
-    async lpush(key: string, values: string[]) {
+    async lpush(key: string, values: string | number[]) {
         return await this.redis.lpush(key, ...values);
+    }
+    async rpush(key: string, values: string | number[]) {
+        return await this.redis.rpush(key, ...values);
+    }
+    async llen(key: string) {
+        return await this.redis.llen(key);
+    }
+    async lrange(key: string, start: number, stop: number) {
+        return await this.redis.lrange(key, start, stop);
+    }
+    async lrem(key: string, val: string | number, count = 1) {
+        return await this.redis.lrem(key, count, val);
+    }
+    async linsertBefore(key: string, ref: string | number, val: string | number) {
+        return await this.redis.linsert(key, 'BEFORE', ref, val);
+    }
+    async linsertAfter(key: string, ref: string | number, val: string | number) {
+        return await this.redis.linsert(key, 'AFTER', ref, val);
+    }
+    async lindex(key: string, val: string | number) {
+        return await this.redis.lindex(key, val)
+    }
+    async lset(key: string, index: number, val: string | number) {
+        return await this.redis.lset(key, index, val)
     }
     async smembers(key: string) {
         return await this.redis.smembers(key);
     }
+
+    async getAllKeys(search: string, type?: string) {
+        let pos = "0";
+        let keyList: string[] = [];
+        while (true) {
+            const [cursor, elements] = await this.scan(search, pos, 10000, type);
+            keyList = keyList.concat(elements);
+            if (!cursor || cursor == '0') {
+                break;
+            }
+            pos = cursor;
+        }
+        return keyList;
+    }
+
+    async xgroupCreate(stream: string, grpname: string, pos = '$') {
+        await this.redis.xgroup('CREATE', stream, grpname, pos, 'MKSTREAM')
+    }
+    async xinfoGroups(stream: string) {
+        let arr = await this.redis.xinfo('GROUPS', stream) as [];
+        let results = [];
+        for (const aitem of arr) {
+            let arrItem = aitem as [];
+            let info = {} as { [key: string]: any; };
+            for (let i = 0; i < arrItem.length; i += 2) {
+                if (i + 1 < arrItem.length) {
+                    info[arrItem[i]] = arrItem[i + 1];
+                }
+            }
+            results.push(info);
+        }
+        return results;
+    }
+
+    async xreadGroup(stream: string, groupname: string, consumername: string, count: number, readtimeout: number) {
+        const result = await this.redis.xreadgroup('GROUP', groupname, consumername, 'COUNT', count, 'BLOCK', readtimeout, 'STREAMS', stream, '>') as any;
+        if (!result?.length || !result[0][1]) return [];
+        const items = result[0][1];
+        return items.map((x: any) => {
+            let obj = {
+                xreadPos: x[0],
+            } as any;
+            for (let i = 0; i < x[1].length; i += 2) {
+                if (i + 1 < x[1].length) {
+                    obj[x[1][i]] = x[1][i + 1];
+                }
+            }
+            return obj;
+        })
+    }
+    async xack(stream: string, groupname: string, ids: string[]) {
+        await this.redis.xack(stream, groupname, ...ids);
+    }
+
 
 
 }

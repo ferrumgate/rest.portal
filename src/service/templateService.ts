@@ -2,7 +2,9 @@ import { ConfigService } from "./configService";
 import fs from 'fs';
 
 
-
+/**
+ * @summary template functions for email confirmation, email forgot or etc...
+ */
 export class TemplateService {
   constructor(private config: ConfigService) {
 

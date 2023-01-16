@@ -50,6 +50,33 @@ describe('redisService', () => {
 
     }).timeout(10000)
 
+    it('test setnx', async () => {
+        const simpleRedis = new RedisService('localhost:6379,localhost:6390');
+
+        const result = await simpleRedis.setnx('deneme', 'deneme', 15000);
+        let data = await simpleRedis.get<string>('deneme', false);
+        expect(data).to.equal('deneme');
+        await Util.sleep(5000);
+        await simpleRedis.setnx('deneme', 'deneme', 15000);
+
+
+
+    }).timeout(10000);
+
+    it('test hincr', async () => {
+        const simpleRedis = new RedisService('localhost:6379,localhost:6390');
+
+        const result = await simpleRedis.incr('deneme');
+        let data = await simpleRedis.get<number>('deneme', false);
+        expect(data).to.equal('1');
+        expect(typeof (data) == 'string').to.be.true;
+
+
+
+
+    }).timeout(10000);
+
+
     it('test transaction', async () => {
         const simpleRedis = new RedisService('localhost:6379');
 
@@ -60,6 +87,25 @@ describe('redisService', () => {
         let as = await simpleRedis.get('deneme2', false)
 
         expect(as).to.equal('deneme2');
+
+
+
+    }).timeout(10000)
+
+
+    it('test transaction with error', async () => {
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let pipe = await simpleRedis.multi()
+        await pipe.set('deneme2', 'deneme2', { ttl: '60000' });
+        await pipe.get('deneme2')
+
+        await simpleRedis.set('abc', 'bed');
+        let pipe2 = await simpleRedis.multi();
+        await pipe2.set('deneme2', 'deneme3', { ttl: '60000' });
+        await pipe2.exec();
+
+        const result = await simpleRedis.get('deneme2', false);
 
 
 
@@ -85,7 +131,26 @@ describe('redisService', () => {
 
 
 
+    }).timeout(10000);
+
+    it('test transaction', async () => {
+        const simpleRedis = new RedisService('localhost:6379');
+
+        let pipe = await simpleRedis.multi()
+        await pipe.set('deneme2', 'deneme2', { ttl: '60000' });
+        let pipe2 = await simpleRedis.multi()
+        await pipe2.set('deneme3', 'deneme3', { ttl: '60000' });
+        let results = await pipe2.exec();
+        let as = await simpleRedis.get('deneme2', false);
+        expect(as).to.be.null;
+
+        let as2 = await simpleRedis.get('deneme3', false)
+        expect(as2).to.equal('deneme3')
+
+
+
     }).timeout(10000)
+
 
 
     it('test transaction that will terminate transaction', async () => {
@@ -154,6 +219,8 @@ describe('redisService', () => {
 
 
     }).timeout(10000)
+
+
 
 
     it('redis hget hset hgetAll', async () => {
@@ -374,6 +441,37 @@ describe('redisService', () => {
         await simpleRedis.xtrim(key, `${new Date().getTime() + 10}`);
         const result = await simpleRedis.xread(key, 10, '0', 1000);
         expect(result.length).to.be.equal(0);
+
+
+    }).timeout(20000);
+
+
+    it('redis xinfoGroups', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+        let key = '/test/stream';
+        await simpleRedis.xgroupCreate(key, 'test1', `0`);
+        await simpleRedis.xgroupCreate(key, 'test2', `0`);
+        await simpleRedis.xgroupCreate(key, 'test3', `0`);
+
+        const result = await simpleRedis.xinfoGroups(key);
+        expect(result.length).to.be.equal(3);
+        expect(result[0].name).to.be.equal('test1');
+
+
+
+    }).timeout(20000);
+
+
+    it('redis xreadGroup', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+        let key = '/test/stream';
+        await simpleRedis.xadd(key, { id: 1 });
+        await simpleRedis.xgroupCreate(key, 'test1', `0`);
+
+        const result = await simpleRedis.xreadGroup(key, 'test1', '12', 10, 1000);
+        expect(result.length).to.be.equal(1);
 
 
     }).timeout(20000);

@@ -14,6 +14,7 @@ import { Service } from '../src/model/service';
 import { User } from '../src/model/user';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
 import { ESService } from '../src/service/esService';
+import { Tunnel } from '../src/model/tunnel';
 
 
 
@@ -51,7 +52,7 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService))
+        const policyService = new PolicyService(configService)
         let result = await policyService.checkUserIdOrGroupId(rule, { id: 'x', groupIds: [] } as any)
         expect(result).to.be.false;
 
@@ -84,7 +85,7 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
+        const policyService = new PolicyService(configService);
         let result = await policyService.check2FA(rule, false)
         expect(result).to.be.true;
 
@@ -123,7 +124,7 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
+        const policyService = new PolicyService(configService);
         let result = await policyService.checkIps(rule, '1.2.3,4')
         expect(result).to.be.true;
 
@@ -178,11 +179,11 @@ describe('policyService ', async () => {
         let redisValue = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
         await redisService.hset(`/tunnel/id/testsession`, redisValue);
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
+        const policyService = new PolicyService(configService);
 
         //no tunnel with this key
         try {
-            let result = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'no tunnel')
+            let result = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, undefined)
 
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(1);
@@ -191,10 +192,11 @@ describe('policyService ', async () => {
         //no gateway
 
         try {
-            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: 'non absent gateway' });
-            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
+            const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: 'non absent gateway' };
+            await redisService.hset(`/tunnel/id/testsession`, tun);
+            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, tun)
         } catch (err) { }
-        expect(policyService.errorNumber).to.equal(2);
+        expect(policyService.errorNumber).to.equal(3);
 
 
         //no network
@@ -203,10 +205,11 @@ describe('policyService ', async () => {
             const newGateway = Util.clone<Gateway>(gateway);
             newGateway.networkId = 'not absent';
             configService.config.gateways = [newGateway];
-            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: newGateway.id });
-            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
+            const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: newGateway.id };
+            await redisService.hset(`/tunnel/id/testsession`, tun);
+            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, tun)
         } catch (err) { }
-        expect(policyService.errorNumber).to.equal(4);
+        expect(policyService.errorNumber).to.equal(5);
 
         configService.config.gateways = [gateway];
 
@@ -230,8 +233,9 @@ describe('policyService ', async () => {
         try {
 
             configService.config.gateways = [gateway];
-            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id });
-            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
+            const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
+            await redisService.hset(`/tunnel/id/testsession`, tun);
+            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, tun)
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(10);
 
@@ -243,8 +247,9 @@ describe('policyService ', async () => {
         try {
 
             configService.config.gateways = [gateway];
-            await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id });
-            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, 'testsession')
+            const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
+            await redisService.hset(`/tunnel/id/testsession`, tun);
+            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, tun)
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(0);
 
@@ -311,11 +316,12 @@ describe('policyService ', async () => {
 
         const es = new ESService(esHost, esUser, esPass)
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
+        const policyService = new PolicyService(configService);
 
         //no client with this key
         try {
-            let result = await policyService.authorize(9, service.id)
+
+            let result = await policyService.authorize(null as any, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(1);
@@ -324,22 +330,22 @@ describe('policyService ', async () => {
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession2');
         await redisService.set(`/tunnel/trackId/3`, 'testsession2');
         try {
-            let result = await policyService.authorize(3, service.id)
+            let result = await policyService.authorize({}, service.id)
 
         } catch (err) {
             console.log(err);
         }
-        expect(policyService.authorizeErrorNumber).to.equal(3);
+        expect(policyService.authorizeErrorNumber).to.equal(2);
 
 
         //no user
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
         await redisService.set(`/tunnel/trackId/3`, 'testsession');
         try {
-            let result = await policyService.authorize(3, service.id)
+            let result = await policyService.authorize(redisValue, service.id)
 
         } catch (err) { }
-        expect(policyService.authorizeErrorNumber).to.equal(4);
+        expect(policyService.authorizeErrorNumber).to.equal(3);
 
 
         const user1: User = {
@@ -364,7 +370,7 @@ describe('policyService ', async () => {
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
         await redisService.set(`/tunnel/trackId/3`, 'testsession');
         try {
-            let result = await policyService.authorize(3, service.id)
+            let result = await policyService.authorize(redisValue2, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(5);
@@ -378,7 +384,7 @@ describe('policyService ', async () => {
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
         await redisService.set(`/tunnel/trackId/3`, 'testsession');
         try {
-            let result = await policyService.authorize(3, service.id)
+            let result = await policyService.authorize(redisValue2, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(6);
@@ -389,7 +395,7 @@ describe('policyService ', async () => {
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
         await redisService.set(`/tunnel/trackId/3`, 'testsession');
         try {
-            let result = await policyService.authorize(3, service.id)
+            let result = await policyService.authorize(redisValue2, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(7);
@@ -415,7 +421,7 @@ describe('policyService ', async () => {
         configService.config.authorizationPolicy.rules = [rule];
 
         try {
-            let result = await policyService.authorize(3, service.id)
+            let result = await policyService.authorize(redisValue2, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(100);
@@ -424,7 +430,7 @@ describe('policyService ', async () => {
 
 
         try {
-            let result = await policyService.authorize(3, service.id)
+            let result = await policyService.authorize(redisValue2, service.id)
 
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(0); //success
@@ -490,7 +496,7 @@ describe('policyService ', async () => {
 
 
 
-        const policyService = new PolicyService(configService, new TunnelService(configService, redisService));
+        const policyService = new PolicyService(configService);
         //prepare for test
         net.isEnabled = false; net2.isEnabled = false;
         let result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, true, '1.1.1.1');

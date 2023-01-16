@@ -6,7 +6,9 @@ import { RBACDefault } from "../model/rbac";
 import { Tunnel } from "../model/tunnel";
 import { AuthSession } from "../model/authSession";
 
-
+/**
+ * @summary a helper class, for widely used functions
+ */
 export class HelperService {
 
     static createUser(source: string, username: string, name: string, password?: string) {

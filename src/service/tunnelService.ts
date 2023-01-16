@@ -2,7 +2,7 @@ import { User } from "../model/user";
 import { logger } from "../common";
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { ConfigService } from "./configService";
-import { RedisService } from "./redisService";
+import { RedisService } from "../service/redisService";
 import { Util } from "../util";
 import { Tunnel } from "../model/tunnel";
 import { HelperService } from "./helperService";
@@ -79,7 +79,7 @@ export class TunnelService {
         const tunnel = await this.redisService.hgetAll(key) as unknown as Tunnel;
         if (Object.keys(tunnel)) {
             tunnel.is2FA = Util.convertToBoolean(tunnel.is2FA);
-
+            tunnel.trackId = Util.convertToNumber(tunnel.trackId);
             return tunnel;
         }
         return undefined;
@@ -170,10 +170,10 @@ export class TunnelService {
         HelperService.isValidTunnel(tunnel);
         await this.redisService.set(`/gateway/${tunnel.gatewayId}/tun/${tunnel.tun}`, tunnelKey, { ttl: 5 * 60 * 1000 });
         // add to a list
-        await this.redisService.sadd(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id || '');
-        await this.redisService.expire(`/tunnel/configure/${tunnel.gatewayId}`, 5 * 60 * 1000);
+        //await this.redisService.sadd(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id || '');
+        //await this.redisService.expire(`/tunnel/configure/${tunnel.gatewayId}`, 5 * 60 * 1000);
         // and publish to listener for configuring all network settings to the destination gateway
-        await this.redisService.publish(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id);
+        //await this.redisService.publish(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id);
     }
 
     /**
@@ -195,15 +195,36 @@ export class TunnelService {
     }
 
     async getTunnelKeys() {
-        let pos = "0";
-        let tunnelKeyList: string[] = [];
-        while (true) {
-            const [cursor, elements] = await this.redisService.scan("/tunnel/id/*", pos, 10000, "hash");
-            tunnelKeyList = tunnelKeyList.concat(elements);
+        return await this.redisService.getAllKeys('/tunnel/id/*', 'hash');
+    }
+
+    async getAllValidTunnels(cont: () => boolean) {
+        let page = 0;
+        let pos = '0';
+        let retList: Tunnel[] = [];
+        while (cont) {
+            const [cursor, results] = await this.redisService.scan('/tunnel/id/*', pos, 10000, 'hash');
+            pos = cursor;
+            const pipeline = await this.redisService.multi();
+            for (const key of results) {
+                await pipeline.hgetAll(key);
+            }
+            const tunnels = await pipeline.exec() as Tunnel[];
+            const validTunnels = tunnels.filter(tunnel => {
+                tunnel.is2FA = Util.convertToBoolean(tunnel.is2FA);
+                tunnel.trackId = Util.convertToNumber(tunnel.trackId);
+                return HelperService.isValidTunnelNoException(tunnel) ? false : true;
+            })
+            validTunnels.forEach(x => {
+                if (x.id) {
+                    retList.push(x);
+                }
+            });
+
             if (!cursor || cursor == '0')
                 break;
-            pos = cursor;
+            page++;
         }
-        return tunnelKeyList;
+        return retList;
     }
 }

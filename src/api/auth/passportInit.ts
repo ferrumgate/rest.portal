@@ -22,7 +22,7 @@ export const passportConf: { activeStrategies: string[] } = {
 export async function passportInit(req: any, res: any, next: any) {
 
     const configService = (req.appService as AppService).configService;
-    if (configService.lastUpdateTime != lastConfigServiceUpdateTime) {//if config changed
+    if (await configService.getLastUpdateTime() != lastConfigServiceUpdateTime) {//if config changed
         const auth = await configService.getAuthSettings();
         const domain = await configService.getDomain();
         const url = await configService.getUrl();
@@ -79,7 +79,7 @@ export async function passportInit(req: any, res: any, next: any) {
             activeStrategies.push(saml);
         }
         passportConf.activeStrategies = activeStrategies;
-        lastConfigServiceUpdateTime = configService.lastUpdateTime;
+        lastConfigServiceUpdateTime = await configService.getLastUpdateTime();
 
     }
     next();

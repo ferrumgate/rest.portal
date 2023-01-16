@@ -90,7 +90,7 @@ function createSampleOAuth2(): BaseOAuth {
 
 function createSampleLocal(): AuthLocal {
     return {
-        id: Util.randomNumberString(),
+
         type: 'local',
         baseType: 'local',
         name: 'Local',

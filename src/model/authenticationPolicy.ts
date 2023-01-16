@@ -10,8 +10,9 @@ export interface AuthenticationRule {
     profile: AuthenticationProfile;
     isEnabled: boolean;
     action: 'allow' | 'deny';
-    insertDate: string,
+    insertDate: string;
     updateDate: string;
+
 
 }
 export function cloneAuthenticationRule(val: AuthenticationRule): AuthenticationRule {
@@ -22,12 +23,13 @@ export function cloneAuthenticationRule(val: AuthenticationRule): Authentication
         networkId: val.networkId,
         userOrgroupIds: val.userOrgroupIds ? Array.from(val.userOrgroupIds) : [],
         profile: cloneAuthenticatonProfile(val.profile),
-        isEnabled: val.isEnabled, updateDate: val.updateDate, insertDate: val.insertDate
+        isEnabled: val.isEnabled, updateDate: val.updateDate, insertDate: val.insertDate,
     }
 }
 
 
 export interface AuthenticationPolicy {
     rules: AuthenticationRule[];
+    rulesOrder: string[];
 
 }

@@ -4,7 +4,7 @@ import { RestfullException } from "../restfullException";
 import { ConfigService } from "./configService";
 
 /**
- * services captcha related functions
+ * @summary services captcha related functions
  */
 export class CaptchaService {
 

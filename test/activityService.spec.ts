@@ -24,7 +24,7 @@ describe('activityService', async () => {
     })
 
 
-    const streamKey = '/activity/logs';
+    const streamKey = '/logs/activity';
     const esHost = 'https://192.168.88.250:9200';
     const esUser = "elastic";
     const esPass = '123456';
@@ -41,9 +41,9 @@ describe('activityService', async () => {
         const items = await redis.xread(streamKey, 10, '0', 1000);
         expect(items.length).to.equal(1);
         const item = items[0];
-        const data = Buffer.from(item.data, 'base64').toString();
+        const data = Buffer.from(item.val, 'base64url')
         expect(data).exist;
-        const obj = JSON.parse(data);
+        const obj = Util.jdecode(data);// JSON.parse(data);
         expect(obj).deep.equal(log);
         await service.stop();
 

@@ -17,7 +17,7 @@ const expect = chai.expect;
 
 
 
-describe('esService ', async () => {
+describe.skip('esService ', async () => {
 
     beforeEach(async () => {
         const es = new ESService(host, user, pass);

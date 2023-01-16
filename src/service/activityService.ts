@@ -41,15 +41,15 @@ export class ActivityService {
 
 
     async save(act: ActivityLog) {
-        const base64 = Buffer.from(JSON.stringify(act)).toString('base64')
-        await this.redisService.xadd('/activity/logs', { data: base64, type: 'b64' });
+        const base64 = Util.jencode(act).toString('base64url');// Buffer.from(JSON.stringify(act)).toString('base64url')
+        await this.redisService.xadd('/logs/activity', { val: base64, type: 'b64' });
     }
 
 
 
     async trimStream(min?: string) {
         try {
-            await this.redisService.xtrim('/activity/logs', min || (new Date().getTime() - 1 * 60 * 60 * 1000).toString());
+            await this.redisService.xtrim('/logs/activity', min || (new Date().getTime() - 1 * 60 * 60 * 1000).toString());
 
         } catch (err) {
             logger.error(err);
