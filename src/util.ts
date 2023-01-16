@@ -174,41 +174,40 @@ export const Util = {
     },
     findClientIpAddress: (req: any) => {
         let ip = req.get('x-real-ip');
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('client-ip');
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('Proxy-Client-IP');
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('WL-Proxy-Client-IP');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_X_FORWARDED_FOR');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_X_FORWARDED');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_X_CLUSTER_CLIENT_IP');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_CLIENT_IP');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_FORWARDED_FOR');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_FORWARDED');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('HTTP_VIA');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.get('REMOTE_ADDR');
 
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.ip;
-
-        if (!ip || ip == 'unknown' || Util.isLocalNetwork(ip))
+        if (!ip || ip == 'unknown')
             ip = req.connection.remoteAddress;
 
         if (ip && ip.substr(0, 7) == "::ffff:") {
