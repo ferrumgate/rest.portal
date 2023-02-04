@@ -11,7 +11,6 @@ export { AuditLog } from './model/auditLog';
 export { AuditService } from './service/auditService';
 export { Util } from './util';
 export { WatchService, WatchItem, WatchBufferedWriteService, WatchGroupService } from './service/watchService'
-export { ConfigEvent } from './model/config';
 export { Service } from './model/service';
 export { Tunnel } from './model/tunnel';
 export { Group } from './model/group';

@@ -12,7 +12,7 @@ import { authorizeAsAdmin } from "./commonApi";
 import { RedisService } from "../service/redisService";
 import { Captcha } from "../model/captcha";
 import * as diff from 'deep-object-diff';
-import { EmailSettings } from "../model/emailSettings";
+import { EmailSetting } from "../model/emailSetting";
 import { AuthCommon, AuthLocal, BaseLdap, BaseLocal, BaseOAuth, BaseSaml } from "../model/authSettings";
 import { util } from "chai";
 import { config } from "process";
@@ -36,9 +36,9 @@ routerConfigAuthAuthenticated.get('/common',
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
-        const auth = await configService.getAuthSettings()
+        const common = await configService.getAuthSettingCommon()
 
-        return res.status(200).json(auth.common || {});
+        return res.status(200).json(common || {});
 
     }))
 function copyAuthCommon(common: AuthCommon): AuthCommon {
@@ -64,10 +64,10 @@ routerConfigAuthAuthenticated.put('/common',
         await inputService.checkIfExists(input);
         //make it safe input data
         const safe = copyAuthCommon(input);
-        const { before, after } = await configService.setAuthSettingsCommon(safe);
-        await auditService.logSetAuthSettingsCommon(currentSession, currentUser, before, after);
+        const { before, after } = await configService.setAuthSettingCommon(safe);
+        await auditService.logsetAuthSettingCommon(currentSession, currentUser, before, after);
 
-        const output = await configService.getAuthSettingsCommon();
+        const output = await configService.getAuthSettingCommon();
         return res.status(200).json(output);
 
     }))
@@ -82,7 +82,7 @@ routerConfigAuthAuthenticated.get('/local',
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
-        const local = await configService.getAuthSettingsLocal();
+        const local = await configService.getAuthSettingLocal();
 
         return res.status(200).json(local);
 
@@ -116,15 +116,15 @@ routerConfigAuthAuthenticated.put('/local',
         const auditService = appService.auditService;
 
         await inputService.checkIfExists(input);
-        const db = await configService.getAuthSettingsLocal();
+        const db = await configService.getAuthSettingLocal();
         const safe = copyAuthLocal(input);
         safe.insertDate = db.insertDate;
         safe.updateDate = new Date().toISOString();
 
-        const { before, after } = await configService.setAuthSettingsLocal(safe);
-        await auditService.logSetAuthSettingsLocal(currentSession, currentUser, before, after);
+        const { before, after } = await configService.setAuthSettingLocal(safe);
+        await auditService.logsetAuthSettingLocal(currentSession, currentUser, before, after);
 
-        const local = await configService.getAuthSettingsLocal();
+        const local = await configService.getAuthSettingLocal();
         return res.status(200).json(local);
 
     }))
@@ -242,7 +242,7 @@ routerConfigAuthAuthenticated.put('/oauth/providers',
         safe.updateDate = new Date().toISOString();
 
         const { before, after } = await configService.addAuthSettingOAuth(safe)
-        await auditService.logAddAuthSettingOAuth(currentSession, currentUser, before, after);
+        await auditService.logaddAuthSettingOAuth(currentSession, currentUser, before, after);
 
         return res.status(200).json(safe);
 
@@ -265,7 +265,7 @@ routerConfigAuthAuthenticated.delete('/oauth/providers/:id',
         const item = (await configService.getAuthSettingOAuth()).providers.find(x => x.id == id);
         if (item) {
             const { before } = await configService.deleteAuthSettingOAuth(id);
-            await auditService.logDeleteAuthSettingOAuth(currentSession, currentUser, before);
+            await auditService.logdeleteAuthSettingOAuth(currentSession, currentUser, before);
         }
 
         return res.status(200).json({});
@@ -397,7 +397,7 @@ routerConfigAuthAuthenticated.put('/ldap/providers',
         safe.updateDate = new Date().toISOString();
 
         const { before, after } = await configService.addAuthSettingLdap(safe)
-        await auditService.logAddAuthSettingLdap(currentSession, currentUser, before, after);
+        await auditService.logaddAuthSettingLdap(currentSession, currentUser, before, after);
 
         return res.status(200).json(safe);
 

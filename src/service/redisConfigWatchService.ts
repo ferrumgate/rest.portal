@@ -10,8 +10,8 @@ import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Captcha } from "../model/captcha";
 import { SSLCertificate } from "../model/sslCertificate";
-import { EmailSettings } from "../model/emailSettings";
-import { LogoSettings } from "../model/logoSettings";
+import { EmailSetting } from "../model/emailSetting";
+import { LogoSetting } from "../model/logoSetting";
 import { AuthSettings, BaseOAuth, BaseSaml } from "../model/authSettings";
 import { AuthCommon } from "../model/authSettings";
 import { AuthLocal } from "../model/authSettings";
@@ -22,9 +22,9 @@ import { Service } from "../model/service";
 import NodeCache from "node-cache";
 import { RestfullException } from "../restfullException";
 import { ErrorCodes } from "../restfullException";
-import { ConfigEvent } from "../model/config";
-import { ConfigWatch, RedisConfigService, RPath } from "./redisConfigService";
+import { RedisConfigService } from "./redisConfigService";
 import { SystemLogService } from "./systemLogService";
+import { ConfigWatch, RPath } from "../model/config";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -40,7 +40,7 @@ export interface ItemWithId {
 export class RedisConfigWatchService extends ConfigService {
 
     executeList: WatchItem<ConfigWatch<any>>[] = [];
-    watch: EventEmitter = new EventEmitter();
+    //watch: EventEmitter = new EventEmitter();
     interval: any;
     redisConfig: RedisConfigService;
     isFilled = false;
@@ -48,9 +48,9 @@ export class RedisConfigWatchService extends ConfigService {
     constructor(private redis: RedisService, private redisStream: RedisService,
         systemlog: SystemLogService,
         private followSystemLog: boolean,
-        encryptKey: string, uniqueName = 'redisconfig', configFile?: string) {
+        encryptKey: string, uniqueName = 'redisconfig', configFile?: string, logReadWaitMS = 1000) {
         super(encryptKey, configFile);
-        this.redisConfig = new RedisConfigService(this.redis, this.redisStream, systemlog, encryptKey, uniqueName, configFile);
+        this.redisConfig = new RedisConfigService(this.redis, this.redisStream, systemlog, encryptKey, uniqueName, configFile, logReadWaitMS);
 
     }
 
@@ -61,20 +61,20 @@ export class RedisConfigWatchService extends ConfigService {
      */
     override async start(): Promise<void> {
         if (this.followSystemLog) {
-            await this.redisConfig.systemLogWatcher.logWatcher.events.on('data', (data: WatchItem<ConfigWatch<any>>) => {
+            await this.redisConfig.systemLogWatcher.watcher.events.on('data', (data: WatchItem<ConfigWatch<any>>) => {
                 this.executeList.push(data);
             })
 
             await this.redisConfig.systemLogWatcher.startWatch();
         }
         else {
-            await this.redisConfig.logWatcher.events.on('data', (data: WatchItem<ConfigWatch<any>>) => {
+            await this.redisConfig.logWatcher.watcher.events.on('data', (data: WatchItem<ConfigWatch<any>>) => {
                 this.executeList.push(data);
             })
 
             await this.redisConfig.logWatcher.startWatch();
         }
-        this.interval = await setIntervalAsync(async () => {
+        this.interval = setIntervalAsync(async () => {
             await this.processExecuteList();
         }, 500);
 
@@ -83,14 +83,17 @@ export class RedisConfigWatchService extends ConfigService {
      * @summary stop log watching, and stop config change
      */
     override async stop(): Promise<void> {
-        await this.redisConfig.systemLogWatcher.logWatcher.stopWatch();
+        await this.redisConfig.systemLogWatcher.watcher.stopWatch();
         await this.redisConfig.logWatcher.stopWatch();
         if (this.interval)
             clearIntervalAsync(this.interval);
         this.interval = null;
 
     }
-    override emitEvent(event: ConfigEvent): void {
+    override publishEvent(ev: string, data?: any): void {
+
+    }
+    override emitEvent<T>(event: ConfigWatch<T>): void {
 
     }
     override isReady(): void {
@@ -114,7 +117,7 @@ export class RedisConfigWatchService extends ConfigService {
 
     }
 
-    async fillFromRedis(): Promise<void> {
+    async fillFromRedis(readyEvent = true): Promise<void> {
 
         if (this.isFilled) return;
 
@@ -150,46 +153,15 @@ export class RedisConfigWatchService extends ConfigService {
         this.config.authenticationPolicy.rulesOrder = await this.redisConfig.rListAll('authenticationPolicy/rulesOrder');
         this.config.authorizationPolicy.rules = await this.redisConfig.rGetAll('authorizationPolicy/rules');
         this.config.authorizationPolicy.rulesOrder = await this.redisConfig.rListAll('authorizationPolicy/rulesOrder');
-        this.isFilled = true;
+        this.config.es = await this.redisConfig.rGet('es') || {};
 
+        if (readyEvent) {
+            this.isFilled = true;
+            this.events.emit('ready');
+        }
 
     }
-    /*  protected findParts(path: string) {
- 
- 
- 
-         const list1: RPath[] = ['authenticationPolicy/rulesOrder', 'authorizationPolicy/rulesOrder'];
-         for (const item of list1) {
-             if (path.startsWith(`/config/${item}`)) {
-                 //let id = path.replace('/config', '').replace(item, '').replace('/', '');
-                 return { path: item, id: undefined };
-             }
-         }
-         const list2: RPath[] = ['users', 'groups', 'services', 'networks',
-             'gateways', 'authenticationPolicy/rules', 'authorizationPolicy/rules',
-             'auth/ldap/providers', 'auth/oauth/providers', 'auth/saml/providers']
- 
-         for (const item of list2) {
-             if (path.startsWith(`/config/${item}`)) {
-                 let id = path.replace('/config', '').replace(item, '').replace('/', '');
-                 return { path: item, id: id };
-             }
-         }
- 
-         const list3: RPath[] = ['lastUpdateTime', 'revision', 'version', 'isConfigured', 'domain',
-             'url', 'jwtSSLCertificate', 'sslCertificate', 'caSSLCertificate', 'captcha', 'email', 'logo',
-             'auth/common', 'auth/local']
- 
-         for (const item of list3) {
-             if (path.startsWith(`/config/${item}`)) {
-                 let id = path.replace('/config', '').replace(item, '').replace('/', '');
-                 return { path: item, id: id };
-             }
-         }
- 
- 
-         throw new Error(`not implemented path ${path}`)
-     } */
+
     protected async removeFromArray(arr: ItemWithId[], id: string) {
         let index = arr.findIndex(x => x.id == id)
         if (index >= 0) {
@@ -312,17 +284,23 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'authorizationPolicy/rulesOrder':
                             this.config.authorizationPolicy.rulesOrder = await this.redisConfig.rListAll('authorizationPolicy/rulesOrder');
                             break;
+                        case 'es':
+                            this.config.es = await this.redisConfig.rGet(path) || {};
+                            break;
                         default:
                             throw new Error(`not implemented path ${item.path}`)
                     }
+                    logger.info(`config changed ${watch.val.path} -> ${watch.val.type} id:${watch.val.val?.id || 'unknown'}`)
                     this.executeList.shift();
                     await this.processConfigChanged(watch);
-                    this.watch.emit('configChanged', watch);
-                    this.watch.emit('log', watch);
+                    this.events.emit('configChanged', watch.val);
+                    this.events.emit('log', watch);
+
+
                 } else {
                     this.executeList.shift();
-                    this.watch.emit('data', watch);
-                    this.watch.emit('log', watch);
+                    this.events.emit('data', watch);
+                    this.events.emit('log', watch);
                 }
             }
 

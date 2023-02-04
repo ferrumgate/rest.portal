@@ -5,6 +5,7 @@ import fs from 'fs';
 import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';
+import { AuthLocal } from '../src/model/authSettings';
 
 
 chai.use(chaiHttp);
@@ -18,7 +19,7 @@ describe('registerApi', async () => {
 
     before(async () => {
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
-        await appService.configService.setEmailSettings({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
+        await appService.configService.setEmailSetting({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
 
         await appService.configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
         await appService.configService.saveConfigToFile();
@@ -28,7 +29,7 @@ describe('registerApi', async () => {
     beforeEach(async () => {
         appService.configService.config.users = [];
         await appService.configService.setIsConfigured(1);
-        await appService.configService.setAuthSettings({ local: { isRegister: 1 } })
+        await appService.configService.setAuthSettingLocal({ isRegister: 1 } as any)
 
     })
 
@@ -85,7 +86,7 @@ describe('registerApi', async () => {
     it('POST /register will return 405 because of register not enabled', async () => {
         //we must send right paramters
 
-        await appService.configService.setAuthSettings({ local: { isRegister: 0 } })
+        await appService.configService.setAuthSettingLocal({ isRegister: 0 } as any)
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/register')

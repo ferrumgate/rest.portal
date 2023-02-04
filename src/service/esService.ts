@@ -7,6 +7,13 @@ import { ActivityLog } from '../model/activityLog';
 import { AuditLog } from '../model/auditLog';
 import { ConfigService } from './configService';
 import fsp from 'fs/promises';
+import { ESSetting } from '../model/esSetting';
+import { logger } from '../common';
+import { RedisConfigWatchCachedService } from './redisConfigWatchCachedService';
+import { RedisConfigService } from './redisConfigService';
+import { ConfigWatch } from '../model/config';
+
+const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 export interface ESAuditLog extends AuditLog {
 
 }
@@ -103,40 +110,86 @@ export class ESService {
 
     private auditIndexes: Map<string, string> = new Map<string, string>();
     private activityIndexes: Map<string, string> = new Map<string, string>();
-    private client: ES.Client;
+    private client!: ES.Client;
+    host?: string;
+    username?: string;
+    password?: string;
     /**
      *  
      */
-    constructor(host?: string, username?: string, password?: string) {
+    constructor(configService: ConfigService, host?: string, username?: string, password?: string) {
+        this.host = host;
+        this.username = username;
+        this.password = password;
+    }
+
+    async createClient(force = false) {
+        if (!force && this.client) return;
+        try {
+            if (this.client)
+                await this.client.close();
+        } catch (ignore) {
+            logger.error(ignore);
+        }
+
         let option: ES.ClientOptions = {
-            node: host || 'http://localhost:9200', auth: {
-                username: username || '',
-                password: password || ''
+            node: this.host || 'https://localhost:9200', auth: {
+                username: this.username || '',
+                password: this.password || ''
             },
             tls: { rejectUnauthorized: false },
 
         }
+        this.auditIndexes = new Map<string, string>();
+        this.activityIndexes = new Map<string, string>();
         this.client = new ES.Client(option);
+
+    }
+    async reConfigure(host: string, username?: string, password?: string) {
+        try {
+            if (this.host != host || this.username != username || this.password != password) {
+                logger.info(`reconfigure es to host: ${host}`);
+                this.host = host;
+                this.username = username;
+                this.password = password;
+                await this.createClient(true);
+                //try create some indexes
+                try {
+                    await this.auditCreateIndexIfNotExits({} as any);
+                } catch (err) { logger.error(err); }
+            }
+
+
+        } catch (err) {
+            logger.error(err);
+        }
     }
 
 
     async search(request: any): Promise<any> {
+        await this.createClient();
         request.ignore_unavailable = true;
         return await this.client.search(request);
 
     }
     async getAllIndexes() {
+        await this.createClient();
         const indexes = await this.client.cat.indices({ format: 'json' });
         return indexes.filter(x => x.index).map(x => x.index) as string[];
     }
     async reset() {
+        await this.createClient();
         const allIndexes = await this.getAllIndexes();
         if (allIndexes.length)
             await this.client.indices.delete({ index: allIndexes })
 
     }
+    async deleteIndexes(indexes: string[]) {
+        await this.client.indices.delete({ index: indexes, ignore_unavailable: true })
+    }
 
     async flush(index?: string) {
+        await this.createClient();
         await this.client.indices.flush({
             index: index,
             force: true
@@ -146,7 +199,7 @@ export class ESService {
 
     ////audit 
     async auditCreateIndexIfNotExits(item: AuditLog): Promise<[ESAuditLog, string]> {
-
+        await this.createClient();
         let date = Date.now();
         // let index = 'ferrum-audit-' + dateformat(item.insertDate, 'yyyymmdd');
         let index = 'ferrumgate-audit';
@@ -234,6 +287,7 @@ export class ESService {
 
 
     async auditSave(items: [ESAuditLog, string][]): Promise<void> {
+        await this.createClient();
         let result: any[] = [];
         let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
         mapped.forEach(x => {
@@ -245,6 +299,7 @@ export class ESService {
     }
 
     addToQuery(item: string | undefined, field: string, dest: any[]) {
+
         const items = item?.split(',');
         if (items?.length) {
             let item = {
@@ -300,7 +355,7 @@ export class ESService {
 
 
     async searchAuditLogs(req: SearchAuditLogsRequest) {
-
+        await this.createClient();
         let request = {
             ignore_unavailable: true,
             index: 'ferrumgate-audit',
@@ -358,7 +413,7 @@ export class ESService {
 
     ////audit 
     async activityCreateIndexIfNotExits(item: ActivityLog): Promise<[ESActivityLog, string]> {
-
+        await this.createClient();
         let index = `ferrumgate-activity-${this.dateFormat(item.insertDate)}`;
         let esitem: ESActivityLog =
         {
@@ -532,6 +587,7 @@ export class ESService {
     }
 
     async activitySave(items: [ESActivityLog, string][]): Promise<void> {
+        await this.createClient();
         let result: any[] = [];
         let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
         mapped.forEach(x => {
@@ -564,6 +620,7 @@ export class ESService {
 
     }
     async searchActivityLogs(req: SearchActivityLogsRequest) {
+        await this.createClient();
         let sDate = req.startDate ? new Date(req.startDate) : this.dayBefore(this.OneDayMS);
         let eDate = req.endDate ? new Date(req.endDate) : new Date();
         const dates = this.indexCalculator(sDate, eDate);
@@ -689,7 +746,7 @@ export class ESService {
     }
 
     async getSummaryLoginTry(sreq: SearchSummaryRequest) {
-
+        await this.createClient();
         const { start, end } = this.getSummaryDates(sreq);
 
 
@@ -730,7 +787,7 @@ export class ESService {
 
 
     async getSummary2faCheck(sreq: SearchSummaryRequest) {
-
+        await this.createClient();
         const { start, end } = this.getSummaryDates(sreq);
 
 
@@ -813,7 +870,7 @@ export class ESService {
      * @returns 
      */
     async getSummaryUserLoginSuccess(sreq: SearchSummaryRequest) {
-
+        await this.createClient();
         const { start, end } = this.getSummaryDates(sreq);
 
 
@@ -851,7 +908,7 @@ export class ESService {
      * @returns 
      */
     async getSummaryUserLoginFailed(sreq: SearchSummaryRequest) {
-
+        await this.createClient();
         const { start, end } = this.getSummaryDates(sreq);
 
 
@@ -885,7 +942,7 @@ export class ESService {
     }
 
     async getSummaryCreateTunnel(sreq: SearchSummaryRequest) {
-
+        await this.createClient();
         const { start, end } = this.getSummaryDates(sreq);
 
         const dates = this.indexCalculator(new Date(start), new Date(end));
@@ -916,7 +973,7 @@ export class ESService {
     }
 
     async getSummaryUserLoginTry(sreq: SearchSummaryUserRequest) {
-
+        await this.createClient();
         const { start, end } = this.getSummaryDates(sreq);
 
 
@@ -961,7 +1018,7 @@ export class ESService {
 
 
     async getSummaryUserLoginTryHours(sreq: SearchSummaryUserRequest) {
-
+        await this.createClient();
         const { start, end } = this.getSummaryDates(sreq);
 
 

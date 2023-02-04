@@ -35,14 +35,14 @@ export class WatchService {
     // start tail -f
     async startWatch() {
 
-        this.intervalRead = await setIntervalAsync(async () => {
+        this.intervalRead = setIntervalAsync(async () => {
             await this.read()
         }, 100);
 
     }
     // start tail -f and trim
     async start(startWatch = true) {
-        this.interval = await setIntervalAsync(async () => {
+        this.interval = setIntervalAsync(async () => {
             await this.trim();
         }, this.trimTime);
         if (startWatch)
@@ -152,7 +152,7 @@ export class WatchBufferedWriteService extends WatchService {
 
     override async start(startWatch?: boolean): Promise<void> {
         await super.start(startWatch);
-        this.timerWrite = await setIntervalAsync(async () => {
+        this.timerWrite = setIntervalAsync(async () => {
             await this.pushAllData();
         }, this.readWriteWait);
     }

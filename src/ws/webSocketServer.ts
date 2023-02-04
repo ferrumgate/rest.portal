@@ -133,7 +133,9 @@ export class WebSocketServer extends events.EventEmitter {
     }
 
 
+    async listen() {
 
+    }
     async close() {
         for (const client of this.clients) {
             try {

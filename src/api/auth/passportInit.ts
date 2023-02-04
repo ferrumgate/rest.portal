@@ -23,7 +23,9 @@ export async function passportInit(req: any, res: any, next: any) {
 
     const configService = (req.appService as AppService).configService;
     if (await configService.getLastUpdateTime() != lastConfigServiceUpdateTime) {//if config changed
-        const auth = await configService.getAuthSettings();
+        const oauth = await configService.getAuthSettingOAuth();
+        const ldap = await configService.getAuthSettingLdap();
+        const saml = await configService.getAuthSettingSaml();
         const domain = await configService.getDomain();
         const url = await configService.getUrl();
 
@@ -51,21 +53,21 @@ export async function passportInit(req: any, res: any, next: any) {
         activeStrategies.push(exchangeKey);
         // init google
         oauthGoogleUnuse();
-        const oauthGoogle = auth.oauth?.providers.find(x => x.type == 'google');
+        const oauthGoogle = oauth?.providers.find(x => x.type == 'google');
         if (oauthGoogle && oauthGoogle.isEnabled) {
             const google = oauthGoogleInit(oauthGoogle, url);
             activeStrategies.push(google);
         }
         // init linkedin
         oauthLinkedinUnuse()
-        const oauthLinkedin = auth.oauth?.providers.find(x => x.type == 'linkedin');
+        const oauthLinkedin = oauth?.providers.find(x => x.type == 'linkedin');
         if (oauthLinkedin && oauthLinkedin.isEnabled) {
             const linkedin = oauthLinkedinInit(oauthLinkedin, url);
             activeStrategies.push(linkedin);
         }
         // init active directory
         activeDirectoryUnuse();
-        const activeDirectory = auth.ldap?.providers.find(x => x.type == 'activedirectory');
+        const activeDirectory = ldap?.providers.find(x => x.type == 'activedirectory');
         if (activeDirectory && activeDirectory.isEnabled) {
 
             const activedirectory = activeDirectoryInit(activeDirectory, url);
@@ -73,7 +75,7 @@ export async function passportInit(req: any, res: any, next: any) {
         }
         // init auth0 saml
         samlAuth0Unuse();
-        const auth0 = auth.saml?.providers.find(x => x.type == 'auth0');
+        const auth0 = saml?.providers.find(x => x.type == 'auth0');
         if (auth0 && auth0.isEnabled) {
             const saml = samlAuth0Init(auth0, url);
             activeStrategies.push(saml);

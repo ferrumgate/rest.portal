@@ -28,7 +28,7 @@ describe.skip('userApiForgotPassword', async () => {
     }
     before(async () => {
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
-        await appService.configService.setEmailSettings({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
+        await appService.configService.setEmailSetting({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
 
         await appService.configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
         await appService.configService.saveConfigToFile();
@@ -38,7 +38,7 @@ describe.skip('userApiForgotPassword', async () => {
     beforeEach(async () => {
         appService.configService.config.users = [];
         await appService.configService.setIsConfigured(1);
-        await appService.configService.setAuthSettings({ local: { isForgotPassword: true } })
+        await appService.configService.setAuthSettingLocal({ isForgotPassword: true } as any)
         await redisService.flushAll();
     })
 
@@ -124,7 +124,7 @@ describe.skip('userApiForgotPassword', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         await appService.configService.setIsConfigured(1);
-        await appService.configService.setAuthSettings({ local: { isForgotPassword: false } });
+        await appService.configService.setAuthSettingLocal({ isForgotPassword: false } as any);
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)

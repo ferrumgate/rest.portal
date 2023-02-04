@@ -10,14 +10,13 @@ import { RedisService } from "./redisService";
 import { logger } from "../common";
 import * as odiff from 'deep-object-diff';
 import { Gateway, Network } from "../model/network";
-import { EmailSettings } from "../model/emailSettings";
+import { EmailSetting } from "../model/emailSetting";
 import { Captcha } from "../model/captcha";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthCommon, BaseAuth } from "../model/authSettings";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Group } from "../model/group";
-import { off } from "process";
-import { stringify } from "querystring";
+import { ESSetting } from "../model/esSetting";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -36,6 +35,7 @@ export class AuditService {
         this.trimInterval = setIntervalAsync(async () => {
             await this.trimStream();
         }, 1 * 60 * 60 * 1000)
+
     }
     async trimStream() {
         try {
@@ -45,6 +45,7 @@ export class AuditService {
             logger.error(err);
         }
     }
+
     /**
      * for testing we need this
      */
@@ -131,7 +132,7 @@ export class AuditService {
             `${before?.name || ''}`)
     }
 
-    async logSetEmailSettings(currentSession: AuthSession, currentUser: User, before?: EmailSettings, after?: EmailSettings) {
+    async logSetEmailSetting(currentSession: AuthSession, currentUser: User, before?: EmailSetting, after?: EmailSetting) {
 
         await this.executeSave(currentSession, currentUser, before, after,
             `email settings updated`,
@@ -204,27 +205,27 @@ export class AuditService {
             `${before?.name || ''}`)
 
     }
-    async logAddAuthSettingLdap(currentSession: AuthSession, currentUser: User, before?: BaseAuth, after?: BaseAuth) {
+    async logaddAuthSettingLdap(currentSession: AuthSession, currentUser: User, before?: BaseAuth, after?: BaseAuth) {
         await this.executeSave(currentSession, currentUser, before, after,
             `auth ldap ${before ? 'updated' : 'created'}`,
             `${before?.name || after?.name}`)
     }
-    async logDeleteAuthSettingOAuth(currentSession: AuthSession, currentUser: User, before?: BaseAuth) {
+    async logdeleteAuthSettingOAuth(currentSession: AuthSession, currentUser: User, before?: BaseAuth) {
         await this.executeDelete(currentSession, currentUser, before,
             `auth oauth deleted`,
             `${before?.name || ''}`)
     }
-    async logAddAuthSettingOAuth(currentSession: AuthSession, currentUser: User, before?: BaseAuth, after?: BaseAuth) {
+    async logaddAuthSettingOAuth(currentSession: AuthSession, currentUser: User, before?: BaseAuth, after?: BaseAuth) {
         await this.executeSave(currentSession, currentUser, before, after,
             `auth oauth ${before ? 'updated' : 'created'}`,
             `${before?.name || after?.name}`)
     }
-    async logSetAuthSettingsLocal(currentSession: AuthSession, currentUser: User, before?: BaseAuth, after?: BaseAuth) {
+    async logsetAuthSettingLocal(currentSession: AuthSession, currentUser: User, before?: BaseAuth, after?: BaseAuth) {
         await this.executeSave(currentSession, currentUser, before, after,
             `auth local ${before ? 'updated' : 'created'}`,
             `${before?.name || after?.name}`)
     }
-    async logSetAuthSettingsCommon(currentSession: AuthSession, currentUser: User, before?: AuthCommon, after?: AuthCommon) {
+    async logsetAuthSettingCommon(currentSession: AuthSession, currentUser: User, before?: AuthCommon, after?: AuthCommon) {
         await this.executeSave(currentSession, currentUser, before, after,
             `auth common ${before ? 'updated' : 'created'}`,
             ``)
@@ -275,10 +276,17 @@ export class AuditService {
             `group ${before ? 'updated' : 'created'}`,
             `${before?.name || after?.name}`)
     }
+    async logSetES(currentSession: AuthSession, currentUser: User, before?: ESSetting, after?: ESSetting) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `es settings updated`,
+            ``,)
+    }
 
     async search(req: SearchAuditLogsRequest) {
         return await this.esService.searchAuditLogs(req);
     }
+
 
 
 
@@ -393,6 +401,11 @@ export class ObjectDiffer {
         return msgStr
 
     }
+
+
+
+
+
 
 
 

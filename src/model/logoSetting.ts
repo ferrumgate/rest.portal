@@ -1,7 +1,7 @@
 /**
  * @summary logo 
  */
-export interface LogoSettings {
+export interface LogoSetting {
     defaultPath?: string;
     default?: string;
 }

@@ -142,15 +142,18 @@ describe('configAuthApi ', async () => {
             ]
         }
 
-        await configService.setAuthSettings(auth);
+        await configService.setAuthSettingCommon(auth.common);
+        await configService.setAuthSettingLocal(auth.local);
+
         await configService.setUrl('http://local.ferrumgate.com:8080');
-        await configService.setDomain('ferrumgate.local');
+        await configService.setDomain('ferrumgate.zero');
         await configService.setCaptcha(
             {
                 client: '6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH',
                 server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
             }
         )
+        await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
     })
 
     beforeEach(async () => {
@@ -174,7 +177,21 @@ describe('configAuthApi ', async () => {
                 providers: []
             }
 
-        await configService.setAuthSettings(auth);
+        await configService.setAuthSettingCommon(auth.common);
+        await configService.setAuthSettingLocal(auth.local);
+
+        const tmp = await configService.getAuthSettingLdap();
+        for (const it of tmp.providers) {
+            await configService.deleteAuthSettingLdap(it.id);
+        }
+        const tmp2 = await configService.getAuthSettingOAuth();
+        for (const it of tmp2.providers) {
+            await configService.deleteAuthSettingOAuth(it.id);
+        }
+        const tmp3 = await configService.getAuthSettingSaml();
+        for (const it of tmp3.providers) {
+            await configService.deleteAuthSettingSaml(it.id);
+        }
 
 
     })
@@ -188,7 +205,7 @@ describe('configAuthApi ', async () => {
         const common: AuthCommon = {
             test: ''
         }
-        await configService.setAuthSettingsCommon(common);
+        await configService.setAuthSettingCommon(common);
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -221,7 +238,7 @@ describe('configAuthApi ', async () => {
         const common: AuthCommon = {
             test: ''
         }
-        //await configService.setAuthSettingsCommon(common);
+        //await configService.setAuthSettingCommon(common);
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -239,7 +256,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(200);
         //check if object test property not saved
-        const returned = await configService.getAuthSettingsCommon() as any;
+        const returned = await configService.getAuthSettingCommon() as any;
         expect(returned.test).not.exist;
 
 
@@ -251,7 +268,7 @@ describe('configAuthApi ', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const local = createSampleLocal();
-        await configService.setAuthSettingsLocal(local);
+        await configService.setAuthSettingLocal(local);
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -279,7 +296,7 @@ describe('configAuthApi ', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const local = createSampleLocal();
-        await configService.setAuthSettingsLocal(local);
+        await configService.setAuthSettingLocal(local);
         local.name = 'changed';
         (local as any).fakeProperty = 'fakevalue';// this value will not written to config
 

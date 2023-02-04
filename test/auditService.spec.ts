@@ -18,7 +18,14 @@ const expect = chai.expect;
 
 
 describe('auditService ', async () => {
-
+    const streamKey = '/logs/audit';
+    const esHost = 'https://192.168.88.250:9200';
+    const esUser = "elastic";
+    const esPass = '123456';
+    const config = new ConfigService('fljvc7rm1xfo37imbu3ryc5mfbh9jpm5', `/tmp/${Util.randomNumberString()}`)
+    before(async () => {
+        await config.setES({ host: esHost, user: esUser, pass: esPass })
+    })
     beforeEach(async () => {
 
     })
@@ -53,14 +60,11 @@ describe('auditService ', async () => {
         expect(msgStr).to.equal('.added.surname: null >>> 22,.added.role.sur: null >>> xx,.deleted.gsm: 34 >>> null,.deleted.ops.1: { .name: dea } >>> null,.updated.name: aborted >>> ab,.updated.role.name: acb >>> def,.updated.test.1: 3 >>> 2,.updated.test.2: 4 >>> 3,.updated.ops.0.name: deneme >>> dea2');
     })
 
-    const streamKey = '/logs/audit';
-    const esHost = 'https://192.168.88.250:9200';
-    const esUser = "elastic";
-    const esPass = '123456';
-    const config = new ConfigService('fljvc7rm1xfo37imbu3ryc5mfbh9jpm5', `/tmp/${Util.randomNumberString()}`)
+
     it('saveToRedis', async () => {
 
-        const es = new ESService(esHost, esUser, esPass);
+        const es = new ESService(config, esHost, esUser, esPass);
+        await Util.sleep(1000);//wait for connecting
         const redis = new RedisService();
         await redis.delete(streamKey)
         let audit = {
@@ -82,7 +86,9 @@ describe('auditService ', async () => {
     }).timeout(20000);
 
     it('executeTryCatch', async () => {
-        const es = new ESService(esHost, esUser, esPass)
+
+        const es = new ESService(config, esHost, esUser, esPass);
+        await Util.sleep(1000);//wait for connecting
         const redis = new RedisService();
         const auditService = new AuditService(config, redis, es);
         //expect no error 
@@ -95,7 +101,8 @@ describe('auditService ', async () => {
     }).timeout(20000);
 
     it('executeDelete', async () => {
-        const es = new ESService(esHost, esUser, esPass)
+
+        const es = new ESService(config, esHost, esUser, esPass);
         const redis = new RedisService();
         await redis.delete(streamKey)
         let before = {
@@ -137,7 +144,8 @@ describe('auditService ', async () => {
     }).timeout(20000);
 
     it('executeSave', async () => {
-        const es = new ESService(esHost, esUser, esPass)
+
+        const es = new ESService(config, esHost, esUser, esPass);
         const redis = new RedisService();
         await redis.delete(streamKey)
         let before = {

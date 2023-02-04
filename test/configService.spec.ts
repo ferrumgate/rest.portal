@@ -11,9 +11,10 @@ import { Group } from '../src/model/group';
 import { Service } from '../src/model/service';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
-import { ConfigEvent } from '../src/model/config';
+
 
 import chaiExclude from 'chai-exclude';
+import { ConfigWatch } from '../src/model/config';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -516,8 +517,8 @@ describe('configService', async () => {
         let common: AuthCommon = {
             bla: 'test'
         }
-        await configService.setAuthSettingsCommon(common);
-        const returned = await configService.getAuthSettingsCommon() as any;
+        await configService.setAuthSettingCommon(common);
+        const returned = await configService.getAuthSettingCommon() as any;
         expect(returned).to.be.exist;
         expect(returned.bla).exist;
 
@@ -581,9 +582,9 @@ describe('configService', async () => {
 
         }
         //add
-        await configService.setAuthSettingsLocal(local);
+        await configService.setAuthSettingLocal(local);
 
-        const returned = await configService.getAuthSettingsLocal();
+        const returned = await configService.getAuthSettingLocal();
         expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
 
 
@@ -1439,8 +1440,8 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-        let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
+        let eventDatas: ConfigWatch<any>[] = [];
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
 
@@ -1495,30 +1496,24 @@ describe('configService', async () => {
         expect(configService.config.authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
         expect(configService.config.authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
 
-        expect(eventDatas.length).to.equal(5);
+        expect(eventDatas.length).to.equal(3);
 
-        expect(eventDatas[0].type).to.equal('updated')
-        expect(eventDatas[0].path).to.equal('/authenticationPolicy/rules');
-        expect(eventDatas[0].data.before.id).exist;
-        expect(eventDatas[0].data.after.id).exist;
+        expect(eventDatas[0].type).to.equal('put')
+        expect(eventDatas[0].path).to.equal('authenticationPolicy/rules');
+        expect(eventDatas[0].before.id).exist;
+        expect(eventDatas[0].val.id).exist;
 
-        expect(eventDatas[1].type).to.equal('updated')
-        expect(eventDatas[1].path).to.equal('/authenticationPolicy');
-        expect(eventDatas[1].data).not.exist;
 
-        expect(eventDatas[2].type).to.equal('updated')
-        expect(eventDatas[2].path).to.equal('/authorizationPolicy/rules');
-        expect(eventDatas[2].data.before.id).exist;
-        expect(eventDatas[2].data.after.id).exist;
+        expect(eventDatas[1].type).to.equal('put')
+        expect(eventDatas[1].path).to.equal('authorizationPolicy/rules');
+        expect(eventDatas[1].before.id).exist;
+        expect(eventDatas[1].val.id).exist;
 
-        expect(eventDatas[3].type).to.equal('updated')
-        expect(eventDatas[3].path).to.equal('/authorizationPolicy');
-        expect(eventDatas[3].data).not.exist;
 
-        expect(eventDatas[4].type).to.equal('deleted');
-        expect(eventDatas[4].path).to.equal('/users');
-        expect(eventDatas[4].data.before.id).exist;
-        expect(eventDatas[4].data.after).not.exist;
+        expect(eventDatas[2].type).to.equal('del');
+        expect(eventDatas[2].path).to.equal('users');
+        expect(eventDatas[2].before.id).exist;
+        expect(eventDatas[2].val).not.exist;
 
 
 
@@ -1530,8 +1525,8 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-        let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
+        let eventDatas: ConfigWatch<any>[] = [];
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
 
@@ -1553,16 +1548,16 @@ describe('configService', async () => {
 
 
         expect(eventDatas.length).to.equal(2);
-        expect(eventDatas[0].type).to.equal('saved')
-        expect(eventDatas[0].path).to.equal('/users')
-        expect(eventDatas[0].data.before).not.exist
-        expect(eventDatas[0].data.after.id).to.equal(aUser.id);
+        expect(eventDatas[0].type).to.equal('put')
+        expect(eventDatas[0].path).to.equal('users')
+        expect(eventDatas[0].before).not.exist
+        expect(eventDatas[0].val.id).to.equal(aUser.id);
 
 
-        expect(eventDatas[1].type).to.equal('updated')
-        expect(eventDatas[1].path).to.equal('/users')
-        expect(eventDatas[1].data.before.id).to.equal(aUser.id);
-        expect(eventDatas[1].data.after.id).to.equal(aUser.id);
+        expect(eventDatas[1].type).to.equal('put')
+        expect(eventDatas[1].path).to.equal('users')
+        expect(eventDatas[1].before.id).to.equal(aUser.id);
+        expect(eventDatas[1].val.id).to.equal(aUser.id);
 
     });
 
@@ -1579,8 +1574,8 @@ describe('configService', async () => {
 
 
 
-        let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
+        let eventDatas: ConfigWatch<any>[] = [];
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
 
@@ -1679,42 +1674,38 @@ describe('configService', async () => {
         expect(configService.config.gateways.find(x => x.networkId == network.id)).not.exist;
         expect(configService.config.gateways[0].networkId).to.be.equal('');
 
-        expect(eventDatas.length).to.equal(7);
-        expect(eventDatas[0].type).to.equal('updated')
-        expect(eventDatas[0].path).to.equal('/gateways')
-        expect(eventDatas[0].data.before.id).exist;
-        expect(eventDatas[0].data.before.id).exist;
+        expect(eventDatas.length).to.equal(5);
+        expect(eventDatas[0].type).to.equal('put')
+        expect(eventDatas[0].path).to.equal('gateways')
+        expect(eventDatas[0].before.id).exist;
+        expect(eventDatas[0].val.id).exist;
 
-        expect(eventDatas[1].type).to.equal('deleted')
-        expect(eventDatas[1].path).to.equal('/services');
-        expect(eventDatas[1].data.before.id).exist;
-        expect(eventDatas[1].data.after).not.exist;
+        expect(eventDatas[1].type).to.equal('del')
+        expect(eventDatas[1].path).to.equal('services');
+        expect(eventDatas[1].before.id).exist;
+        expect(eventDatas[1].val).not.exist;
 
-        expect(eventDatas[2].type).to.equal('deleted')
-        expect(eventDatas[2].path).to.equal('/authorizationPolicy/rules');
-        expect(eventDatas[2].data.before.id).exist;
-        expect(eventDatas[2].data.after).not.exist;
-
-        expect(eventDatas[3].type).to.equal('updated')
-        expect(eventDatas[3].path).to.equal('/authorizationPolicy');
-        expect(eventDatas[3].data).not.exist;
+        expect(eventDatas[2].type).to.equal('del')
+        expect(eventDatas[2].path).to.equal('authorizationPolicy/rules');
+        expect(eventDatas[2].before.id).exist;
+        expect(eventDatas[2].val).not.exist;
 
 
 
-        expect(eventDatas[4].type).to.equal('deleted')
-        expect(eventDatas[4].path).to.equal('/authenticationPolicy/rules');
-        expect(eventDatas[4].data.before.id).exist;
-        expect(eventDatas[4].data.after).not.exist;
-
-        expect(eventDatas[5].type).to.equal('updated')
-        expect(eventDatas[5].path).to.equal('/authenticationPolicy');
-        expect(eventDatas[5].data).not.exist;
 
 
-        expect(eventDatas[6].type).to.equal('deleted')
-        expect(eventDatas[6].path).to.equal('/networks');
-        expect(eventDatas[6].data.before.id).exist;
-        expect(eventDatas[6].data.after).not.exist;
+        expect(eventDatas[3].type).to.equal('del')
+        expect(eventDatas[3].path).to.equal('authenticationPolicy/rules');
+        expect(eventDatas[3].before.id).exist;
+        expect(eventDatas[3].val).not.exist;
+
+
+
+
+        expect(eventDatas[4].type).to.equal('del')
+        expect(eventDatas[4].path).to.equal('networks');
+        expect(eventDatas[4].before.id).exist;
+        expect(eventDatas[4].val).not.exist;
 
 
 
@@ -1734,7 +1725,7 @@ describe('configService', async () => {
 
 
 
-        let eventDatas: ConfigEvent[] = [];
+        let eventDatas: ConfigWatch<any>[] = [];
 
 
 
@@ -1749,7 +1740,7 @@ describe('configService', async () => {
         }
 
         await configService.saveGateway(gateway);
-        configService.events.on('changed', (data: ConfigEvent) => {
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
         await configService.deleteGateway(gateway.id);
@@ -1757,10 +1748,10 @@ describe('configService', async () => {
 
 
         expect(eventDatas.length).to.equal(1);
-        expect(eventDatas[0].type).to.equal('deleted')
-        expect(eventDatas[0].path).to.equal('/gateways')
-        expect(eventDatas[0].data.before.id).exist;
-        expect(eventDatas[0].data.after).not.exist;
+        expect(eventDatas[0].type).to.equal('del')
+        expect(eventDatas[0].path).to.equal('gateways')
+        expect(eventDatas[0].before.id).exist;
+        expect(eventDatas[0].val).not.exist;
 
 
     });
@@ -1771,8 +1762,8 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-        let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
+        let eventDatas: ConfigWatch<any>[] = [];
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
 
@@ -1836,31 +1827,25 @@ describe('configService', async () => {
         expect(configService.config.authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aGroup.id))).to.not.exist;
         expect(configService.config.authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
 
-        expect(eventDatas.length).to.equal(6);
-
-        expect(eventDatas[1].type).to.equal('updated')
-        expect(eventDatas[1].path).to.equal('/authenticationPolicy/rules');
-        expect(eventDatas[1].data.before.id).exist;
-        expect(eventDatas[1].data.after.id).exist;
-
-        expect(eventDatas[2].type).to.equal('updated')
-        expect(eventDatas[2].path).to.equal('/authenticationPolicy');
-        expect(eventDatas[2].data).not.exist;
-
-        expect(eventDatas[3].type).to.equal('updated')
-        expect(eventDatas[3].path).to.equal('/authorizationPolicy/rules');
-        expect(eventDatas[3].data.before.id).exist;
-        expect(eventDatas[3].data.after.id).exist;
-
-        expect(eventDatas[4].type).to.equal('updated')
-        expect(eventDatas[4].path).to.equal('/authorizationPolicy');
-        expect(eventDatas[4].data).not.exist;
+        expect(eventDatas.length).to.equal(4);
 
 
-        expect(eventDatas[5].type).to.equal('deleted');
-        expect(eventDatas[5].path).to.equal('/groups');
-        expect(eventDatas[5].data.before.id).exist;
-        expect(eventDatas[5].data.after).not.exist;
+        expect(eventDatas[1].type).to.equal('put')
+        expect(eventDatas[1].path).to.equal('authenticationPolicy/rules');
+        expect(eventDatas[1].before.id).exist;
+        expect(eventDatas[1].val.id).exist;
+
+
+        expect(eventDatas[2].type).to.equal('put')
+        expect(eventDatas[2].path).to.equal('authorizationPolicy/rules');
+        expect(eventDatas[2].before.id).exist;
+        expect(eventDatas[2].val.id).exist;
+
+
+        expect(eventDatas[3].type).to.equal('del');
+        expect(eventDatas[3].path).to.equal('groups');
+        expect(eventDatas[3].before.id).exist;
+        expect(eventDatas[3].val).not.exist;
 
 
 
@@ -1880,8 +1865,8 @@ describe('configService', async () => {
 
 
 
-        let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
+        let eventDatas: ConfigWatch<any>[] = [];
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
 
@@ -1936,32 +1921,22 @@ describe('configService', async () => {
 
         configService.config.authorizationPolicy.rules.push(rule);
 
-
-
         await configService.deleteService(service1.id);
 
         expect(configService.config.authorizationPolicy.rules.find(x => x.serviceId == service1.id)).to.not.exist;
 
 
-        expect(eventDatas.length).to.equal(3);
+        expect(eventDatas.length).to.equal(2);
 
-        expect(eventDatas[0].type).to.equal('deleted')
-        expect(eventDatas[0].path).to.equal('/authorizationPolicy/rules');
-        expect(eventDatas[0].data.before.id).exist;
-        expect(eventDatas[0].data.after).not.exist;
+        expect(eventDatas[0].type).to.equal('del')
+        expect(eventDatas[0].path).to.equal('authorizationPolicy/rules');
+        expect(eventDatas[0].before.id).exist;
+        expect(eventDatas[0].val).not.exist;
 
-        expect(eventDatas[1].type).to.equal('updated')
-        expect(eventDatas[1].path).to.equal('/authorizationPolicy');
-        expect(eventDatas[1].data).not.exist;
-
-
-        expect(eventDatas[2].type).to.equal('deleted')
-        expect(eventDatas[2].path).to.equal('/services');
-        expect(eventDatas[2].data.before.id).exist;
-        expect(eventDatas[2].data.after).not.exist;
-
-
-
+        expect(eventDatas[1].type).to.equal('del')
+        expect(eventDatas[1].path).to.equal('services');
+        expect(eventDatas[1].before.id).exist;
+        expect(eventDatas[1].val).not.exist;
 
 
     });

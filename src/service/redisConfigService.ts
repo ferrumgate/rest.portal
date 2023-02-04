@@ -3,15 +3,15 @@ import { logger } from "../common";
 import { ConfigService } from "./configService";
 import { RedisPipelineService, RedisService } from "../service/redisService";
 import { User } from "../model/user";
-import { WatchService } from "./watchService";
+import { WatchItem, WatchService } from "./watchService";
 import { pipeline } from "stream";
 import { RedLockService } from "./redLockService";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Captcha } from "../model/captcha";
 import { SSLCertificate } from "../model/sslCertificate";
-import { EmailSettings } from "../model/emailSettings";
-import { LogoSettings } from "../model/logoSettings";
+import { EmailSetting } from "../model/emailSetting";
+import { LogoSetting } from "../model/logoSetting";
 import { AuthSettings, BaseOAuth, BaseSaml } from "../model/authSettings";
 import { AuthCommon } from "../model/authSettings";
 import { AuthLocal } from "../model/authSettings";
@@ -22,45 +22,15 @@ import { Service } from "../model/service";
 import NodeCache from "node-cache";
 import { RestfullException } from "../restfullException";
 import { ErrorCodes } from "../restfullException";
-import { ConfigEvent } from "../model/config";
 import { SystemLogService } from "./systemLogService";
+import { ESSetting } from "../model/esSetting";
+import { ConfigWatch, RPath } from "../model/config";
+import { ConfigLogService } from "./configLogService";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
 
-type Nullable<T> = T | null | undefined;
-
-// adding new paths here
-// also effects redisConfigWatchService
-// processExecuteList
-export type RPath =
-    'lastUpdateTime' |
-    'revision' |
-    'version' |
-    'isConfigured' |
-    'domain' |
-    'url' |
-    'auth/common' |
-    'auth/local' |
-    'auth/oauth/providers' |
-    'auth/ldap/providers' |
-    'auth/saml/providers' |
-    'jwtSSLCertificate' |
-    'sslCertificate' |
-    'caSSLCertificate' |
-    'users' |
-    'groups' |
-    'services' |
-    'captcha' |
-    'email' |
-    'logo' |
-    'networks' |
-    'gateways' |
-    'authenticationPolicy/rules' |
-    'authenticationPolicy/rulesOrder' |
-    'authorizationPolicy/rules' |
-    'authorizationPolicy/rulesOrder';
 
 // there paths are select count(*)
 export type RPathCount = 'users/*' |
@@ -74,9 +44,6 @@ export type RPathCount = 'users/*' |
 
 
 
-export interface ConfigWatch<T> {
-    path: string, type: 'del' | 'put', val: T, before?: T
-}
 
 /**
  * @summary save all config to rdis
@@ -86,22 +53,21 @@ export class RedisConfigService extends ConfigService {
     isInitCompleted = false;
     timerInterval: any;
     //timerInterval2: any;
-    lastPos = '$';
+    //lastPos = '$';
     //logs: any[] = [];
 
-    logWatcher: WatchService;
+    logWatcher: ConfigLogService;
     systemLogWatcher: SystemLogService;
     redLock: RedLockService;
     constructor(private redis: RedisService, private redisStream: RedisService,
         systemLog: SystemLogService,
         encryptKey: string,
-        uniqueName = 'redisconfig', configFile?: string) {
+        uniqueName = 'redisconfig', configFile?: string, logWatcherWaitMS = 1000) {
         super(encryptKey, configFile);
         this.systemLogWatcher = systemLog;
-        this.logWatcher = new WatchService(this.redis, this.redisStream, '/logs/config', uniqueName + '/pos',
-            new Date().getTime().toString(),
-            24 * 60 * 60 * 1000,
-            encryptKey, 1000);
+        this.logWatcher =
+            new ConfigLogService(this.redis, this.redisStream, encryptKey, uniqueName + '/pos',
+                logWatcherWaitMS);
         this.redLock = new RedLockService(this.redis);
     }
 
@@ -109,7 +75,7 @@ export class RedisConfigService extends ConfigService {
     override async start() {
         try {
 
-            this.timerInterval = await setIntervalAsync(async () => {
+            this.timerInterval = setIntervalAsync(async () => {
                 await this.init();
             }, 1000)
 
@@ -128,13 +94,16 @@ export class RedisConfigService extends ConfigService {
     protected async logWatcherStop() {
         await this.logWatcher.stop(false);
     }
+    pathCalculate(path: RPath | RPathCount) {
+        return path.startsWith('/') ? `/config${path}` : `/config/${path}`
+    }
     async rCount(path: RPathCount) {
-        const rpath = `/config/${path}`;
+        const rpath = this.pathCalculate(path);
         return (await this.redis.getAllKeys(rpath)).length;
     }
 
     async rGetAll<T>(path: RPath, callback?: (vals: T[]) => void) {
-        const rpath = `/config/${path}`;
+        const rpath = this.pathCalculate(path);
 
         const keys = await this.redis.getAllKeys(`${rpath}/*`);
 
@@ -167,7 +136,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     async rListAll<T>(path: RPath, callback?: (vals: string[]) => T[]) {
-        const rpath = `/config/${path}`;
+        const rpath = this.pathCalculate(path);
         const len = Util.convertToNumber(await this.redis.llen(rpath));
         if (len) {
             const items = await this.redis.lrange(rpath, 0, len);
@@ -177,11 +146,11 @@ export class RedisConfigService extends ConfigService {
         } else return [];
     }
     async rListGetIndex<T>(path: RPath, index: number) {
-        const rpath = `/config/${path}`;
+        const rpath = this.pathCalculate(path);
         return await this.redis.lindex(rpath, index);
     }
     async rListDel(path: RPath, val: string | number, pipeline?: RedisPipelineService) {
-        const rpath = `/config/${path}`;
+        const rpath = this.pathCalculate(path);
         const trx = pipeline || await this.redis.multi();
 
         await trx.lrem(rpath, val);
@@ -192,7 +161,7 @@ export class RedisConfigService extends ConfigService {
             await trx.exec();
     }
     async rListAdd(path: RPath, val: string | number, pushBack: boolean, pipeline?: RedisPipelineService) {
-        const rpath = `/config/${path}`;
+        const rpath = this.pathCalculate(path);
         const trx = pipeline || await this.redis.multi();
         if (pushBack)
             await trx.rpush(rpath, [val]);
@@ -204,7 +173,7 @@ export class RedisConfigService extends ConfigService {
             await trx.exec();
     }
     async rListInsert(path: RPath, val: string | number, refPos: 'BEFORE' | 'AFTER', refVal: string | number, previous: number, current: number, total: number, pipeline?: RedisPipelineService) {
-        const rpath = `/config/${path}`;
+        const rpath = this.pathCalculate(path);
         const trx = pipeline || await this.redis.multi();
         /* if (current == 0)
             await trx.lpush(rpath, [val]);
@@ -222,12 +191,12 @@ export class RedisConfigService extends ConfigService {
             await trx.exec();
     }
     async rListLen(path: RPath) {
-        const rpath = `/config/${path}`;
+        const rpath = this.pathCalculate(path);
         return await this.redis.llen(rpath);
     }
 
     async rGetDirect<T extends number>(path: RPath, callback?: (val: any) => Promise<any>) {
-        let rpath = `/config/${path}`;
+        let rpath = this.pathCalculate(path);
         let dataStr = await this.redis.get(rpath, false) as any;
         if (dataStr) {
             let val = Util.convertToNumber(dataStr)
@@ -242,7 +211,7 @@ export class RedisConfigService extends ConfigService {
     }
 
     async rGet<Nullable>(path: RPath, callback?: (val: Nullable | null) => Promise<Nullable>) {
-        let rpath = `/config/${path}`;
+        let rpath = this.pathCalculate(path);
 
         let dataStr = await this.redis.get(rpath, false) as any;
         if (dataStr) {
@@ -276,10 +245,10 @@ export class RedisConfigService extends ConfigService {
 
 
 
-    async rDel<T>(path: string, data: T, pipeline?: RedisPipelineService, callback?: (val: T, pipeline: RedisPipelineService) => Promise<any>) {
+    async rDel<T>(path: RPath, data: T, pipeline?: RedisPipelineService, callback?: (val: T, pipeline: RedisPipelineService) => Promise<any>) {
         if (data == null || data == undefined) return;
-        let rpath = `/config/${path}`;
-        let wrpath = `/config/${path}`;
+        let rpath = this.pathCalculate(path);
+        let wrpath = this.pathCalculate(path);
         if (typeof (data) == 'object' && (data as any).id)
             rpath += `/${(data as any).id}`;
         const lpipeline = pipeline || await this.redis.multi();
@@ -294,12 +263,12 @@ export class RedisConfigService extends ConfigService {
             await lpipeline.exec();
     }
 
-    async rSave<T>(path: string, before: T | undefined, after: T,
+    async rSave<T>(path: RPath, before: T | undefined, after: T,
         pipeline?: RedisPipelineService,
         extra?: (before: T | undefined, after: T, pipeline: RedisPipelineService) => Promise<void>) {
         if (after == null || after == undefined) return;
-        let rpath = `/config/${path}`;
-        let wrpath = `/config/${path}`;
+        let rpath = this.pathCalculate(path);
+        let wrpath = this.pathCalculate(path);
         if (typeof (after) == 'object' && (after as any).id)
             rpath += `/${(after as any).id}`;
         let dataStr;// = '';
@@ -325,7 +294,7 @@ export class RedisConfigService extends ConfigService {
             await lpipeline.exec();
 
     }
-    async rSaveArray<T>(path: string, data: T[], pipeline?: RedisPipelineService,
+    async rSaveArray<T>(path: RPath, data: T[], pipeline?: RedisPipelineService,
         extra?: (before: T | undefined, after: T, pipeline: RedisPipelineService) => Promise<void>) {
         if (data == null || data == undefined) return;
 
@@ -374,6 +343,7 @@ export class RedisConfigService extends ConfigService {
             this.isInitCompleted = true;
             await this.logWatcherStart()
             await this.afterInit();
+            this.events.emit('ready');
             logger.info("initted config service");
         } catch (err) {
             logger.error(err);
@@ -384,6 +354,7 @@ export class RedisConfigService extends ConfigService {
     protected async afterInit() {
 
     }
+
 
     protected async logWatcherStart() {
         await this.logWatcher.start(false);
@@ -451,14 +422,14 @@ export class RedisConfigService extends ConfigService {
             }, pipeline);
         }
         {
-            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.local");
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.zero");
             await this.rSave('caSSLCertificate', undefined, {
                 privateKey: privateKey,
                 publicKey: publicKey,
             }, pipeline);
         }
         {
-            const { privateKey, publicKey } = await Util.createSelfSignedCrt("secure.ferrumgate.local");
+            const { privateKey, publicKey } = await Util.createSelfSignedCrt("secure.ferrumgate.zero");
             await this.rSave('sslCertificate', undefined, {
                 privateKey: privateKey,
                 publicKey: publicKey,
@@ -469,10 +440,13 @@ export class RedisConfigService extends ConfigService {
 
     }
 
-    override emitEvent(event: ConfigEvent): void {
+    override emitEvent<T>(event: ConfigWatch<T>): void {
         // we need to disabled this,
         // with redis, every change is written to /logs/config file,
         // clients need to follow that file, about changes
+    }
+    override publishEvent(ev: string, data?: any): void {
+        // disable all base events
     }
 
 
@@ -506,6 +480,7 @@ export class RedisConfigService extends ConfigService {
         this.config.gateways = await this.rGetAll('gateways');
         this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
         this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        this.config.es = await this.rGet('es') || {};
 
         return await super.saveConfigToString();
 
@@ -712,22 +687,18 @@ export class RedisConfigService extends ConfigService {
             }
         }
 
-
-
-        rulesAuthnChanged.forEach(x => {
-            this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
-        })
-        if (rulesAuthnChanged.length) {
-            this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
-        }
-        rulesAuthzChanged.forEach(x => {
-            this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
-        })
-        if (rulesAuthzChanged.length) {
-            this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
-        }
-
-        this.emitEvent({ type: 'deleted', path: '/users', data: this.createTrackEvent(user) })
+        /*  rulesAuthnChanged.forEach(x => {
+             const trc = this.createTrackEvent(x.previous, x.item);
+             this.emitEvent({ type: 'put', path: 'authenticationPolicy/rules', val: trc.after, before: trc.after })
+         })
+ 
+         rulesAuthzChanged.forEach(x => {
+             const trc = this.createTrackEvent(x.previous, x.item)
+             this.emitEvent({ type: 'put', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before })
+         })
+ 
+         const trc = this.createTrackEvent(user);
+         this.emitEvent({ type: 'del', path: 'users', val: trc.after, before: trc.before }) */
 
     }
 
@@ -833,22 +804,22 @@ export class RedisConfigService extends ConfigService {
     }
 
     //TODO test
-    override async getEmailSettings(): Promise<EmailSettings> {
+    override async getEmailSetting(): Promise<EmailSetting> {
         this.isReady();
-        this.config.email = await this.rGet<EmailSettings>('email') || {
+        this.config.email = await this.rGet<EmailSetting>('email') || {
             type: 'empty',
             fromname: '', pass: '', user: ''
         };
-        return await super.getEmailSettings();
+        return await super.getEmailSetting();
     }
 
-    override async setEmailSettings(options: EmailSettings) {
+    override async setEmailSetting(options: EmailSetting) {
         this.isReady();
-        this.config.email = await this.rGet<EmailSettings>('email') || {
+        this.config.email = await this.rGet<EmailSetting>('email') || {
             type: 'empty',
             fromname: '', pass: '', user: ''
         };
-        const ret = await super.setEmailSettings(options);
+        const ret = await super.setEmailSetting(options);
         const pipeline = await this.redis.multi();
         await this.rSave('email', ret.before, ret.after, pipeline);
         await this.saveLastUpdateTime(pipeline);
@@ -856,14 +827,14 @@ export class RedisConfigService extends ConfigService {
         return ret;
     }
 
-    override async getLogo(): Promise<LogoSettings> {
+    override async getLogo(): Promise<LogoSetting> {
         this.isReady();
-        this.config.logo = await this.rGet<LogoSettings>('logo') || {};
+        this.config.logo = await this.rGet<LogoSetting>('logo') || {};
         return await super.getLogo();
     }
-    override async setLogo(logo: LogoSettings | {}) {
+    override async setLogo(logo: LogoSetting | {}) {
         this.isReady();
-        this.config.logo = await this.rGet<LogoSettings>('email') || {};
+        this.config.logo = await this.rGet<LogoSetting>('email') || {};
         const ret = await super.setLogo(logo);
         const pipeline = await this.redis.multi();
         await this.rSave('logo', ret.before, ret.after, pipeline);
@@ -882,50 +853,50 @@ export class RedisConfigService extends ConfigService {
         this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
     }
 
-    override async getAuthSettings(): Promise<AuthSettings> {
-        this.isReady();
-        await this.rGetAuthsettings();
-        return await super.getAuthSettings();
+    /*   override async getAuthSettings(): Promise<AuthSettings> {
+          this.isReady();
+          await this.rGetAuthsettings();
+          return await super.getAuthSettings();
+  
+      }
+      override async setAuthSettings(option: AuthSettings | {}) {
+          this.isReady();
+          await this.rGetAuthsettings();
+          const ret = await super.setAuthSettings(option) as { before: AuthSettings, after: AuthSettings };
+          const pipeline = await this.redis.multi();
+          await this.rSave('auth/common', ret.before.common, ret.after, pipeline);
+          await this.rSave('auth/local', ret.before, ret.after, pipeline);
+          if (ret.before.ldap?.providers)
+              for (const it of ret.before.ldap?.providers)
+                  await this.rDel('auth/ldap/providers', it, pipeline);
+          if (ret.before.oauth?.providers)
+              for (const it of ret.before.oauth?.providers)
+                  await this.rDel('auth/oauth/providers', it, pipeline);
+          if (ret.before.saml?.providers)
+              for (const it of ret.before.saml?.providers)
+                  await this.rDel('auth/saml/providers', it, pipeline)
+  
+          if (ret.after.ldap?.providers)
+              for (const it of ret.after.ldap?.providers)
+                  await this.rSave('auth/ldap/providers', undefined, it, pipeline);
+          if (ret.after.oauth?.providers)
+              for (const it of ret.after.oauth?.providers)
+                  await this.rSave('auth/oauth/providers', undefined, it, pipeline);
+          if (ret.after.saml?.providers)
+              for (const it of ret.after.saml?.providers)
+                  await this.rSave('auth/saml/providers', undefined, it, pipeline);
+  
+          await this.saveLastUpdateTime(pipeline);
+          await pipeline.exec();
+  
+          return ret;
+  
+      } */
 
-    }
-    override async setAuthSettings(option: AuthSettings | {}) {
-        this.isReady();
-        await this.rGetAuthsettings();
-        const ret = await super.setAuthSettings(option) as { before: AuthSettings, after: AuthSettings };
-        const pipeline = await this.redis.multi();
-        await this.rSave('auth/common', ret.before.common, ret.after, pipeline);
-        await this.rSave('auth/local', ret.before, ret.after, pipeline);
-        if (ret.before.ldap?.providers)
-            for (const it of ret.before.ldap?.providers)
-                await this.rDel('auth/ldap/providers', it, pipeline);
-        if (ret.before.oauth?.providers)
-            for (const it of ret.before.oauth?.providers)
-                await this.rDel('auth/oauth/providers', it, pipeline);
-        if (ret.before.saml?.providers)
-            for (const it of ret.before.saml?.providers)
-                await this.rDel('auth/saml/providers', it, pipeline)
-
-        if (ret.after.ldap?.providers)
-            for (const it of ret.after.ldap?.providers)
-                await this.rSave('auth/ldap/providers', undefined, it, pipeline);
-        if (ret.after.oauth?.providers)
-            for (const it of ret.after.oauth?.providers)
-                await this.rSave('auth/oauth/providers', undefined, it, pipeline);
-        if (ret.after.saml?.providers)
-            for (const it of ret.after.saml?.providers)
-                await this.rSave('auth/saml/providers', undefined, it, pipeline);
-
-        await this.saveLastUpdateTime(pipeline);
-        await pipeline.exec();
-
-        return ret;
-
-    }
-
-    async setAuthSettingsCommon(common: AuthCommon) {
+    async setAuthSettingCommon(common: AuthCommon) {
         this.isReady();
         this.config.auth.common = await this.rGet<AuthCommon>('auth/common') || {};
-        let ret = await super.setAuthSettingsCommon(common);
+        let ret = await super.setAuthSettingCommon(common);
         const pipeline = await this.redis.multi();
         await this.rSave('auth/common', ret.before, ret.after, pipeline);
         await this.saveLastUpdateTime(pipeline);
@@ -934,26 +905,26 @@ export class RedisConfigService extends ConfigService {
 
 
     }
-    override async getAuthSettingsCommon() {
+    override async getAuthSettingCommon() {
         this.isReady();
         this.config.auth.common = await this.rGet<AuthCommon>('auth/common') || {};
-        return super.getAuthSettingsCommon();
+        return super.getAuthSettingCommon();
     }
 
-    override async setAuthSettingsLocal(local: AuthLocal) {
+    override async setAuthSettingLocal(local: AuthLocal) {
         this.isReady();
         this.config.auth.local = await this.rGet<AuthLocal>('auth/local') || this.createAuthLocal();
-        let ret = await super.setAuthSettingsLocal(local);
+        let ret = await super.setAuthSettingLocal(local);
         const pipeline = await this.redis.multi();
         await this.rSave('auth/local', ret.before, ret.after, pipeline);
         await this.saveLastUpdateTime(pipeline);
         await pipeline.exec();
         return ret;
     }
-    override async getAuthSettingsLocal() {
+    override async getAuthSettingLocal() {
         this.isReady();
         this.config.auth.local = await this.rGet<AuthLocal>('auth/local') || this.createAuthLocal();
-        return super.getAuthSettingsLocal();
+        return super.getAuthSettingLocal();
     }
 
 
@@ -1118,7 +1089,8 @@ export class RedisConfigService extends ConfigService {
             let previous = Util.clone(x);
             x.networkId = '';
             await this.rSave('gateways', previous, x, pipeline);
-            this.emitEvent({ type: "updated", path: '/gateways', data: this.createTrackEvent(previous, x) })
+            /*  const trc = this.createTrackEvent(previous, x);
+             this.emitEvent({ type: "put", path: 'gateways', val: trc.after, before: trc.before }) */
         };
 
         //////////services
@@ -1127,7 +1099,8 @@ export class RedisConfigService extends ConfigService {
         this.config.services = this.config.services.filter(x => x.networkId != net.id);
         for (const x of deleteServices) {
             await this.rDel('services', x, pipeline);
-            this.emitEvent({ type: 'deleted', path: '/services', data: this.createTrackEvent(x) });
+            //const trc = this.createTrackEvent(x)
+            //this.emitEvent({ type: 'del', path: 'services', val: trc.after, before: trc.before });
         }
 
         //// policy authorization
@@ -1136,7 +1109,8 @@ export class RedisConfigService extends ConfigService {
         for (const x of deleteAuthorizationRules) {
             await this.rDel('authorizationPolicy/rules', x, pipeline);
             await this.rListDel('authorizationPolicy/rulesOrder', x.id, pipeline);
-            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) });
+            //const trc = this.createTrackEvent(x);
+            //this.emitEvent({ type: 'del', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before });
         };
         //check one more
         let deleteServicesId = deleteServices.map(x => x.id);
@@ -1145,12 +1119,11 @@ export class RedisConfigService extends ConfigService {
         for (const x of deleteAuthorizatonRules2) {
             await this.rDel('authorizationPolicy/rules', x, pipeline);
             await this.rListDel('authorizationPolicy/rulesOrder', x.id, pipeline);
-            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) });
+            //const trc = this.createTrackEvent(x);
+            //this.emitEvent({ type: 'del', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before });
         }
 
-        if (deleteAuthorizationRules.length || deleteAuthorizatonRules2.length) {
-            this.emitEvent({ type: 'updated', path: '/authorizationPolicy' });
-        }
+
 
         //policy authentication
         let deleteAuthenticationRules = this.config.authenticationPolicy.rules.filter(x => x.networkId == net.id);
@@ -1158,13 +1131,13 @@ export class RedisConfigService extends ConfigService {
         for (const x of deleteAuthenticationRules) {
             await this.rDel('authenticationPolicy/rules', x, pipeline);
             await this.rListDel('authenticationPolicy/rulesOrder', x.id, pipeline);
-            this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(x) });
-        }
-        if (deleteAuthenticationRules.length) {
-            this.emitEvent({ type: 'updated', path: '/authenticationPolicy' });
+            //const trc = this.createTrackEvent(x)
+            //this.emitEvent({ type: 'del', path: 'authenticationPolicy/rules', val: trc.after, before: trc.before });
         }
 
-        this.emitEvent({ type: 'deleted', path: '/networks', data: this.createTrackEvent(net) });
+
+        // const trc = this.createTrackEvent(net)
+        //this.emitEvent({ type: 'del', path: 'networks', val: trc.after, before: trc.before });
 
     }
 
@@ -1368,23 +1341,25 @@ export class RedisConfigService extends ConfigService {
             }
         }
 
-        usersChanged.forEach(x => {
-            this.emitEvent({ type: 'updated', path: '/users', data: this.createTrackEvent(x.previous, x.item) })
-        })
-
-        rulesAuthnChanged.forEach(x => {
-            this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
-        })
-        if (rulesAuthnChanged.length)
-            this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
-        rulesAuthzChanged.forEach(x => {
-            this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x.previous, x.item) })
-        })
-        if (rulesAuthzChanged.length)
-            this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
-
-        this.emitEvent({ type: 'deleted', path: '/groups', data: this.createTrackEvent(grp) })
-
+        /*  usersChanged.forEach(x => {
+             const trc = this.createTrackEvent(x.previous, x.item);
+             this.emitEvent({ type: 'put', path: 'users', val: trc.after, before: trc.before })
+         })
+ 
+         rulesAuthnChanged.forEach(x => {
+             const trc = this.createTrackEvent(x.previous, x.item)
+             this.emitEvent({ type: 'put', path: 'authenticationPolicy/rules', val: trc.after, before: trc.before })
+         })
+ 
+         rulesAuthzChanged.forEach(x => {
+             const trc = this.createTrackEvent(x.previous, x.item);
+             this.emitEvent({ type: 'put', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before })
+         })
+ 
+ 
+         const trc = this.createTrackEvent(grp);
+         this.emitEvent({ type: 'del', path: 'groups', val: trc.after, before: trc.before })
+  */
 
 
     }
@@ -1471,12 +1446,12 @@ export class RedisConfigService extends ConfigService {
         for (const x of rulesAuthzChanged) {
             await this.rDel('authorizationPolicy/rules', x, pipeline);
             await this.rListDel('authorizationPolicy/rulesOrder', x.id, pipeline);
-            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(x) })
+            // const trc = this.createTrackEvent(x);
+            // this.emitEvent({ type: 'del', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before })
         }
-        if (rulesAuthzChanged.length)
-            this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
 
-        this.emitEvent({ type: 'deleted', path: '/services', data: this.createTrackEvent(svc) })
+        //const trc = this.createTrackEvent(svc);
+        //this.emitEvent({ type: 'del', path: 'services', val: trc.after, before: trc.before })
 
     }
 
@@ -1560,8 +1535,9 @@ export class RedisConfigService extends ConfigService {
             await this.rListDel('authenticationPolicy/rulesOrder', rule.id, pipeline);
             await this.saveLastUpdateTime(pipeline);
             await pipeline.exec();
-            this.emitEvent({ type: 'deleted', path: '/authenticationPolicy/rules', data: this.createTrackEvent(rule) })
-            this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
+            // const trc = this.createTrackEvent(rule);
+            // this.emitEvent({ type: 'del', path: 'authenticationPolicy/rules', val: trc.after, before: trc.before })
+
 
         }
         return this.createTrackEvent(rule);
@@ -1589,8 +1565,9 @@ export class RedisConfigService extends ConfigService {
         await this.saveLastUpdateTime(pipeline);
         await pipeline.exec();
 
-        this.emitEvent({ type: 'updated', path: '/authenticationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
-        this.emitEvent({ type: 'updated', path: '/authenticationPolicy' })
+        //  const trc = this.createTrackIndexEvent(currentRule, previous, index);
+        //  this.emitEvent({ type: 'put', path: 'authenticationPolicy/rulesOrder', val: trc.iAfter, before: trc.iBefore })
+
         return this.createTrackIndexEvent(currentRule, previous, index);
 
 
@@ -1649,8 +1626,9 @@ export class RedisConfigService extends ConfigService {
             await this.rListDel('authorizationPolicy/rulesOrder', rule.id, pipeline);
             await this.saveLastUpdateTime(pipeline);
             await pipeline.exec();
-            this.emitEvent({ type: 'deleted', path: '/authorizationPolicy/rules', data: this.createTrackEvent(rule) })
-            this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
+            //const trc = this.createTrackEvent(rule);
+            //this.emitEvent({ type: 'del', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before })
+
 
         }
         return this.createTrackEvent(rule);
@@ -1677,12 +1655,30 @@ export class RedisConfigService extends ConfigService {
         await this.saveLastUpdateTime(pipeline);
         await pipeline.exec();
 
-        this.emitEvent({ type: 'updated', path: '/authorizationPolicy/rules', data: this.createTrackIndexEvent(currentRule, previous, index) })
-        this.emitEvent({ type: 'updated', path: '/authorizationPolicy' })
+        //const trc = this.createTrackIndexEvent(currentRule, previous, index);
+        //this.emitEvent({ type: 'put', path: 'authorizationPolicy/rules', val: trc.iAfter, before: trc.iBefore })
+
         return this.createTrackIndexEvent(currentRule, previous, index);
 
 
     }
+
+    override async setES(conf: ESSetting): Promise<{ before?: ESSetting | undefined; after?: ESSetting | undefined; }> {
+        this.isReady();
+        this.config.es = await this.rGet<ESSetting>('es') || {};
+        let ret = await super.setES(conf);
+        const pipeline = await this.redis.multi();
+        await this.rSave('es', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+    override async getES(): Promise<ESSetting> {
+        this.isReady();
+        this.config.es = await this.rGet<ESSetting>('es') || {};
+        return await super.getES();
+    }
+
 
 
 }
@@ -1705,6 +1701,63 @@ export class RedisCachedConfigService extends RedisConfigService {
             deleteOnExpire: true, stdTTL: 60 * 60, useClones: false
         }
     )
+
+    protected override async afterInit(): Promise<void> {
+        await this.logWatcher.watcher.events.on('data', async (data: WatchItem<ConfigWatch<any>>) => {
+            logger.info(`system changed log received ${data.val.path}`);
+            await this.execute(data);
+        })
+
+        await this.logWatcher.startWatch();
+    }
+
+    //below cache items must follow and clear cache
+    async execute(watch: WatchItem<ConfigWatch<any>>) {
+        try {
+            const item = watch.val;
+            let rpath = item.path;
+            if (rpath.startsWith('/config')) {
+                let path = rpath.substring(8) as RPath;
+                let val = item.val;
+                let type = item.type;
+
+                switch (path) {
+                    case 'jwtSSLCertificate':
+                        this.nodeCache.del('jwtSSLCertificate');
+                        break;
+                    case 'captcha':
+                        this.nodeCache.del('captcha');
+                        break;
+                    case 'domain':
+                        this.nodeCache.del('domain');
+                        break;
+                    case 'url':
+                        this.nodeCache.del('url');
+                        break;
+                    case 'es':
+                        this.nodeCache.del('es');
+                        break;
+                    case 'caSSLCertificate':
+                        this.nodeCache.del('caSSLCertificate');
+                        break;
+                    default:
+                        logger.warn(`not implemented path ${item.path}`)
+                }
+                logger.info(`config changed ${watch.val.path} -> ${watch.val.type} id:${watch.val.val?.id || 'unknown'}`)
+
+                this.events.emit('configChanged', watch.val);
+                this.events.emit('log', watch);
+
+
+            } else {
+                this.events.emit('data', watch);
+                this.events.emit('log', watch);
+            }
+
+        } catch (err) {
+            logger.error(err);
+        }
+    }
 
     override async getJWTSSLCertificate(): Promise<SSLCertificate> {
         const ssl = this.nodeCache.get<SSLCertificate>('jwtSSLCertificate');
@@ -1762,6 +1815,33 @@ export class RedisCachedConfigService extends RedisConfigService {
         this.nodeCache.set('url', ret.after);
         return ret;
     }
+
+    override async setES(conf: ESSetting): Promise<{ before?: ESSetting | undefined; after?: ESSetting | undefined; }> {
+        const ret = await super.setES(conf);
+        this.nodeCache.set('es', ret.after);
+        return ret;
+    }
+    override async getES(): Promise<ESSetting> {
+        const val = this.nodeCache.get<ESSetting>('es');
+        if (val) return val;
+        const sup = await super.getES();
+        this.nodeCache.set('es', sup);
+        return sup;
+    }
+    override async setCASSLCertificate(cert: {} | SSLCertificate): Promise<{ before?: SSLCertificate | undefined; after?: SSLCertificate | undefined; }> {
+        const ret = await super.setCASSLCertificate(cert);
+        this.nodeCache.set('caSSLCertificate', ret.after);
+        return ret;
+    }
+    override async getCASSLCertificate(): Promise<SSLCertificate> {
+        const val = this.nodeCache.get<SSLCertificate>('caSSLCertificate');
+        if (val) return val;
+        const sup = await super.getCASSLCertificate()
+        this.nodeCache.set("caSSLCertificate", sup);
+        return sup;
+    }
+
+
 
 
 

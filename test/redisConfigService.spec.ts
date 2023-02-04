@@ -11,15 +11,16 @@ import { Group } from '../src/model/group';
 import { Service } from '../src/model/service';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
-import { ConfigEvent } from '../src/model/config';
+
 
 import chaiExclude from 'chai-exclude';
-import { ConfigWatch, RedisConfigService } from '../src/service/redisConfigService';
+import { RedisConfigService } from '../src/service/redisConfigService';
 import { RedisService } from '../src/service/redisService';
 import { config } from 'process';
 import { WatchItem } from '../src/service/watchService';
 import { authenticate } from 'passport';
 import { SystemLogService } from '../src/service/systemLogService';
+import { ConfigWatch } from '../src/model/config';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -77,7 +78,7 @@ describe('redisConfigService', async () => {
     it('rDel', async () => {
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         let logs: ConfigWatch<User>[] = [];
-        configService.logWatcher.events.on('data', (data: WatchItem<ConfigWatch<User>>) => {
+        configService.logWatcher.watcher.events.on('data', (data: WatchItem<ConfigWatch<User>>) => {
             logs.push(data.val);
         })
         //await configService.logWatcher.read();
@@ -86,10 +87,10 @@ describe('redisConfigService', async () => {
         const data = await configService.rExists('users/1')
         expect(data).to.be.false;
         await Util.sleep(1000);
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
         await Util.sleep(10000);
         expect(logs.length).to.equal(2);
         expect(logs[0].type).to.equal('put');
@@ -584,59 +585,7 @@ describe('redisConfigService', async () => {
 
     });
 
-    it('setAuthSettings/getAuthSettings', async () => {
 
-        //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.auth = {
-            common: {},
-            local: {} as AuthLocal,
-            ldap: {
-                providers: [
-                    { id: '1' } as BaseLdap
-                ]
-            },
-            oauth: {
-                providers: [
-                    { id: '1' } as BaseOAuth
-                ]
-            },
-            saml: {
-                providers: [
-                    { id: '1' } as BaseSaml
-                ]
-            }
-
-        };
-
-        await configService.init();
-
-        await configService.setAuthSettings({
-            common: {},
-            local: {} as AuthLocal,
-            ldap: {
-                providers: [
-                    { id: '2' } as BaseLdap
-                ]
-            },
-            oauth: {
-                providers: [
-                    { id: '3' } as BaseOAuth
-                ]
-            },
-            saml: {
-                providers: [
-                    { id: '4' } as BaseSaml
-                ]
-            }
-
-        });
-        const db = await configService.getAuthSettings()
-        expect(db.ldap?.providers[0].id).to.equal('2');
-        expect(db.oauth?.providers[0].id).to.equal('3');
-
-
-    });
 
 
     it('authSettingsCommon', async () => {
@@ -647,8 +596,8 @@ describe('redisConfigService', async () => {
         let common: AuthCommon = {
             bla: 'test'
         }
-        await configService.setAuthSettingsCommon(common);
-        const returned = await configService.getAuthSettingsCommon() as any;
+        await configService.setAuthSettingCommon(common);
+        const returned = await configService.getAuthSettingCommon() as any;
         expect(returned).to.be.exist;
         expect(returned.bla).exist;
 
@@ -694,7 +643,7 @@ describe('redisConfigService', async () => {
 
     }).timeout(60000);
 
-    it('setAuthSettingsLocal/getAuthSettingsLocal', async () => {
+    it('setAuthSettingLocal/getAuthSettingLocal', async () => {
 
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
@@ -717,9 +666,9 @@ describe('redisConfigService', async () => {
 
         }
         //add
-        await configService.setAuthSettingsLocal(local);
+        await configService.setAuthSettingLocal(local);
 
-        const returned = await configService.getAuthSettingsLocal();
+        const returned = await configService.getAuthSettingLocal();
         expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
 
 
@@ -1844,8 +1793,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -1903,11 +1852,11 @@ describe('redisConfigService', async () => {
         expect(authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
         expect(authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
 
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
 
 
         expect(logs.length > 0).to.be.true;
@@ -1932,8 +1881,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -1953,11 +1902,11 @@ describe('redisConfigService', async () => {
         aUser.name = 'changed';
 
         await configService.saveUser(aUser);
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
 
         expect(logs.length > 0).to.be.true;
 
@@ -1978,8 +1927,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -2087,8 +2036,8 @@ describe('redisConfigService', async () => {
         expect(gateways.find(x => x.networkId == network.id)).not.exist;
         expect(gateways[0].networkId).to.be.equal('');
 
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
 
         expect(logs.length > 0).to.be.true;
 
@@ -2108,8 +2057,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -2129,8 +2078,8 @@ describe('redisConfigService', async () => {
 
         await configService.deleteGateway(gateway.id);
 
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
         expect(logs.length > 0).to.be.true;
 
 
@@ -2152,8 +2101,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -2224,8 +2173,8 @@ describe('redisConfigService', async () => {
         expect(authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aGroup.id))).to.not.exist;
         expect(authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
 
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
 
         expect(logs.length > 0).to.be.true;
 
@@ -2247,8 +2196,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -2313,8 +2262,8 @@ describe('redisConfigService', async () => {
         const authorizationPolicy = await configService.getAuthorizationPolicy();
         expect(authorizationPolicy.rules.find(x => x.serviceId == service1.id)).to.not.exist;
 
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
 
         expect(logs.length > 0).to.be.true;
 
@@ -2341,6 +2290,21 @@ describe('redisConfigService', async () => {
         const str = await configService.saveConfigToString()
 
         expect(str).exist
+
+    });
+
+
+    it('getES/setES', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.captcha = {};
+        await configService.init();
+
+        await configService.setES({ host: 'abc', user: 'adfa' });
+        const db = await configService.getES()
+        expect(db?.host).to.equal('abc');
+
 
     });
 

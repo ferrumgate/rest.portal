@@ -1,3 +1,4 @@
+import { ConfigService } from "./configService";
 import { RedisService } from "./redisService";
 // TODO move dhcp codes to here,
 /**
@@ -7,7 +8,7 @@ export class DhcpService {
     /**
      *
      */
-    constructor(private redis: RedisService) {
+    constructor(private configService: ConfigService, private redis: RedisService) {
 
 
     }

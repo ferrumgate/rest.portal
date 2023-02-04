@@ -126,7 +126,8 @@ describe('auditApi ', async () => {
 
     it('/log/audit', async () => {
 
-        const es = new ESService(host, user, pass);
+        const es = new ESService(configService, host, user, pass);
+        await Util.sleep(1000);//wait for connecting
         await es.reset();
         const { audit1, audit2, audit3 } = createSampleData2();
         let data = await es.auditCreateIndexIfNotExits(audit1);
@@ -146,7 +147,7 @@ describe('auditApi ', async () => {
             await Util.sleep(5000);
         }
 
-
+        await appService.startReconfigureES();
         const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum');
 

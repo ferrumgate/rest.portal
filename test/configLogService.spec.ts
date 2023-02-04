@@ -4,7 +4,7 @@ import chaiHttp from 'chai-http';
 import fs, { read } from 'fs';
 import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
-import { SystemLogService } from '../src/service/systemLogService';
+import { ConfigLogService } from '../src/service/configLogService';
 import { RedisService, Util } from '../src/lib';
 
 
@@ -14,7 +14,7 @@ const expect = chai.expect;
 
 
 
-describe('systemLogService', async () => {
+describe('configLogService', async () => {
 
     const redis = new RedisService();
     const redisStream = new RedisService();
@@ -24,7 +24,7 @@ describe('systemLogService', async () => {
     })
     it('write/read', async () => {
 
-        const log = new SystemLogService(redis, redisStream);
+        const log = new ConfigLogService(redis, redisStream);
         let readedData = null;
         log.watcher.events.on('data', (data: any) => {
             readedData = data;
@@ -32,7 +32,7 @@ describe('systemLogService', async () => {
         await log.startWatch();
         await log.start();
         await log.write({ 'path': '/test', type: 'put', 'val': { id: 1 } });
-        await Util.sleep(5000);
+        await Util.sleep(2000);
         expect(readedData).exist;
         console.log(readedData);
         expect((readedData as any).val.type).to.equal('put');
@@ -44,7 +44,7 @@ describe('systemLogService', async () => {
 
     it('write/read encrypted', async () => {
 
-        const log = new SystemLogService(redis, redisStream, 'es7lcqz73ftr5f846oy8evpmivhzkvqb', 'test2');
+        const log = new ConfigLogService(redis, redisStream, 'es7lcqz73ftr5f846oy8evpmivhzkvqb', 'test2');
         let readedData = null;
         log.watcher.events.on('data', (data: any) => {
             readedData = data;

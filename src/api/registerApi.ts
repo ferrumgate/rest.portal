@@ -27,8 +27,8 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
         logger.warn(`system is not configured yet`);
         throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
     }
-    const authSettings = await configService.getAuthSettings();
-    if (!authSettings.local.isRegister) {
+    const local = await configService.getAuthSettingLocal();
+    if (!local.isRegister) {
         logger.warn(`register is not allowed`);
         throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, ErrorCodes.ErrMethodNotAllowed, "register not enabled");
     }

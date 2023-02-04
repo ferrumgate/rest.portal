@@ -28,6 +28,9 @@ const expect = chai.expect;
 
 describe('policyService ', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+    const host = 'https://192.168.88.250:9200';
+    const user = 'elastic';
+    const pass = '123456';
     beforeEach((done) => {
 
         if (fs.existsSync(filename))
@@ -37,6 +40,7 @@ describe('policyService ', async () => {
     it('checkUserIdOrGroupId', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
@@ -70,6 +74,7 @@ describe('policyService ', async () => {
     it('check2FA', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
@@ -107,6 +112,7 @@ describe('policyService ', async () => {
     it('checkIps', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
@@ -151,6 +157,7 @@ describe('policyService ', async () => {
     it('authenticate', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
 
         const net: Network = {
@@ -270,6 +277,7 @@ describe('policyService ', async () => {
     it('authorize', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
 
         const net: Network = {
@@ -314,7 +322,7 @@ describe('policyService ', async () => {
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
         await redisService.set(`/tunnel/trackId/3`, 'testsession');
 
-        const es = new ESService(esHost, esUser, esPass)
+        const es = new ESService(configService, esHost, esUser, esPass);
 
         const policyService = new PolicyService(configService);
 
@@ -439,6 +447,7 @@ describe('policyService ', async () => {
     it('userNetworks', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
 
         const net: Network = {

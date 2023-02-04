@@ -3,7 +3,7 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { ConfigService } from '../src/service/configService';
 import { Email, EmailService } from '../src/service/emailService';
-import { EmailSettings } from '../src/model/emailSettings';
+import { EmailSetting } from '../src/model/emailSetting';
 import { Util } from '../src/util';
 
 
@@ -22,7 +22,7 @@ describe.skip('emailService ', async () => {
     it('send email through gmail', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         let config = new ConfigService('wt99Z3MDQgdTSQKU1gfzZkBLkUN2PBMLFtR0vjCSjlYvSq9U', filename)
-        config.setEmailSettings({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: 'nqquxankumksakon' });
+        config.setEmailSetting({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: 'nqquxankumksakon' });
         const emailService = new EmailService(config);
         const email: Email = {
             subject: `test ${new Date().toISOString()}`, to: 'hamza@hamzakilic.com', text: `test ${new Date().toISOString()}`
@@ -37,12 +37,12 @@ describe.skip('emailService ', async () => {
     it('send email with gmail', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         let config = new ConfigService('wt99Z3MDQgdTSQKU1gfzZkBLkUN2PBMLFtR0vjCSjlYvSq9U', filename)
-        const settings: EmailSettings = {
+        const settings: EmailSetting = {
             fromname: 'ferrumgate',
             type: 'google', user: 'ferrumgates@gmail.com',
             pass: 'nqquxankumksakon'
         };
-        config.setEmailSettings(settings);
+        config.setEmailSetting(settings);
 
         const emailService = new EmailService(config);
         const email: Email = {

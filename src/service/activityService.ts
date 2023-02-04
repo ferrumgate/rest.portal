@@ -10,7 +10,7 @@ import { RedisService } from "./redisService";
 import { logger } from "../common";
 import * as odiff from 'deep-object-diff';
 import { Gateway, Network } from "../model/network";
-import { EmailSettings } from "../model/emailSettings";
+import { EmailSetting } from "../model/emailSetting";
 import { Captcha } from "../model/captcha";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { BaseAuth } from "../model/authSettings";
@@ -33,7 +33,6 @@ export class ActivityService {
     trimInterval: any;
 
     constructor(private redisService: RedisService, private esService: ESService) {
-
         this.trimInterval = setIntervalAsync(async () => {
             await this.trimStream();
         }, 1 * 60 * 60 * 1000)

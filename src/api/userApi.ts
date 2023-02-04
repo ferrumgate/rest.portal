@@ -82,8 +82,8 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
         logger.warn(`system is not configured yet`);
         throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
     }
-    const authSettings = await configService.getAuthSettings();
-    if (!authSettings.local.isForgotPassword) {
+    const local = await configService.getAuthSettingLocal();
+    if (!local.isForgotPassword) {
         logger.warn(`forgotpassword is not allowed`);
         throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, ErrorCodes.ErrMethodNotAllowed, "forgotpassword not enabled");
     }

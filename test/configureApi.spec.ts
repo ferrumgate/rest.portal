@@ -185,7 +185,7 @@ describe('configureApi ', async () => {
                 .send({
                     email: 'test5@test.com', password: 'somePassword123',
                     url: 'https://secure.ferrumgate.com',
-                    domain: 'ferrumgate.local',
+                    domain: 'ferrumgate.zero',
                     serviceNetwork: '10.0.0.0/16',
                     clientNetwork: '172.18.18.0/24',
                     sshHost: '1.2.3.4:1111'
