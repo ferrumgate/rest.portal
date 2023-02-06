@@ -91,6 +91,9 @@ describe('authApi', async () => {
                 insertDate: new Date().toISOString(),
                 updateDate: new Date().toISOString()
             },
+            ldap: { providers: [] },
+            oauth: { providers: [] },
+            saml: { providers: [] }
 
         }
         auth.oauth = {

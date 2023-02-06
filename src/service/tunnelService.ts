@@ -8,6 +8,7 @@ import { Tunnel } from "../model/tunnel";
 import { HelperService } from "./helperService";
 import { getNetworkByGatewayId } from "../api/commonApi";
 import { AuthSession } from "../model/authSession";
+import { DhcpService } from "./dhcpService";
 
 
 /**
@@ -19,13 +20,13 @@ export class TunnelService {
      *
      */
 
-    lastUsedIps: Map<string, bigint> = new Map();
-    lastUsedTrackId: number = 0;
-    constructor(private config: ConfigService, private redisService: RedisService) {
+    //lastUsedIps: Map<string, bigint> = new Map();
+    //lastUsedTrackId: number = 0;
+    constructor(private config: ConfigService, private redisService: RedisService, private dhcp: DhcpService) {
 
 
     }
-    async getEmptyTrackId() {
+    /* async getEmptyTrackId() {
         for (let i = this.lastUsedTrackId + 1; i < 4294967295; ++i) {
             const isExists = await this.redisService.containsKey(`/tunnel/trackId/${i}`);
             if (!isExists)
@@ -69,7 +70,7 @@ export class TunnelService {
 
         logger.fatal("tunnel ip pool is over");
         throw new RestfullException(500, ErrorCodes.ErrIpAssignFailed, ErrorCodesInternal.ErrIpPoolIsOver, 'ip pool is over');
-    }
+    } */
     async getNetwork(tunnel: Tunnel) {
         const network = getNetworkByGatewayId(this.config, tunnel.gatewayId);
         return network;
@@ -102,20 +103,22 @@ export class TunnelService {
         //security check
         if (!tunnel.authenticatedTime) {
             //peer ip must be set before 
-            const { network, ip } = await this.getEmptyIp(tunnel.gatewayId || '');
-            const { trackId } = await this.getEmptyTrackId();
+            const { network, ip } = await this.dhcp.getEmptyIp(tunnel.gatewayId || '');
+            const { trackId } = await this.dhcp.getEmptyTrackId();
             const ipstr = Util.bigIntegerToIp(ip);
-            this.lastUsedIps.set(network.id, ip);
-            this.lastUsedTrackId = trackId;
-            await this.redisService.hset(key, { assignedClientIp: ipstr, trackId: trackId, userId: user.id, sessionId: session.id, is2FA: session.is2FA });
+            //this.lastUsedIps.set(network.id, ip);
+            //this.lastUsedTrackId = trackId;
+            const pipeline = await this.redisService.multi();
+            await pipeline.hset(key, { assignedClientIp: ipstr, trackId: trackId, userId: user.id, sessionId: session.id, is2FA: session.is2FA });
+            await pipeline.expire(key, 5 * 60 * 1000);
+            await pipeline.exec();
             //await redisService.sadd(this.clientNetworkUsedList, Util.bigIntegerToIp(ip));
             //all client checking will be over this ip
             //client will set this ip to its interface
             // then will confirm ok
             // and system will prepare additional network settings
-            await this.redisService.set(`/tunnel/ip/${ipstr}`, tunnelKey, { ttl: 7 * 60 * 1000 });
-            await this.redisService.set(`/tunnel/trackId/${trackId}`, tunnelKey, { ttl: 7 * 60 * 1000 });
-
+            await this.dhcp.leaseIp(ipstr, tunnelKey);
+            await this.dhcp.leaseTrackId(trackId, tunnelKey);
 
 
             await this.redisService.hset(key, { authenticatedTime: new Date().toISOString() });
@@ -146,13 +149,13 @@ export class TunnelService {
         HelperService.isValidTunnel(tunnel);
         const tmp = tunnel.assignedClientIp;
         //peer ip must be set before 
-        const { network, ip } = await this.getEmptyIp(tunnel.gatewayId || '');
+        const { network, ip } = await this.dhcp.getEmptyIp(tunnel.gatewayId || '');
         const ipstr = Util.bigIntegerToIp(ip);
-        this.lastUsedIps.set(network.id, ip);
+        //this.lastUsedIps.set(network.id, ip);
         await this.redisService.hset(key, { assignedClientIp: ipstr });
-        await this.redisService.set(`/tunnel/ip/${ipstr}`, tunnelKey, { ttl: 7 * 60 * 1000 });
+        await this.dhcp.leaseIp(ipstr, tunnelKey);
         if (tmp)
-            await this.redisService.delete(`/tunnel/ip/${tmp}`);
+            await this.dhcp.releaseIp(tmp);
         await this.redisService.expire(`/gateway/${tunnel.gatewayId}/tun/${tunnel.tun}`, 5 * 60 * 1000);
         await this.redisService.expire(key, 5 * 60 * 1000);
         return await this.redisService.hgetAll(key) as unknown as Tunnel;

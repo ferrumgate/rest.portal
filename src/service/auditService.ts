@@ -282,6 +282,18 @@ export class AuditService {
             `es settings updated`,
             ``,)
     }
+    async logConfigExport(currentSession: AuthSession, currentUser: User) {
+
+        await this.executeSave(currentSession, currentUser, undefined, undefined,
+            `config exported`,
+            ``,)
+    }
+    async logConfigImport(currentSession: AuthSession, currentUser: User) {
+
+        await this.executeSave(currentSession, currentUser, undefined, undefined,
+            `config imported`,
+            ``,)
+    }
 
     async search(req: SearchAuditLogsRequest) {
         return await this.esService.searchAuditLogs(req);

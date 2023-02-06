@@ -8,6 +8,7 @@ import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { AuthSettings } from '../src/model/authSettings';
 import { EmailSetting } from '../src/model/emailSetting';
+import yaml from 'yaml';
 
 
 chai.use(chaiHttp);
@@ -56,6 +57,9 @@ describe('configApi ', async () => {
                 insertDate: new Date().toISOString(),
                 updateDate: new Date().toISOString()
             },
+            saml: { providers: [] },
+            ldap: { providers: [] },
+            oauth: { providers: [] }
 
         }
         auth.oauth = {
@@ -564,6 +568,122 @@ describe('configApi ', async () => {
 
         expect(response.status).to.equal(200);
         expect(response.body.error).to.equal('');
+
+
+    }).timeout(50000);
+
+
+    it('GET /config/export will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const newValues = {
+            host: 'https://192.168.88.250:9200',
+            user: 'elastic',
+            pass: '123456'
+        }
+        const binaryParser = function (res: any, cb: any) {
+            res.setEncoding("binary");
+            res.data = "";
+            res.on("data", function (chunk: any) {
+                res.data += chunk;
+            });
+            res.on("end", function () {
+                cb(null, new Buffer(res.data, "binary"));
+            });
+        };
+        await appService.configService.setES(newValues);
+
+
+        let response2: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/config/export/key')
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response2.status).to.equal(200);
+        expect(response2.body.key).exist;
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/config/export/' + response2.body.key)
+                .set(`Authorization`, `Bearer ${token}`)
+                .buffer()
+                .parse(binaryParser)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        const buffer = response.body;
+        expect(buffer.length).exist;
+        const randomFilename = Util.randomNumberString();
+        const tmp = `/tmp/${randomFilename}`;
+        fs.writeFileSync(tmp, buffer);
+
+
+
+        const fileContent = Util.decrypt(response2.body.key, fs.readFileSync(tmp).toString());
+        const config = yaml.parse(fileContent);
+        expect(config).exist;
+
+
+    }).timeout(50000);
+
+
+    it('POST /config/import/:key will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const newValues = {
+            host: 'https://192.168.88.250:9200',
+            user: 'elastic',
+            pass: '123456'
+        }
+
+        await appService.configService.setES(newValues);
+        const randomfile = `/tmp/${Util.randomNumberString()}.txt`;
+        const key = Util.randomNumberString(32);
+        const str = Util.encrypt(key, 'hello world');
+        fs.writeFileSync(randomfile, str);
+
+        let response2: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/config/import/' + key)
+                .set(`Authorization`, `Bearer ${token}`)
+                .set('content-type', 'multipart/form-data')
+                .field('email', 'myemail@gmail.com')
+                .field('firstname', 'slim')
+                .field('lastname', 'shady')
+                .attach('config', fs.readFileSync(randomfile), 'file.png')
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response2.status).to.equal(200);
+
+
+
+
+
 
 
     }).timeout(50000);

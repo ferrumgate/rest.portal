@@ -19,6 +19,7 @@ type Nullable<T> = T | null | undefined;
 // adding new paths here
 // also effects redisConfigWatchService
 // processExecuteList
+// also redisConfigService getAll, setAll
 export type RPath =
     'lastUpdateTime' |
     'revision' |
@@ -46,7 +47,8 @@ export type RPath =
     'authenticationPolicy/rulesOrder' |
     'authorizationPolicy/rules' |
     'authorizationPolicy/rulesOrder' |
-    'es';
+    'es' | 'flush';
+
 
 
 
@@ -99,6 +101,8 @@ export interface Config {
     // redisConfigWatchService 
     // redisConfigWatchCachedService
     es: ESSetting;
+    //config reset
+    flush: number;
 
 
 }

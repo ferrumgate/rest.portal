@@ -24,7 +24,7 @@ import { RestfullException } from "../restfullException";
 import { ErrorCodes } from "../restfullException";
 import { SystemLogService } from "./systemLogService";
 import { ESSetting } from "../model/esSetting";
-import { ConfigWatch, RPath } from "../model/config";
+import { Config, ConfigWatch, RPath } from "../model/config";
 import { ConfigLogService } from "./configLogService";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
@@ -239,7 +239,7 @@ export class RedisConfigService extends ConfigService {
         if (this.getEncKey()) {
             dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url'); //Util.encrypt(this.getEncKey(), dataStr, 'base64url');
         }
-        const rpath = `/index/config/${path}/${dataStr}`;
+        const rpath = `/config/index/${path}/${dataStr}`;
         return await this.redis.get(rpath, false) as Nullable;
     }
 
@@ -304,6 +304,16 @@ export class RedisConfigService extends ConfigService {
 
 
     }
+    async rFlushAll(pipeline?: RedisPipelineService) {
+        const lpipeline = pipeline || await this.redis.multi();
+        const path = '/config/*';
+        await lpipeline.delete(path);
+        const log = { path: '/config/flush', type: 'put', val: 1, before: 0 }
+        await this.logWatcher.write(log, lpipeline);
+        await this.systemLogWatcher.write(log, lpipeline)
+        if (!pipeline)
+            await lpipeline.exec();
+    }
 
 
     async rExists(path: string) {
@@ -366,13 +376,13 @@ export class RedisConfigService extends ConfigService {
         if (this.getEncKey()) {
             dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//Util.encrypt(this.getEncKey(), dataStr, 'base64url')
         }
-        await trx.set(`/index/config/users/username/${dataStr}`, user.id);
+        await trx.set(`/config/index/users/username/${dataStr}`, user.id);
         if (user.apiKey) {
             let dataStr = user.apiKey;
             if (this.getEncKey()) {
                 dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//  Util.encrypt(this.getEncKey(), dataStr, 'base64url')
             }
-            await trx.set(`/index/config/users/apiKey/${dataStr}`, user.id);
+            await trx.set(`/config/index/users/apiKey/${dataStr}`, user.id);
         }
         if (!pipeline)
             await trx.exec();
@@ -399,9 +409,9 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('logo', undefined, this.config.logo, pipeline);
         await this.rSave('auth/common', undefined, this.config.auth.common, pipeline);
         await this.rSave('auth/local', undefined, this.config.auth.local, pipeline);
-        await this.rSaveArray('auth/ldap/providers', this.config.auth.ldap?.providers || [], pipeline);
-        await this.rSaveArray('auth/oauth/providers', this.config.auth.oauth?.providers || [], pipeline);
-        await this.rSaveArray('auth/saml/providers', this.config.auth.saml?.providers || [], pipeline);
+        await this.rSaveArray('auth/ldap/providers', this.config.auth.ldap.providers || [], pipeline);
+        await this.rSaveArray('auth/oauth/providers', this.config.auth.oauth.providers || [], pipeline);
+        await this.rSaveArray('auth/saml/providers', this.config.auth.saml.providers || [], pipeline);
         await this.rSaveArray('networks', this.config.networks, pipeline);
         await this.rSaveArray('gateways', this.config.gateways, pipeline);
         await this.rSaveArray('authenticationPolicy/rules', this.config.authenticationPolicy.rules, pipeline);
@@ -452,36 +462,7 @@ export class RedisConfigService extends ConfigService {
 
     override async saveConfigToString() {
 
-        this.config.version = await this.rGet('version') || 0;
-        this.config.isConfigured = await this.rGet('isConfigured') || 0;
-        this.config.users = await this.rGetAll('users');
-        this.config.groups = await this.rGetAll('groups');
-        this.config.services = await this.rGetAll('services');
-        this.config.captcha = await this.rGet('captcha') || {};
-        this.config.jwtSSLCertificate = await this.rGet('jwtSSLCertificate') || {};
-        this.config.sslCertificate = await this.rGet('sslCertificate') || {};
-        this.config.caSSLCertificate = await this.rGet('caSSLCertificate') || {};
-        this.config.domain = await this.rGet('domain') || '';
-        this.config.url = await this.rGet('url') || '';
-        this.config.email = await this.rGet('email') || this.createDefaultEmail();
-        this.config.auth.common = await this.rGet('auth/common') || {};
-        this.config.auth.local = await this.rGet('auth/local') || this.createAuthLocal();
-
-        this.config.auth.ldap = { providers: [] };
-        this.config.auth.ldap.providers = await this.rGetAll('auth/ldap/providers');
-
-        this.config.auth.oauth = { providers: [] };
-        this.config.auth.oauth.providers = await this.rGetAll('auth/oauth/providers');
-
-        this.config.auth.saml = { providers: [] };
-        this.config.auth.saml.providers = await this.rGetAll('auth/saml/providers');
-
-        this.config.networks = await this.rGetAll('networks');
-        this.config.gateways = await this.rGetAll('gateways');
-        this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
-        this.config.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
-        this.config.es = await this.rGet('es') || {};
-
+        await this.getConfig();
         return await super.saveConfigToString();
 
     }
@@ -625,13 +606,13 @@ export class RedisConfigService extends ConfigService {
         if (this.getEncKey()) {
             dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');// Util.encrypt(this.getEncKey(), dataStr, 'base64url')
         }
-        await trx.remove(`/index/config/users/username/${dataStr}`);
+        await trx.remove(`/config/index/users/username/${dataStr}`);
         if (user.apiKey) {
             let dataStr = user.apiKey;
             if (this.getEncKey()) {
                 dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//Util.encrypt(this.getEncKey(), dataStr, 'base64url')
             }
-            await trx.remove(`/index/config/users/apiKey/${dataStr}`);
+            await trx.remove(`/config/index/users/apiKey/${dataStr}`);
         }
         if (!pipeline)
             await trx.exec();
@@ -687,18 +668,6 @@ export class RedisConfigService extends ConfigService {
             }
         }
 
-        /*  rulesAuthnChanged.forEach(x => {
-             const trc = this.createTrackEvent(x.previous, x.item);
-             this.emitEvent({ type: 'put', path: 'authenticationPolicy/rules', val: trc.after, before: trc.after })
-         })
- 
-         rulesAuthzChanged.forEach(x => {
-             const trc = this.createTrackEvent(x.previous, x.item)
-             this.emitEvent({ type: 'put', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before })
-         })
- 
-         const trc = this.createTrackEvent(user);
-         this.emitEvent({ type: 'del', path: 'users', val: trc.after, before: trc.before }) */
 
     }
 
@@ -853,45 +822,7 @@ export class RedisConfigService extends ConfigService {
         this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
     }
 
-    /*   override async getAuthSettings(): Promise<AuthSettings> {
-          this.isReady();
-          await this.rGetAuthsettings();
-          return await super.getAuthSettings();
-  
-      }
-      override async setAuthSettings(option: AuthSettings | {}) {
-          this.isReady();
-          await this.rGetAuthsettings();
-          const ret = await super.setAuthSettings(option) as { before: AuthSettings, after: AuthSettings };
-          const pipeline = await this.redis.multi();
-          await this.rSave('auth/common', ret.before.common, ret.after, pipeline);
-          await this.rSave('auth/local', ret.before, ret.after, pipeline);
-          if (ret.before.ldap?.providers)
-              for (const it of ret.before.ldap?.providers)
-                  await this.rDel('auth/ldap/providers', it, pipeline);
-          if (ret.before.oauth?.providers)
-              for (const it of ret.before.oauth?.providers)
-                  await this.rDel('auth/oauth/providers', it, pipeline);
-          if (ret.before.saml?.providers)
-              for (const it of ret.before.saml?.providers)
-                  await this.rDel('auth/saml/providers', it, pipeline)
-  
-          if (ret.after.ldap?.providers)
-              for (const it of ret.after.ldap?.providers)
-                  await this.rSave('auth/ldap/providers', undefined, it, pipeline);
-          if (ret.after.oauth?.providers)
-              for (const it of ret.after.oauth?.providers)
-                  await this.rSave('auth/oauth/providers', undefined, it, pipeline);
-          if (ret.after.saml?.providers)
-              for (const it of ret.after.saml?.providers)
-                  await this.rSave('auth/saml/providers', undefined, it, pipeline);
-  
-          await this.saveLastUpdateTime(pipeline);
-          await pipeline.exec();
-  
-          return ret;
-  
-      } */
+
 
     async setAuthSettingCommon(common: AuthCommon) {
         this.isReady();
@@ -1677,6 +1608,102 @@ export class RedisConfigService extends ConfigService {
         this.isReady();
         this.config.es = await this.rGet<ESSetting>('es') || {};
         return await super.getES();
+    }
+
+    /**
+     * @summary export all config object
+     * @param config 
+     */
+    override async getConfig(config?: Config) {
+        const cfg = config || this.config;
+        cfg.lastUpdateTime = await this.rGet('lastUpdateTime') || '';
+        cfg.revision = await this.rGetDirect('revision') || 0;
+        cfg.version = await this.rGet('version') || 0;
+        cfg.isConfigured = await this.rGet('isConfigured') || 0;
+        cfg.domain = await this.rGet('domain') || '';
+        cfg.url = await this.rGet('url') || '';
+        cfg.auth.common = await this.rGet('auth/common') || {};
+        cfg.auth.local = await this.rGet('auth/local') || this.createAuthLocal();
+        cfg.auth.ldap = {
+            providers: await this.rGetAll('auth/ldap/providers')
+        }
+        cfg.auth.oauth = {
+            providers: await this.rGetAll('auth/oauth/providers')
+        }
+        this.config.auth.saml = {
+            providers: await this.rGetAll('auth/saml/providers')
+        }
+        cfg.jwtSSLCertificate = await this.rGet('jwtSSLCertificate') || {};
+        cfg.sslCertificate = await this.rGet('sslCertificate') || {};
+        cfg.caSSLCertificate = await this.rGet('caSSLCertificate') || {};
+        cfg.users = await this.rGetAll('users');
+        cfg.groups = await this.rGetAll('groups');
+        cfg.services = await this.rGetAll('services');
+        cfg.captcha = await this.rGet('captcha') || {};
+        cfg.email = await this.rGet('email') || this.createDefaultEmail();
+        cfg.logo = await this.rGet('logo') || {};
+        cfg.networks = await this.rGetAll('networks');
+        cfg.gateways = await this.rGetAll('gateways');
+        cfg.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+        cfg.authenticationPolicy.rulesOrder = await this.rListAll('authenticationPolicy/rulesOrder');
+        cfg.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
+        cfg.authorizationPolicy.rulesOrder = await this.rListAll('authorizationPolicy/rulesOrder');
+        cfg.es = await this.rGet('es') || {};
+    }
+
+    /**
+     * @summary import all config
+     * @param cfg 
+     */
+    override async setConfig(cfg: Config) {
+        const pipeline = await this.redis.multi();
+        await this.rFlushAll(pipeline);
+        await this.rSave('version', undefined, cfg.version, pipeline);
+        await this.rSave('isConfigured', undefined, cfg.isConfigured, pipeline);
+        await this.rSave('revision', undefined, cfg.revision, pipeline);
+        await this.rSaveArray('users', cfg.users, pipeline,
+            async (before: any, data: any, trx: RedisPipelineService) => {
+                await this.saveUserIndexes(data, trx);
+                return data;
+            });
+        await this.rSaveArray('groups', cfg.groups, pipeline);
+        await this.rSaveArray('services', cfg.services, pipeline);
+        await this.rSave('captcha', undefined, cfg.captcha, pipeline);
+        await this.rSave('jwtSSLCertificate', undefined, cfg.jwtSSLCertificate, pipeline);
+        await this.rSave('sslCertificate', undefined, cfg.sslCertificate, pipeline);
+        await this.rSave('caSSLCertificate', undefined, cfg.caSSLCertificate, pipeline);
+        await this.rSave('domain', undefined, cfg.domain, pipeline);
+        await this.rSave('url', undefined, cfg.url, pipeline);
+        await this.rSave('email', undefined, cfg.email, pipeline);
+        await this.rSave('logo', undefined, cfg.logo, pipeline);
+        await this.rSave('auth/common', undefined, cfg.auth.common, pipeline);
+        await this.rSave('auth/local', undefined, cfg.auth.local, pipeline);
+        await this.rSaveArray('auth/ldap/providers', cfg.auth.ldap?.providers || [], pipeline);
+        await this.rSaveArray('auth/oauth/providers', cfg.auth.oauth?.providers || [], pipeline);
+        await this.rSaveArray('auth/saml/providers', cfg.auth.saml?.providers || [], pipeline);
+        await this.rSaveArray('networks', cfg.networks, pipeline);
+        await this.rSaveArray('gateways', cfg.gateways, pipeline);
+        await this.rSaveArray('authenticationPolicy/rules', cfg.authenticationPolicy.rules, pipeline);
+        for (const order of cfg.authenticationPolicy.rulesOrder) {
+            await this.rListAdd('authenticationPolicy/rulesOrder', order, true, pipeline);
+        }
+        await this.rSaveArray('authorizationPolicy/rules', cfg.authorizationPolicy.rules, pipeline);
+        for (const order of cfg.authorizationPolicy.rulesOrder) {
+            await this.rListAdd('authorizationPolicy/rulesOrder', order, true, pipeline);
+        }
+        await this.rSave('lastUpdateTime', undefined, cfg.lastUpdateTime, pipeline);
+        await this.rSave('jwtSSLCertificate', undefined, cfg.jwtSSLCertificate, pipeline);
+        await this.rSave('caSSLCertificate', undefined, cfg.caSSLCertificate, pipeline);
+
+        await this.rSave('sslCertificate', undefined, cfg.sslCertificate, pipeline);
+        await this.rSave('es', undefined, cfg.es, pipeline);
+
+        await pipeline.exec();
+        this.config = this.createConfig();
+
+
+
+
     }
 
 

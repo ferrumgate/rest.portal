@@ -79,9 +79,10 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
     }
 
 
-
-
     override async processConfigChanged(watch: WatchItem<ConfigWatch<any>>) {
+        if (watch.val.path.includes('flush')) {
+            this.nodeCache.flushAll();
+        }
         if (watch.val.path.includes('authorizationPolicy')) {
             let sortMap = new Map();
             this.config.authorizationPolicy.rulesOrder.forEach((val, index) => {

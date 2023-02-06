@@ -14,6 +14,7 @@ import { Gateway, Network } from '../src/model/network';
 import { SessionService } from '../src/service/sessionService';
 import { SummaryService } from '../src/service/summaryService';
 import { ESService } from '../src/service/esService';
+import { DhcpService } from '../src/service/dhcpService';
 
 
 
@@ -54,7 +55,7 @@ describe('summaryService', () => {
         await configService.saveService({ id: 'test7' } as any);
         await configService.saveGroup({ id: 'test10' } as any);
         const sessionService = new SessionService(configService, simpleRedis);
-        const tunnelService = new TunnelService(configService, simpleRedis);
+        const tunnelService = new TunnelService(configService, simpleRedis, new DhcpService(configService, simpleRedis));
         const es = new ESService(configService, host, user, pass);
         const summaryService = new SummaryService(configService, tunnelService, sessionService, simpleRedis, es);
         const sum = await summaryService.getSummaryConfig();

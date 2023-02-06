@@ -19,9 +19,13 @@ import { config } from "process";
 import { AuthSession } from "../model/authSession";
 import { ESSetting } from "../model/esSetting";
 import { ESService } from "../service/esService";
-
-
-
+import { RedisConfigWatchService } from "../service/redisConfigWatchService";
+import yaml from 'yaml';
+import fsp from 'fs/promises';
+import multer from 'multer';
+import { Config } from "log4js";
+import { attachActivitySession, attachActivityUser, saveActivity } from "./auth/commonAuth";
+const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 } });
 
 
 /////////////////////////////////  public //////////////////////////////////
@@ -422,6 +426,105 @@ routerConfigAuthenticated.post('/es/check',
         return res.status(200).json({ error: errMsg });
 
     }))
+
+/////////  import / export config ///////////////////////////
+
+routerConfigAuthenticated.get('/export/key',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`exporting config`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const redisService = appService.redisService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        const random = Util.randomNumberString(32);
+        await redisService.set(`/export/file/${random}`, random, { ttl: 10000 });
+        return res.status(200).json({ key: random });
+
+    }))
+
+routerConfigAuthenticated.get('/export/:key',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { key } = req.params;
+        logger.info(`exporting config`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const redisService = appService.redisService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+
+        const encKey = await redisService.get(`/export/file/${key}`, false) as string;
+        if (!encKey) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodes.ErrNotFound, 'key is wrong');
+
+        let conf = configService.createConfig();
+        await configService.getConfig(conf);
+
+
+        const str = yaml.stringify(conf);
+
+        const encrypted = Util.encrypt(encKey, str);
+        const randomFilename = Util.randomNumberString(8);
+        const filepath = `/tmp/${randomFilename}`;
+        await fsp.writeFile(filepath, encrypted);
+        await redisService.delete(`/export/file/${encKey}`);
+        await auditService.logConfigExport(currentSession, currentUser);
+        return res.download(filepath, `${randomFilename}.txt`)
+        //return res.status(200).json({ key: encrypted });
+
+    }))
+
+
+
+routerConfigAuthenticated.post('/import/:key',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(upload.single('config')),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { key } = req.params;
+        logger.info(`importing config`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const redisService = appService.redisService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+
+
+        const file = req.file;
+        const str = (await fsp.readFile(file.path)).toString();
+        const decrpted = Util.decrypt(key, str);
+
+        const conf = yaml.parse(decrpted) as Config;
+        await configService.setConfig(conf);
+        await fsp.unlink(file.path);
+
+        await auditService.logConfigImport(currentSession, currentUser);
+        return res.status(200).json({});
+
+    }))
+
+
+
+
 
 
 

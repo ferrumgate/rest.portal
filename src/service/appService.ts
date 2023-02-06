@@ -90,14 +90,15 @@ export class AppService {
         this.twoFAService = twoFA || new TwoFAService();
         this.sessionService = session || new SessionService(this.configService, this.redisService);
         this.oauth2Service = oauth2 || new OAuth2Service(this.configService, this.sessionService);
-        this.tunnelService = tunnel || new TunnelService(this.configService, this.redisService);
+        this.dhcpService = dhcp || new DhcpService(this.configService, this.redisService);
+        this.tunnelService = tunnel || new TunnelService(this.configService, this.redisService, this.dhcpService);
         this.esService = es || new ESService(this.configService);
         this.activityService = activity || new ActivityService(this.redisService, this.esService);
         this.auditService = audit || new AuditService(this.configService, this.redisService, this.esService);
         this.policyService = policy || new PolicyService(this.configService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
-        this.dhcpService = dhcp || new DhcpService(this.configService, this.redisService);
+
 
 
 

@@ -117,43 +117,12 @@ export class RedisConfigWatchService extends ConfigService {
 
     }
 
+
     async fillFromRedis(readyEvent = true): Promise<void> {
 
         if (this.isFilled) return;
 
-        this.config.lastUpdateTime = await this.redisConfig.rGet('lastUpdateTime') || '';
-        this.config.revision = await this.redisConfig.rGetDirect('revision');
-        this.config.version = await this.redisConfig.rGet('version') || 0;
-        this.config.isConfigured = await this.redisConfig.rGet('isConfigured') || 0;
-        this.config.domain = await this.redisConfig.rGet('domain') || '';
-        this.config.url = await this.redisConfig.rGet('url') || '';
-        this.config.auth.common = await this.redisConfig.rGet('auth/common') || {};
-        this.config.auth.local = await this.redisConfig.rGet('auth/local') || this.createAuthLocal();
-        this.config.auth.ldap = {
-            providers: await this.redisConfig.rGetAll('auth/ldap/providers')
-        }
-        this.config.auth.oauth = {
-            providers: await this.redisConfig.rGetAll('auth/oauth/providers')
-        }
-        this.config.auth.saml = {
-            providers: await this.redisConfig.rGetAll('auth/saml/providers')
-        }
-        this.config.jwtSSLCertificate = await this.redisConfig.rGet('jwtSSLCertificate') || {};
-        this.config.sslCertificate = await this.redisConfig.rGet('sslCertificate') || {};
-        this.config.caSSLCertificate = await this.redisConfig.rGet('caSSLCertificate') || {};
-        this.config.users = await this.redisConfig.rGetAll('users');
-        this.config.groups = await this.redisConfig.rGetAll('groups');
-        this.config.services = await this.redisConfig.rGetAll('services');
-        this.config.captcha = await this.redisConfig.rGet('captcha') || {};
-        this.config.email = await this.redisConfig.rGet('email') || this.createDefaultEmail();
-        this.config.logo = await this.redisConfig.rGet('logo') || {};
-        this.config.networks = await this.redisConfig.rGetAll('networks');
-        this.config.gateways = await this.redisConfig.rGetAll('gateways');
-        this.config.authenticationPolicy.rules = await this.redisConfig.rGetAll('authenticationPolicy/rules');
-        this.config.authenticationPolicy.rulesOrder = await this.redisConfig.rListAll('authenticationPolicy/rulesOrder');
-        this.config.authorizationPolicy.rules = await this.redisConfig.rGetAll('authorizationPolicy/rules');
-        this.config.authorizationPolicy.rulesOrder = await this.redisConfig.rListAll('authorizationPolicy/rulesOrder');
-        this.config.es = await this.redisConfig.rGet('es') || {};
+        await this.redisConfig.getConfig(this.config);
 
         if (readyEvent) {
             this.isFilled = true;
@@ -201,11 +170,14 @@ export class RedisConfigWatchService extends ConfigService {
                 const item = watch.val;
                 let rpath = item.path;
                 if (rpath.startsWith('/config')) {
-                    let path = rpath.substring(8);
+                    let path = rpath.substring(8) as RPath;
                     let val = item.val;
                     let type = item.type;
 
                     switch (path) {
+                        case 'flush':
+                            this.config = this.createConfig();
+                            break;//sometimes flush
                         case 'lastUpdateTime':
                             this.config.lastUpdateTime = await this.redisConfig.rGet(path) || '';
                             break;

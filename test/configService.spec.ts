@@ -96,6 +96,27 @@ describe('configService', async () => {
 
 
     });
+
+    it('createConfig', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.setCaptcha({ client: '1', server: '2' });
+        const config = configService.createConfig();
+        expect(config.lastUpdateTime).exist;
+        expect(config.revision).exist;
+        expect(config.isConfigured).exist;
+        expect(config.users).exist;
+        expect(config.groups).exist;
+        expect(config.services).exist;
+        expect(config.captcha).exist;
+        expect(config.captcha.client).not.exist;
+        expect(config.captcha.server).not.exist;
+
+    });
+
+
+
     it('getUserByUsername', async () => {
 
         //first create a config and save to a file
@@ -529,7 +550,7 @@ describe('configService', async () => {
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         configService.config.auth = {
-            common: {}, local: {} as any
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
         }
         let oauth: BaseOAuth = {
             name: 'google',
@@ -567,7 +588,7 @@ describe('configService', async () => {
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         configService.config.auth = {
-            common: {}, local: {} as any
+            common: {}, local: {} as any, oauth: {} as any, saml: {} as any, ldap: {} as any
         }
         let local: BaseLocal = {
             name: 'google',

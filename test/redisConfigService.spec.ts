@@ -608,7 +608,7 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
-            common: {}, local: {} as any
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
         }
         await configService.init();
         let oauth: BaseOAuth = {
@@ -649,7 +649,7 @@ describe('redisConfigService', async () => {
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         configService.config.auth = {
-            common: {}, local: {} as any
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
         }
         await configService.init();
         let local: BaseLocal = {
@@ -680,7 +680,7 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
-            common: {}, local: {} as any, ldap: { providers: [] }
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
         }
         await configService.init();
         let ldap: BaseLdap = {
@@ -721,7 +721,7 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
-            common: {}, local: {} as any, ldap: { providers: [] }
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
         }
         await configService.init();
         let saml: BaseSaml = {
@@ -2307,6 +2307,45 @@ describe('redisConfigService', async () => {
 
 
     });
+
+
+    it('getAll', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        await configService.init();
+        await configService.setCaptcha({ client: '2', server: '3' });
+
+        let config = configService.createConfig();
+        await configService.getConfig(config);
+        expect(config.captcha.client).to.equal('2');
+        expect(config.captcha.server).to.equal('3');
+
+
+    });
+
+    it('setAll', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        await configService.init();
+        await configService.setCaptcha({ client: '2', server: '3' });
+
+        const catpcha1 = await configService.getCaptcha();
+        expect(catpcha1.client).to.equal('2');
+        expect(catpcha1.server).to.equal('3');
+
+        let config = configService.createConfig();
+        config.captcha = { client: '4', server: '5' };
+        await configService.setConfig(config);
+        const catpcha = await configService.getCaptcha();
+        expect(catpcha.client).to.equal('4');
+        expect(catpcha.server).to.equal('5');
+
+
+    });
+
+
 
 
 

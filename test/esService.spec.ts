@@ -581,7 +581,7 @@ describe('esService ', async () => {
         }
         expect(isError).to.be.true;
 
-        await es.reConfigure('https://localhost:9200', user, pass);
+        await es.reConfigure('https://192.168.88.250:9200', user, pass);
         isError = false;
         try {
             const data = await es.activityCreateIndexIfNotExits(activity1);
@@ -609,7 +609,7 @@ describe('esService ', async () => {
         }
         expect(isError).to.be.false;
 
-        await es.reConfigure('https://localhost:9200', user, pass);
+        await es.reConfigure('https://182.168.88.250:9200', user, pass);
         isError = false;
         try {
             const data = await es.activityCreateIndexIfNotExits(activity1);

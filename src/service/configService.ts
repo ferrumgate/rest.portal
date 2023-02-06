@@ -44,6 +44,50 @@ export class ConfigService {
     constructor(encryptKey: string, configFile?: string) {
         if (!encryptKey)
             throw new Error('needs and encyption key with lenght 32');
+
+
+        this.secretKey = encryptKey;
+        if (configFile)
+            this.configfile = configFile;
+        this.config = this.createConfig();
+
+        // start point for delete
+        //for testing start
+        //dont delete aboveline
+        try {
+            if (process.env.LOAD_TEST_DATA) {
+                var m = require('../../test/configServiceTestData');
+                m.loadTestData(this.config);
+            }
+        } catch (err) {
+            logger.error(err);
+        }
+
+
+        //dont delete below line
+        //for testing end
+        // end point for delete
+        this.config.lastUpdateTime = new Date().toISOString();
+        this.loadConfigFromFile();
+        if (process.env.LIMITED_MODE == 'true') {
+            if (!this.config.groups.find(x => x.id == 'hb16ldst577l9mkf'))
+                this.config.groups.push({
+                    id: 'hb16ldst577l9mkf',
+                    name: 'admin',
+                    isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
+                })
+            if (!this.config.groups.find(x => x.id == 'pl0m0xh6az722y0t'))
+                this.config.groups.push({
+                    id: `pl0m0xh6az722y0t`,
+                    name: 'remote',
+                    isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
+                })
+        }
+
+
+
+    }
+    createConfig(): Config {
         //default user
         const adminUser = this.createAdminUser();
 
@@ -58,11 +102,7 @@ export class ConfigService {
             updateDate: new Date().toISOString(),
             isEnabled: true
         }
-
-        this.secretKey = encryptKey;
-        if (configFile)
-            this.configfile = configFile;
-        this.config = {
+        return {
             lastUpdateTime: new Date().toISOString(),
             revision: 0,
             version: 1,
@@ -103,43 +143,12 @@ export class ConfigService {
             },
             authorizationPolicy: { rules: [], rulesOrder: [] },
 
-            es: {}
+            es: {},
+            flush: 0
 
         }
-        // start point for delete
-        //for testing start
-        //dont delete aboveline
-        try {
-            if (process.env.LOAD_TEST_DATA) {
-                var m = require('../../test/configServiceTestData');
-                m.loadTestData(this.config);
-            }
-        } catch (err) {
-            logger.error(err);
-        }
-
-
-        //dont delete below line
-        //for testing end
-        // end point for delete
-        this.config.lastUpdateTime = new Date().toISOString();
-        this.loadConfigFromFile();
-        if (process.env.LIMITED_MODE == 'true') {
-            if (!this.config.groups.find(x => x.id == 'hb16ldst577l9mkf'))
-                this.config.groups.push({
-                    id: 'hb16ldst577l9mkf',
-                    name: 'admin',
-                    isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
-                })
-            if (!this.config.groups.find(x => x.id == 'pl0m0xh6az722y0t'))
-                this.config.groups.push({
-                    id: `pl0m0xh6az722y0t`,
-                    name: 'remote',
-                    isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
-                })
-        }
-
-
+    }
+    async checkModel() {
 
     }
     async init() {
@@ -1558,6 +1567,13 @@ export class ConfigService {
         this.isReady(); this.isReadable();
         const config = this.clone(this.config.es);
         return config;
+    }
+
+    async getConfig(config?: Config) {
+
+    }
+    async setConfig(cfg: Config) {
+
     }
 
 

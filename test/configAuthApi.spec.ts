@@ -133,7 +133,10 @@ describe('configAuthApi ', async () => {
         await configService.setConfigPath('/tmp/config.yaml');
         const auth: AuthSettings = {
             common: {},
-            local: {} as any
+            local: {} as any,
+            saml: { providers: [] },
+            ldap: { providers: [] },
+            oauth: { providers: [] }
 
         }
         auth.oauth = {
@@ -162,7 +165,10 @@ describe('configAuthApi ', async () => {
         configService.config.users = [];
         const auth: AuthSettings = {
             common: {},
-            local: {} as any
+            local: {} as any,
+            saml: { providers: [] },
+            ldap: { providers: [] },
+            oauth: { providers: [] }
 
         }
         auth.oauth = {

@@ -256,20 +256,21 @@ export class RedisService {
         else
             await this.redis.set(key, valueStr, 'PX', options.ttl);
     }
-    async setnx(key: string, value: any, ttl?: number): Promise<void> {
+    async setnx(key: string, value: any, ttl?: number): Promise<boolean> {
 
         let valueStr = value;
         if (typeof value !== 'string' && typeof value !== 'number') {
             valueStr = JSON.stringify(value);
         }
         if (!ttl)
-            await this.redis.set(key, valueStr, 'NX');
+            return await this.redis.set(key, valueStr, 'NX') ? true : false;
         else {
-            await this.redis.set(key, valueStr, 'PX', ttl, 'NX')
+            return await this.redis.set(key, valueStr, 'PX', ttl, 'NX') ? true : false
 
         }
 
     }
+
     async get<T>(key: string, parse = true): Promise<T | null | undefined> {
 
         let x = await this.redis.get(key) as any;
