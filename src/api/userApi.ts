@@ -105,7 +105,7 @@ routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next:
     } */
     const key = Util.createRandomHash(48);
     const link = `${req.baseHost}/user/resetpass?key=${key}`
-    await redisService.set(`/user/resetpass/${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
+    await redisService.set(`/user/resetpass/${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//7 days
 
     const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
     const logo = `${req.baseHost}/dassets/img/${logoPath}`;
@@ -170,6 +170,10 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
     return res.status(200).json({ result: true });
 
 }))
+
+
+
+
 
 
 //////////////////////////////// authenticated user /////////////////////
@@ -621,6 +625,67 @@ routerUserAuthenticated.put('/',
         }
 
         return res.status(200).json(userDb);
+
+    }))
+
+
+routerUserAuthenticated.post('/invite',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { emails } = req.body as { emails: string[] };
+        logger.info(`inviting new users `);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        const emailService = appService.emailService;
+        const redisService = appService.redisService;
+        const templateService = appService.templateService;
+
+        const emailSettings = await configService.getEmailSetting();
+        if (emailSettings.type == 'empty') {
+            throw new RestfullException(400, ErrorCodes.ErrEmailConfigNeed, ErrorCodes.ErrEmailConfigNeed, "email config needs");
+        }
+
+
+        let results: { email: string, errMsg?: string }[] = [];
+        for (const email of emails) {
+            logger.info(`inviting ${email}`)
+            try {
+                const isEmail = await inputService.isEmail(email);
+                if (!isEmail) {
+                    results.push({ email: email, errMsg: 'not valid email' });
+                    continue;
+                }
+                const userDb = await configService.getUserByUsername(email);
+                if (userDb) {
+                    results.push({ email: email, errMsg: 'allready exists' });
+                    continue;
+                }
+
+                const key = Util.createRandomHash(48);
+                const link = `${req.baseHost}/register/invite?key=${key}`
+                await redisService.set(`/register/invite/${key}`, { email: email }, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
+
+                const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
+                const logo = `${req.baseHost}/dassets/img/${logoPath}`;
+                const html = await templateService.createInvite(email, link, logo);
+                logger.info(`sending invite link to ${email}`);
+                await emailService.send({ to: email, subject: `You are invited to join ${req.hostname}`, html: html });
+                results.push({ email: email })
+
+            } catch (err: any) {
+                logger.error(err);
+                results.push({ email: email, errMsg: err.message })
+            }
+        }
+
+
+        return res.status(200).json({ results: results });
 
     }))
 

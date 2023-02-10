@@ -467,6 +467,12 @@ routerConfigAuthenticated.get('/export/:key',
         const inputService = appService.inputService;
         const auditService = appService.auditService;
 
+        const isSystemConfigured = await configService.getIsConfigured();
+        if (!isSystemConfigured) {
+            logger.warn(`system is not configured yet`);
+            throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+        }
+
 
         const encKey = await redisService.get(`/export/file/${key}`, false) as string;
         if (!encKey) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodes.ErrNotFound, 'key is wrong');
@@ -507,7 +513,11 @@ routerConfigAuthenticated.post('/import/:key',
         const inputService = appService.inputService;
         const auditService = appService.auditService;
 
-
+        const isSystemConfigured = await configService.getIsConfigured();
+        if (!isSystemConfigured) {
+            logger.warn(`system is not configured yet`);
+            throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+        }
 
         const file = req.file;
         const str = (await fsp.readFile(file.path)).toString();

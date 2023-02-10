@@ -9,6 +9,7 @@ import { Util } from '../src/util';
 import { AuthSettings } from '../src/model/authSettings';
 import { EmailSetting } from '../src/model/emailSetting';
 import yaml from 'yaml';
+import { Email, EmailService } from '../src/service/emailService';
 
 
 chai.use(chaiHttp);
@@ -25,6 +26,7 @@ describe('configApi ', async () => {
     const redisService = appService.redisService;
     const configService = appService.configService;
     const sessionService = appService.sessionService;
+    const emailService = appService.emailService;
 
     const user: User = {
         username: 'hamza@ferrumgate.com',
@@ -123,6 +125,10 @@ describe('configApi ', async () => {
         configService.config.users = [];
 
 
+    })
+
+    afterEach(async () => {
+        appService.emailService = emailService;
     })
     it('GET /config/public will return public configs', async () => {
 
@@ -428,8 +434,17 @@ describe('configApi ', async () => {
 
     }).timeout(50000);
 
-    it.skip('POST /config/email/check will return 200, with no error', async () => {
+    it('POST /config/email/check will return 200, with no error', async () => {
 
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+            override  async sendWith(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
@@ -595,7 +610,7 @@ describe('configApi ', async () => {
         };
         await appService.configService.setES(newValues);
 
-
+        await appService.configService.setIsConfigured(1);
         let response2: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .get('/config/export/key')
@@ -656,6 +671,7 @@ describe('configApi ', async () => {
         }
 
         await appService.configService.setES(newValues);
+        await appService.configService.setIsConfigured(1);
         const randomfile = `/tmp/${Util.randomNumberString()}.txt`;
         const key = Util.randomNumberString(32);
         const str = Util.encrypt(key, 'hello world');

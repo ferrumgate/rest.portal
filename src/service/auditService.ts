@@ -295,6 +295,8 @@ export class AuditService {
             ``,)
     }
 
+
+
     async search(req: SearchAuditLogsRequest) {
         return await this.esService.searchAuditLogs(req);
     }

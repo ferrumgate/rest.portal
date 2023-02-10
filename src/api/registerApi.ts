@@ -6,8 +6,79 @@ import { User } from "../model/user";
 import { Util } from "../util";
 import fs from 'fs';
 import { HelperService } from "../service/helperService";
+import { restore } from "nock/types";
+
 
 export const routerRegister = express.Router();
+
+
+
+routerRegister.post('/invite', asyncHandler(async (req: any, res: any, next: any) => {
+    const userInput = req.body as { key: string, password: string, name?: string };
+    if (!userInput.key || !userInput.password)
+        throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrUsernameOrPasswordInvalid, "username and password required");
+
+
+
+    const appService = req.appService as AppService;
+    const configService = appService.configService;
+    const inputService = appService.inputService;
+    const templateService = appService.templateService;
+    const emailService = appService.emailService;
+    const redisService = appService.redisService;
+    const twoFAService = appService.twoFAService;
+    const auditService = appService.auditService;
+
+    const isSystemConfigured = await configService.getIsConfigured();
+    if (!isSystemConfigured) {
+        logger.warn(`system is not configured yet`);
+        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+    }
+    const rKey = `/register/invite/${userInput.key}`;
+    const data: { email: string } | null | undefined = await redisService.get(rKey, true);
+
+    if (!data) {
+        logger.info('invite key not found');
+        throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodes.ErrNotFound, "key not found");
+    }
+
+
+
+    inputService.checkPasswordPolicy(userInput.password);
+    inputService.checkEmail(data.email);//important we need to check,and this must be email
+    logger.info(`someone is registering invite from ${req.clientIp} with email: ${data.email}`);
+    const userDb = await configService.getUserByUsername(data.email);
+    if (userDb) {
+        logger.info(`user email ${userDb.username} allready exits sending reset password link`);
+        //send change password link over email
+
+        const key = Util.createRandomHash(48);
+        const link = `${req.baseHost}/user/resetpass?key=${key}`
+        await redisService.set(`/user/resetpass/${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//1 days
+
+        const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
+        const logo = `${req.baseHost}/dassets/img/${logoPath}`;
+        const html = await templateService.createForgotPassword(userDb.name, link, logo);
+        //fs.writeFileSync('/tmp/abc.html', html);
+        //send reset link over email
+        await emailService.send({ to: userDb.username, subject: 'Reset your password', html: html });
+        await redisService.delete(rKey);
+        return res.status(200).json({ result: true });
+    }
+    logger.info(`someone is not exits on db with email ${data.email}`);
+    let userSave: User = HelperService.createUser('local-local',
+        data.email,
+        userInput.name || data.email.substring(0, data.email.indexOf('@')),
+        userInput.password);
+
+    userSave.isEmailVerified = true;
+    userSave.isVerified = true;
+
+    await configService.saveUser(userSave);
+    await redisService.delete(rKey);
+    return res.status(200).json({ result: true });
+
+}));
 
 routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
     const userInput = req.body as { username: string, password: string, name?: string };
@@ -62,7 +133,7 @@ routerRegister.post('/', asyncHandler(async (req: any, res: any, next: any) => {
 
 
     const key = Util.createRandomHash(48);
-    const link = `${req.baseHost}/user/emailconfirm?key=${key}`
+    const link = `${req.baseHost}/user/confirmemail?key=${key}`
     await redisService.set(`/user/confirm/${key}`, userSave.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//7 days
 
     const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';

@@ -5,6 +5,7 @@ import fs from 'fs';
 import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';
+import { Email, EmailService } from '../src/service/emailService';
 
 
 chai.use(chaiHttp);
@@ -13,9 +14,11 @@ const expect = chai.expect;
 
 
 
-describe.skip('userApiResetPassword', async () => {
+describe('userApiResetPassword', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
+    const emailService = appService.emailService;
+    const configService = appService.configService;
     const user: User = {
         username: 'hamza@ferrumgate.com',
         groupIds: [],
@@ -40,8 +43,17 @@ describe.skip('userApiResetPassword', async () => {
         appService.configService.config.users = [];
         await redisService.flushAll();
     })
+    afterEach(async () => {
+        appService.emailService = emailService;
+    })
 
     it('POST /user/resetpass will return 400 with undefined pass parameter', async () => {
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         //prepare data
         await appService.configService.saveUser(user);
 
@@ -61,6 +73,12 @@ describe.skip('userApiResetPassword', async () => {
     }).timeout(50000);
 
     it('POST /user/resetpass will return 401 with not found key parameter', async () => {
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         //prepare data
         await appService.configService.saveUser(user);
 
@@ -80,6 +98,12 @@ describe.skip('userApiResetPassword', async () => {
     }).timeout(50000);
 
     it('POST /user/resetpass will return 400 with password policy', async () => {
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         //prepare data
         await appService.configService.saveUser(user);
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -100,6 +124,12 @@ describe.skip('userApiResetPassword', async () => {
 
 
     it('POST /user/resetpass will return 401 with not found user', async () => {
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         //prepare data
         await appService.configService.saveUser(user);
         await appService.redisService.set(`/user/resetpass/deneme`, 'someid2');
@@ -119,6 +149,12 @@ describe.skip('userApiResetPassword', async () => {
     }).timeout(50000);
 
     it('POST /user/resetpass will return 200 with found user', async () => {
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         //prepare data
         await appService.configService.saveUser(user);
         await appService.redisService.set(`/user/resetpass/deneme`, 'someid');

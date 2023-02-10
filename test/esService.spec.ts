@@ -595,7 +595,7 @@ describe('esService ', async () => {
 
 
     it('reConfigure2 reconnect to same host', async () => {
-        const host = 'https://localhost:9200';
+        const host = 'https://192.168.88.250:9200';
         const user = 'elastic';
         const pass = '123456';
         const es = new ESService(config, host, user, pass);
@@ -609,7 +609,7 @@ describe('esService ', async () => {
         }
         expect(isError).to.be.false;
 
-        await es.reConfigure('https://182.168.88.250:9200', user, pass);
+        await es.reConfigure('https://192.168.88.250:9200', user, pass);
         isError = false;
         try {
             const data = await es.activityCreateIndexIfNotExits(activity1);

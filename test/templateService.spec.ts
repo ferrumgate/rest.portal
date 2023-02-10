@@ -15,7 +15,7 @@ const expect = chai.expect;
 
 
 
-describe.skip('templateService', async () => {
+describe('templateService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', filename);
 
@@ -41,8 +41,18 @@ describe.skip('templateService', async () => {
 
         const templateService = new TemplateService(configService);
         const logopath = (await configService.getLogo()).defaultPath || 'logo.png';
-        const template = await templateService.createForgotPassword('hamza', 'https://portal.ferrumgate.com/user/emailconfirm?key=9sTVrjfbhA0iI15qVi8a7HXIXDtUg22VHTJt3Z9s8XXlqAH5', logopath);
+        const template = await templateService.createForgotPassword('hamza', 'https://portal.ferrumgate.com/user/confirmemail?key=9sTVrjfbhA0iI15qVi8a7HXIXDtUg22VHTJt3Z9s8XXlqAH5', logopath);
         fs.writeFileSync('/tmp/template2.html', template);
+        expect(template).exist;
+
+    }).timeout(5000);
+
+    it('createInvite', async () => {
+
+        const templateService = new TemplateService(configService);
+        const logopath = (await configService.getLogo()).defaultPath || 'logo.png';
+        const template = await templateService.createInvite('hamza', 'https://portal.ferrumgate.com/user/invite?key=9sTVrjfbhA0iI15qVi8a7HXIXDtUg22VHTJt3Z9s8XXlqAH5', logopath);
+        fs.writeFileSync('/tmp/template3.html', template);
         expect(template).exist;
 
     }).timeout(5000);
