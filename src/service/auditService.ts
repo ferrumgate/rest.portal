@@ -152,7 +152,8 @@ export class AuditService {
             `${before || after}`)
     }
     async logSetUrl(currentSession: AuthSession, currentUser: User, before?: string, after?: string) {
-
+        await this.executeSave(currentSession, currentUser, before, after, 'url updated',
+            `${before || after}`)
     }
     async logSaveUser(currentSession: AuthSession, currentUser: User, before?: User, after?: User) {
 
@@ -293,6 +294,27 @@ export class AuditService {
         await this.executeSave(currentSession, currentUser, undefined, undefined,
             `config imported`,
             ``,)
+    }
+
+    async logUserConfirm(currentSession: AuthSession, currentUser: User) {
+
+        await this.executeSave(currentSession, currentUser, undefined, undefined,
+            `user confirmed`,
+            `${currentUser.username}`)
+    }
+
+    async logForgotPassword(currentSession: AuthSession, currentUser: User, username: string) {
+
+        await this.executeSave(currentSession, currentUser, undefined, undefined,
+            `password forgotten`,
+            `${username}`)
+    }
+
+    async logResetPassword(currentSession: AuthSession, currentUser: User) {
+
+        await this.executeSave(currentSession, currentUser, undefined, undefined,
+            `password reset`,
+            `${currentUser.username}`)
     }
 
 

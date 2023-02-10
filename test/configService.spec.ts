@@ -134,7 +134,7 @@ describe('configService', async () => {
         configService.config.users.push(aUser);
         const user = await configService.getUserByUsername('hamza.kilic@ferrumgate.com');
         delete aUser.password;
-        expect(user).to.deep.include(aUser);
+        expect(user).to.excluding(['insertDate', 'updateDate']).deep.include(aUser);
 
     });
 
@@ -155,7 +155,7 @@ describe('configService', async () => {
         configService.config.users.push(aUser);
         const user = await configService.getUserByUsernameAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash');
         delete aUser.password;
-        expect(user).to.deep.include(aUser);
+        expect(user).to.excluding(['insertDate', 'updateDate']).deep.include(aUser);
 
         const user2 = await configService.getUserByUsernameAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash2');
 
@@ -179,7 +179,7 @@ describe('configService', async () => {
         configService.config.users.push(aUser);
         const user = await configService.getUserById('someid');
         delete aUser.password;
-        expect(user).to.deep.include(aUser);
+        expect(user).to.excluding(['insertDate', 'updateDate']).deep.include(aUser);
 
     });
 
@@ -415,7 +415,7 @@ describe('configService', async () => {
         const networkDb = await configService.getNetwork(network.id);
         expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
         const networkDb2 = await configService.getNetworkByName('default2');
-        expect(networkDb2).to.deep.include(network);
+        expect(networkDb2).to.excluding(['insertDate', 'updateDate']).deep.include(network);
 
     });
 
@@ -446,7 +446,7 @@ describe('configService', async () => {
         await configService.saveNetwork(network);
         await configService.saveGateway(gateway);
         const networkDb = await configService.getNetworkByGateway(gateway.id);
-        expect(networkDb).to.deep.include(network);
+        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.include(network);
 
     });
 

@@ -13,6 +13,7 @@ import { authorizeAsAdmin } from "./commonApi";
 import { AuthSession } from "../model/authSession";
 import { UserNetworkListResponse } from "../service/policyService";
 import { HelperService } from "../service/helperService";
+import { attachActivity, attachActivitySession, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
 
 
 
@@ -21,41 +22,64 @@ import { HelperService } from "../service/helperService";
 export const routerUserEmailConfirm = express.Router();
 //user/confirm
 routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: any) => {
-    const key = req.query.key || req.body.key;
-    if (!key)
-        throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs key argument");
+    try {
+        attachActivity(req);
+        const key = req.query.key || req.body.key;
+        if (!key)
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs key argument");
 
-    logger.info(`user confirm with key: ${key}`);
-    const appService = req.appService as AppService;
-    const configService = appService.configService;
-    const redisService = appService.redisService;
+        logger.info(`user confirm with key: ${key}`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const redisService = appService.redisService;
+        const sessionService = appService.sessionService;
+        const activityService = appService.activityService;
+        const auditService = appService.auditService;
 
-    const isSystemConfigured = await configService.getIsConfigured();
-    if (!isSystemConfigured) {
-        logger.warn(`system is not configured yet`);
-        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+
+        const isSystemConfigured = await configService.getIsConfigured();
+        if (!isSystemConfigured) {
+            logger.warn(`system is not configured yet`);
+            throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+        }
+
+        //check key from redis
+        const rkey = `/user/confirm/${key}`;
+        const userId = await redisService.get(rkey, false) as string;
+        if (!userId) {
+            logger.fatal(`user confirm key not found key: ${key}`);
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrKeyNotFound, "not found key");
+
+        }
+        const userDb = await configService.getUserById(userId);
+        if (!userDb) {//check for safety
+            logger.warn(`user confirm user id not found ${userId}`);
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, "argument problem");
+
+        }
+        //verify
+        userDb.isVerified = true;
+
+        //audit log and activity logs needs
+        req.currentSession = await sessionService.createFakeSession(userDb, false, req.clientIp, userDb.source);
+        attachActivitySession(req, req.currentSession);
+        attachActivityUser(req, userDb);
+
+
+        await configService.saveUser(userDb);
+        //delete the key for security
+        await redisService.delete(rkey);
+
+
+        logger.info(`user confirm is ok ${key}`);
+        await auditService.logUserConfirm(req.currentSession, userDb);
+        await saveActivity(req, 'user confirmed');
+
+        return res.status(200).json({ result: true });
+    } catch (err) {
+        saveActivityError(req, 'user confirmed', err);
+        throw err;
     }
-
-    //check key from redis
-    const rkey = `/user/confirm/${key}`;
-    const userId = await redisService.get(rkey, false) as string;
-    if (!userId) {
-        logger.fatal(`user confirm key not found key: ${key}`);
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrKeyNotFound, "not found key");
-    }
-    const userDb = await configService.getUserById(userId);
-    if (!userDb) {//check for safety
-        logger.warn(`user confirm user id not found ${userId}`);
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, "argument problem");
-    }
-    //verify
-    userDb.isVerified = true;
-    await configService.saveUser(userDb);
-    //delete the key for security
-    await redisService.delete(rkey);
-
-    logger.info(`user confirm is ok ${key}`);
-    return res.status(200).json({ result: true });
 
 }))
 
@@ -64,57 +88,82 @@ export const routerUserForgotPassword = express.Router();
 
 //user/forgotpass
 routerUserForgotPassword.post('/', asyncHandler(async (req: any, res: any, next: any) => {
-    const email = req.body.username || req.query.username;
-    if (!email) {
-        logger.error(`forgot password email parameter absent`);
-        throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs username parameter");
-    }
+    try {
+        attachActivity(req);
 
-    const appService = req.appService as AppService;
-    const configService = appService.configService;
-    const redisService = appService.redisService;
-    const inputService = appService.inputService;
-    const templateService = appService.templateService;
-    const emailService = appService.emailService;
+        const email = req.body.username || req.query.username;
+        if (!email) {
+            logger.error(`forgot password email parameter absent`);
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs username parameter");
+        }
 
-    const isSystemConfigured = await configService.getIsConfigured();
-    if (!isSystemConfigured) {
-        logger.warn(`system is not configured yet`);
-        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
-    }
-    const local = await configService.getAuthSettingLocal();
-    if (!local.isForgotPassword) {
-        logger.warn(`forgotpassword is not allowed`);
-        throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, ErrorCodes.ErrMethodNotAllowed, "forgotpassword not enabled");
-    }
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const redisService = appService.redisService;
+        const inputService = appService.inputService;
+        const templateService = appService.templateService;
+        const emailService = appService.emailService;
+        const auditService = appService.auditService;
+        const sessionService = appService.sessionService;
 
-    logger.info(`forgot password with email ${email}`);
-    //this is security check if input is not valid email then throw exception
-    await inputService.checkEmail(email);
 
-    const userDb = await configService.getUserByUsername(email);
-    if (!userDb) {
 
-        logger.error(`forgot password no user found with email ${email}`);
+
+
+        const isSystemConfigured = await configService.getIsConfigured();
+        if (!isSystemConfigured) {
+            logger.warn(`system is not configured yet`);
+            throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+        }
+        const local = await configService.getAuthSettingLocal();
+        if (!local.isForgotPassword) {
+            logger.warn(`forgotpassword is not allowed`);
+            throw new RestfullException(405, ErrorCodes.ErrMethodNotAllowed, ErrorCodes.ErrMethodNotAllowed, "forgotpassword not enabled");
+        }
+
+        logger.info(`forgot password with email ${email}`);
+        //this is security check if input is not valid email then throw exception
+        await inputService.checkEmail(email);
+
+        const userDb = await configService.getUserByUsername(email);
+        if (!userDb) {
+
+            logger.error(`forgot password no user found with email ${email}`);
+            attachActivityUsername(req, email);
+            await saveActivity(req, 'forgot password');
+            return res.status(200).json({ result: true });
+        }
+
+        //audit log and activity logs needs
+        req.currentSession = await sessionService.createFakeSession(userDb, false, req.clientIp, userDb.source);
+        attachActivitySession(req, req.currentSession);
+        attachActivityUser(req, userDb);
+        /* if (userDb.source != 'local') {
+            //security check only local users can forgot password
+            logger.error(`forgot password user is not local with email ${email}`);
+            return res.status(200).json({ result: true });
+        } */
+        const key = Util.createRandomHash(48);
+        const link = `${req.baseHost}/user/resetpass?key=${key}`
+        await redisService.set(`/user/resetpass/${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//7 days
+
+        const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
+        const logo = `${req.baseHost}/dassets/img/${logoPath}`;
+        const html = await templateService.createForgotPassword(userDb.name, link, logo);
+        //fs.writeFileSync('/tmp/abc.html', html);
+        logger.info(`forgot password sending reset link to ${userDb.username}`);
+        //send reset link over email
+        await emailService.send({ to: userDb.username, subject: 'Reset your password', html: html });
+
+
+        await auditService.logForgotPassword(req.currentSession, userDb, email);
+        await saveActivity(req, 'forgot password');
+
         return res.status(200).json({ result: true });
+    } catch (err) {
+        saveActivityError(req, 'forgot password', err);
+        throw err;
     }
-    /* if (userDb.source != 'local') {
-        //security check only local users can forgot password
-        logger.error(`forgot password user is not local with email ${email}`);
-        return res.status(200).json({ result: true });
-    } */
-    const key = Util.createRandomHash(48);
-    const link = `${req.baseHost}/user/resetpass?key=${key}`
-    await redisService.set(`/user/resetpass/${key}`, userDb.id, { ttl: 7 * 24 * 60 * 60 * 1000 })//7 days
-
-    const logoPath = (await configService.getLogo()).defaultPath || 'logo.png';
-    const logo = `${req.baseHost}/dassets/img/${logoPath}`;
-    const html = await templateService.createForgotPassword(userDb.name, link, logo);
-    //fs.writeFileSync('/tmp/abc.html', html);
-    logger.info(`forgot password sending reset link to ${userDb.username}`);
-    //send reset link over email
-    await emailService.send({ to: userDb.username, subject: 'Reset your password', html: html });
-    return res.status(200).json({ result: true });
 
 }))
 
@@ -124,50 +173,68 @@ export const routerUserResetPassword = express.Router();
 
 
 routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: any) => {
+    try {
+        attachActivity(req);
 
-    const pass = req.body.pass;
-    const key = req.body.key;
-    if (!pass || !key) {
-        logger.error(`reset password pass parameter absent or key absent`);
-        throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs pass parameter");
+        const pass = req.body.pass;
+        const key = req.body.key;
+        if (!pass || !key) {
+            logger.error(`reset password pass parameter absent or key absent`);
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs pass parameter");
+        }
+
+
+
+        const rkey = `/user/resetpass/${key}`;
+        logger.info(`reset password with key: ${key} `)
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const redisService = appService.redisService;
+        const inputService = appService.inputService;
+        const templateService = appService.templateService;
+        const emailService = appService.emailService;
+        const auditService = appService.auditService;
+        const sessionService = appService.sessionService;
+
+        const isSystemConfigured = await configService.getIsConfigured();
+        if (!isSystemConfigured) {
+            logger.warn(`system is not configured yet`);
+            throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+        }
+
+        inputService.checkPasswordPolicy(pass);
+
+        const userId = await redisService.get(rkey, false) as string;
+        if (!userId) {
+            logger.fatal(`reset password key not found with id: ${key}`);
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrKeyNotFound, "not authorized");
+        }
+        const user = await configService.getUserById(userId);
+        if (!user) {
+            logger.fatal(`reset password user not found with userId: ${userId}`);
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, "not authorized");
+        }
+        //audit
+        req.currentSession = await sessionService.createFakeSession(user, false, req.clientIp, user.source);
+        attachActivitySession(req, req.currentSession);
+        attachActivityUser(req, user);
+
+        inputService.checkEmail(user.username);//username must be email, security barrier
+
+        user.password = Util.bcryptHash(pass);
+        await configService.saveUser(user);
+
+        await redisService.delete(rkey);
+        logger.info(`reset password pass changed for ${user.username}`);
+
+        await auditService.logResetPassword(req.currentSession, user);
+        await saveActivity(req, 'reset password');
+
+        return res.status(200).json({ result: true });
+    } catch (err) {
+        saveActivityError(req, 'reset password', err);
+        throw err;
     }
-
-
-
-    const rkey = `/user/resetpass/${key}`;
-    logger.info(`reset password with key: ${key} `)
-    const appService = req.appService as AppService;
-    const configService = appService.configService;
-    const redisService = appService.redisService;
-    const inputService = appService.inputService;
-    const templateService = appService.templateService;
-    const emailService = appService.emailService;
-
-    const isSystemConfigured = await configService.getIsConfigured();
-    if (!isSystemConfigured) {
-        logger.warn(`system is not configured yet`);
-        throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
-    }
-
-    inputService.checkPasswordPolicy(pass);
-
-    const userId = await redisService.get(rkey, false) as string;
-    if (!userId) {
-        logger.fatal(`reset password key not found with id: ${key}`);
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrKeyNotFound, "not authorized");
-    }
-    const user = await configService.getUserById(userId);
-    if (!user) {
-        logger.fatal(`reset password user not found with userId: ${userId}`);
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, "not authorized");
-    }
-    inputService.checkEmail(user.username);//username must be email, security barrier
-
-    user.password = Util.bcryptHash(pass);
-    await configService.saveUser(user);
-    logger.info(`reset password pass changed for ${user.username}`);
-    await redisService.delete(rkey);
-    return res.status(200).json({ result: true });
 
 }))
 
