@@ -150,6 +150,12 @@ export function attachActivity(req: any, activity?: any) {
 
 }
 
+function getRequestPath(req: any) {
+    const path: string = req.baseUrl + req.path;
+    if (path.endsWith('/'))
+        return path.substring(0, path.length - 1);
+    return path;
+}
 
 export async function saveActivityError(req: any, type: string, err: any, extFunc?: (log: ActivityLog) => void) {
     try {
@@ -169,7 +175,7 @@ export async function saveActivityError(req: any, type: string, err: any, extFun
             userId: act.user?.id,
             user2FA: act.user?.is2FA,//user needs 2FA            
             sessionId: act.sessionId,
-            requestPath: req.path,
+            requestPath: getRequestPath(req),
             //tunnel related data
             assignedIp: act.assignedIp,
             tunnelId: act.tunnelId,
@@ -211,7 +217,7 @@ export async function saveActivity(req: any, type: string, extFunc?: (log: Activ
             ip: act.clientIp || req.clientIp,
             status: ActivityStatus.Success,
             sessionId: act.sessionId,
-            requestPath: req.path,
+            requestPath: getRequestPath(req),
             //tunnel related data
             assignedIp: act.assignedIp,
             tunnelId: act.tunnelId,

@@ -21,6 +21,12 @@ const expect = chai.expect;
 chai.use(chaiExclude);
 
 
+function exclude(a: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    return a;
+}
+
 describe('configService', async () => {
 
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -134,7 +140,8 @@ describe('configService', async () => {
         configService.config.users.push(aUser);
         const user = await configService.getUserByUsername('hamza.kilic@ferrumgate.com');
         delete aUser.password;
-        expect(user).to.excluding(['insertDate', 'updateDate']).deep.include(aUser);
+
+        expect(exclude(user)).to.deep.equal(exclude(aUser));
 
     });
 
@@ -155,7 +162,9 @@ describe('configService', async () => {
         configService.config.users.push(aUser);
         const user = await configService.getUserByUsernameAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash');
         delete aUser.password;
-        expect(user).to.excluding(['insertDate', 'updateDate']).deep.include(aUser);
+        console.log(user);
+        console.log(aUser);
+        expect(exclude(user)).to.deep.equal(exclude(aUser));
 
         const user2 = await configService.getUserByUsernameAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash2');
 
@@ -179,7 +188,7 @@ describe('configService', async () => {
         configService.config.users.push(aUser);
         const user = await configService.getUserById('someid');
         delete aUser.password;
-        expect(user).to.excluding(['insertDate', 'updateDate']).deep.include(aUser);
+        expect(exclude(user)).to.deep.include(exclude(aUser));
 
     });
 
@@ -413,9 +422,9 @@ describe('configService', async () => {
 
         await configService.saveNetwork(network);
         const networkDb = await configService.getNetwork(network.id);
-        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+        expect(exclude(networkDb)).to.deep.equal(exclude(network));
         const networkDb2 = await configService.getNetworkByName('default2');
-        expect(networkDb2).to.excluding(['insertDate', 'updateDate']).deep.include(network);
+        expect(exclude(networkDb2)).to.deep.include(exclude(network));
 
     });
 
@@ -446,7 +455,7 @@ describe('configService', async () => {
         await configService.saveNetwork(network);
         await configService.saveGateway(gateway);
         const networkDb = await configService.getNetworkByGateway(gateway.id);
-        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.include(network);
+        expect(exclude(networkDb)).to.deep.include(exclude(network));
 
     });
 
@@ -504,7 +513,7 @@ describe('configService', async () => {
 
         await configService.saveGateway(gateway);
         const gatewayDb = await configService.getGateway(gateway.id);
-        expect(gatewayDb).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
+        expect(exclude(gatewayDb)).to.deep.equal(exclude(gateway));
 
     });
     it('deleteGateway', async () => {
@@ -568,7 +577,7 @@ describe('configService', async () => {
         await configService.addAuthSettingOAuth(oauth);
 
         const returned = await configService.getAuthSettingOAuth();
-        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
+        expect(exclude(returned.providers[0])).to.deep.equal(exclude(oauth));
         //delete
         await configService.deleteAuthSettingOAuth(oauth.id);
         const returned2 = await configService.getAuthSettingOAuth();
@@ -606,7 +615,7 @@ describe('configService', async () => {
         await configService.setAuthSettingLocal(local);
 
         const returned = await configService.getAuthSettingLocal();
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
+        expect(exclude(returned)).to.deep.equal(exclude(local));
 
 
     });
@@ -630,7 +639,7 @@ describe('configService', async () => {
         await configService.saveGroup(group);
 
         const returned = await configService.getGroup(group.id);
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+        expect(exclude(returned)).to.deep.equal(exclude(group));
 
 
     });
@@ -705,7 +714,7 @@ describe('configService', async () => {
 
         const returned = await configService.getGroupsAll();
         expect(returned.length).to.be.equal(2);
-        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+        expect(exclude(returned[0])).to.deep.equal(exclude(group));
 
     });
 
@@ -732,7 +741,7 @@ describe('configService', async () => {
 
         const returned = await configService.getGroup(group.id)
 
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+        expect(exclude(returned)).to.deep.equal(exclude(group));
 
     });
 
@@ -803,7 +812,7 @@ describe('configService', async () => {
         await configService.saveService(service);
 
         const returned = await configService.getService(service.id);
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
+        expect(exclude(returned)).to.deep.equal(exclude(service));
 
 
     });
@@ -957,7 +966,7 @@ describe('configService', async () => {
 
         const returned = await configService.getServicesBy();
         expect(returned.length).to.be.equal(2);
-        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+        expect(exclude(returned[0])).to.deep.equal(exclude(service1));
 
     });
 
@@ -989,7 +998,7 @@ describe('configService', async () => {
 
         const returned = await configService.getService(service1.id)
 
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+        expect(exclude(returned)).to.deep.equal(exclude(service1));
 
     });
 

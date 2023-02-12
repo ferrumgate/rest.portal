@@ -14,7 +14,13 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
-
+function expectToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete b.insertDate;
+    delete b.updateDate;
+    expect(a).to.deep.equal(b);
+}
 
 /**
  * authenticated user api tests
@@ -117,7 +123,8 @@ describe('networkApi', async () => {
         })
         expect(response.status).to.equal(200);
         expect(response.body).exist;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+
+        expectToDeepEqual(response.body, network);
 
     }).timeout(50000);
 
@@ -206,7 +213,8 @@ describe('networkApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body).exist;
         expect(response.body.items.length).to.equal(2);
-        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+
+        expectToDeepEqual(response.body.items[0], network);
 
         //test ids
 
@@ -224,7 +232,8 @@ describe('networkApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body).exist;
         expect(response.body.items.length).to.equal(2);
-        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(network2);
+
+        expectToDeepEqual(response.body.items[0], network2);
 
     }).timeout(50000);
 
@@ -302,11 +311,13 @@ describe('networkApi', async () => {
 
         network.insertDate = response.body.insertDate;
         network.updateDate = response.body.updateDate;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+
+        expectToDeepEqual(response.body, network);
 
 
         const netdb = await appService.configService.getNetwork(network.id);
-        expect(netdb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+
+        expectToDeepEqual(netdb, network);
 
     }).timeout(50000);
 
@@ -348,7 +359,8 @@ describe('networkApi', async () => {
         network.id = response.body.id;
         network.insertDate = response.body.insertDate;
         network.updateDate = response.body.updateDate;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+
+        expectToDeepEqual(response.body, network);
         expect(response.body.id).exist;
 
 

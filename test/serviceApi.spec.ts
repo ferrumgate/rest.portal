@@ -16,6 +16,13 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
+function expectToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete b.insertDate;
+    delete b.updateDate;
+    expect(a).to.deep.equal(b);
+}
 
 function createSampleData() {
     let network: Network = {
@@ -149,7 +156,8 @@ describe('serviceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(service2);
+
+        expectToDeepEqual(response.body, service2);
 
     }).timeout(50000);
 
@@ -209,7 +217,7 @@ describe('serviceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+        expectToDeepEqual(response.body.items[0], service1);
 
     }).timeout(50000);
 
@@ -273,7 +281,7 @@ describe('serviceApi', async () => {
             itemDb.insertDate = service2.insertDate;
             itemDb.updateDate = service2.updateDate;
         }
-        expect(itemDb).to.excluding(['insertDate', 'updateDate']).deep.equal(service2);
+        expectToDeepEqual(itemDb, service2);
 
     }).timeout(50000);
 
@@ -310,7 +318,8 @@ describe('serviceApi', async () => {
         service2.assignedIp = response.body.assignedIp;
         service2.insertDate = response.body.insertDate;
         service2.updateDate = response.body.updateDate;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(service2);
+
+        expectToDeepEqual(response.body, service2);
 
     }).timeout(50000);
 

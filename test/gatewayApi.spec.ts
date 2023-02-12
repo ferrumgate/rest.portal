@@ -14,6 +14,14 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
+function expectToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete b.insertDate;
+    delete b.updateDate;
+    expect(a).to.deep.equal(b);
+}
+
 
 /**
  * authenticated user api tests
@@ -112,7 +120,7 @@ describe('gatewayApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
+        expectToDeepEqual(response.body, gateway);
 
     }).timeout(50000);
 
@@ -182,7 +190,7 @@ describe('gatewayApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway2);
+        expectToDeepEqual(response.body.items[0], gateway2);
 
     }).timeout(50000);
 
@@ -252,7 +260,7 @@ describe('gatewayApi', async () => {
         })
         expect(response.status).to.equal(200);
         const itemDb = await appService.configService.getGateway(gateway.id);
-        expect(itemDb).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
+        expectToDeepEqual(itemDb, gateway);
 
     }).timeout(50000);
 
@@ -289,7 +297,7 @@ describe('gatewayApi', async () => {
         expect(response.status).to.equal(200);
 
         gateway.id = response.body.id;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
+        expectToDeepEqual(response.body, gateway);
 
     }).timeout(50000);
 

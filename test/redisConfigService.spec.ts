@@ -26,6 +26,15 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
+function expectToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete a.password;
+    delete b.insertDate;
+    delete b.updateDate;
+    delete b.password;
+    expect(a).to.deep.equal(b);
+}
 
 describe('redisConfigService', async () => {
     const redis = new RedisService();
@@ -162,7 +171,7 @@ describe('redisConfigService', async () => {
         await configService.init();
         const aUserDb = await configService.getUserByUsername(aUser.username);
         expect(aUserDb).exist;
-        expect(aUserDb).to.excluding(['password']).deep.equal(aUser);
+        expectToDeepEqual(aUserDb, aUser);
 
     });
 
@@ -184,7 +193,8 @@ describe('redisConfigService', async () => {
         await configService.init();
         const aUserDb = await configService.getUserByUsernameAndSource(aUser.username, 'local');
         expect(aUserDb).exist;
-        expect(aUserDb).to.excluding(['password']).deep.equal(aUser);
+        expectToDeepEqual(aUserDb, aUser);
+
 
     });
 
@@ -227,7 +237,7 @@ describe('redisConfigService', async () => {
         configService.config.users.push(aUser);
         await configService.init();
         const user = await configService.getUserById('someid');
-        expect(user).to.excluding(['password']).deep.equal(aUser);
+        expectToDeepEqual(user, aUser);
 
     });
 
@@ -628,7 +638,7 @@ describe('redisConfigService', async () => {
         await configService.addAuthSettingOAuth(oauth);
 
         const returned = await configService.getAuthSettingOAuth();
-        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
+        expectToDeepEqual(returned.providers[0], oauth);
         //delete
         await configService.deleteAuthSettingOAuth(oauth.id);
         const returned2 = await configService.getAuthSettingOAuth();
@@ -669,7 +679,7 @@ describe('redisConfigService', async () => {
         await configService.setAuthSettingLocal(local);
 
         const returned = await configService.getAuthSettingLocal();
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
+        expectToDeepEqual(returned, local);
 
 
     });
@@ -701,7 +711,7 @@ describe('redisConfigService', async () => {
         await configService.addAuthSettingLdap(ldap);
 
         const returned = await configService.getAuthSettingLdap();
-        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(ldap);
+        expectToDeepEqual(returned.providers[0], ldap);
         //delete
         await configService.deleteAuthSettingLdap(ldap.id);
         const returned2 = await configService.getAuthSettingOAuth();
@@ -741,7 +751,7 @@ describe('redisConfigService', async () => {
         await configService.addAuthSettingSaml(saml);
 
         const returned = await configService.getAuthSettingSaml();
-        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(saml);
+        expectToDeepEqual(returned.providers[0], saml);
         //delete
         await configService.deleteAuthSettingSaml(saml.id);
         const returned2 = await configService.getAuthSettingSaml();
@@ -773,9 +783,9 @@ describe('redisConfigService', async () => {
 
         await configService.saveNetwork(network);
         const networkDb = await configService.getNetwork(network.id);
-        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+        expectToDeepEqual(networkDb, network);
         const networkDb2 = await configService.getNetworkByName('default2');
-        expect(networkDb2).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+        expectToDeepEqual(networkDb2, network);
 
     });
 
@@ -807,7 +817,7 @@ describe('redisConfigService', async () => {
         await configService.saveNetwork(network);
         await configService.saveGateway(gateway);
         const networkDb = await configService.getNetworkByGateway(gateway.id);
-        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+        expectToDeepEqual(networkDb, network);
 
     });
 
@@ -866,7 +876,7 @@ describe('redisConfigService', async () => {
 
         await configService.saveGateway(gateway);
         const gatewayDb = await configService.getGateway(gateway.id);
-        expect(gatewayDb).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
+        expectToDeepEqual(gatewayDb, gateway);
 
     });
     it('deleteGateway', async () => {
@@ -944,7 +954,8 @@ describe('redisConfigService', async () => {
         await configService.saveGroup(group);
 
         const returned = await configService.getGroup(group.id);
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+
+        expectToDeepEqual(returned, group);
 
 
     });
@@ -1023,7 +1034,7 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getGroupsAll();
         expect(returned.length).to.be.equal(2);
-        //expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+
 
     });
 
@@ -1052,7 +1063,7 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getGroup(group.id)
 
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+        expectToDeepEqual(returned, group);
 
     });
 
@@ -1127,7 +1138,8 @@ describe('redisConfigService', async () => {
         await configService.saveService(service);
 
         const returned = await configService.getService(service.id);
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
+
+        expectToDeepEqual(returned, service);
 
 
     });
@@ -1285,7 +1297,8 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getServicesBy();
         expect(returned.length).to.be.equal(2);
-        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+
+        expectToDeepEqual(returned[0], service1);
 
     });
 
@@ -1318,7 +1331,7 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getService(service1.id)
 
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+        expectToDeepEqual(returned, service1);
 
     });
 

@@ -285,34 +285,34 @@ export class AuditService {
     }
     async logConfigExport(currentSession: AuthSession, currentUser: User) {
 
-        await this.executeSave(currentSession, currentUser, undefined, undefined,
+        await this.executeSave(currentSession, currentUser, {}, {},
             `config exported`,
             ``,)
     }
     async logConfigImport(currentSession: AuthSession, currentUser: User) {
 
-        await this.executeSave(currentSession, currentUser, undefined, undefined,
+        await this.executeSave(currentSession, currentUser, {}, {},
             `config imported`,
             ``,)
     }
 
     async logUserConfirm(currentSession: AuthSession, currentUser: User) {
 
-        await this.executeSave(currentSession, currentUser, undefined, undefined,
+        await this.executeSave(currentSession, currentUser, {}, {},
             `user confirmed`,
             `${currentUser.username}`)
     }
 
     async logForgotPassword(currentSession: AuthSession, currentUser: User, username: string) {
 
-        await this.executeSave(currentSession, currentUser, undefined, undefined,
+        await this.executeSave(currentSession, currentUser, {}, {},
             `password forgotten`,
             `${username}`)
     }
 
     async logResetPassword(currentSession: AuthSession, currentUser: User) {
 
-        await this.executeSave(currentSession, currentUser, undefined, undefined,
+        await this.executeSave(currentSession, currentUser, {}, {},
             `password reset`,
             `${currentUser.username}`)
     }

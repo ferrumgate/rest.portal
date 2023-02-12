@@ -14,6 +14,13 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
+function expectToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete b.insertDate;
+    delete b.updateDate;
+    expect(a).to.deep.equal(b);
+}
 
 function createSampleData() {
     const group1: Group = {
@@ -132,7 +139,7 @@ describe('groupApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(group2);
+        expectToDeepEqual(response.body, group2);
 
     }).timeout(50000);
 
@@ -193,7 +200,7 @@ describe('groupApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(group1);
+        expectToDeepEqual(response.body.items[0], group1);
 
     }).timeout(50000);
 
@@ -256,7 +263,8 @@ describe('groupApi', async () => {
             itemDb.insertDate = group3.insertDate;
             itemDb.updateDate = group3.updateDate;
         }
-        expect(itemDb).to.excluding(['insertDate', 'updateDate']).deep.equal(group3);
+
+        expectToDeepEqual(itemDb, group3);
 
     }).timeout(50000);
 
@@ -291,7 +299,7 @@ describe('groupApi', async () => {
         group1.insertDate = response.body.insertDate;
         group1.updateDate = response.body.updateDate;
 
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(group1);
+        expectToDeepEqual(response.body, group1);
 
     }).timeout(50000);
 

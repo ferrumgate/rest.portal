@@ -78,6 +78,12 @@ export interface SearchActivityLogsRequest {
     browser?: string;
     browserVersion?: string;
     requestPath?: string;
+
+    sourceIp?: string;
+    sourcePort?: number;
+    destinationIp?: string;
+    destinationPort?: number;
+    networkProtocol?: string;
 }
 
 export interface SearchSummaryRequest {
@@ -261,7 +267,12 @@ export class ESService {
 
                             },
                             ip: {
-                                type: "keyword"
+                                type: "keyword",
+                                fields: {
+                                    addr: {
+                                        type: 'ip'
+                                    }
+                                }
 
                             },
                             severity: {
@@ -463,9 +474,15 @@ export class ESService {
 
                             },
                             ip: {
-                                type: "keyword"
+                                type: "keyword",
+                                fields: {
+                                    addr: {
+                                        type: 'ip'
+                                    }
+                                }
 
                             },
+
                             status: {
                                 type: "integer"
 
@@ -507,7 +524,12 @@ export class ESService {
 
                             },
                             assignedIp: {
-                                type: "keyword"
+                                type: "keyword",
+                                fields: {
+                                    addr: {
+                                        type: 'ip'
+                                    }
+                                }
 
                             },
                             tunnelId: {
@@ -571,6 +593,32 @@ export class ESService {
                             },
                             country: {
                                 type: "keyword"
+                            },
+                            sourceIp: {
+                                type: "keyword",
+                                fields: {
+                                    addr: {
+                                        type: 'ip'
+                                    }
+                                }
+                            },
+                            sourcePort: {
+                                type: "integer"
+                            },
+                            destinationIp: {
+                                type: "keyword",
+                                fields: {
+                                    addr: {
+                                        type: 'ip'
+                                    }
+                                }
+                            },
+
+                            destinationPort: {
+                                type: "integer"
+                            },
+                            networkProtocol: {
+                                type: "keyword"
                             }
 
 
@@ -625,7 +673,9 @@ export class ESService {
         let eDate = req.endDate ? new Date(req.endDate) : new Date();
         const dates = this.indexCalculator(sDate, eDate);
         const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
-        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        let cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`);
+        if (!cindexes.length)
+            cindexes = dates.map(x => `ferrumgate-activity-${x}`);
         let request = {
             ignore_unavailable: true,
             index: cindexes,
@@ -671,7 +721,7 @@ export class ESService {
             let item = {
                 query_string: {
                     query: `${req.search}`,
-                    fields: ['requestId', "type", "authSource", "ip", "statusMessage", "statusMessage2", "serviceId", "serviceName",
+                    fields: ['requestId', "type", "authSource", "ip", "statusMessage", "statusMessage2", "serviceId", "serviceName", "assignedIp", "sourceIp", "destinationIp",
                         "username", "userId", "gatewayId", "gatewayName", "networkId", "networkName", "authnId", "authnName", "authzId", "authzName"]
                 }
             }
