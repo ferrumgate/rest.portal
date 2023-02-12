@@ -8,6 +8,8 @@ import { AuditLog } from '../src/model/auditLog';
 import { Util } from '../src/util';
 import { ESService } from '../src/service/esService';
 import { ActivityService } from '../src/service/activityService';
+import { ConfigService } from '../src/service/configService';
+
 
 
 
@@ -18,18 +20,21 @@ const expect = chai.expect;
 
 
 describe('activityService', async () => {
-
+    const streamKey = '/logs/activity';
+    const host = 'https://192.168.88.250:9200';
+    const user = 'elastic';
+    const pass = '123456';
+    const config = new ConfigService('fljvc7rm1xfo37imbu3ryc5mfbh9jpm5', `/tmp/${Util.randomNumberString()}`)
     beforeEach(async () => {
+        await config.setES({ host: host, user: user, pass: pass })
 
     })
 
 
-    const streamKey = '/logs/activity';
-    const esHost = 'https://192.168.88.250:9200';
-    const esUser = "elastic";
-    const esPass = '123456';
+
     it('save', async () => {
-        const es = new ESService(esHost, esUser, esPass);
+
+        const es = new ESService(config, host, user, pass);
         const redis = new RedisService();
         await redis.delete(streamKey)
         let log = {
@@ -51,7 +56,7 @@ describe('activityService', async () => {
     }).timeout(20000);
 
     it('trimStream', async () => {
-        const es = new ESService(esHost, esUser, esPass);
+        const es = new ESService(config, host, user, pass);
         const redis = new RedisService();
         await redis.delete(streamKey)
         let log = {

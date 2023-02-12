@@ -10,14 +10,14 @@ import { Gateway } from '../src/model/network';
 import { AuditLog } from '../src/model/auditLog';
 import { ESService } from '../src/service/esService';
 import { ActivityLog } from '../src/model/activityLog';
+import { ConfigService } from '../src/service/configService';
+import { config } from 'process';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
 
 
-const esHost = 'https://192.168.88.250:9200';
-const esUser = "elastic";
-const esPass = '123456';
+
 
 describe('activityApi ', async () => {
     const appService = (app.appService) as AppService;
@@ -25,13 +25,19 @@ describe('activityApi ', async () => {
     const configService = appService.configService;
     const sessionService = appService.sessionService;
 
+    const host = 'https://192.168.88.250:9200';
+    const user = 'elastic';
+    const pass = '123456';
+
+
 
     before(async () => {
+
         if (fs.existsSync('/tmp/config.yaml'))
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
-        await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
-
+        await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await configService.setES({ host: host, user: user, pass: pass })
 
     })
 
@@ -97,9 +103,7 @@ describe('activityApi ', async () => {
 
 
 
-    const host = 'https://192.168.88.250:9200';
-    const user = 'elastic';
-    const pass = '123456';
+
 
     function createSampleData2() {
         let activity1: ActivityLog = {
@@ -130,7 +134,7 @@ describe('activityApi ', async () => {
 
     it('/log/audit', async () => {
 
-        const es = new ESService(host, user, pass);
+        const es = new ESService(configService, host, user, pass);
         await es.reset();
         const { activity1, activity2 } = createSampleData2();
         let data = await es.activityCreateIndexIfNotExits(activity1);
@@ -148,6 +152,7 @@ describe('activityApi ', async () => {
             test -= 5000;
             await Util.sleep(5000);
         }
+        await appService.startReconfigureES();
 
 
         const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');

@@ -11,20 +11,30 @@ import { Group } from '../src/model/group';
 import { Service } from '../src/model/service';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
-import { ConfigEvent } from '../src/model/config';
+
 
 import chaiExclude from 'chai-exclude';
-import { ConfigWatch, RedisConfigService } from '../src/service/redisConfigService';
+import { RedisConfigService } from '../src/service/redisConfigService';
 import { RedisService } from '../src/service/redisService';
 import { config } from 'process';
 import { WatchItem } from '../src/service/watchService';
 import { authenticate } from 'passport';
 import { SystemLogService } from '../src/service/systemLogService';
+import { ConfigWatch } from '../src/model/config';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
+function expectToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete a.password;
+    delete b.insertDate;
+    delete b.updateDate;
+    delete b.password;
+    expect(a).to.deep.equal(b);
+}
 
 describe('redisConfigService', async () => {
     const redis = new RedisService();
@@ -77,7 +87,7 @@ describe('redisConfigService', async () => {
     it('rDel', async () => {
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         let logs: ConfigWatch<User>[] = [];
-        configService.logWatcher.events.on('data', (data: WatchItem<ConfigWatch<User>>) => {
+        configService.logWatcher.watcher.events.on('data', (data: WatchItem<ConfigWatch<User>>) => {
             logs.push(data.val);
         })
         //await configService.logWatcher.read();
@@ -86,10 +96,10 @@ describe('redisConfigService', async () => {
         const data = await configService.rExists('users/1')
         expect(data).to.be.false;
         await Util.sleep(1000);
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
         await Util.sleep(10000);
         expect(logs.length).to.equal(2);
         expect(logs[0].type).to.equal('put');
@@ -161,7 +171,7 @@ describe('redisConfigService', async () => {
         await configService.init();
         const aUserDb = await configService.getUserByUsername(aUser.username);
         expect(aUserDb).exist;
-        expect(aUserDb).to.excluding(['password']).deep.equal(aUser);
+        expectToDeepEqual(aUserDb, aUser);
 
     });
 
@@ -183,7 +193,8 @@ describe('redisConfigService', async () => {
         await configService.init();
         const aUserDb = await configService.getUserByUsernameAndSource(aUser.username, 'local');
         expect(aUserDb).exist;
-        expect(aUserDb).to.excluding(['password']).deep.equal(aUser);
+        expectToDeepEqual(aUserDb, aUser);
+
 
     });
 
@@ -226,7 +237,7 @@ describe('redisConfigService', async () => {
         configService.config.users.push(aUser);
         await configService.init();
         const user = await configService.getUserById('someid');
-        expect(user).to.excluding(['password']).deep.equal(aUser);
+        expectToDeepEqual(user, aUser);
 
     });
 
@@ -584,59 +595,7 @@ describe('redisConfigService', async () => {
 
     });
 
-    it('setAuthSettings/getAuthSettings', async () => {
 
-        //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.auth = {
-            common: {},
-            local: {} as AuthLocal,
-            ldap: {
-                providers: [
-                    { id: '1' } as BaseLdap
-                ]
-            },
-            oauth: {
-                providers: [
-                    { id: '1' } as BaseOAuth
-                ]
-            },
-            saml: {
-                providers: [
-                    { id: '1' } as BaseSaml
-                ]
-            }
-
-        };
-
-        await configService.init();
-
-        await configService.setAuthSettings({
-            common: {},
-            local: {} as AuthLocal,
-            ldap: {
-                providers: [
-                    { id: '2' } as BaseLdap
-                ]
-            },
-            oauth: {
-                providers: [
-                    { id: '3' } as BaseOAuth
-                ]
-            },
-            saml: {
-                providers: [
-                    { id: '4' } as BaseSaml
-                ]
-            }
-
-        });
-        const db = await configService.getAuthSettings()
-        expect(db.ldap?.providers[0].id).to.equal('2');
-        expect(db.oauth?.providers[0].id).to.equal('3');
-
-
-    });
 
 
     it('authSettingsCommon', async () => {
@@ -647,8 +606,8 @@ describe('redisConfigService', async () => {
         let common: AuthCommon = {
             bla: 'test'
         }
-        await configService.setAuthSettingsCommon(common);
-        const returned = await configService.getAuthSettingsCommon() as any;
+        await configService.setAuthSettingCommon(common);
+        const returned = await configService.getAuthSettingCommon() as any;
         expect(returned).to.be.exist;
         expect(returned.bla).exist;
 
@@ -659,7 +618,7 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
-            common: {}, local: {} as any
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
         }
         await configService.init();
         let oauth: BaseOAuth = {
@@ -679,7 +638,7 @@ describe('redisConfigService', async () => {
         await configService.addAuthSettingOAuth(oauth);
 
         const returned = await configService.getAuthSettingOAuth();
-        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
+        expectToDeepEqual(returned.providers[0], oauth);
         //delete
         await configService.deleteAuthSettingOAuth(oauth.id);
         const returned2 = await configService.getAuthSettingOAuth();
@@ -694,13 +653,13 @@ describe('redisConfigService', async () => {
 
     }).timeout(60000);
 
-    it('setAuthSettingsLocal/getAuthSettingsLocal', async () => {
+    it('setAuthSettingLocal/getAuthSettingLocal', async () => {
 
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         configService.config.auth = {
-            common: {}, local: {} as any
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
         }
         await configService.init();
         let local: BaseLocal = {
@@ -717,10 +676,10 @@ describe('redisConfigService', async () => {
 
         }
         //add
-        await configService.setAuthSettingsLocal(local);
+        await configService.setAuthSettingLocal(local);
 
-        const returned = await configService.getAuthSettingsLocal();
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
+        const returned = await configService.getAuthSettingLocal();
+        expectToDeepEqual(returned, local);
 
 
     });
@@ -731,7 +690,7 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
-            common: {}, local: {} as any, ldap: { providers: [] }
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
         }
         await configService.init();
         let ldap: BaseLdap = {
@@ -752,7 +711,7 @@ describe('redisConfigService', async () => {
         await configService.addAuthSettingLdap(ldap);
 
         const returned = await configService.getAuthSettingLdap();
-        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(ldap);
+        expectToDeepEqual(returned.providers[0], ldap);
         //delete
         await configService.deleteAuthSettingLdap(ldap.id);
         const returned2 = await configService.getAuthSettingOAuth();
@@ -772,7 +731,7 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
-            common: {}, local: {} as any, ldap: { providers: [] }
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
         }
         await configService.init();
         let saml: BaseSaml = {
@@ -792,7 +751,7 @@ describe('redisConfigService', async () => {
         await configService.addAuthSettingSaml(saml);
 
         const returned = await configService.getAuthSettingSaml();
-        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(saml);
+        expectToDeepEqual(returned.providers[0], saml);
         //delete
         await configService.deleteAuthSettingSaml(saml.id);
         const returned2 = await configService.getAuthSettingSaml();
@@ -824,9 +783,9 @@ describe('redisConfigService', async () => {
 
         await configService.saveNetwork(network);
         const networkDb = await configService.getNetwork(network.id);
-        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+        expectToDeepEqual(networkDb, network);
         const networkDb2 = await configService.getNetworkByName('default2');
-        expect(networkDb2).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+        expectToDeepEqual(networkDb2, network);
 
     });
 
@@ -858,7 +817,7 @@ describe('redisConfigService', async () => {
         await configService.saveNetwork(network);
         await configService.saveGateway(gateway);
         const networkDb = await configService.getNetworkByGateway(gateway.id);
-        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+        expectToDeepEqual(networkDb, network);
 
     });
 
@@ -917,7 +876,7 @@ describe('redisConfigService', async () => {
 
         await configService.saveGateway(gateway);
         const gatewayDb = await configService.getGateway(gateway.id);
-        expect(gatewayDb).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
+        expectToDeepEqual(gatewayDb, gateway);
 
     });
     it('deleteGateway', async () => {
@@ -995,7 +954,8 @@ describe('redisConfigService', async () => {
         await configService.saveGroup(group);
 
         const returned = await configService.getGroup(group.id);
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+
+        expectToDeepEqual(returned, group);
 
 
     });
@@ -1074,7 +1034,7 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getGroupsAll();
         expect(returned.length).to.be.equal(2);
-        //expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+
 
     });
 
@@ -1103,7 +1063,7 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getGroup(group.id)
 
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+        expectToDeepEqual(returned, group);
 
     });
 
@@ -1178,7 +1138,8 @@ describe('redisConfigService', async () => {
         await configService.saveService(service);
 
         const returned = await configService.getService(service.id);
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
+
+        expectToDeepEqual(returned, service);
 
 
     });
@@ -1336,7 +1297,8 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getServicesBy();
         expect(returned.length).to.be.equal(2);
-        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+
+        expectToDeepEqual(returned[0], service1);
 
     });
 
@@ -1369,7 +1331,7 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getService(service1.id)
 
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+        expectToDeepEqual(returned, service1);
 
     });
 
@@ -1844,8 +1806,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -1903,11 +1865,11 @@ describe('redisConfigService', async () => {
         expect(authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
         expect(authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
 
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
 
 
         expect(logs.length > 0).to.be.true;
@@ -1932,8 +1894,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -1953,11 +1915,11 @@ describe('redisConfigService', async () => {
         aUser.name = 'changed';
 
         await configService.saveUser(aUser);
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
 
         expect(logs.length > 0).to.be.true;
 
@@ -1978,8 +1940,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -2087,8 +2049,8 @@ describe('redisConfigService', async () => {
         expect(gateways.find(x => x.networkId == network.id)).not.exist;
         expect(gateways[0].networkId).to.be.equal('');
 
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
 
         expect(logs.length > 0).to.be.true;
 
@@ -2108,8 +2070,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -2129,8 +2091,8 @@ describe('redisConfigService', async () => {
 
         await configService.deleteGateway(gateway.id);
 
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
         expect(logs.length > 0).to.be.true;
 
 
@@ -2152,8 +2114,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -2224,8 +2186,8 @@ describe('redisConfigService', async () => {
         expect(authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aGroup.id))).to.not.exist;
         expect(authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
 
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
 
         expect(logs.length > 0).to.be.true;
 
@@ -2247,8 +2209,8 @@ describe('redisConfigService', async () => {
         let logs: any[] = [];
 
         await configService.init();
-        await configService.logWatcher.trim(1);
-        configService.logWatcher.events.on('data', (data: any) => {
+        await configService.logWatcher.watcher.trim(1);
+        configService.logWatcher.watcher.events.on('data', (data: any) => {
 
             logs.push(data);
         })
@@ -2313,8 +2275,8 @@ describe('redisConfigService', async () => {
         const authorizationPolicy = await configService.getAuthorizationPolicy();
         expect(authorizationPolicy.rules.find(x => x.serviceId == service1.id)).to.not.exist;
 
-        await configService.logWatcher.read();
-        await configService.logWatcher.read();
+        await configService.logWatcher.watcher.read();
+        await configService.logWatcher.watcher.read();
 
         expect(logs.length > 0).to.be.true;
 
@@ -2343,6 +2305,60 @@ describe('redisConfigService', async () => {
         expect(str).exist
 
     });
+
+
+    it('getES/setES', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.captcha = {};
+        await configService.init();
+
+        await configService.setES({ host: 'abc', user: 'adfa' });
+        const db = await configService.getES()
+        expect(db?.host).to.equal('abc');
+
+
+    });
+
+
+    it('getAll', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        await configService.init();
+        await configService.setCaptcha({ client: '2', server: '3' });
+
+        let config = configService.createConfig();
+        await configService.getConfig(config);
+        expect(config.captcha.client).to.equal('2');
+        expect(config.captcha.server).to.equal('3');
+
+
+    });
+
+    it('setAll', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        await configService.init();
+        await configService.setCaptcha({ client: '2', server: '3' });
+
+        const catpcha1 = await configService.getCaptcha();
+        expect(catpcha1.client).to.equal('2');
+        expect(catpcha1.server).to.equal('3');
+
+        let config = configService.createConfig();
+        config.captcha = { client: '4', server: '5' };
+        await configService.setConfig(config);
+        const catpcha = await configService.getCaptcha();
+        expect(catpcha.client).to.equal('4');
+        expect(catpcha.server).to.equal('5');
+
+
+    });
+
+
 
 
 

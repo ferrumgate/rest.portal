@@ -5,6 +5,7 @@ import fs from 'fs';
 import { AppService } from '../src/service/appService';
 import { app } from '../src/index';
 import { User } from '../src/model/user';
+import { Email, EmailService } from '../src/service/emailService';
 
 
 chai.use(chaiHttp);
@@ -13,9 +14,11 @@ const expect = chai.expect;
 
 
 
-describe.skip('userApiForgotPassword', async () => {
+describe('userApiForgotPassword', async () => {
     const appService = app.appService as AppService;
     const redisService = appService.redisService;
+    const emailService = appService.emailService;
+    const configService = appService.configService;
     const user: User = {
         username: 'hamza@ferrumgate.com',
         groupIds: [],
@@ -28,7 +31,7 @@ describe.skip('userApiForgotPassword', async () => {
     }
     before(async () => {
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
-        await appService.configService.setEmailSettings({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
+        await appService.configService.setEmailSetting({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
 
         await appService.configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
         await appService.configService.saveConfigToFile();
@@ -38,11 +41,22 @@ describe.skip('userApiForgotPassword', async () => {
     beforeEach(async () => {
         appService.configService.config.users = [];
         await appService.configService.setIsConfigured(1);
-        await appService.configService.setAuthSettings({ local: { isForgotPassword: true } })
+        await appService.configService.setAuthSettingLocal({ isForgotPassword: true } as any)
         await redisService.flushAll();
     })
 
+    afterEach(async () => {
+        appService.emailService = emailService;
+    })
+
     it('POST /user/forgotpass will return 400 with undefined email parameter', async () => {
+
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         //prepare data
         await appService.configService.saveUser(user);
 
@@ -61,6 +75,12 @@ describe.skip('userApiForgotPassword', async () => {
     }).timeout(50000);
 
     it('POST /user/forgotpass will return 200 with not found user parameter', async () => {
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         //prepare data
         await appService.configService.saveUser(user);
 
@@ -82,6 +102,12 @@ describe.skip('userApiForgotPassword', async () => {
 
 
     it('POST /user/forgotpass will return 200 with found user', async () => {
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         //prepare data
         await appService.configService.saveUser(user);
 
@@ -102,6 +128,12 @@ describe.skip('userApiForgotPassword', async () => {
 
 
     it('POST /user/forgotpass will return 415 because of not configured system', async () => {
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         //prepare data
         await appService.configService.saveUser(user);
         await appService.configService.setIsConfigured(0);
@@ -121,10 +153,16 @@ describe.skip('userApiForgotPassword', async () => {
 
     }).timeout(50000);
     it('POST /user/forgotpass will return 405 because of not enabled forgot password', async () => {
+        class MockEmail extends EmailService {
+            override  async send(email: Email): Promise<void> {
+
+            }
+        }
+        appService.emailService = new MockEmail(configService);
         //prepare data
         await appService.configService.saveUser(user);
         await appService.configService.setIsConfigured(1);
-        await appService.configService.setAuthSettings({ local: { isForgotPassword: false } });
+        await appService.configService.setAuthSettingLocal({ isForgotPassword: false } as any);
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)

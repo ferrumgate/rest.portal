@@ -14,6 +14,7 @@ import { Gateway, Network } from '../src/model/network';
 import { SessionService } from '../src/service/sessionService';
 import { SummaryService } from '../src/service/summaryService';
 import { ESService } from '../src/service/esService';
+import { DhcpService } from '../src/service/dhcpService';
 
 
 
@@ -25,7 +26,9 @@ const expect = chai.expect;
 describe('summaryService', () => {
 
     const simpleRedis = new RedisService('localhost:6379,localhost:6390');
-
+    const host = 'https://192.168.88.250:9200';
+    const user = 'elastic';
+    const pass = '123456';
     beforeEach(async () => {
 
         await simpleRedis.flushAll();
@@ -52,8 +55,8 @@ describe('summaryService', () => {
         await configService.saveService({ id: 'test7' } as any);
         await configService.saveGroup({ id: 'test10' } as any);
         const sessionService = new SessionService(configService, simpleRedis);
-        const tunnelService = new TunnelService(configService, simpleRedis);
-        const es = new ESService();
+        const tunnelService = new TunnelService(configService, simpleRedis, new DhcpService(configService, simpleRedis));
+        const es = new ESService(configService, host, user, pass);
         const summaryService = new SummaryService(configService, tunnelService, sessionService, simpleRedis, es);
         const sum = await summaryService.getSummaryConfig();
         expect(sum.authnCount).to.equal(1);

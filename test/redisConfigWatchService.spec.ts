@@ -105,7 +105,7 @@ describe('redisConfigWatchService ', async () => {
 
         const watcher = new RedisConfigWatchService(new RedisService(), new RedisService(), systemLog, false, encryptKey, 'test2', '/tmp/abcd');
         let eventsReceived = false;
-        watcher.watch.on('configChanged', (data: any) => {
+        watcher.events.on('configChanged', (data: any) => {
             eventsReceived = true;
         })
         await watcher.start();
@@ -126,7 +126,7 @@ describe('redisConfigWatchService ', async () => {
 
         const watcher = new RedisConfigWatchService(new RedisService(), new RedisService(), systemLog, true, encryptKey, 'test2', '/tmp/abcd');
         let eventsReceived = false;
-        watcher.watch.on('configChanged', (data: any) => {
+        watcher.events.on('configChanged', (data: any) => {
             eventsReceived = true;
         })
         await watcher.start();

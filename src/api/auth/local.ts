@@ -37,7 +37,7 @@ export function localInit() {
                     throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrUserNotFound, 'bad user');
                 attachActivityUser(req, user);
                 //get user roles if local is disabled
-                const local = await configService.getAuthSettingsLocal();
+                const local = await configService.getAuthSettingLocal();
                 await checkUser(user, local);
 
                 if (!local.isEnabled) {

@@ -12,13 +12,20 @@ import { authorizeAsAdmin } from "./commonApi";
 import { RedisService } from "../service/redisService";
 import { Captcha } from "../model/captcha";
 import * as diff from 'deep-object-diff';
-import { EmailSettings } from "../model/emailSettings";
+import { EmailSetting } from "../model/emailSetting";
 import { AuthCommon, AuthLocal, BaseLocal, BaseOAuth } from "../model/authSettings";
 import { util } from "chai";
 import { config } from "process";
 import { AuthSession } from "../model/authSession";
-
-
+import { ESSetting } from "../model/esSetting";
+import { ESService } from "../service/esService";
+import { RedisConfigWatchService } from "../service/redisConfigWatchService";
+import yaml from 'yaml';
+import fsp from 'fs/promises';
+import multer from 'multer';
+import { Config } from "log4js";
+import { attachActivitySession, attachActivityUser, saveActivity } from "./auth/commonAuth";
+const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 } });
 
 
 /////////////////////////////////  public //////////////////////////////////
@@ -34,18 +41,21 @@ export const routerConfig = express.Router();
 async function getPublicConfig(configService: ConfigService) {
     const captcha = await configService.getCaptcha();
     const isConfigured = await configService.getIsConfigured();
-    const authSettings = await configService.getAuthSettings();
+    const oauth = await configService.getAuthSettingOAuth();
+    const saml = await configService.getAuthSettingSaml();
+    const ldap = await configService.getAuthSettingLdap();
+    const local = await configService.getAuthSettingLocal();
 
-    const googleOAuth = authSettings.oauth?.providers.find(x => x.type == 'google');
-    const linkedOAuth = authSettings.oauth?.providers.find(x => x.type == 'linkedin');
-    const auth0 = authSettings.saml?.providers.find(x => x.type == 'auth0');
+    const googleOAuth = oauth?.providers.find(x => x.type == 'google');
+    const linkedOAuth = oauth?.providers.find(x => x.type == 'linkedin');
+    const auth0 = saml?.providers.find(x => x.type == 'auth0');
     return {
         captchaSiteKey: captcha.client,
         isConfigured: isConfigured,
         login: {
             local: {
-                isForgotPassword: authSettings.local.isForgotPassword,
-                isRegister: authSettings.local.isRegister
+                isForgotPassword: local.isForgotPassword,
+                isRegister: local.isRegister
             },
             oAuthGoogle: googleOAuth?.isEnabled ? {} : undefined,
             oAuthLinkedin: linkedOAuth?.isEnabled ? {} : undefined,
@@ -190,14 +200,14 @@ routerConfigAuthenticated.get('/email',
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
-        const email = await configService.getEmailSettings();
+        const email = await configService.getEmailSetting();
 
         return res.status(200).json(email);
 
     }))
 
 
-function getEmailSettingFrom(input: EmailSettings): EmailSettings {
+function getEmailSettingFrom(input: EmailSetting): EmailSetting {
     if (input.type == 'empty')
         return {
             type: 'empty', user: '', fromname: '', pass: ''
@@ -232,7 +242,7 @@ routerConfigAuthenticated.put('/email',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
-        const input = req.body as EmailSettings
+        const input = req.body as EmailSetting
         logger.info(`changing config email settings`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
@@ -245,16 +255,16 @@ routerConfigAuthenticated.put('/email',
 
         await inputService.checkIfExists(input);
         const emailService = appService.emailService;
-        const email = await configService.getEmailSettings();
+        const email = await configService.getEmailSetting();
         const diffFields = diff.detailedDiff(email, input);
         if (Object.keys(diffFields)) {
             const setting = getEmailSettingFrom(input);
-            const { before, after } = await configService.setEmailSettings(setting);
-            await auditService.logSetEmailSettings(currentSession, currentUser, before, after);
+            const { before, after } = await configService.setEmailSetting(setting);
+            await auditService.logSetEmailSetting(currentSession, currentUser, before, after);
             await emailService.reset();
 
         }
-        const again = await configService.getEmailSettings();
+        const again = await configService.getEmailSetting();
         return res.status(200).json(again);
 
     }));
@@ -277,15 +287,15 @@ routerConfigAuthenticated.delete('/email',
         const emailService = appService.emailService;
         const auditService = appService.auditService;
 
-        const email = await configService.getEmailSettings();
+        const email = await configService.getEmailSetting();
 
         if (email) {
-            const { before, after } = await configService.setEmailSettings({ type: 'empty', fromname: '', pass: '', user: '' });
-            await auditService.logSetEmailSettings(currentSession, currentUser, before, after);
+            const { before, after } = await configService.setEmailSetting({ type: 'empty', fromname: '', pass: '', user: '' });
+            await auditService.logSetEmailSetting(currentSession, currentUser, before, after);
             await emailService.reset();
 
         }
-        const again = await configService.getEmailSettings();
+        const again = await configService.getEmailSetting();
         return res.status(200).json(again);
 
     }));
@@ -296,7 +306,7 @@ routerConfigAuthenticated.post('/email/check',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
-        const input = req.body as EmailSettings
+        const input = req.body as EmailSetting
 
         logger.info(`checking email settings`);
 
@@ -339,5 +349,192 @@ routerConfigAuthenticated.post('/email/check',
         return res.status(200).json({ isError: isError, errorMessage: errorMessage });
 
     }));
+
+
+
+////////////////////////////// captcha ///////////////////////////////////////
+
+routerConfigAuthenticated.get('/es',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`getting config es parameters`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const es = await configService.getES();
+
+
+        return res.status(200).json(es || {});
+
+    }))
+
+routerConfigAuthenticated.put('/es',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const input = req.body as ESSetting
+        logger.info(`changing config es settings`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const redisService = appService.redisService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        const es = await configService.getES();
+        if (es.host != input.host || es.pass != input.pass || es.user || input.user || es.deleteOldRecordsMaxDays != input.deleteOldRecordsMaxDays) {
+            const { before, after } = await configService.setES(input);
+            await auditService.logSetES(currentSession, currentUser, before, after);
+        }
+        const again = await configService.getES();
+        return res.status(200).json(again);
+
+    }))
+
+
+routerConfigAuthenticated.post('/es/check',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const input = req.body as ESSetting
+        logger.info(`checking config es settings`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const redisService = appService.redisService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        let errMsg = '';
+        try {
+            const es = new ESService(configService, input.host, input.user, input.pass);
+            const indexes = await es.getAllIndexes();
+        } catch (err: any) {
+            logger.error(err);
+            errMsg = err.message;
+        }
+        return res.status(200).json({ error: errMsg });
+
+    }))
+
+/////////  import / export config ///////////////////////////
+
+routerConfigAuthenticated.get('/export/key',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`exporting config`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const redisService = appService.redisService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        const random = Util.randomNumberString(32);
+        await redisService.set(`/export/file/${random}`, random, { ttl: 10000 });
+        return res.status(200).json({ key: random });
+
+    }))
+
+routerConfigAuthenticated.get('/export/:key',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { key } = req.params;
+        logger.info(`exporting config`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const redisService = appService.redisService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        const isSystemConfigured = await configService.getIsConfigured();
+        if (!isSystemConfigured) {
+            logger.warn(`system is not configured yet`);
+            throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+        }
+
+
+        const encKey = await redisService.get(`/export/file/${key}`, false) as string;
+        if (!encKey) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodes.ErrNotFound, 'key is wrong');
+
+        let conf = configService.createConfig();
+        await configService.getConfig(conf);
+
+
+        const str = yaml.stringify(conf);
+
+        const encrypted = Util.encrypt(encKey, str);
+        const randomFilename = Util.randomNumberString(8);
+        const filepath = `/tmp/${randomFilename}`;
+        await fsp.writeFile(filepath, encrypted);
+        await redisService.delete(`/export/file/${encKey}`);
+        await auditService.logConfigExport(currentSession, currentUser);
+        return res.download(filepath, `${randomFilename}.txt`)
+        //return res.status(200).json({ key: encrypted });
+
+    }))
+
+
+
+routerConfigAuthenticated.post('/import/:key',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(upload.single('config')),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { key } = req.params;
+        logger.info(`importing config`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const redisService = appService.redisService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        const isSystemConfigured = await configService.getIsConfigured();
+        if (!isSystemConfigured) {
+            logger.warn(`system is not configured yet`);
+            throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+        }
+
+        const file = req.file;
+        const str = (await fsp.readFile(file.path)).toString();
+        const decrpted = Util.decrypt(key, str);
+
+        const conf = yaml.parse(decrpted) as Config;
+        await configService.setConfig(conf);
+        await fsp.unlink(file.path);
+
+        await auditService.logConfigImport(currentSession, currentUser);
+        return res.status(200).json({});
+
+    }))
+
+
+
+
+
 
 

@@ -6,16 +6,16 @@ version=$(cat package.json | grep version | cut -d: -f2 | tr -d , | tr -d \" | t
 docker build -t rest.portal .
 docker tag rest.portal rest.portal:$version
 echo "rest.portal:$version builded"
-docker tag rest.portal registry.ferrumgate.local/ferrumgate/rest.portal:$version
-docker tag rest.portal registry.ferrumgate.local/ferrumgate/rest.portal:latest
+docker tag rest.portal registry.ferrumgate.zero/ferrumgate/rest.portal:$version
+docker tag rest.portal registry.ferrumgate.zero/ferrumgate/rest.portal:latest
 docker tag rest.portal ferrumgate/rest.portal:$version
 
 while true; do
     read -p "do you want to push to local registry y/n " yn
     case $yn in
     [Yy]*)
-        docker push registry.ferrumgate.local/ferrumgate/rest.portal:$version
-        docker push registry.ferrumgate.local/ferrumgate/rest.portal:latest
+        docker push registry.ferrumgate.zero/ferrumgate/rest.portal:$version
+        docker push registry.ferrumgate.zero/ferrumgate/rest.portal:latest
         break
         ;;
     [Nn]*) exit ;;

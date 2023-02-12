@@ -1,6 +1,6 @@
 import * as nodemailer from 'nodemailer'
 import SMTPPool from 'nodemailer/lib/smtp-pool';
-import { EmailSettings } from '../model/emailSettings';
+import { EmailSetting } from '../model/emailSetting';
 import { logger } from '../common';
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../restfullException';
 
@@ -132,20 +132,20 @@ export class EmailService {
         this.sender = null;
     }
     async send(email: Email) {
-        const emailSettings = await this.configService.getEmailSettings();
-        if (emailSettings.type == 'empty')// if any settings does not exits
+        const EmailSetting = await this.configService.getEmailSetting();
+        if (EmailSetting.type == 'empty')// if any settings does not exits
             return;
         if (!this.sender) {
 
-            switch (emailSettings.type) {
+            switch (EmailSetting.type) {
                 case 'google':
-                    this.sender = new GmailAccount("gmail", emailSettings.fromname, emailSettings.user, emailSettings.pass);
+                    this.sender = new GmailAccount("gmail", EmailSetting.fromname, EmailSetting.user, EmailSetting.pass);
                     break;
                 case 'office365':
-                    this.sender = new Office365Account("office", emailSettings.fromname, emailSettings.user, emailSettings.pass);
+                    this.sender = new Office365Account("office", EmailSetting.fromname, EmailSetting.user, EmailSetting.pass);
                     break;
                 case 'smtp':
-                    this.sender = new SmtpAccount('smtp', emailSettings.fromname, emailSettings.host || 'localhost', emailSettings.port || 25, emailSettings.isSecure || false, emailSettings.user, emailSettings.pass);
+                    this.sender = new SmtpAccount('smtp', EmailSetting.fromname, EmailSetting.host || 'localhost', EmailSetting.port || 25, EmailSetting.isSecure || false, EmailSetting.user, EmailSetting.pass);
                     break;
                 default:
                     logger.fatal(`unknown email type`);
@@ -154,7 +154,7 @@ export class EmailService {
 
         }
         let tmp = {
-            from: { name: emailSettings.fromName, address: emailSettings.user },
+            from: { name: EmailSetting.fromName, address: EmailSetting.user },
             to: email.to,
             cc: email.cc,
             bcc: email.bcc,
@@ -178,21 +178,21 @@ export class EmailService {
         })
     }
 
-    async sendWith(email: Email, emailSettings: EmailSettings, pureError = false) {
+    async sendWith(email: Email, EmailSetting: EmailSetting, pureError = false) {
 
-        if (emailSettings.type == 'empty')// if any settings does not exits
+        if (EmailSetting.type == 'empty')// if any settings does not exits
             return;
         let sender: EmailSender;
 
-        switch (emailSettings.type) {
+        switch (EmailSetting.type) {
             case 'google':
-                sender = new GmailAccount("gmail", emailSettings.fromname, emailSettings.user, emailSettings.pass);
+                sender = new GmailAccount("gmail", EmailSetting.fromname, EmailSetting.user, EmailSetting.pass);
                 break;
             case 'office365':
-                sender = new Office365Account("office", emailSettings.fromname, emailSettings.user, emailSettings.pass);
+                sender = new Office365Account("office", EmailSetting.fromname, EmailSetting.user, EmailSetting.pass);
                 break;
             case 'smtp':
-                sender = new SmtpAccount('smtp', emailSettings.fromname, emailSettings.host || 'localhost', emailSettings.port || 25, emailSettings.isSecure || false, emailSettings.user, emailSettings.pass);
+                sender = new SmtpAccount('smtp', EmailSetting.fromname, EmailSetting.host || 'localhost', EmailSetting.port || 25, EmailSetting.isSecure || false, EmailSetting.user, EmailSetting.pass);
                 break;
             default:
                 logger.fatal(`unknown email type`);
@@ -201,7 +201,7 @@ export class EmailService {
 
 
         let tmp = {
-            from: { name: emailSettings.fromName, address: emailSettings.user },
+            from: { name: EmailSetting.fromName, address: EmailSetting.user },
             to: email.to,
             cc: email.cc,
             bcc: email.bcc,

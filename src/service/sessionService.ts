@@ -55,6 +55,19 @@ export class SessionService {
         }
         return session;
     }
+    async createEmptySession(clientIp: string) {
+        const session: AuthSession = {
+            id: Util.randomNumberString(64),
+            insertDate: new Date().toISOString(),
+            ip: clientIp, is2FA: false,
+            lastSeen: new Date().toISOString(),
+            source: 'unknown',
+            userId: 'unknown',
+            username: 'unknown',
+
+        }
+        return session;
+    }
 
     async getSession(id: string): Promise<AuthSession | undefined> {
         const sidkey = `/session/id/${id}`;

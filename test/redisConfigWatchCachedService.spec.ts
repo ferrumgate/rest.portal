@@ -43,7 +43,7 @@ describe('RedisConfigWatchCachedService', () => {
         getCache() {
             return this.nodeCache;
         }
-        getConfig() { return this.config };
+        getConfigValue() { return this.config };
     }
 
     async function getSampleTunnel() {
@@ -71,7 +71,7 @@ describe('RedisConfigWatchCachedService', () => {
         const config = new MockConfig(systemlog);
         await config.start();
         await Util.sleep(1000);
-        const conf = config.getConfig();
+        const conf = config.getConfigValue();
         const cache = config.getCache();
 
         expect(cache.get(conf.users[0].id)).exist;
@@ -98,7 +98,7 @@ describe('RedisConfigWatchCachedService', () => {
         await systemlog.write({ path: '/config/gateways', type: 'put', val: { id: 4, test: '5' } });
         await systemlog.write({ path: '/config/services', type: 'put', val: { id: 5, test: '6' } });
         await Util.sleep(1000);
-        const conf = config.getConfig();
+        const conf = config.getConfigValue();
         const cache = config.getCache();
 
         expect(cache.get(conf.users[0].id)).exist;
@@ -134,7 +134,7 @@ describe('RedisConfigWatchCachedService', () => {
         await systemlog.write({ path: '/config/services', type: 'put', val: { id: 5, test: '6' } });
         await Util.sleep(1000);
 
-        const conf = config.getConfig();
+        const conf = config.getConfigValue();
         const cache = config.getCache();
 
         expect(cache.get(conf.users[0].id)).exist;

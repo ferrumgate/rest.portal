@@ -406,11 +406,12 @@ async function init() {
 
 }
 async function start() {
-    //create new jwt certificates
-    const appService = (app.appService as AppService);
-    const configService = appService.configService;
 
-    await configService.start();
+
+    if (!process.env.NODE_TEST) {
+        const appService = (app.appService as AppService);
+        await appService.start();
+    }
 
 
     if (!process.env.NODE_TEST)
@@ -425,16 +426,11 @@ async function start() {
     httpServer.listen(port, () => {
         logger.info('service started on ', port);
     })
-    //const ssl = await configService.getSSLCertificate();
-    //const httpsServer = https.createServer({ cert: ssl.publicKey, key: ssl.privateKey }, app);
 
-
-    /* httpsServer.listen(ports, () => {
-        logger.info('service started on ', ports);
-    }) */
 
 
 }
+
 
 init().then(async () => {
     await start().catch(err => {

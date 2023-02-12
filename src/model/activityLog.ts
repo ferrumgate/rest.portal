@@ -42,4 +42,10 @@ export interface ActivityLog {
     osVersion?: string;
     browser?: string;
     browserVersion?: string;
+
+    sourceIp?: string;
+    sourcePort?: number;
+    destinationIp?: string;
+    destinationPort?: number;
+    networkProtocol?: string;
 }

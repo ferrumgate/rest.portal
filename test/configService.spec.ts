@@ -11,14 +11,21 @@ import { Group } from '../src/model/group';
 import { Service } from '../src/model/service';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
-import { ConfigEvent } from '../src/model/config';
+
 
 import chaiExclude from 'chai-exclude';
+import { ConfigWatch } from '../src/model/config';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
+
+function exclude(a: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    return a;
+}
 
 describe('configService', async () => {
 
@@ -95,6 +102,27 @@ describe('configService', async () => {
 
 
     });
+
+    it('createConfig', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.setCaptcha({ client: '1', server: '2' });
+        const config = configService.createConfig();
+        expect(config.lastUpdateTime).exist;
+        expect(config.revision).exist;
+        expect(config.isConfigured).exist;
+        expect(config.users).exist;
+        expect(config.groups).exist;
+        expect(config.services).exist;
+        expect(config.captcha).exist;
+        expect(config.captcha.client).not.exist;
+        expect(config.captcha.server).not.exist;
+
+    });
+
+
+
     it('getUserByUsername', async () => {
 
         //first create a config and save to a file
@@ -112,7 +140,8 @@ describe('configService', async () => {
         configService.config.users.push(aUser);
         const user = await configService.getUserByUsername('hamza.kilic@ferrumgate.com');
         delete aUser.password;
-        expect(user).to.deep.include(aUser);
+
+        expect(exclude(user)).to.deep.equal(exclude(aUser));
 
     });
 
@@ -133,7 +162,9 @@ describe('configService', async () => {
         configService.config.users.push(aUser);
         const user = await configService.getUserByUsernameAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash');
         delete aUser.password;
-        expect(user).to.deep.include(aUser);
+        console.log(user);
+        console.log(aUser);
+        expect(exclude(user)).to.deep.equal(exclude(aUser));
 
         const user2 = await configService.getUserByUsernameAndPass('hamza.kilic@ferrumgate.com', 'passwordWithHash2');
 
@@ -157,7 +188,7 @@ describe('configService', async () => {
         configService.config.users.push(aUser);
         const user = await configService.getUserById('someid');
         delete aUser.password;
-        expect(user).to.deep.include(aUser);
+        expect(exclude(user)).to.deep.include(exclude(aUser));
 
     });
 
@@ -391,9 +422,9 @@ describe('configService', async () => {
 
         await configService.saveNetwork(network);
         const networkDb = await configService.getNetwork(network.id);
-        expect(networkDb).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+        expect(exclude(networkDb)).to.deep.equal(exclude(network));
         const networkDb2 = await configService.getNetworkByName('default2');
-        expect(networkDb2).to.deep.include(network);
+        expect(exclude(networkDb2)).to.deep.include(exclude(network));
 
     });
 
@@ -424,7 +455,7 @@ describe('configService', async () => {
         await configService.saveNetwork(network);
         await configService.saveGateway(gateway);
         const networkDb = await configService.getNetworkByGateway(gateway.id);
-        expect(networkDb).to.deep.include(network);
+        expect(exclude(networkDb)).to.deep.include(exclude(network));
 
     });
 
@@ -482,7 +513,7 @@ describe('configService', async () => {
 
         await configService.saveGateway(gateway);
         const gatewayDb = await configService.getGateway(gateway.id);
-        expect(gatewayDb).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
+        expect(exclude(gatewayDb)).to.deep.equal(exclude(gateway));
 
     });
     it('deleteGateway', async () => {
@@ -516,8 +547,8 @@ describe('configService', async () => {
         let common: AuthCommon = {
             bla: 'test'
         }
-        await configService.setAuthSettingsCommon(common);
-        const returned = await configService.getAuthSettingsCommon() as any;
+        await configService.setAuthSettingCommon(common);
+        const returned = await configService.getAuthSettingCommon() as any;
         expect(returned).to.be.exist;
         expect(returned.bla).exist;
 
@@ -528,7 +559,7 @@ describe('configService', async () => {
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         configService.config.auth = {
-            common: {}, local: {} as any
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
         }
         let oauth: BaseOAuth = {
             name: 'google',
@@ -546,7 +577,7 @@ describe('configService', async () => {
         await configService.addAuthSettingOAuth(oauth);
 
         const returned = await configService.getAuthSettingOAuth();
-        expect(returned.providers[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
+        expect(exclude(returned.providers[0])).to.deep.equal(exclude(oauth));
         //delete
         await configService.deleteAuthSettingOAuth(oauth.id);
         const returned2 = await configService.getAuthSettingOAuth();
@@ -566,7 +597,7 @@ describe('configService', async () => {
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         configService.config.auth = {
-            common: {}, local: {} as any
+            common: {}, local: {} as any, oauth: {} as any, saml: {} as any, ldap: {} as any
         }
         let local: BaseLocal = {
             name: 'google',
@@ -581,10 +612,10 @@ describe('configService', async () => {
 
         }
         //add
-        await configService.setAuthSettingsLocal(local);
+        await configService.setAuthSettingLocal(local);
 
-        const returned = await configService.getAuthSettingsLocal();
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
+        const returned = await configService.getAuthSettingLocal();
+        expect(exclude(returned)).to.deep.equal(exclude(local));
 
 
     });
@@ -608,7 +639,7 @@ describe('configService', async () => {
         await configService.saveGroup(group);
 
         const returned = await configService.getGroup(group.id);
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+        expect(exclude(returned)).to.deep.equal(exclude(group));
 
 
     });
@@ -683,7 +714,7 @@ describe('configService', async () => {
 
         const returned = await configService.getGroupsAll();
         expect(returned.length).to.be.equal(2);
-        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+        expect(exclude(returned[0])).to.deep.equal(exclude(group));
 
     });
 
@@ -710,7 +741,7 @@ describe('configService', async () => {
 
         const returned = await configService.getGroup(group.id)
 
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(group);
+        expect(exclude(returned)).to.deep.equal(exclude(group));
 
     });
 
@@ -781,7 +812,7 @@ describe('configService', async () => {
         await configService.saveService(service);
 
         const returned = await configService.getService(service.id);
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
+        expect(exclude(returned)).to.deep.equal(exclude(service));
 
 
     });
@@ -935,7 +966,7 @@ describe('configService', async () => {
 
         const returned = await configService.getServicesBy();
         expect(returned.length).to.be.equal(2);
-        expect(returned[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+        expect(exclude(returned[0])).to.deep.equal(exclude(service1));
 
     });
 
@@ -967,7 +998,7 @@ describe('configService', async () => {
 
         const returned = await configService.getService(service1.id)
 
-        expect(returned).to.excluding(['insertDate', 'updateDate']).deep.equal(service1);
+        expect(exclude(returned)).to.deep.equal(exclude(service1));
 
     });
 
@@ -1439,8 +1470,8 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-        let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
+        let eventDatas: ConfigWatch<any>[] = [];
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
 
@@ -1495,30 +1526,24 @@ describe('configService', async () => {
         expect(configService.config.authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
         expect(configService.config.authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
 
-        expect(eventDatas.length).to.equal(5);
+        expect(eventDatas.length).to.equal(3);
 
-        expect(eventDatas[0].type).to.equal('updated')
-        expect(eventDatas[0].path).to.equal('/authenticationPolicy/rules');
-        expect(eventDatas[0].data.before.id).exist;
-        expect(eventDatas[0].data.after.id).exist;
+        expect(eventDatas[0].type).to.equal('put')
+        expect(eventDatas[0].path).to.equal('authenticationPolicy/rules');
+        expect(eventDatas[0].before.id).exist;
+        expect(eventDatas[0].val.id).exist;
 
-        expect(eventDatas[1].type).to.equal('updated')
-        expect(eventDatas[1].path).to.equal('/authenticationPolicy');
-        expect(eventDatas[1].data).not.exist;
 
-        expect(eventDatas[2].type).to.equal('updated')
-        expect(eventDatas[2].path).to.equal('/authorizationPolicy/rules');
-        expect(eventDatas[2].data.before.id).exist;
-        expect(eventDatas[2].data.after.id).exist;
+        expect(eventDatas[1].type).to.equal('put')
+        expect(eventDatas[1].path).to.equal('authorizationPolicy/rules');
+        expect(eventDatas[1].before.id).exist;
+        expect(eventDatas[1].val.id).exist;
 
-        expect(eventDatas[3].type).to.equal('updated')
-        expect(eventDatas[3].path).to.equal('/authorizationPolicy');
-        expect(eventDatas[3].data).not.exist;
 
-        expect(eventDatas[4].type).to.equal('deleted');
-        expect(eventDatas[4].path).to.equal('/users');
-        expect(eventDatas[4].data.before.id).exist;
-        expect(eventDatas[4].data.after).not.exist;
+        expect(eventDatas[2].type).to.equal('del');
+        expect(eventDatas[2].path).to.equal('users');
+        expect(eventDatas[2].before.id).exist;
+        expect(eventDatas[2].val).not.exist;
 
 
 
@@ -1530,8 +1555,8 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-        let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
+        let eventDatas: ConfigWatch<any>[] = [];
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
 
@@ -1553,16 +1578,16 @@ describe('configService', async () => {
 
 
         expect(eventDatas.length).to.equal(2);
-        expect(eventDatas[0].type).to.equal('saved')
-        expect(eventDatas[0].path).to.equal('/users')
-        expect(eventDatas[0].data.before).not.exist
-        expect(eventDatas[0].data.after.id).to.equal(aUser.id);
+        expect(eventDatas[0].type).to.equal('put')
+        expect(eventDatas[0].path).to.equal('users')
+        expect(eventDatas[0].before).not.exist
+        expect(eventDatas[0].val.id).to.equal(aUser.id);
 
 
-        expect(eventDatas[1].type).to.equal('updated')
-        expect(eventDatas[1].path).to.equal('/users')
-        expect(eventDatas[1].data.before.id).to.equal(aUser.id);
-        expect(eventDatas[1].data.after.id).to.equal(aUser.id);
+        expect(eventDatas[1].type).to.equal('put')
+        expect(eventDatas[1].path).to.equal('users')
+        expect(eventDatas[1].before.id).to.equal(aUser.id);
+        expect(eventDatas[1].val.id).to.equal(aUser.id);
 
     });
 
@@ -1579,8 +1604,8 @@ describe('configService', async () => {
 
 
 
-        let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
+        let eventDatas: ConfigWatch<any>[] = [];
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
 
@@ -1679,42 +1704,38 @@ describe('configService', async () => {
         expect(configService.config.gateways.find(x => x.networkId == network.id)).not.exist;
         expect(configService.config.gateways[0].networkId).to.be.equal('');
 
-        expect(eventDatas.length).to.equal(7);
-        expect(eventDatas[0].type).to.equal('updated')
-        expect(eventDatas[0].path).to.equal('/gateways')
-        expect(eventDatas[0].data.before.id).exist;
-        expect(eventDatas[0].data.before.id).exist;
+        expect(eventDatas.length).to.equal(5);
+        expect(eventDatas[0].type).to.equal('put')
+        expect(eventDatas[0].path).to.equal('gateways')
+        expect(eventDatas[0].before.id).exist;
+        expect(eventDatas[0].val.id).exist;
 
-        expect(eventDatas[1].type).to.equal('deleted')
-        expect(eventDatas[1].path).to.equal('/services');
-        expect(eventDatas[1].data.before.id).exist;
-        expect(eventDatas[1].data.after).not.exist;
+        expect(eventDatas[1].type).to.equal('del')
+        expect(eventDatas[1].path).to.equal('services');
+        expect(eventDatas[1].before.id).exist;
+        expect(eventDatas[1].val).not.exist;
 
-        expect(eventDatas[2].type).to.equal('deleted')
-        expect(eventDatas[2].path).to.equal('/authorizationPolicy/rules');
-        expect(eventDatas[2].data.before.id).exist;
-        expect(eventDatas[2].data.after).not.exist;
-
-        expect(eventDatas[3].type).to.equal('updated')
-        expect(eventDatas[3].path).to.equal('/authorizationPolicy');
-        expect(eventDatas[3].data).not.exist;
+        expect(eventDatas[2].type).to.equal('del')
+        expect(eventDatas[2].path).to.equal('authorizationPolicy/rules');
+        expect(eventDatas[2].before.id).exist;
+        expect(eventDatas[2].val).not.exist;
 
 
 
-        expect(eventDatas[4].type).to.equal('deleted')
-        expect(eventDatas[4].path).to.equal('/authenticationPolicy/rules');
-        expect(eventDatas[4].data.before.id).exist;
-        expect(eventDatas[4].data.after).not.exist;
-
-        expect(eventDatas[5].type).to.equal('updated')
-        expect(eventDatas[5].path).to.equal('/authenticationPolicy');
-        expect(eventDatas[5].data).not.exist;
 
 
-        expect(eventDatas[6].type).to.equal('deleted')
-        expect(eventDatas[6].path).to.equal('/networks');
-        expect(eventDatas[6].data.before.id).exist;
-        expect(eventDatas[6].data.after).not.exist;
+        expect(eventDatas[3].type).to.equal('del')
+        expect(eventDatas[3].path).to.equal('authenticationPolicy/rules');
+        expect(eventDatas[3].before.id).exist;
+        expect(eventDatas[3].val).not.exist;
+
+
+
+
+        expect(eventDatas[4].type).to.equal('del')
+        expect(eventDatas[4].path).to.equal('networks');
+        expect(eventDatas[4].before.id).exist;
+        expect(eventDatas[4].val).not.exist;
 
 
 
@@ -1734,7 +1755,7 @@ describe('configService', async () => {
 
 
 
-        let eventDatas: ConfigEvent[] = [];
+        let eventDatas: ConfigWatch<any>[] = [];
 
 
 
@@ -1749,7 +1770,7 @@ describe('configService', async () => {
         }
 
         await configService.saveGateway(gateway);
-        configService.events.on('changed', (data: ConfigEvent) => {
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
         await configService.deleteGateway(gateway.id);
@@ -1757,10 +1778,10 @@ describe('configService', async () => {
 
 
         expect(eventDatas.length).to.equal(1);
-        expect(eventDatas[0].type).to.equal('deleted')
-        expect(eventDatas[0].path).to.equal('/gateways')
-        expect(eventDatas[0].data.before.id).exist;
-        expect(eventDatas[0].data.after).not.exist;
+        expect(eventDatas[0].type).to.equal('del')
+        expect(eventDatas[0].path).to.equal('gateways')
+        expect(eventDatas[0].before.id).exist;
+        expect(eventDatas[0].val).not.exist;
 
 
     });
@@ -1771,8 +1792,8 @@ describe('configService', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-        let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
+        let eventDatas: ConfigWatch<any>[] = [];
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
 
@@ -1836,31 +1857,25 @@ describe('configService', async () => {
         expect(configService.config.authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aGroup.id))).to.not.exist;
         expect(configService.config.authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
 
-        expect(eventDatas.length).to.equal(6);
-
-        expect(eventDatas[1].type).to.equal('updated')
-        expect(eventDatas[1].path).to.equal('/authenticationPolicy/rules');
-        expect(eventDatas[1].data.before.id).exist;
-        expect(eventDatas[1].data.after.id).exist;
-
-        expect(eventDatas[2].type).to.equal('updated')
-        expect(eventDatas[2].path).to.equal('/authenticationPolicy');
-        expect(eventDatas[2].data).not.exist;
-
-        expect(eventDatas[3].type).to.equal('updated')
-        expect(eventDatas[3].path).to.equal('/authorizationPolicy/rules');
-        expect(eventDatas[3].data.before.id).exist;
-        expect(eventDatas[3].data.after.id).exist;
-
-        expect(eventDatas[4].type).to.equal('updated')
-        expect(eventDatas[4].path).to.equal('/authorizationPolicy');
-        expect(eventDatas[4].data).not.exist;
+        expect(eventDatas.length).to.equal(4);
 
 
-        expect(eventDatas[5].type).to.equal('deleted');
-        expect(eventDatas[5].path).to.equal('/groups');
-        expect(eventDatas[5].data.before.id).exist;
-        expect(eventDatas[5].data.after).not.exist;
+        expect(eventDatas[1].type).to.equal('put')
+        expect(eventDatas[1].path).to.equal('authenticationPolicy/rules');
+        expect(eventDatas[1].before.id).exist;
+        expect(eventDatas[1].val.id).exist;
+
+
+        expect(eventDatas[2].type).to.equal('put')
+        expect(eventDatas[2].path).to.equal('authorizationPolicy/rules');
+        expect(eventDatas[2].before.id).exist;
+        expect(eventDatas[2].val.id).exist;
+
+
+        expect(eventDatas[3].type).to.equal('del');
+        expect(eventDatas[3].path).to.equal('groups');
+        expect(eventDatas[3].before.id).exist;
+        expect(eventDatas[3].val).not.exist;
 
 
 
@@ -1880,8 +1895,8 @@ describe('configService', async () => {
 
 
 
-        let eventDatas: ConfigEvent[] = [];
-        configService.events.on('changed', (data: ConfigEvent) => {
+        let eventDatas: ConfigWatch<any>[] = [];
+        configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
 
@@ -1936,32 +1951,22 @@ describe('configService', async () => {
 
         configService.config.authorizationPolicy.rules.push(rule);
 
-
-
         await configService.deleteService(service1.id);
 
         expect(configService.config.authorizationPolicy.rules.find(x => x.serviceId == service1.id)).to.not.exist;
 
 
-        expect(eventDatas.length).to.equal(3);
+        expect(eventDatas.length).to.equal(2);
 
-        expect(eventDatas[0].type).to.equal('deleted')
-        expect(eventDatas[0].path).to.equal('/authorizationPolicy/rules');
-        expect(eventDatas[0].data.before.id).exist;
-        expect(eventDatas[0].data.after).not.exist;
+        expect(eventDatas[0].type).to.equal('del')
+        expect(eventDatas[0].path).to.equal('authorizationPolicy/rules');
+        expect(eventDatas[0].before.id).exist;
+        expect(eventDatas[0].val).not.exist;
 
-        expect(eventDatas[1].type).to.equal('updated')
-        expect(eventDatas[1].path).to.equal('/authorizationPolicy');
-        expect(eventDatas[1].data).not.exist;
-
-
-        expect(eventDatas[2].type).to.equal('deleted')
-        expect(eventDatas[2].path).to.equal('/services');
-        expect(eventDatas[2].data.before.id).exist;
-        expect(eventDatas[2].data.after).not.exist;
-
-
-
+        expect(eventDatas[1].type).to.equal('del')
+        expect(eventDatas[1].path).to.equal('services');
+        expect(eventDatas[1].before.id).exist;
+        expect(eventDatas[1].val).not.exist;
 
 
     });

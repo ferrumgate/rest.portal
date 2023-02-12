@@ -1,12 +1,14 @@
 import NodeCache from "node-cache";
+import { ConfigWatch } from "../model/config";
+import { RPath } from "../model/config";
 import { AuthenticationRule, AuthorizationRule, WatchItem } from "../lib";
 import { Group } from "../model/group";
 import { Gateway } from "../model/network";
 import { Network } from "../model/network";
 import { Service } from "../model/service";
 import { User } from "../model/user";
-import { ConfigWatch, RPath } from "./redisConfigService";
 import { ItemWithId, RedisConfigWatchService } from "./redisConfigWatchService";
+import { SSLCertificate } from "../model/sslCertificate";
 
 class NodeCacheForThis extends NodeCache {
     override get<T>(key: string): T | undefined {
@@ -29,8 +31,9 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
             deleteOnExpire: false, stdTTL: 0, useClones: false
         }
     )
-    override async fillFromRedis(): Promise<void> {
-        await super.fillFromRedis();
+    override async fillFromRedis(readyEvent = true): Promise<void> {
+        if (this.isFilled) return;
+        await super.fillFromRedis(false);
         this.config.networks.forEach(x => this.nodeCache.set(x.id, x));
         this.config.gateways.forEach(x => this.nodeCache.set(x.id, x));
         this.config.users.forEach(x => this.nodeCache.set(x.id, x));
@@ -38,6 +41,8 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
         this.config.services.forEach(x => this.nodeCache.set(x.id, x));
         this.config.authorizationPolicy.rules.forEach(x => this.nodeCache.set(x.id, x));
         this.config.authenticationPolicy.rules.forEach(x => this.nodeCache.set(x.id, x));
+        this.isFilled = true;
+        this.events.emit('ready');
 
     }
 
@@ -75,6 +80,9 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
 
 
     override async processConfigChanged(watch: WatchItem<ConfigWatch<any>>) {
+        if (watch.val.path.includes('flush')) {
+            this.nodeCache.flushAll();
+        }
         if (watch.val.path.includes('authorizationPolicy')) {
             let sortMap = new Map();
             this.config.authorizationPolicy.rulesOrder.forEach((val, index) => {

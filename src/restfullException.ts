@@ -76,6 +76,7 @@ export class ErrorCodes {
     static ErrLimitedModeIsWorking: string = 'ErrLimitedModeIsWorking';
     static ErrConflictData: string = 'ErrConflictData';
     static ErrSystemIsNotReady: string = "ErrConfigIsNotReady";
+    static ErrEmailConfigNeed: string = 'ErrEmailConfigNeed'
 
 }
 

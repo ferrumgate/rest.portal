@@ -1,22 +1,18 @@
 import { ConfigService } from "./configService";
 import { RedisPipelineService, RedisService } from "./redisService";
+import { SystemLog } from "./systemLogService";
 import { WatchService } from "./watchService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
-export interface SystemLog {
-    type: string;
-    path: string;
-    val: any;
-    before?: any;
-}
+
 /**
- * @summary a system logger, with @see WatchService that writes logs to a redis stream
+ * @summary a config logger, with @see WatchService that writes logs to a redis stream
  */
-export class SystemLogService {
-    private key = '/logs/system';
+export class ConfigLogService {
+    private key = '/logs/config';
     private isStarted = false;
     watcher: WatchService;
     constructor(private redis: RedisService, private redisStream: RedisService,
-        encryptKey: string = '', uniqueName = 'systemlog', logReadWaitMS = 1000) {
+        encryptKey: string = '', uniqueName = 'configLog', logReadWaitMS = 1000) {
 
         this.watcher = new WatchService(this.redis, this.redisStream, this.key, uniqueName + '/pos',
             new Date().getTime().toString(),

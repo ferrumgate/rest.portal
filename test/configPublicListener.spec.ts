@@ -16,6 +16,14 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
+function expectToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete b.insertDate;
+    delete b.updateDate;
+    expect(a).to.deep.equal(b);
+}
+
 
 
 async function createSampleData(): Promise<any> {
@@ -103,7 +111,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getGatewayById('someid', '231a0932')
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.excluding(['insertDate', 'updateDate']).deep.equal(gateway);
+        expectToDeepEqual(result.result, gateway);
 
     }).timeout(5000);
 
@@ -124,7 +132,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getNetworkByGatewayId('someid', '231a0932')
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.excluding(['insertDate', 'updateDate']).deep.equal(network);
+        expectToDeepEqual(result.result, network);
 
     }).timeout(5000);
 
@@ -146,7 +154,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getService('someid', service.id)
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
+        expectToDeepEqual(result.result, service);
 
     }).timeout(5000);
 
@@ -167,7 +175,7 @@ describe('configPublicRoom ', async () => {
         const result = await room.getServicesByGatewayId('someid', gateway.id);
         expect(result.id).to.equal('someid');
         expect(result.isError).to.be.undefined;
-        expect(result.result[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(service);
+        expectToDeepEqual(result.result[0], service);
 
     }).timeout(5000);
 

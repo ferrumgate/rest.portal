@@ -16,6 +16,14 @@ const expect = chai.expect;
 chai.use(chaiExclude);
 
 
+function expectToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete b.insertDate;
+    delete b.updateDate;
+    expect(a).to.deep.equal(b);
+}
+
 function createSampleDataAuthenticaton() {
 
 
@@ -152,9 +160,9 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.rules[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule1);
-        expect(response.body.rules[1]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
-        expect(response.body.rules[2]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule3);
+        expectToDeepEqual(response.body.rules[0], rule1);
+        expectToDeepEqual(response.body.rules[1], rule2);
+        expectToDeepEqual(response.body.rules[2], rule3);
 
     }).timeout(50000);
 
@@ -183,7 +191,7 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
+        expectToDeepEqual(response.body, rule2);
 
 
     }).timeout(50000);
@@ -279,11 +287,13 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
+
+        expectToDeepEqual(response.body, rule2);
 
         //
         const rule = await appService.configService.getAuthenticationPolicyRule(rule2.id);
-        expect(rule).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
+
+        expectToDeepEqual(rule, rule2);
 
     }).timeout(50000);
 
@@ -316,7 +326,8 @@ describe('policy', async () => {
         })
         expect(response.status).to.equal(200);
         rule1.id = response.body.id;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule1);
+
+        expectToDeepEqual(response.body, rule1);
 
 
 
@@ -354,9 +365,11 @@ describe('policy', async () => {
 
         //
         const policy = await appService.configService.getAuthenticationPolicy();
-        expect(policy.rules[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
-        expect(policy.rules[1]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule3);
-        expect(policy.rules[2]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule1);
+
+        expectToDeepEqual(policy.rules[0], rule2);
+        expectToDeepEqual(policy.rules[1], rule3);
+        expectToDeepEqual(policy.rules[2], rule1);
+
 
     }).timeout(50000);
 
@@ -489,9 +502,10 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body.rules[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule1);
-        expect(response.body.rules[1]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
-        expect(response.body.rules[2]).to.excluding(['insertDate', 'updateDate']).deep.equal(rule3);
+
+        expectToDeepEqual(response.body.rules[0], rule1);
+        expectToDeepEqual(response.body.rules[1], rule2);
+        expectToDeepEqual(response.body.rules[2], rule3);
 
     }).timeout(50000);
 
@@ -520,7 +534,8 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
+
+        expectToDeepEqual(response.body, rule2);
 
 
     }).timeout(50000);
@@ -616,11 +631,13 @@ describe('policy', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
+
+        expectToDeepEqual(response.body, rule2);
 
         //
         const rule = await appService.configService.getAuthorizationPolicyRule(rule2.id);
-        expect(rule).to.excluding(['insertDate', 'updateDate']).deep.equal(rule2);
+
+        expectToDeepEqual(rule, rule2);
 
     }).timeout(50000);
 
@@ -653,7 +670,8 @@ describe('policy', async () => {
         })
         expect(response.status).to.equal(200);
         rule1.id = response.body.id;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(rule1);
+
+        expectToDeepEqual(response.body, rule1);
 
 
 

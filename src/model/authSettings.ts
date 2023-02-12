@@ -68,7 +68,7 @@ export interface AuthCommon {
 export interface AuthSettings {
     common: AuthCommon;
     local: AuthLocal;
-    oauth?: AuthOAuth;
-    ldap?: AuthLdap;
-    saml?: AuthSaml;
+    oauth: AuthOAuth;
+    ldap: AuthLdap;
+    saml: AuthSaml;
 }

@@ -14,6 +14,14 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
+function expectToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete b.insertDate;
+    delete b.updateDate;
+    expect(a).to.deep.equal(b);
+}
+
 
 function createSampleSaml1(): BaseSaml {
     return {
@@ -133,7 +141,10 @@ describe('configAuthApi ', async () => {
         await configService.setConfigPath('/tmp/config.yaml');
         const auth: AuthSettings = {
             common: {},
-            local: {} as any
+            local: {} as any,
+            saml: { providers: [] },
+            ldap: { providers: [] },
+            oauth: { providers: [] }
 
         }
         auth.oauth = {
@@ -142,15 +153,18 @@ describe('configAuthApi ', async () => {
             ]
         }
 
-        await configService.setAuthSettings(auth);
+        await configService.setAuthSettingCommon(auth.common);
+        await configService.setAuthSettingLocal(auth.local);
+
         await configService.setUrl('http://local.ferrumgate.com:8080');
-        await configService.setDomain('ferrumgate.local');
+        await configService.setDomain('ferrumgate.zero');
         await configService.setCaptcha(
             {
                 client: '6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH',
                 server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
             }
         )
+        await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
     })
 
     beforeEach(async () => {
@@ -159,7 +173,10 @@ describe('configAuthApi ', async () => {
         configService.config.users = [];
         const auth: AuthSettings = {
             common: {},
-            local: {} as any
+            local: {} as any,
+            saml: { providers: [] },
+            ldap: { providers: [] },
+            oauth: { providers: [] }
 
         }
         auth.oauth = {
@@ -174,7 +191,21 @@ describe('configAuthApi ', async () => {
                 providers: []
             }
 
-        await configService.setAuthSettings(auth);
+        await configService.setAuthSettingCommon(auth.common);
+        await configService.setAuthSettingLocal(auth.local);
+
+        const tmp = await configService.getAuthSettingLdap();
+        for (const it of tmp.providers) {
+            await configService.deleteAuthSettingLdap(it.id);
+        }
+        const tmp2 = await configService.getAuthSettingOAuth();
+        for (const it of tmp2.providers) {
+            await configService.deleteAuthSettingOAuth(it.id);
+        }
+        const tmp3 = await configService.getAuthSettingSaml();
+        for (const it of tmp3.providers) {
+            await configService.deleteAuthSettingSaml(it.id);
+        }
 
 
     })
@@ -188,7 +219,7 @@ describe('configAuthApi ', async () => {
         const common: AuthCommon = {
             test: ''
         }
-        await configService.setAuthSettingsCommon(common);
+        await configService.setAuthSettingCommon(common);
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -221,7 +252,7 @@ describe('configAuthApi ', async () => {
         const common: AuthCommon = {
             test: ''
         }
-        //await configService.setAuthSettingsCommon(common);
+        //await configService.setAuthSettingCommon(common);
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -239,7 +270,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(200);
         //check if object test property not saved
-        const returned = await configService.getAuthSettingsCommon() as any;
+        const returned = await configService.getAuthSettingCommon() as any;
         expect(returned.test).not.exist;
 
 
@@ -251,7 +282,7 @@ describe('configAuthApi ', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const local = createSampleLocal();
-        await configService.setAuthSettingsLocal(local);
+        await configService.setAuthSettingLocal(local);
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -268,7 +299,7 @@ describe('configAuthApi ', async () => {
         })
 
         expect(response.status).to.equal(200);
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(local)
+        expectToDeepEqual(response.body, local);
 
 
     }).timeout(50000);
@@ -279,7 +310,7 @@ describe('configAuthApi ', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const local = createSampleLocal();
-        await configService.setAuthSettingsLocal(local);
+        await configService.setAuthSettingLocal(local);
         local.name = 'changed';
         (local as any).fakeProperty = 'fakevalue';// this value will not written to config
 
@@ -301,7 +332,7 @@ describe('configAuthApi ', async () => {
         delete (local as any).fakeProperty;
         response.body.insertDate = local.insertDate;
         response.body.updateDate = local.updateDate;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(local);
+        expectToDeepEqual(response.body, local);
 
 
     }).timeout(50000);
@@ -333,8 +364,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(200);
         expect(response.body.items).exist;
-
-        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
+        expectToDeepEqual(response.body.items[0], oauth);
 
 
     }).timeout(50000);
@@ -368,7 +398,7 @@ describe('configAuthApi ', async () => {
         oauth2.id = response.body.id;
         response.body.insertDate = oauth2.insertDate;
         response.body.updateDate = oauth2.updateDate;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth2);
+        expectToDeepEqual(response.body, oauth2);
 
 
     }).timeout(50000);
@@ -432,9 +462,9 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.fakeProperty).not.exist;
         delete oauthAny.fakeProperty;
-        response.body.insertDate = oauth.insertDate;
-        response.body.updateDate = oauth.updateDate;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(oauth);
+
+        expectToDeepEqual(response.body, oauth);
+
 
 
     }).timeout(50000);
@@ -548,7 +578,7 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.items).exist;
 
-        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(ldap);
+        expectToDeepEqual(response.body.items[0], ldap);
 
 
     }).timeout(50000);
@@ -579,9 +609,7 @@ describe('configAuthApi ', async () => {
         expect(response.body).exist;
 
         ldap.id = response.body.id;
-        response.body.insertDate = ldap.insertDate;
-        response.body.updateDate = ldap.updateDate;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(ldap);
+        expectToDeepEqual(response.body, ldap);
 
 
     }).timeout(50000);
@@ -644,9 +672,7 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.fakeProperty).not.exist;
         delete ldapAny.fakeProperty;
-        response.body.insertDate = ldap.insertDate;
-        response.body.updateDate = ldap.updateDate;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(ldap);
+        expectToDeepEqual(response.body, ldap);
 
 
     }).timeout(50000);
@@ -767,7 +793,7 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.items).exist;
 
-        expect(response.body.items[0]).to.excluding(['insertDate', 'updateDate']).deep.equal(saml);
+        expectToDeepEqual(response.body.items[0], saml);
 
 
     }).timeout(50000);
@@ -800,7 +826,8 @@ describe('configAuthApi ', async () => {
         saml.id = response.body.id;
         response.body.insertDate = saml.insertDate;
         response.body.updateDate = saml.updateDate;
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(saml);
+
+        expectToDeepEqual(response.body, saml);
 
 
     }).timeout(50000);
@@ -866,7 +893,7 @@ describe('configAuthApi ', async () => {
         response.body.insertDate = saml.insertDate;
         response.body.updateDate = saml.updateDate;
 
-        expect(response.body).to.excluding(['insertDate', 'updateDate']).deep.equal(saml);
+        expectToDeepEqual(response.body, saml);
 
 
     }).timeout(50000);

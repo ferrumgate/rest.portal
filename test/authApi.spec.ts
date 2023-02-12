@@ -91,6 +91,9 @@ describe('authApi', async () => {
                 insertDate: new Date().toISOString(),
                 updateDate: new Date().toISOString()
             },
+            ldap: { providers: [] },
+            oauth: { providers: [] },
+            saml: { providers: [] }
 
         }
         auth.oauth = {
@@ -151,7 +154,19 @@ describe('authApi', async () => {
 
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
-        await configService.setAuthSettings(auth);
+        await configService.setAuthSettingCommon(auth.common);
+        await configService.setAuthSettingLocal(auth.local);
+        for (const it of auth.ldap.providers) {
+            await configService.addAuthSettingLdap(it)
+        }
+        for (const it of auth.saml?.providers) {
+            await configService.addAuthSettingSaml(it)
+        }
+        for (const it of auth.oauth.providers) {
+            await configService.addAuthSettingOAuth(it)
+        }
+
+
         await configService.setUrl('http://local.ferrumgate.com:8080')
         await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
         await configService.saveNetwork(net);
@@ -376,12 +391,12 @@ describe('authApi', async () => {
 
         }
         await configService.saveUser(user6);
-        const local = await configService.getAuthSettingsLocal();
+        const local = await configService.getAuthSettingLocal();
         const tmp = {
             ...local
         }
         tmp.isEnabled = false;
-        await configService.setAuthSettingsLocal(tmp);
+        await configService.setAuthSettingLocal(tmp);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth')
@@ -420,12 +435,12 @@ describe('authApi', async () => {
 
         }
         await configService.saveUser(user5);
-        const local = await configService.getAuthSettingsLocal();
+        const local = await configService.getAuthSettingLocal();
         const tmp = {
             ...local
         }
         tmp.isEnabled = false;
-        await configService.setAuthSettingsLocal(tmp);
+        await configService.setAuthSettingLocal(tmp);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth')
