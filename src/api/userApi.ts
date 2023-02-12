@@ -73,11 +73,11 @@ routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: a
 
         logger.info(`user confirm is ok ${key}`);
         await auditService.logUserConfirm(req.currentSession, userDb);
-        await saveActivity(req, 'user confirmed');
+        await saveActivity(req, 'user confirm');
 
         return res.status(200).json({ result: true });
     } catch (err) {
-        saveActivityError(req, 'user confirmed', err);
+        saveActivityError(req, 'user confirm', err);
         throw err;
     }
 
