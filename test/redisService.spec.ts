@@ -530,6 +530,23 @@ describe('redisService', () => {
 
     }).timeout(20000);
 
+    it('zadd/zrem/zrangebyscore', async () => {
+
+        const simpleRedis = new RedisService();
+        await simpleRedis.zadd('test', 'abc', 10);
+        await simpleRedis.zadd('test', 'abc', 20);
+        const results = await simpleRedis.zrangebyscore('test', 0, '+inf', 0, 100);
+        expect(results.length).to.equal(1);
+        const results2 = await simpleRedis.zrangebyscore('test', 50, '+inf', 0, 100);
+        expect(results2.length).to.equal(0);
+
+        await simpleRedis.zrem('test', 'abc');
+        const results3 = await simpleRedis.zrangebyscore('test', 0, '+inf', 0, 100);
+        expect(results3.length).to.equal(0);
+
+
+    }).timeout(20000);
+
 
 
 

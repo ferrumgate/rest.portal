@@ -1973,6 +1973,327 @@ describe('configService', async () => {
 
 
 
+    it('getIpIntelligenceBlackList/setIpIntelligenceBlackList/delete', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+            blackList: [
+                { id: Util.randomNumberString(), val: '192.168.0.0/24', insertDate: new Date().toISOString() }
+            ],
+            whiteList: [],
+            countryList: { items: [] },
+            filterCategory: {},
+            sources: { items: [] }
+        }
+
+        const list = await configService.getIpIntelligenceBlackList();
+        expect(list.length).to.equal(1);
+        await configService.saveIpIntelligenceBlackListItem(
+            { id: Util.randomNumberString(), val: '192.168.10.0/24', insertDate: new Date().toISOString() }
+        );
+        const list2 = await configService.getIpIntelligenceBlackList();
+        expect(list2.length).to.equal(2);
+
+        await configService.deleteIpIntelligenceBlackListItem(list2[1].id);
+        const list3 = await configService.getIpIntelligenceBlackList();
+        expect(list3.length).to.equal(1);
+
+
+    });
+
+    it('getIpIntelligenceWhiteList/setIpIntelligenceWhiteList/delete', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+            blackList: [],
+            whiteList: [{
+                id: Util.randomNumberString(),
+                val: '102.10.1.1/32',
+                insertDate: new Date().toISOString()
+            }],
+            countryList: { items: [] },
+            filterCategory: {},
+            sources: { items: [] }
+        }
+
+        const list = await configService.getIpIntelligenceWhiteList();
+        expect(list.length).to.equal(1);
+        await configService.saveIpIntelligenceWhiteListItem({
+            id: Util.randomNumberString(),
+            val: '192.168.10.0/24',
+            insertDate: new Date().toISOString()
+        });
+        const list2 = await configService.getIpIntelligenceWhiteList();
+        expect(list2.length).to.equal(2);
+
+        await configService.deleteIpIntelligenceWhiteListItem(list2[1].id);
+        const list3 = await configService.getIpIntelligenceWhiteList();
+        expect(list3.length).to.equal(1);
+
+
+
+    });
+
+    it('getIpIntelligenceWhiteListBy', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+            blackList: [],
+            whiteList: [{
+                id: Util.randomNumberString(),
+                val: '102.10.1.1/32',
+                insertDate: new Date().toISOString()
+            },
+            {
+                id: Util.randomNumberString(),
+                val: '102.10.2.1/32',
+                insertDate: new Date().toISOString()
+            },
+            {
+                id: Util.randomNumberString(),
+                val: '102.10.3.1/32',
+                insertDate: new Date().toISOString()
+            }],
+            countryList: { items: [] },
+            filterCategory: {},
+            sources: { items: [] }
+        }
+
+        const list = await configService.getIpIntelligenceWhiteListBy(0, 2);
+        expect(list.total).to.equal(3);
+        expect(list.items.length).to.equal(2);
+
+
+        const list2 = await configService.getIpIntelligenceWhiteListBy(1, 2);
+        expect(list2.total).to.equal(3);
+        expect(list2.items.length).to.equal(1);
+
+
+
+    });
+
+    it('getIpIntelligenceFilterCategory/setIpIntelligenceFilterCategory', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+            blackList: [],
+            whiteList: [],
+            countryList: { items: [] },
+            filterCategory: {},
+            sources: { items: [] }
+        }
+
+        const filter = await configService.getIpIntelligenceFilterCategory();
+        expect(filter.crawler).to.be.undefined
+        expect(filter.hosting).to.be.undefined;
+        expect(filter.proxy).to.be.undefined;
+
+        await configService.setIpIntelligenceFilterCategory({ crawler: true, hosting: true, proxy: true });
+        const filter2 = await configService.getIpIntelligenceFilterCategory();
+        expect(filter2.crawler).to.be.true;
+        expect(filter2.hosting).to.be.true;
+        expect(filter2.proxy).to.be.true;
+
+
+    });
+
+
+    it('getIpIntelligenceSources/setIpIntelligenceSources', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+            blackList: [],
+            whiteList: [],
+            countryList: { items: [] },
+            filterCategory: {},
+            sources: { items: [] }
+        }
+
+        const filter = await configService.getIpIntelligenceSources();
+        expect(filter.items.length).to.equal(0);
+
+        await configService.setIpIntelligenceSources(
+            {
+                items: [{ name: 'test', type: 'test' }]
+            });
+        const filter2 = await configService.getIpIntelligenceSources();
+        expect(filter2.items.length).to.equal(1);
+
+
+    });
+
+    it('getIpIntelligenceCountryList/setIpIntelligenceCountryList/delete', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+            blackList: [],
+            whiteList: [],
+            countryList: { items: [] },
+            filterCategory: {},
+            sources: { items: [] }
+        }
+
+        const filter = await configService.getIpIntelligenceCountryList();
+        expect(filter.items.length).to.equal(0);
+
+        await configService.setIpIntelligenceCountryList({
+            items: [
+                { isoCode: 'adfa', 'name': 'test', 'id': 'test' }
+            ]
+        });
+        const filter2 = await configService.getIpIntelligenceCountryList();
+        expect(filter2.items.length).to.equal(1);
+
+
+    });
+    it('getIpIntelligenceBlackListItem/getIpIntelligenceBlackListItemByIp', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+            blackList: [],
+            whiteList: [],
+            countryList: { items: [] },
+            filterCategory: {},
+            sources: { items: [] }
+        }
+        const add = { id: Util.randomNumberString(16), val: '192.168.0.1/24', insertDate: new Date().toISOString() }
+        const filter = await configService.saveIpIntelligenceBlackListItem(add);
+
+        const item = await configService.getIpIntelligenceBlackListItemByIp('192.168.0.5');
+        expect(item).exist;
+
+        const item2 = await configService.getIpIntelligenceBlackListItemByIp('192.168.1.5');
+        expect(item2).not.exist;
+
+
+        const added = await configService.getIpIntelligenceBlackListItem(add.id);
+        expect(added).exist;
+
+
+
+    });
+    it('getIpIntelligenceWhiteListItem/getIpIntelligenceWhiteListItemByIp', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+            blackList: [],
+            whiteList: [],
+            countryList: { items: [] },
+            filterCategory: {},
+            sources: { items: [] }
+        }
+        const add =
+            { id: Util.randomNumberString(16), val: '192.168.0.1/24', insertDate: new Date().toISOString() };
+        const filter = await configService.saveIpIntelligenceWhiteListItem(add);
+
+        const item = await configService.getIpIntelligenceWhiteListItemByIp('192.168.0.5');
+        expect(item).exist;
+
+        const item2 = await configService.getIpIntelligenceWhiteListItemByIp('192.168.1.5');
+        expect(item2).not.exist;
+
+
+        const added = await configService.getIpIntelligenceWhiteListItem(add.id);
+        expect(added).exist;
+
+
+    });
+
+    it('getIpIntelligenceBlackListBy', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+            whiteList: [],
+            blackList: [{
+                id: Util.randomNumberString(),
+                val: '102.10.1.1/32',
+                insertDate: new Date().toISOString()
+            },
+            {
+                id: Util.randomNumberString(),
+                val: '102.10.2.1/32',
+                insertDate: new Date().toISOString()
+            },
+            {
+                id: Util.randomNumberString(),
+                val: '102.10.3.1/32',
+                insertDate: new Date().toISOString()
+            }],
+            countryList: { items: [] },
+            filterCategory: {},
+            sources: { items: [] }
+        }
+
+        const list = await configService.getIpIntelligenceBlackListBy(0, 2);
+        expect(list.total).to.equal(3);
+        expect(list.items.length).to.equal(2);
+
+
+        const list2 = await configService.getIpIntelligenceBlackListBy(1, 2);
+        expect(list2.total).to.equal(3);
+        expect(list2.items.length).to.equal(1);
+
+
+
+    });
+
+
+
+
 
 
 

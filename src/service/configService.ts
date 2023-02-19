@@ -21,6 +21,9 @@ import { AuthorizationRule } from "../model/authorizationPolicy";
 import EventEmitter from "node:events";
 import { ESSetting } from "../model/esSetting";
 import { stringify } from "querystring";
+import { IpIntelligenceBWItem, IpIntelligenceCountryList, IpIntelligenceFilterCategory } from "../model/IpIntelligence";
+import { IpIntelligenceSources } from "../model/IpIntelligence";
+import IPCIDR from "ip-cidr";
 
 
 
@@ -144,7 +147,17 @@ export class ConfigService {
             authorizationPolicy: { rules: [], rulesOrder: [] },
 
             es: {},
-            flush: 0
+            flush: 0,
+            ipIntelligence: {
+                blackList: [],
+                whiteList: [],
+                countryList: { items: [] },
+                filterCategory:
+                {
+                    crawler: true, hosting: true, proxy: true
+                },
+                sources: { items: [] }
+            }
 
         }
     }
@@ -1575,6 +1588,168 @@ export class ConfigService {
     async setConfig(cfg: Config) {
 
     }
+
+    async getIpIntelligenceBlackList() {
+        this.isReady(); this.isReadable();
+        const config = this.clone(this.config.ipIntelligence.blackList);
+        return config;
+    }
+    async getIpIntelligenceBlackListBy(page: number, pageSize: number) {
+        this.isReady(); this.isReadable();
+        const config = this.clone(this.config.ipIntelligence.blackList.slice(page * pageSize, (page + 1) * pageSize));
+        return { total: this.config.ipIntelligence.blackList.length, items: config };
+    }
+
+    async saveIpIntelligenceBlackListItem(item: IpIntelligenceBWItem) {
+        this.isReady(); this.isReadable();
+        let findedIndex = this.config.ipIntelligence.blackList.findIndex(x => x.id == item.id);
+        let finded = this.config.ipIntelligence.blackList[findedIndex];
+        const cloned = this.clone(item);
+        if (!finded) {
+            this.config.ipIntelligence.blackList.push(cloned);
+            findedIndex = this.config.ipIntelligence.blackList.length - 1;
+            const trc = this.createTrackEvent(finded, this.config.ipIntelligence.blackList[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'ipIntelligence/blacklist', val: trc.after, before: trc.before });
+        } else {
+            this.config.ipIntelligence.blackList[findedIndex] = cloned;
+            const trc = this.createTrackEvent(finded, this.config.ipIntelligence.blackList[findedIndex])
+            this.emitEvent({ type: 'put', path: 'ipIntelligence/blacklist', val: trc.after, before: trc.before });
+        }
+        await this.saveConfigToFile();
+        return this.createTrackEvent(finded, this.config.ipIntelligence.blackList[findedIndex]);
+
+    }
+    async deleteIpIntelligenceBlackListItem(id: string) {
+        this.isReady(); this.isWritable();
+        const indexId = this.config.ipIntelligence.blackList.findIndex(x => x.id == id);
+        const network = this.config.ipIntelligence.blackList.find(x => x.id == id);
+        if (indexId >= 0 && network) {
+            this.config.ipIntelligence.blackList.splice(indexId, 1);
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(network)
+    }
+
+    async getIpIntelligenceBlackListItemByIp(ip: string): Promise<IpIntelligenceBWItem | null | undefined> {
+        this.isReady(); this.isWritable();
+        const finded = this.config.ipIntelligence.blackList.find(x => new IPCIDR(x.val).contains(ip))
+        return finded;
+    }
+    async getIpIntelligenceBlackListItem(id: string): Promise<IpIntelligenceBWItem | null | undefined> {
+        this.isReady(); this.isWritable();
+        const finded = this.config.ipIntelligence.blackList.find(x => x.id == id);
+        return finded;
+    }
+
+    async getIpIntelligenceWhiteList() {
+        this.isReady(); this.isReadable();
+        const config = this.clone(this.config.ipIntelligence.whiteList);
+        return config;
+    }
+    async getIpIntelligenceWhiteListBy(page: number, pageSize: number) {
+        this.isReady(); this.isReadable();
+        const config = this.clone(this.config.ipIntelligence.whiteList.slice(page * pageSize, (page + 1) * pageSize));
+        return { total: this.config.ipIntelligence.whiteList.length, items: config };
+    }
+
+    async saveIpIntelligenceWhiteListItem(item: IpIntelligenceBWItem) {
+        this.isReady(); this.isReadable();
+        let findedIndex = this.config.ipIntelligence.whiteList.findIndex(x => x.id == item.id);
+        let finded = this.config.ipIntelligence.whiteList[findedIndex];
+        const cloned = this.clone(item);
+        if (!finded) {
+            this.config.ipIntelligence.whiteList.push(cloned);
+            findedIndex = this.config.ipIntelligence.whiteList.length - 1;
+            const trc = this.createTrackEvent(finded, this.config.ipIntelligence.whiteList[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'ipIntelligence/whiteList', val: trc.after, before: trc.before });
+        } else {
+            this.config.ipIntelligence.whiteList[findedIndex] = cloned;
+            const trc = this.createTrackEvent(finded, this.config.ipIntelligence.whiteList[findedIndex])
+            this.emitEvent({ type: 'put', path: 'ipIntelligence/whiteList', val: trc.after, before: trc.before });
+        }
+        await this.saveConfigToFile();
+        return this.createTrackEvent(finded, this.config.ipIntelligence.whiteList[findedIndex]);
+
+    }
+
+    async deleteIpIntelligenceWhiteListItem(id: string) {
+        this.isReady(); this.isWritable();
+        const indexId = this.config.ipIntelligence.whiteList.findIndex(x => x.id == id);
+        const network = this.config.ipIntelligence.whiteList.find(x => x.id == id);
+        if (indexId >= 0 && network) {
+            this.config.ipIntelligence.whiteList.splice(indexId, 1);
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(network)
+    }
+    async getIpIntelligenceWhiteListItemByIp(ip: string): Promise<IpIntelligenceBWItem | null | undefined> {
+        this.isReady(); this.isWritable();
+        const finded = this.config.ipIntelligence.whiteList.find(x => new IPCIDR(x.val).contains(ip))
+        return finded;
+    }
+    async getIpIntelligenceWhiteListItem(id: string): Promise<IpIntelligenceBWItem | null | undefined> {
+        this.isReady(); this.isWritable();
+        const finded = this.config.ipIntelligence.whiteList.find(x => x.id == id)
+        return finded;
+    }
+
+
+    async getIpIntelligenceFilterCategory() {
+        this.isReady(); this.isReadable();
+        const config = this.clone(this.config.ipIntelligence.filterCategory);
+        return config;
+    }
+    async setIpIntelligenceFilterCategory(filter: IpIntelligenceFilterCategory | {}) {
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(filter);
+        const prev = this.config.ipIntelligence.filterCategory;
+        this.config.ipIntelligence.filterCategory = {
+            ...cloned
+        }
+        const trc = this.createTrackEvent(prev, this.config.ipIntelligence.filterCategory)
+        this.emitEvent({ type: 'put', path: 'ipIntelligence/filterCategory', val: trc.after, before: trc.before })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.ipIntelligence.filterCategory);
+    }
+
+
+    async getIpIntelligenceSources() {
+        this.isReady(); this.isReadable();
+        const config = this.clone(this.config.ipIntelligence.sources);
+        return config;
+    }
+    async setIpIntelligenceSources(sources: IpIntelligenceSources) {
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(sources);
+        const prev = this.config.ipIntelligence.sources;
+        this.config.ipIntelligence.sources = {
+            ...cloned
+        }
+        const trc = this.createTrackEvent(prev, this.config.ipIntelligence.sources)
+        this.emitEvent({ type: 'put', path: 'ipIntelligence/sources', val: trc.after, before: trc.before })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.ipIntelligence.sources);
+    }
+
+    async getIpIntelligenceCountryList() {
+        this.isReady(); this.isReadable();
+        const config = this.clone(this.config.ipIntelligence.countryList);
+        return config;
+    }
+
+
+    async setIpIntelligenceCountryList(countryList: IpIntelligenceCountryList) {
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(countryList);
+        const prev = this.config.ipIntelligence.countryList;
+        this.config.ipIntelligence.countryList = cloned;
+        const trc = this.createTrackEvent(prev, this.config.ipIntelligence.countryList)
+        this.emitEvent({ type: 'put', path: 'ipIntelligence/countryList', val: trc.after, before: trc.before })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.ipIntelligence.countryList);
+    }
+
+
 
 
 

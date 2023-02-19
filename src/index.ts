@@ -29,6 +29,8 @@ import { routerActivityAuthenticated } from "./api/activityApi";
 import { ConfigService } from "./service/configService";
 import { routerSummaryAuthenticated } from "./api/summaryApi";
 import { saveActivityError } from "./api/auth/commonAuth";
+import { routerIpIntelligenceAuthenticated } from "./api/ipIntelligenceApi";
+import { routerDataAuthenticated } from "./api/dataApi";
 
 
 
@@ -392,6 +394,26 @@ async function init() {
         asyncHandlerWithArgs(checkCaptcha, 'summaryCaptcha', 50),
         asyncHandlerWithArgs(checkLimitedMode),
         routerSummaryAuthenticated);
+
+
+    app.use('(\/api)?/data',
+        asyncHandler(setAppService),
+        asyncHandler(findClientIp),
+        asyncHandlerWithArgs(rateLimit, 'data', 1000),
+        asyncHandlerWithArgs(rateLimit, 'dataHourly', 1000),
+        asyncHandlerWithArgs(rateLimit, 'dataDaily', 5000),
+        asyncHandlerWithArgs(checkCaptcha, 'dataCaptcha', 50),
+        routerDataAuthenticated);
+
+    app.use('(\/api)?/ip/intelligence',
+        asyncHandler(setAppService),
+        asyncHandler(findClientIp),
+        asyncHandlerWithArgs(rateLimit, 'ipIntelligence', 1000),
+        asyncHandlerWithArgs(rateLimit, 'ipIntelligenceHourly', 1000),
+        asyncHandlerWithArgs(rateLimit, 'ipIntelligenceDaily', 5000),
+        asyncHandlerWithArgs(checkCaptcha, 'ipIntelligenceCaptcha', 50),
+        asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
+        routerIpIntelligenceAuthenticated);
 
 
 

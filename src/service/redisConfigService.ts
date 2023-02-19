@@ -26,6 +26,12 @@ import { SystemLogService } from "./systemLogService";
 import { ESSetting } from "../model/esSetting";
 import { Config, ConfigWatch, RPath } from "../model/config";
 import { ConfigLogService } from "./configLogService";
+import { IpIntelligenceBWItem } from "../model/IpIntelligence";
+import { IpIntelligenceFilterCategory } from "../model/IpIntelligence";
+import { IpIntelligenceCountryList } from "../model/IpIntelligence";
+import IPCIDR from "ip-cidr";
+import { isIPv4 } from "net";
+import * as ipaddr from 'ip-address';
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -1610,7 +1616,8 @@ export class RedisConfigService extends ConfigService {
         return await super.getES();
     }
 
-    /**
+
+    /*
      * @summary export all config object
      * @param config 
      */
@@ -1649,6 +1656,14 @@ export class RedisConfigService extends ConfigService {
         cfg.authorizationPolicy.rules = await this.rGetAll('authorizationPolicy/rules');
         cfg.authorizationPolicy.rulesOrder = await this.rListAll('authorizationPolicy/rulesOrder');
         cfg.es = await this.rGet('es') || {};
+
+
+        cfg.ipIntelligence.blackList = await this.rGetAll('ipIntelligence/blackList');
+        cfg.ipIntelligence.whiteList = await this.rGetAll('ipIntelligence/whiteList');
+        cfg.ipIntelligence.filterCategory = await this.rGet('ipIntelligence/filterCategory') || {};
+        cfg.ipIntelligence.sources = await this.rGet('ipIntelligence/sources') || { items: [] };
+        cfg.ipIntelligence.countryList = await this.rGet('ipIntelligence/countryList') || { items: [] };
+
     }
 
     /**
@@ -1698,6 +1713,13 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('sslCertificate', undefined, cfg.sslCertificate, pipeline);
         await this.rSave('es', undefined, cfg.es, pipeline);
 
+        await this.rSaveArray('ipIntelligence/blackList', cfg.ipIntelligence.blackList, pipeline);
+        await this.rSaveArray('ipIntelligence/whiteList', cfg.ipIntelligence.whiteList, pipeline);
+        await this.rSave('ipIntelligence/countryList', undefined, cfg.ipIntelligence.countryList, pipeline);
+        await this.rSave('ipIntelligence/filterCategory', undefined, cfg.ipIntelligence.filterCategory, pipeline);
+        await this.rSave('ipIntelligence/sources', undefined, cfg.ipIntelligence.sources, pipeline);
+
+
         await pipeline.exec();
         this.config = this.createConfig();
 
@@ -1705,6 +1727,251 @@ export class RedisConfigService extends ConfigService {
 
 
     }
+
+
+
+    override async getIpIntelligenceBlackList() {
+        this.isReady();
+        this.config.ipIntelligence.blackList = await this.rGetAll('ipIntelligence/blackList');
+        return await super.getIpIntelligenceBlackList();
+    }
+    override async getIpIntelligenceBlackListBy(page: number, pageSize: number) {
+        this.isReady();
+        this.config.ipIntelligence.blackList = [];
+        const key = '/config/index/ipIntelligence/blackList/insertDate';
+        const count = '/config/index/ipIntelligence/blackList/count';
+        const total = await this.redis.get(count, false) || 0;
+        const keys = await this.redis.zrangebyscore(key, '+inf', '-inf', page * pageSize, pageSize, true);
+        let items = [];
+        for (const key of keys) {
+            const item = await this.getIpIntelligenceBlackListItem(key);
+            if (item)
+                items.push(item);
+        }
+        return { total: Number(total), items: items };
+    }
+    override async saveIpIntelligenceBlackListItem(item: IpIntelligenceBWItem) {
+        this.isReady();
+        this.config.ipIntelligence.blackList = [];
+        const net = await this.rGetWith<IpIntelligenceBWItem>('ipIntelligence/blackList', item.id);
+        if (net) this.config.ipIntelligence.blackList.push(net);
+        let ret = await super.saveIpIntelligenceBlackListItem(item);
+        const pipeline = await this.redis.multi();
+        await this.rSave('ipIntelligence/blackList', ret.before, ret.after, pipeline);
+        await this.saveIpIntelligenceListItemIndex('blackList', item, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    override async deleteIpIntelligenceBlackListItem(id: string) {
+        this.isReady();
+        this.config.ipIntelligence.blackList = [];
+
+        const rule = await this.rGetWith<IpIntelligenceBWItem>('ipIntelligence/blackList', id)
+        if (rule) {
+
+            const pipeline = await this.redis.multi();
+            await this.rDel('ipIntelligence/blackList', rule, pipeline);
+            await this.deleteIpIntelligenceListItemIndex('blackList', rule, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+
+        }
+        return this.createTrackEvent(rule);
+    }
+    override async getIpIntelligenceBlackListItemByIp(ip: string) {
+        const itemId = (await this.getIpIntelligenceListItemIndex('blackList', ip));
+        if (!itemId) return null;
+        return await this.getIpIntelligenceBlackListItem(itemId);
+    }
+    override async getIpIntelligenceBlackListItem(id: string) {
+        return await this.rGetWith<IpIntelligenceBWItem>('ipIntelligence/blackList', id)
+    }
+
+
+    override async getIpIntelligenceWhiteList() {
+        this.isReady();
+        this.config.ipIntelligence.whiteList = await this.rGetAll('ipIntelligence/whiteList');
+        return await super.getIpIntelligenceWhiteList();
+    }
+
+    override async getIpIntelligenceWhiteListBy(page: number, pageSize: number) {
+        this.isReady();
+        this.config.ipIntelligence.blackList = [];
+        const key = '/config/index/ipIntelligence/whiteList/insertDate';
+        const count = '/config/index/ipIntelligence/whiteList/count';
+        const total = await this.redis.get(count, false) || 0;
+        const keys = await this.redis.zrangebyscore(key, '+inf', '-inf', page * pageSize, pageSize, true);
+        let items = [];
+        for (const key of keys) {
+            const item = await this.getIpIntelligenceWhiteListItem(key);
+            if (item)
+                items.push(item);
+        }
+        return { total: Number(total), items: items };
+    }
+    static ipToHex(ip: string) {
+        let arr = [];
+        if (isIPv4(ip)) {
+            const xx = new ipaddr.Address4(ip)
+            arr = xx.toArray();
+            arr.unshift(...[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        }
+        else {
+            const yy = new ipaddr.Address6(ip);
+            arr = yy.toByteArray();
+        }
+
+        var s = '0x';
+        arr.forEach((byte) => {
+            s += ('0' + (byte & 0xFF).toString(16)).slice(-2);
+        });
+        return s;
+    }
+
+    async saveIpIntelligenceListItemIndex(index: 'whiteList' | 'blackList', item: IpIntelligenceBWItem, pipeline?: RedisPipelineService) {
+        const trx = pipeline || await this.redis.multi();
+
+        const isValid = IPCIDR.isValidCIDR(item.val);
+        if (!isValid) return;
+
+        const cidr = new IPCIDR(item.val);
+        const start = cidr.addressStart.correctForm();
+        const end = cidr.addressEnd.correctForm();
+        const key = `/config/index/ipIntelligence/${index}/range`;
+
+        const startKey = `${RedisConfigService.ipToHex(start)}:${item.id}`;
+        const endKey = `${RedisConfigService.ipToHex(end)}:${item.id}`;
+
+        await trx.zadd(key, startKey, 0);
+        if (endKey != startKey)
+            await trx.zadd(key, endKey, 0);
+
+        const keyForOrdered = `/config/index/ipIntelligence/${index}/insertDate`;
+        await trx.zadd(keyForOrdered, item.id, new Date(item.insertDate).getTime());
+
+        const count = `/config/index/ipIntelligence/${index}/count`
+        await trx.incr(count);
+
+        if (!pipeline)
+            await trx.exec();
+
+    }
+    async deleteIpIntelligenceListItemIndex(index: 'whiteList' | 'blackList', item: IpIntelligenceBWItem, pipeline?: RedisPipelineService) {
+        const trx = pipeline || await this.redis.multi();
+
+        const isValid = IPCIDR.isValidCIDR(item.val);
+        if (!isValid) return;
+
+        const cidr = new IPCIDR(item.val);
+        const start = cidr.addressStart.correctForm();
+        const end = cidr.addressEnd.correctForm();
+        const key = `/config/index/ipIntelligence/${index}/range`
+
+        const startKey = `${RedisConfigService.ipToHex(start)}:${item.id}`;
+        const endKey = `${RedisConfigService.ipToHex(end)}:${item.id}`;
+
+        await trx.zrem(key, startKey);
+        if (endKey != startKey)
+            await trx.zrem(key, endKey);
+
+        const keyForOrdered = `/config/index/ipIntelligence/${index}/insertDate`;
+        await trx.zrem(keyForOrdered, item.id);
+
+        const count = `/config/index/ipIntelligence/${index}/count`
+        await trx.decr(count);
+
+        if (!pipeline)
+            await trx.exec();
+    }
+    async getIpIntelligenceListItemIndex(index: 'whiteList' | 'blackList', ip: string) {
+
+
+        const key = `/config/index/ipIntelligence/${index}/range`
+
+        const startKey = `${RedisConfigService.ipToHex(ip)}:`;
+
+        const items = await this.redis.zrangebylex(key, `[${startKey}`, `+`, 0, 1);
+        if (!items.length) return null;
+        const itemId = items[0].split(':')[1];
+        if (!itemId) return null;
+        return itemId;
+
+    }
+    override async saveIpIntelligenceWhiteListItem(item: IpIntelligenceBWItem) {
+        this.isReady();
+        this.config.ipIntelligence.whiteList = [];
+        const net = await this.rGetWith<IpIntelligenceBWItem>('ipIntelligence/whiteList', item.id);
+        if (net) this.config.ipIntelligence.whiteList.push(net);
+        let ret = await super.saveIpIntelligenceWhiteListItem(item);
+        const pipeline = await this.redis.multi();
+        await this.rSave('ipIntelligence/whiteList', ret.before, ret.after, pipeline);
+        await this.saveIpIntelligenceListItemIndex('whiteList', item, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    override async deleteIpIntelligenceWhiteListItem(id: string) {
+        this.isReady();
+        this.config.ipIntelligence.whiteList = [];
+
+        const rule = await this.rGetWith<IpIntelligenceBWItem>('ipIntelligence/whiteList', id)
+        if (rule) {
+
+            const pipeline = await this.redis.multi();
+            await this.rDel('ipIntelligence/whiteList', rule, pipeline);
+            await this.deleteIpIntelligenceListItemIndex('whiteList', rule, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+
+        }
+        return this.createTrackEvent(rule);
+    }
+
+    override async getIpIntelligenceWhiteListItemByIp(ip: string) {
+        const itemId = (await this.getIpIntelligenceListItemIndex('whiteList', ip));
+        if (!itemId) return null;
+        return await this.getIpIntelligenceWhiteListItem(itemId);
+    }
+    override async getIpIntelligenceWhiteListItem(id: string) {
+        return await this.rGetWith<IpIntelligenceBWItem>('ipIntelligence/whiteList', id)
+    }
+
+
+    override async getIpIntelligenceFilterCategory() {
+        this.isReady();
+        this.config.ipIntelligence.filterCategory = await this.rGet<IpIntelligenceFilterCategory>('ipIntelligence/filterCategory') || {};
+        return await super.getIpIntelligenceFilterCategory();
+    }
+    override async setIpIntelligenceFilterCategory(filter: IpIntelligenceFilterCategory | {}) {
+        this.isReady();
+        this.config.ipIntelligence.filterCategory = await this.rGet<IpIntelligenceFilterCategory>('ipIntelligence/filterCategory') || {};
+        let ret = await super.setIpIntelligenceFilterCategory(filter);
+        const pipeline = await this.redis.multi();
+        await this.rSave('ipIntelligence/filterCategory', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    override async getIpIntelligenceCountryList() {
+        this.isReady();
+        this.config.ipIntelligence.countryList = await this.rGet<IpIntelligenceCountryList>('ipIntelligence/countryList') || { items: [] };
+        return await super.getIpIntelligenceCountryList();
+    }
+    override async setIpIntelligenceCountryList(countryList: IpIntelligenceCountryList) {
+        this.isReady();
+        this.config.ipIntelligence.filterCategory = await this.rGet<IpIntelligenceFilterCategory>('ipIntelligence/countryList') || {};
+        let ret = await super.setIpIntelligenceCountryList(countryList);
+        const pipeline = await this.redis.multi();
+        await this.rSave('ipIntelligence/countryList', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
 
 
 
@@ -1867,6 +2134,7 @@ export class RedisCachedConfigService extends RedisConfigService {
         this.nodeCache.set("caSSLCertificate", sup);
         return sup;
     }
+
 
 
 

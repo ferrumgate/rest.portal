@@ -12,6 +12,7 @@ import { SSHCertificate } from "./sshCertificate";
 import { SSLCertificate } from "./sslCertificate";
 import { ESSetting } from "./esSetting";
 import { User } from "./user";
+import { IpIntelligence } from "./IpIntelligence";
 
 
 type Nullable<T> = T | null | undefined;
@@ -47,7 +48,12 @@ export type RPath =
     'authenticationPolicy/rulesOrder' |
     'authorizationPolicy/rules' |
     'authorizationPolicy/rulesOrder' |
-    'es' | 'flush';
+    'es' | 'flush' |
+    'ipIntelligence/blackList' |
+    'ipIntelligence/whiteList' |
+    'ipIntelligence/countryList' |
+    'ipIntelligence/filterCategory' |
+    'ipIntelligence/sources';
 
 
 
@@ -97,12 +103,14 @@ export interface Config {
     authenticationPolicy: AuthenticationPolicy;
     authorizationPolicy: AuthorizationPolicy;
 
-    // adding new property needs to lookup 
-    // redisConfigWatchService 
-    // redisConfigWatchCachedService
+
     es: ESSetting;
     //config reset
     flush: number;
 
-
+    // adding new property needs to lookup 
+    // redisConfigWatchService 
+    // redisConfigWatchCachedService
+    // redisConfigService getConfig and setConfig functions
+    ipIntelligence: IpIntelligence;
 }
