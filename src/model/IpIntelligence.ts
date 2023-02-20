@@ -1,13 +1,14 @@
 import { Country } from "./country";
 
 export interface IpIntelligenceSource {
+    id: string;
     type: string;
     name: string;
+    insertDate: string;
+    updateDate: string;
     [key: string]: any;
 }
-export interface IpIntelligenceSources {
-    items: IpIntelligenceSource[];
-}
+
 export interface IpIntelligenceFilterCategory {
     proxy?: boolean,
     hosting?: boolean,
@@ -36,7 +37,7 @@ export interface IpIntelligence {
     //filter category option
     filterCategory: IpIntelligenceFilterCategory,
     //intelligence sources
-    sources: IpIntelligenceSources
+    sources: IpIntelligenceSource[];
 
 }
 

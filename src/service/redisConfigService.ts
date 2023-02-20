@@ -26,7 +26,7 @@ import { SystemLogService } from "./systemLogService";
 import { ESSetting } from "../model/esSetting";
 import { Config, ConfigWatch, RPath } from "../model/config";
 import { ConfigLogService } from "./configLogService";
-import { IpIntelligenceBWItem } from "../model/IpIntelligence";
+import { IpIntelligenceBWItem, IpIntelligenceSource } from "../model/IpIntelligence";
 import { IpIntelligenceFilterCategory } from "../model/IpIntelligence";
 import { IpIntelligenceCountryList } from "../model/IpIntelligence";
 import IPCIDR from "ip-cidr";
@@ -1661,7 +1661,7 @@ export class RedisConfigService extends ConfigService {
         cfg.ipIntelligence.blackList = await this.rGetAll('ipIntelligence/blackList');
         cfg.ipIntelligence.whiteList = await this.rGetAll('ipIntelligence/whiteList');
         cfg.ipIntelligence.filterCategory = await this.rGet('ipIntelligence/filterCategory') || {};
-        cfg.ipIntelligence.sources = await this.rGet('ipIntelligence/sources') || { items: [] };
+        cfg.ipIntelligence.sources = await this.rGetAll('ipIntelligence/sources');
         cfg.ipIntelligence.countryList = await this.rGet('ipIntelligence/countryList') || { items: [] };
 
     }
@@ -1717,7 +1717,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('ipIntelligence/whiteList', cfg.ipIntelligence.whiteList, pipeline);
         await this.rSave('ipIntelligence/countryList', undefined, cfg.ipIntelligence.countryList, pipeline);
         await this.rSave('ipIntelligence/filterCategory', undefined, cfg.ipIntelligence.filterCategory, pipeline);
-        await this.rSave('ipIntelligence/sources', undefined, cfg.ipIntelligence.sources, pipeline);
+        await this.rSaveArray('ipIntelligence/sources', cfg.ipIntelligence.sources, pipeline);
 
 
         await pipeline.exec();
@@ -1967,6 +1967,7 @@ export class RedisConfigService extends ConfigService {
         this.config.ipIntelligence.countryList = await this.rGet<IpIntelligenceCountryList>('ipIntelligence/countryList') || { items: [] };
         return await super.getIpIntelligenceCountryList();
     }
+
     override async setIpIntelligenceCountryList(countryList: IpIntelligenceCountryList) {
         this.isReady();
         this.config.ipIntelligence.filterCategory = await this.rGet<IpIntelligenceFilterCategory>('ipIntelligence/countryList') || {};
@@ -1977,6 +1978,51 @@ export class RedisConfigService extends ConfigService {
         await pipeline.exec();
         return ret;
     }
+
+    override async getIpIntelligenceSources(): Promise<IpIntelligenceSource[]> {
+        this.isReady();
+        this.config.ipIntelligence.whiteList = await this.rGetAll('ipIntelligence/sources');
+        return await super.getIpIntelligenceSources();
+    }
+    override async getIpIntelligenceSource(id: string) {
+        this.isReady();
+        this.config.ipIntelligence.sources = [];
+        const src = await this.rGetWith<IpIntelligenceSource>(`ipIntelligence/sources`, id);
+        if (src) {
+            this.config.ipIntelligence.sources.push(src);
+        }
+        return await super.getIpIntelligenceSource(id);
+    }
+
+    async saveIpIntelligenceSource(source: IpIntelligenceSource) {
+        this.isReady();
+        this.config.ipIntelligence.sources = [];
+        const src = await this.rGetWith<IpIntelligenceSource>('ipIntelligence/sources', source.id);
+        if (src) this.config.ipIntelligence.sources.push(src);
+        let ret = await super.saveIpIntelligenceSource(source);
+        const pipeline = await this.redis.multi();
+        await this.rSave('ipIntelligence/sources', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+    async deleteIpIntelligenceSource(id: string) {
+        this.isReady();
+
+        this.config.ipIntelligence.sources = [];
+
+        const source = await this.rGetWith<IpIntelligenceSource>('ipIntelligence/sources', id);
+        if (source) {
+            this.config.ipIntelligence.sources.push(source);
+            const pipeline = await this.redis.multi();
+            await this.rDel('ipIntelligence/sources', source, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return this.createTrackEvent(source)
+    }
+
+
 
 
 

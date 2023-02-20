@@ -12,7 +12,7 @@ import { RBACDefault } from "../model/rbac";
 import { authorizeAsAdmin } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
-import { IpIntelligenceBWItem } from "../model/IpIntelligence";
+import { IpIntelligenceBWItem, IpIntelligenceSource } from "../model/IpIntelligence";
 import IPCIDR from "ip-cidr";
 
 
@@ -96,7 +96,7 @@ routerIpIntelligenceAuthenticated.delete('(\/blacklist|\/whitelist)/:id',
         const item = isBlackListRequest ?
             await configService.getIpIntelligenceBlackListItem(id) :
             await configService.getIpIntelligenceWhiteListItem(id);
-        if (!item) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNetworkNotFound, 'no network');
+        if (!item) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceBWItemNotFound, 'no bw item found');
 
 
         const { before } = isBlackListRequest ?
@@ -182,6 +182,113 @@ routerIpIntelligenceAuthenticated.post('(\/blacklist|\/whitelist)',
 
     }))
 
+
+
+//  /ip/intelligence/source
+routerIpIntelligenceAuthenticated.get('/source',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`query ip intelligence source`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const sources = await configService.getIpIntelligenceSources();
+        return res.status(200).json({ items: sources });
+
+    }))
+
+routerIpIntelligenceAuthenticated.delete('/source/:id',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        logger.info(`delete ip intelligence source with id: ${id}`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const auditService = appService.auditService;
+
+        const source = await configService.getIpIntelligenceSource(id);
+        if (!source) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellengence source');
+
+        const { before } = await configService.deleteIpIntelligenceSource(source.id);
+        await auditService.logDeleteIpIntelligenceSource(currentSession, currentUser, before);
+        return res.status(200).json({});
+
+    }))
+function cloneIpIntelligenceSource(obj: IpIntelligenceSource): IpIntelligenceSource {
+    return {
+        id: obj.id, insertDate: obj.insertDate, updateDate: obj.updateDate, name: obj.name, type: obj.type,
+        apiKey: obj.apiKey
+    }
+}
+
+routerIpIntelligenceAuthenticated.put('/source',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const input = req.body as IpIntelligenceSource;
+        logger.info(`changing ip intelligence source for ${input.id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        await inputService.checkNotEmpty(input.id);
+        await inputService.checkNotEmpty(input.apiKey);
+        const source = await configService.getIpIntelligenceSource(input.id);
+        if (!source) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intelligence source');
+
+
+        input.name = input.type;
+        const safe = cloneIpIntelligenceSource(input);
+        safe.insertDate = source.insertDate;
+        safe.updateDate = new Date().toISOString();
+        const { before, after } = await configService.saveIpIntelligenceSource(safe);
+        await auditService.logSaveIpIntelligenceSource(currentSession, currentUser, before, after);
+
+        return res.status(200).json(safe);
+
+    }))
+
+routerIpIntelligenceAuthenticated.post('/source',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        logger.info(`saving a new ip intelligence source`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        const input = req.body as IpIntelligenceSource;
+        input.id = Util.randomNumberString(16);
+
+        await inputService.checkNotEmpty(input.apiKey);
+
+        input.name = input.type;
+
+        const safe = cloneIpIntelligenceSource(input);
+        safe.insertDate = new Date().toISOString();
+        safe.updateDate = new Date().toISOString();
+        const { before, after } = await configService.saveIpIntelligenceSource(safe);
+        await auditService.logSaveIpIntelligenceSource(currentSession, currentUser, before, after);
+        return res.status(200).json(safe);
+
+    }))
 
 
 

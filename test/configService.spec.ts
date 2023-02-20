@@ -1989,7 +1989,7 @@ describe('configService', async () => {
             whiteList: [],
             countryList: { items: [] },
             filterCategory: {},
-            sources: { items: [] }
+            sources: []
         }
 
         const list = await configService.getIpIntelligenceBlackList();
@@ -2025,7 +2025,7 @@ describe('configService', async () => {
             }],
             countryList: { items: [] },
             filterCategory: {},
-            sources: { items: [] }
+            sources: []
         }
 
         const list = await configService.getIpIntelligenceWhiteList();
@@ -2074,7 +2074,7 @@ describe('configService', async () => {
             }],
             countryList: { items: [] },
             filterCategory: {},
-            sources: { items: [] }
+            sources: []
         }
 
         const list = await configService.getIpIntelligenceWhiteListBy(0, 2);
@@ -2104,7 +2104,7 @@ describe('configService', async () => {
             whiteList: [],
             countryList: { items: [] },
             filterCategory: {},
-            sources: { items: [] }
+            sources: []
         }
 
         const filter = await configService.getIpIntelligenceFilterCategory();
@@ -2122,35 +2122,7 @@ describe('configService', async () => {
     });
 
 
-    it('getIpIntelligenceSources/setIpIntelligenceSources', async () => {
 
-        //first create a config and save to a file
-        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-        configService.config.networks = [];
-        configService.config.gateways = [];
-        configService.config.services = [];
-        configService.config.authenticationPolicy.rules = [];
-        configService.config.authorizationPolicy.rules = [];
-        configService.config.ipIntelligence = {
-            blackList: [],
-            whiteList: [],
-            countryList: { items: [] },
-            filterCategory: {},
-            sources: { items: [] }
-        }
-
-        const filter = await configService.getIpIntelligenceSources();
-        expect(filter.items.length).to.equal(0);
-
-        await configService.setIpIntelligenceSources(
-            {
-                items: [{ name: 'test', type: 'test' }]
-            });
-        const filter2 = await configService.getIpIntelligenceSources();
-        expect(filter2.items.length).to.equal(1);
-
-
-    });
 
     it('getIpIntelligenceCountryList/setIpIntelligenceCountryList/delete', async () => {
 
@@ -2166,7 +2138,7 @@ describe('configService', async () => {
             whiteList: [],
             countryList: { items: [] },
             filterCategory: {},
-            sources: { items: [] }
+            sources: []
         }
 
         const filter = await configService.getIpIntelligenceCountryList();
@@ -2196,7 +2168,7 @@ describe('configService', async () => {
             whiteList: [],
             countryList: { items: [] },
             filterCategory: {},
-            sources: { items: [] }
+            sources: []
         }
         const add = { id: Util.randomNumberString(16), val: '192.168.0.1/24', insertDate: new Date().toISOString() }
         const filter = await configService.saveIpIntelligenceBlackListItem(add);
@@ -2228,7 +2200,7 @@ describe('configService', async () => {
             whiteList: [],
             countryList: { items: [] },
             filterCategory: {},
-            sources: { items: [] }
+            sources: []
         }
         const add =
             { id: Util.randomNumberString(16), val: '192.168.0.1/24', insertDate: new Date().toISOString() };
@@ -2275,7 +2247,7 @@ describe('configService', async () => {
             }],
             countryList: { items: [] },
             filterCategory: {},
-            sources: { items: [] }
+            sources: []
         }
 
         const list = await configService.getIpIntelligenceBlackListBy(0, 2);
@@ -2286,6 +2258,41 @@ describe('configService', async () => {
         const list2 = await configService.getIpIntelligenceBlackListBy(1, 2);
         expect(list2.total).to.equal(3);
         expect(list2.items.length).to.equal(1);
+
+
+
+    });
+
+    it('getIpIntelligenceSources/saveIpIntelligenceSource/deleteIpIntelligence', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+            blackList: [],
+            whiteList: [],
+            countryList: { items: [] },
+            filterCategory: {},
+            sources: []
+        }
+
+        const filter = await configService.getIpIntelligenceSources();
+        expect(filter.length).to.equal(0);
+        const item = { name: 'test', type: 'test', id: Util.randomNumberString(), insertDate: '', updateDate: '' };
+        await configService.saveIpIntelligenceSource(
+            item
+        );
+        const filter2 = await configService.getIpIntelligenceSources();
+        expect(filter2.length).to.equal(1);
+
+        await configService.deleteIpIntelligenceSource(item.id);
+        const filter3 = await configService.getIpIntelligenceSources();
+        expect(filter3.length).to.equal(0);
+
 
 
 

@@ -269,7 +269,7 @@ export class RedisConfigWatchService extends ConfigService {
                             this.config.ipIntelligence.filterCategory = await this.redisConfig.rGet(path) || {};
                             break;
                         case 'ipIntelligence/sources':
-                            this.config.ipIntelligence.sources = await this.redisConfig.rGet(path) || { items: [] };
+                            await this.processArray(this.config.ipIntelligence.sources, path, item, val.id);
                             break;
                         case 'ipIntelligence/countryList':
                             this.config.ipIntelligence.countryList = await this.redisConfig.rGet(path) || { items: [] };

@@ -9,7 +9,7 @@ import { Util } from '../src/util';
 import { Network } from '../src/model/network';
 
 import chaiExclude from 'chai-exclude';
-import { IpIntelligence } from '../src/model/IpIntelligence';
+import { IpIntelligence, IpIntelligenceSource } from '../src/model/IpIntelligence';
 import { IpIntelligenceBWItem } from '../src/model/IpIntelligence';
 
 chai.use(chaiHttp);
@@ -59,6 +59,7 @@ describe('ipIntelligenceApi', async () => {
         appService.configService.config.ipIntelligence.blackList = [];
         appService.configService.config.ipIntelligence.whiteList = [];
         appService.configService.config.ipIntelligence.countryList = { items: [] };
+        appService.configService.config.ipIntelligence.sources = [];
         await redisService.flushAll();
     })
 
@@ -409,6 +410,159 @@ describe('ipIntelligenceApi', async () => {
         expect(response.body.results[0].item).exist;
         expect(response.body.results[0].errMsg).exist;
 
+
+    }).timeout(50000);
+
+
+    //// ip intelligence source 
+
+    it('GET /ip/intelligence/source will return items', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+
+        const item: IpIntelligenceSource = {
+            id: Util.randomNumberString(),
+            name: 'abc', type: 'acdf', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(),
+        }
+
+        await appService.configService.saveIpIntelligenceSource(item);
+
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/ip/intelligence/source`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body.items).exist;
+
+
+        expectToDeepEqual(response.body.items[0], item);
+
+
+
+    }).timeout(50000);
+
+    it('DELETE /ip/intelligence/source', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+
+        const item: IpIntelligenceSource = {
+            id: Util.randomNumberString(),
+            name: 'abc', type: 'acdf', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(),
+        }
+
+        await appService.configService.saveIpIntelligenceSource(item);
+
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .delete(`/ip/intelligence/source/` + item.id)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+
+        const items = await appService.configService.getIpIntelligenceSources();
+        expect(items.length).to.equal(0);
+
+
+    }).timeout(50000);
+
+    it('POST /ip/intelligence/source', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+
+        const item: IpIntelligenceSource = {
+            id: Util.randomNumberString(), apiKey: 'abc',
+            name: 'abc', type: 'acdf', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(),
+        }
+
+        //await appService.configService.saveIpIntelligenceSource(item);
+
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/ip/intelligence/source`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(item)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+
+        const items = await appService.configService.getIpIntelligenceSources();
+        expect(items.length).to.equal(1);
+
+
+    }).timeout(50000);
+
+    it('PUT /ip/intelligence/source', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+
+        const item: IpIntelligenceSource = {
+            id: Util.randomNumberString(), apiKey: 'abc',
+            name: 'abc', type: 'acdf', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(),
+        }
+
+        await appService.configService.saveIpIntelligenceSource(item);
+        item.apiKey = 'def'
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put(`/ip/intelligence/source`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(item)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+
+        const items = await appService.configService.getIpIntelligenceSources();
+        expect(items.length).to.equal(1);
+        expect(items[0].apiKey).to.equal('def');
 
     }).timeout(50000);
 

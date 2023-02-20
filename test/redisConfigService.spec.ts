@@ -2425,28 +2425,13 @@ describe('redisConfigService', async () => {
         expect(item2.proxy).to.be.false;
     });
 
-    it('getIpIntelligenceSources/setIpIntelligenceSources', async () => {
 
-        //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.sources = { items: [] };
-        await configService.init();
-
-        const source = await configService.getIpIntelligenceSources();
-        expect(source.items.length).to.equal(0);
-
-        await configService.setIpIntelligenceSources({ items: [{ name: 'test', type: 'test2' }] });
-
-        const source2 = await configService.getIpIntelligenceSources();
-        expect(source2.items.length).to.equal(1);
-
-    });
 
     it('getIpIntelligenceCountryList/setIpIntelligenceCountryList', async () => {
 
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.sources = { items: [] };
+        configService.config.ipIntelligence.sources = [];
         await configService.init();
 
         const source = await configService.getIpIntelligenceCountryList();
@@ -2587,6 +2572,30 @@ describe('redisConfigService', async () => {
 
 
     }).timeout(20000);
+
+
+    it('getIpIntelligenceSources/saveIpIntelligenceSource/deleteIpIntelligenceSource', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.ipIntelligence.sources = [];
+        await configService.init();
+
+        const source = await configService.getIpIntelligenceSources();
+        expect(source.length).to.equal(0);
+
+        const item = { name: 'test', type: 'test2', id: Util.randomNumberString(), insertDate: '', updateDate: '' };
+        await configService.saveIpIntelligenceSource(item);
+
+        const source2 = await configService.getIpIntelligenceSources();
+        expect(source2.length).to.equal(1);
+
+        await configService.deleteIpIntelligenceSource(item.id);
+        const source3 = await configService.getIpIntelligenceSources();
+        expect(source3.length).to.equal(0);
+        
+
+    });
 
 
 

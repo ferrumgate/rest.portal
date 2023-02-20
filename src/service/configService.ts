@@ -21,8 +21,7 @@ import { AuthorizationRule } from "../model/authorizationPolicy";
 import EventEmitter from "node:events";
 import { ESSetting } from "../model/esSetting";
 import { stringify } from "querystring";
-import { IpIntelligenceBWItem, IpIntelligenceCountryList, IpIntelligenceFilterCategory } from "../model/IpIntelligence";
-import { IpIntelligenceSources } from "../model/IpIntelligence";
+import { IpIntelligenceBWItem, IpIntelligenceCountryList, IpIntelligenceFilterCategory, IpIntelligenceSource } from "../model/IpIntelligence";
 import IPCIDR from "ip-cidr";
 
 
@@ -156,7 +155,7 @@ export class ConfigService {
                 {
                     crawler: true, hosting: true, proxy: true
                 },
-                sources: { items: [] }
+                sources: []
             }
 
         }
@@ -1622,12 +1621,12 @@ export class ConfigService {
     async deleteIpIntelligenceBlackListItem(id: string) {
         this.isReady(); this.isWritable();
         const indexId = this.config.ipIntelligence.blackList.findIndex(x => x.id == id);
-        const network = this.config.ipIntelligence.blackList.find(x => x.id == id);
-        if (indexId >= 0 && network) {
+        const bitem = this.config.ipIntelligence.blackList.find(x => x.id == id);
+        if (indexId >= 0 && bitem) {
             this.config.ipIntelligence.blackList.splice(indexId, 1);
             await this.saveConfigToFile();
         }
-        return this.createTrackEvent(network)
+        return this.createTrackEvent(bitem)
     }
 
     async getIpIntelligenceBlackListItemByIp(ip: string): Promise<IpIntelligenceBWItem | null | undefined> {
@@ -1675,12 +1674,12 @@ export class ConfigService {
     async deleteIpIntelligenceWhiteListItem(id: string) {
         this.isReady(); this.isWritable();
         const indexId = this.config.ipIntelligence.whiteList.findIndex(x => x.id == id);
-        const network = this.config.ipIntelligence.whiteList.find(x => x.id == id);
-        if (indexId >= 0 && network) {
+        const witem = this.config.ipIntelligence.whiteList.find(x => x.id == id);
+        if (indexId >= 0 && witem) {
             this.config.ipIntelligence.whiteList.splice(indexId, 1);
             await this.saveConfigToFile();
         }
-        return this.createTrackEvent(network)
+        return this.createTrackEvent(witem)
     }
     async getIpIntelligenceWhiteListItemByIp(ip: string): Promise<IpIntelligenceBWItem | null | undefined> {
         this.isReady(); this.isWritable();
@@ -1718,17 +1717,48 @@ export class ConfigService {
         const config = this.clone(this.config.ipIntelligence.sources);
         return config;
     }
-    async setIpIntelligenceSources(sources: IpIntelligenceSources) {
-        this.isReady(); this.isWritable();
-        let cloned = this.clone(sources);
-        const prev = this.config.ipIntelligence.sources;
-        this.config.ipIntelligence.sources = {
-            ...cloned
+    async getIpIntelligenceSource(id: string) {
+        this.isReady(); this.isReadable();
+        const source = this.config.ipIntelligence.sources.find(x => x.id == id);
+        if (!source) {
+            return source;
         }
-        const trc = this.createTrackEvent(prev, this.config.ipIntelligence.sources)
-        this.emitEvent({ type: 'put', path: 'ipIntelligence/sources', val: trc.after, before: trc.before })
+        return this.clone(source);
+    }
+    async saveIpIntelligenceSource(source: IpIntelligenceSource) {
+        this.isReady(); this.isReadable();
+        let findedIndex = this.config.ipIntelligence.sources.findIndex(x => x.id == source.id);
+        let finded = this.config.ipIntelligence.sources[findedIndex];
+        const cloned = this.clone(source);
+        if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
+            this.config.ipIntelligence.sources.push(cloned);
+            findedIndex = this.config.ipIntelligence.sources.length - 1;
+            const trc = this.createTrackEvent(finded, this.config.ipIntelligence.sources[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'ipIntelligence/sources', val: trc.after, before: trc.before });
+        } else {
+            this.config.ipIntelligence.sources[findedIndex] = {
+                ...finded,
+                ...cloned,
+                updateDate: new Date().toISOString()
+            }
+            const trc = this.createTrackEvent(finded, this.config.ipIntelligence.sources[findedIndex])
+            this.emitEvent({ type: 'put', path: 'ipIntelligence/sources', val: trc.after, before: trc.before });
+        }
         await this.saveConfigToFile();
-        return this.createTrackEvent(prev, this.config.ipIntelligence.sources);
+        return this.createTrackEvent(finded, this.config.ipIntelligence.sources[findedIndex]);
+    }
+    async deleteIpIntelligenceSource(id: string) {
+        this.isReady(); this.isWritable();
+        const indexId = this.config.ipIntelligence.sources.findIndex(x => x.id == id);
+        const source = this.config.ipIntelligence.sources.find(x => x.id == id);
+        if (indexId >= 0 && source) {
+            this.config.ipIntelligence.sources.splice(indexId, 1);
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(source)
+
     }
 
     async getIpIntelligenceCountryList() {

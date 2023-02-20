@@ -78,6 +78,7 @@ export class ErrorCodes {
     static ErrSystemIsNotReady: string = "ErrConfigIsNotReady";
     static ErrEmailConfigNeed: string = 'ErrEmailConfigNeed'
 
+
 }
 
 
@@ -119,5 +120,7 @@ export class ErrorCodesInternal extends ErrorCodes {
     static ErrUsernameOrPasswordInvalid: string = "ErrUsernameOrPasswordInvalid";
     static ErrRateLimitReached: string = "ErrRateLimitReached";
     static ErrOnlyAuthLocalIsValid: string = "ErrOnlyAuthLocalIsValid";
+    static ErrIpIntelligenceSourceNotFound: string = "ErrIpIntelligenceSourceNotFound";
+    static ErrIpIntelligenceBWItemNotFound: string = "ErrIpIntelligenceBWItemNotFound";
 
 }
