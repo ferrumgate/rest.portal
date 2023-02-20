@@ -17,6 +17,7 @@ import fsp from 'fs/promises'
 import https from 'https';
 import { X509Certificate } from 'crypto';
 import { decode, encode } from '@msgpack/msgpack';
+import IPCIDR from 'ip-cidr';
 
 export interface IpRange {
     start: string;
@@ -477,6 +478,29 @@ export const Util = {
 
         return decrpted;
     },
+    ipToHex(ip: string) {
+        let arr = [];
+        if (isIPv4(ip)) {
+            const xx = new ipAddress.Address4(ip)
+            arr = xx.toArray();
+            arr.unshift(...[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        }
+        else {
+            const yy = new ipAddress.Address6(ip);
+            arr = yy.toByteArray();
+        }
+
+        var s = '0x';
+        arr.forEach((byte) => {
+            s += ('0' + (byte & 0xFF).toString(16)).slice(-2);
+        });
+        return s;
+    },
+    cidrNormalize(ipRange: string) {
+        const cidr = new IPCIDR(ipRange);
+        const str = cidr.addressStart.correctForm() + cidr.addressStart.subnet;
+        return str;
+    }
 
 
 

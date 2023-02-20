@@ -1783,7 +1783,11 @@ export class RedisConfigService extends ConfigService {
     override async getIpIntelligenceBlackListItemByIp(ip: string) {
         const itemId = (await this.getIpIntelligenceListItemIndex('blackList', ip));
         if (!itemId) return null;
-        return await this.getIpIntelligenceBlackListItem(itemId);
+        const item = await this.getIpIntelligenceBlackListItem(itemId);
+        if (!item) return null;
+        if (new IPCIDR(item.val).contains(ip))
+            return item;
+        return null;
     }
     override async getIpIntelligenceBlackListItem(id: string) {
         return await this.rGetWith<IpIntelligenceBWItem>('ipIntelligence/blackList', id)
@@ -1811,24 +1815,7 @@ export class RedisConfigService extends ConfigService {
         }
         return { total: Number(total), items: items };
     }
-    static ipToHex(ip: string) {
-        let arr = [];
-        if (isIPv4(ip)) {
-            const xx = new ipaddr.Address4(ip)
-            arr = xx.toArray();
-            arr.unshift(...[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        }
-        else {
-            const yy = new ipaddr.Address6(ip);
-            arr = yy.toByteArray();
-        }
 
-        var s = '0x';
-        arr.forEach((byte) => {
-            s += ('0' + (byte & 0xFF).toString(16)).slice(-2);
-        });
-        return s;
-    }
 
     async saveIpIntelligenceListItemIndex(index: 'whiteList' | 'blackList', item: IpIntelligenceBWItem, pipeline?: RedisPipelineService) {
         const trx = pipeline || await this.redis.multi();
@@ -1839,14 +1826,17 @@ export class RedisConfigService extends ConfigService {
         const cidr = new IPCIDR(item.val);
         const start = cidr.addressStart.correctForm();
         const end = cidr.addressEnd.correctForm();
-        const key = `/config/index/ipIntelligence/${index}/range`;
+        const keyRange = `/config/index/ipIntelligence/${index}/range`;
+        const keyIp = `/config/index/ipIntelligence/${index}/ip`;
 
-        const startKey = `${RedisConfigService.ipToHex(start)}:${item.id}`;
-        const endKey = `${RedisConfigService.ipToHex(end)}:${item.id}`;
-
-        await trx.zadd(key, startKey, 0);
-        if (endKey != startKey)
-            await trx.zadd(key, endKey, 0);
+        const startKey = `${Util.ipToHex(start)}:${item.id}`;
+        const endKey = `${Util.ipToHex(end)}:${item.id}`;
+        if (endKey != startKey) {
+            await trx.zadd(keyRange, startKey, 0);
+            await trx.zadd(keyRange, endKey, 0);
+        } else {
+            await trx.zadd(keyIp, startKey, 0);
+        }
 
         const keyForOrdered = `/config/index/ipIntelligence/${index}/insertDate`;
         await trx.zadd(keyForOrdered, item.id, new Date(item.insertDate).getTime());
@@ -1867,14 +1857,18 @@ export class RedisConfigService extends ConfigService {
         const cidr = new IPCIDR(item.val);
         const start = cidr.addressStart.correctForm();
         const end = cidr.addressEnd.correctForm();
-        const key = `/config/index/ipIntelligence/${index}/range`
+        const keyRange = `/config/index/ipIntelligence/${index}/range`
+        const keyIp = `/config/index/ipIntelligence/${index}/ip`
 
-        const startKey = `${RedisConfigService.ipToHex(start)}:${item.id}`;
-        const endKey = `${RedisConfigService.ipToHex(end)}:${item.id}`;
+        const startKey = `${Util.ipToHex(start)}:${item.id}`;
+        const endKey = `${Util.ipToHex(end)}:${item.id}`;
 
-        await trx.zrem(key, startKey);
-        if (endKey != startKey)
-            await trx.zrem(key, endKey);
+        if (endKey != startKey) {
+            await trx.zrem(keyRange, startKey);
+            await trx.zrem(keyRange, endKey);
+        } else {
+            await trx.zrem(keyIp, startKey);
+        }
 
         const keyForOrdered = `/config/index/ipIntelligence/${index}/insertDate`;
         await trx.zrem(keyForOrdered, item.id);
@@ -1888,13 +1882,21 @@ export class RedisConfigService extends ConfigService {
     async getIpIntelligenceListItemIndex(index: 'whiteList' | 'blackList', ip: string) {
 
 
-        const key = `/config/index/ipIntelligence/${index}/range`
+        const keyRange = `/config/index/ipIntelligence/${index}/range`
+        const keyIp = `/config/index/ipIntelligence/${index}/ip`;
 
-        const startKey = `${RedisConfigService.ipToHex(ip)}:`;
+        const startKey = `${Util.ipToHex(ip)}:`;
 
-        const items = await this.redis.zrangebylex(key, `[${startKey}`, `+`, 0, 1);
-        if (!items.length) return null;
-        const itemId = items[0].split(':')[1];
+        const items = await this.redis.zrangebylex(keyIp, `[${startKey}`, `+`, 0, 1);
+        if (items.length) {
+            const itemId = items[0].split(':')[1];
+            if (!itemId) return null;
+            return itemId;
+        }
+
+        const items2 = await this.redis.zrangebylex(keyRange, `[${startKey}`, `+`, 0, 1);
+        if (!items2.length) return null;
+        const itemId = items2[0].split(':')[1];
         if (!itemId) return null;
         return itemId;
 
@@ -1933,7 +1935,11 @@ export class RedisConfigService extends ConfigService {
     override async getIpIntelligenceWhiteListItemByIp(ip: string) {
         const itemId = (await this.getIpIntelligenceListItemIndex('whiteList', ip));
         if (!itemId) return null;
-        return await this.getIpIntelligenceWhiteListItem(itemId);
+        const item = await this.getIpIntelligenceWhiteListItem(itemId);
+        if (!item) return null;
+        if (new IPCIDR(item.val).contains(ip))
+            return item;
+        return null;
     }
     override async getIpIntelligenceWhiteListItem(id: string) {
         return await this.rGetWith<IpIntelligenceBWItem>('ipIntelligence/whiteList', id)

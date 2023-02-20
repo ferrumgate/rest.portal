@@ -21,6 +21,8 @@ function expectToDeepEqual(a: any, b: any) {
     delete a.updateDate;
     delete b.insertDate;
     delete b.updateDate;
+    delete a.id;
+    delete b.id;
     expect(a).to.deep.equal(b);
 }
 
@@ -54,6 +56,9 @@ describe('ipIntelligenceApi', async () => {
         appService.configService.config.users = [];
         appService.configService.config.networks = [];
         appService.configService.config.gateways = [];
+        appService.configService.config.ipIntelligence.blackList = [];
+        appService.configService.config.ipIntelligence.whiteList = [];
+        appService.configService.config.ipIntelligence.countryList = { items: [] };
         await redisService.flushAll();
     })
 
@@ -240,7 +245,7 @@ describe('ipIntelligenceApi', async () => {
 
         const bwitem: IpIntelligenceBWItem = {
             id: Util.randomNumberString(),
-            val: '192.168.0.1/24',
+            val: '192.168.0.0/24',
             insertDate: new Date().toISOString(),
         }
 
@@ -251,7 +256,7 @@ describe('ipIntelligenceApi', async () => {
             chai.request(app)
                 .post(`/ip/intelligence/blacklist`)
                 .set(`Authorization`, `Bearer ${token}`)
-                .send(bwitem)
+                .send({ items: [bwitem] })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -261,12 +266,148 @@ describe('ipIntelligenceApi', async () => {
         })
         expect(response.status).to.equal(200);
         expect(response.body).exist;
-        //posting creates a new id
-        bwitem.id = response.body.id;
-        bwitem.insertDate = response.body.insertDate;
 
-        expectToDeepEqual(response.body, bwitem);
-        expect(response.body.id).exist;
+
+        expectToDeepEqual(response.body.results[0].item, bwitem);
+        expect(response.body.results[0].item).exist;
+        expect(response.body.results[0].errMsg).not.exist;
+
+
+    }).timeout(50000);
+
+
+    it('POST /ip/intelligence/blacklist will return with allready exists and', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+
+        const bwitem: IpIntelligenceBWItem = {
+            id: Util.randomNumberString(),
+            val: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+        }
+
+        await appService.configService.saveIpIntelligenceBlackListItem(bwitem);
+
+
+
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/ip/intelligence/blacklist`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ items: [bwitem] })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+
+
+        expectToDeepEqual(response.body.results[0].item, bwitem);
+        expect(response.body.results[0].item).exist;
+        expect(response.body.results[0].errMsg).exist;
+
+
+    }).timeout(50000);
+
+    it('POST /ip/intelligence/blacklist will return with allready exists', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+
+        const bwitem: IpIntelligenceBWItem = {
+            id: Util.randomNumberString(),
+            val: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+        }
+
+        await appService.configService.saveIpIntelligenceBlackListItem(bwitem);
+
+        // this ip allready exits
+        const bwitem2: IpIntelligenceBWItem = {
+            id: Util.randomNumberString(),
+            val: '192.168.0.1/32',
+            insertDate: new Date().toISOString(),
+        }
+
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/ip/intelligence/blacklist`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ items: [bwitem2] })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+
+
+        expectToDeepEqual(response.body.results[0].item, bwitem2);
+        expect(response.body.results[0].item).exist;
+        expect(response.body.results[0].errMsg).exist;
+
+
+    }).timeout(50000);
+
+    it('POST /ip/intelligence/blacklist will return with allready exists', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+
+        const bwitem: IpIntelligenceBWItem = {
+            id: Util.randomNumberString(),
+            val: '192.168.0.0/16',
+            insertDate: new Date().toISOString(),
+        }
+
+        await appService.configService.saveIpIntelligenceBlackListItem(bwitem);
+
+        //this block allready exits
+        const bwitem2: IpIntelligenceBWItem = {
+            id: Util.randomNumberString(),
+            val: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+        }
+
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/ip/intelligence/blacklist`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ items: [bwitem2] })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+
+
+        expectToDeepEqual(response.body.results[0].item, bwitem2);
+        expect(response.body.results[0].item).exist;
+        expect(response.body.results[0].errMsg).exist;
 
 
     }).timeout(50000);

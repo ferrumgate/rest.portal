@@ -5,6 +5,7 @@ import { Util } from '../src/util';
 import fs from 'fs';
 
 import nock from 'nock';
+import IPCIDR from 'ip-cidr';
 
 
 
@@ -529,6 +530,31 @@ describe('util ', () => {
 
         done();
     });
+
+    it('ipToHex', async () => {
+
+        const hex = Util.ipToHex('192.168.1.1');
+        expect(hex).to.equal('0x000000000000000000000000c0a80101');
+        const hex2 = Util.ipToHex('2001:db8:3c4d::/48')
+        expect(hex2).to.equal('0x20010db83c4d00000000000000000000');
+
+
+
+    }).timeout(20000);
+
+
+    it('cidrNormalize', async () => {
+
+        const cidr = Util.cidrNormalize('192.168.1.2/24');
+
+        expect(cidr).to.equal('192.168.1.0/24');
+
+        const cidr6 = Util.cidrNormalize('2001:db8:85a3::8a2e:370:7336/64');
+        expect(cidr6).to.equal('2001:db8:85a3::/64');
+
+
+
+    }).timeout(20000);
 
 
 

@@ -340,6 +340,11 @@ export class AuditService {
             `ip intelligence blacklist item ${before ? 'updated' : 'created'}`,
             `${before?.val || after?.val}`,)
     }
+    async logSaveIpIntelligenceWhiteListItem(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceBWItem, after?: IpIntelligenceBWItem) {
+        await this.executeSave(currentSession, currentUser, before, after,
+            `ip intelligence whitelist item ${before ? 'updated' : 'created'}`,
+            `${before?.val || after?.val}`,)
+    }
 
 
 

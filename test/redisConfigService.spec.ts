@@ -2461,15 +2461,7 @@ describe('redisConfigService', async () => {
 
     });
 
-    it('ipToHex', async () => {
 
-        const hex = RedisConfigService.ipToHex('192.168.1.1');
-        expect(hex).to.equal('0x000000000000000000000000c0a80101');
-        const hex2 = RedisConfigService.ipToHex('2001:db8:3c4d::/48')
-        expect(hex2).to.equal('0x20010db83c4d00000000000000000000');
-
-
-    }).timeout(20000);
 
     it('saveIpIntelligenceListItemIndex/deleteIpIntelligenceListItemIndex', async () => {
 
