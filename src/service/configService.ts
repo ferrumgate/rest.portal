@@ -150,11 +150,6 @@ export class ConfigService {
             ipIntelligence: {
                 blackList: [],
                 whiteList: [],
-                countryList: { items: [] },
-                filterCategory:
-                {
-                    crawler: true, hosting: true, proxy: true
-                },
                 sources: []
             }
 
@@ -1693,23 +1688,6 @@ export class ConfigService {
     }
 
 
-    async getIpIntelligenceFilterCategory() {
-        this.isReady(); this.isReadable();
-        const config = this.clone(this.config.ipIntelligence.filterCategory);
-        return config;
-    }
-    async setIpIntelligenceFilterCategory(filter: IpIntelligenceFilterCategory | {}) {
-        this.isReady(); this.isWritable();
-        let cloned = this.clone(filter);
-        const prev = this.config.ipIntelligence.filterCategory;
-        this.config.ipIntelligence.filterCategory = {
-            ...cloned
-        }
-        const trc = this.createTrackEvent(prev, this.config.ipIntelligence.filterCategory)
-        this.emitEvent({ type: 'put', path: 'ipIntelligence/filterCategory', val: trc.after, before: trc.before })
-        await this.saveConfigToFile();
-        return this.createTrackEvent(prev, this.config.ipIntelligence.filterCategory);
-    }
 
 
     async getIpIntelligenceSources() {
@@ -1761,23 +1739,7 @@ export class ConfigService {
 
     }
 
-    async getIpIntelligenceCountryList() {
-        this.isReady(); this.isReadable();
-        const config = this.clone(this.config.ipIntelligence.countryList);
-        return config;
-    }
 
-
-    async setIpIntelligenceCountryList(countryList: IpIntelligenceCountryList) {
-        this.isReady(); this.isWritable();
-        let cloned = this.clone(countryList);
-        const prev = this.config.ipIntelligence.countryList;
-        this.config.ipIntelligence.countryList = cloned;
-        const trc = this.createTrackEvent(prev, this.config.ipIntelligence.countryList)
-        this.emitEvent({ type: 'put', path: 'ipIntelligence/countryList', val: trc.after, before: trc.before })
-        await this.saveConfigToFile();
-        return this.createTrackEvent(prev, this.config.ipIntelligence.countryList);
-    }
 
 
 

@@ -2403,48 +2403,8 @@ describe('redisConfigService', async () => {
     });
 
 
-    it('getIpIntelligenceFilterCategory/setIpIntelligenceFilterCategory', async () => {
-
-        //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.filterCategory = {};
-        await configService.init();
-
-        const item = await configService.getIpIntelligenceFilterCategory();
-
-        expect(item.crawler).to.be.undefined;
-        expect(item.hosting).to.be.undefined;
-        expect(item.proxy).to.be.undefined;
-
-        await configService.setIpIntelligenceFilterCategory({ crawler: true, hosting: true, proxy: false });
-
-        const item2 = await configService.getIpIntelligenceFilterCategory();
-
-        expect(item2.crawler).to.be.true;
-        expect(item2.hosting).to.be.true;
-        expect(item2.proxy).to.be.false;
-    });
 
 
-
-    it('getIpIntelligenceCountryList/setIpIntelligenceCountryList', async () => {
-
-        //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.sources = [];
-        await configService.init();
-
-        const source = await configService.getIpIntelligenceCountryList();
-        expect(source.items.length).to.equal(0);
-
-
-        await configService.setIpIntelligenceCountryList({ items: [{ id: calculateCountryId('test'), name: 'test', isoCode: 'test3' }] });
-
-        const source2 = await configService.getIpIntelligenceCountryList();
-        expect(source2.items.length).to.equal(1);
-
-
-    });
 
 
 
@@ -2593,7 +2553,7 @@ describe('redisConfigService', async () => {
         await configService.deleteIpIntelligenceSource(item.id);
         const source3 = await configService.getIpIntelligenceSources();
         expect(source3.length).to.equal(0);
-        
+
 
     });
 

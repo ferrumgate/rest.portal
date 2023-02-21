@@ -1660,9 +1660,7 @@ export class RedisConfigService extends ConfigService {
 
         cfg.ipIntelligence.blackList = await this.rGetAll('ipIntelligence/blackList');
         cfg.ipIntelligence.whiteList = await this.rGetAll('ipIntelligence/whiteList');
-        cfg.ipIntelligence.filterCategory = await this.rGet('ipIntelligence/filterCategory') || {};
         cfg.ipIntelligence.sources = await this.rGetAll('ipIntelligence/sources');
-        cfg.ipIntelligence.countryList = await this.rGet('ipIntelligence/countryList') || { items: [] };
 
     }
 
@@ -1715,8 +1713,6 @@ export class RedisConfigService extends ConfigService {
 
         await this.rSaveArray('ipIntelligence/blackList', cfg.ipIntelligence.blackList, pipeline);
         await this.rSaveArray('ipIntelligence/whiteList', cfg.ipIntelligence.whiteList, pipeline);
-        await this.rSave('ipIntelligence/countryList', undefined, cfg.ipIntelligence.countryList, pipeline);
-        await this.rSave('ipIntelligence/filterCategory', undefined, cfg.ipIntelligence.filterCategory, pipeline);
         await this.rSaveArray('ipIntelligence/sources', cfg.ipIntelligence.sources, pipeline);
 
 
@@ -1946,42 +1942,9 @@ export class RedisConfigService extends ConfigService {
     }
 
 
-    override async getIpIntelligenceFilterCategory() {
-        this.isReady();
-        this.config.ipIntelligence.filterCategory = await this.rGet<IpIntelligenceFilterCategory>('ipIntelligence/filterCategory') || {};
-        return await super.getIpIntelligenceFilterCategory();
-    }
-    override async setIpIntelligenceFilterCategory(filter: IpIntelligenceFilterCategory | {}) {
-        this.isReady();
-        this.config.ipIntelligence.filterCategory = await this.rGet<IpIntelligenceFilterCategory>('ipIntelligence/filterCategory') || {};
-        let ret = await super.setIpIntelligenceFilterCategory(filter);
-        const pipeline = await this.redis.multi();
-        await this.rSave('ipIntelligence/filterCategory', ret.before, ret.after, pipeline);
-        await this.saveLastUpdateTime(pipeline);
-        await pipeline.exec();
-        return ret;
-    }
-
-    override async getIpIntelligenceCountryList() {
-        this.isReady();
-        this.config.ipIntelligence.countryList = await this.rGet<IpIntelligenceCountryList>('ipIntelligence/countryList') || { items: [] };
-        return await super.getIpIntelligenceCountryList();
-    }
-
-    override async setIpIntelligenceCountryList(countryList: IpIntelligenceCountryList) {
-        this.isReady();
-        this.config.ipIntelligence.filterCategory = await this.rGet<IpIntelligenceFilterCategory>('ipIntelligence/countryList') || {};
-        let ret = await super.setIpIntelligenceCountryList(countryList);
-        const pipeline = await this.redis.multi();
-        await this.rSave('ipIntelligence/countryList', ret.before, ret.after, pipeline);
-        await this.saveLastUpdateTime(pipeline);
-        await pipeline.exec();
-        return ret;
-    }
-
     override async getIpIntelligenceSources(): Promise<IpIntelligenceSource[]> {
         this.isReady();
-        this.config.ipIntelligence.whiteList = await this.rGetAll('ipIntelligence/sources');
+        this.config.ipIntelligence.sources = await this.rGetAll('ipIntelligence/sources');
         return await super.getIpIntelligenceSources();
     }
     override async getIpIntelligenceSource(id: string) {

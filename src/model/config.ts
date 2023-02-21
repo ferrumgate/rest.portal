@@ -51,8 +51,6 @@ export type RPath =
     'es' | 'flush' |
     'ipIntelligence/blackList' |
     'ipIntelligence/whiteList' |
-    'ipIntelligence/countryList' |
-    'ipIntelligence/filterCategory' |
     'ipIntelligence/sources';
 
 

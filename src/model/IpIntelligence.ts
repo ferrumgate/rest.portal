@@ -2,7 +2,7 @@ import { Country } from "./country";
 
 export interface IpIntelligenceSource {
     id: string;
-    type: string;
+    type: 'ipdata.co' | 'ipapi.com' | 'ipify.org' | string;
     name: string;
     insertDate: string;
     updateDate: string;
@@ -32,12 +32,19 @@ export interface IpIntelligence {
 
     whiteList: IpIntelligenceBWItem[],
     blackList: IpIntelligenceBWItem[],
-    //allowed country list
-    countryList: IpIntelligenceCountryList,
-    //filter category option
-    filterCategory: IpIntelligenceFilterCategory,
     //intelligence sources
     sources: IpIntelligenceSource[];
 
 }
 
+
+
+
+export interface IpIntelligenceItem {
+    ip: string;
+    countryCode: string;
+    countryName: string;
+    isProxy: boolean;
+    isHosting: boolean;
+    isCrawler: boolean;
+}

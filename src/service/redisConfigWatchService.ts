@@ -265,15 +265,10 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'ipIntelligence/whiteList':
                             await this.processArray(this.config.ipIntelligence.whiteList, path, item, val.id);
                             break;
-                        case 'ipIntelligence/filterCategory':
-                            this.config.ipIntelligence.filterCategory = await this.redisConfig.rGet(path) || {};
-                            break;
                         case 'ipIntelligence/sources':
                             await this.processArray(this.config.ipIntelligence.sources, path, item, val.id);
                             break;
-                        case 'ipIntelligence/countryList':
-                            this.config.ipIntelligence.countryList = await this.redisConfig.rGet(path) || { items: [] };
-                            break;
+
 
 
                         default:

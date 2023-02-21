@@ -291,6 +291,32 @@ routerIpIntelligenceAuthenticated.post('/source',
     }))
 
 
+routerIpIntelligenceAuthenticated.post('/source/check',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const input = req.body as IpIntelligenceSource;
+        logger.info(`check ip intelligence source ${input.type}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        const ipIntelligence = appService.ipIntelligenceService;
+
+
+        await inputService.checkNotEmpty(input.apiKey);
+        await ipIntelligence.check(input);
+
+        return res.status(200).json({});
+
+    }))
+
+
+
 
 
 

@@ -58,7 +58,6 @@ describe('ipIntelligenceApi', async () => {
         appService.configService.config.gateways = [];
         appService.configService.config.ipIntelligence.blackList = [];
         appService.configService.config.ipIntelligence.whiteList = [];
-        appService.configService.config.ipIntelligence.countryList = { items: [] };
         appService.configService.config.ipIntelligence.sources = [];
         await redisService.flushAll();
     })
