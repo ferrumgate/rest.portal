@@ -18,6 +18,8 @@ import https from 'https';
 import { X509Certificate } from 'crypto';
 import { decode, encode } from '@msgpack/msgpack';
 import IPCIDR from 'ip-cidr';
+import moment from 'moment-timezone';
+import { TimeZone } from './model/timezone';
 
 export interface IpRange {
     start: string;
@@ -500,15 +502,28 @@ export const Util = {
         const cidr = new IPCIDR(ipRange);
         const str = cidr.addressStart.correctForm() + cidr.addressStart.subnet;
         return str;
+    },
+    timeZoneList(): TimeZone[] {
+
+        let zones: TimeZone[] = [];
+        const zonenames = moment.tz.names();
+        for (const zone of zonenames) {
+            const tz = moment.tz.zone(zone);
+            if (tz) {
+                zones.push({ name: tz.name, offset: tz.parse(new Date().getTime()) });
+            }
+        }
+        return zones;
+    },
+    timeInZone(zone: string, time?: number) {
+        let z = moment.tz(time ? new Date(time) : Date.now(), zone);
+        return {
+            hour: z.hour(),
+            minute: z.minute(),
+            second: z.second(),
+            milisecond: z.millisecond(),
+            weekDay: z.day()
+        }
     }
-
-
-
-
-
-
-
-
-
 
 }

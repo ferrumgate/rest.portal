@@ -558,6 +558,25 @@ describe('util ', () => {
 
 
 
+    it('timeZoneList', () => {
+
+        const timezones = Util.timeZoneList();
+        expect(timezones.length > 0).to.be.true;
+        const AmericaNewyork = timezones.find(x => x.name == 'America/New_York');
+        expect(AmericaNewyork).exist;
+        expect(AmericaNewyork?.offset).to.equal(300);
+    }).timeout(10000);
+
+
+    it('timeInZone', () => {
+        const date = Util.timeInZone('America/New_York', new Date('2023-02-19 13:05:02.0Z').getTime());
+        expect(date.hour).to.equal(8);
+        expect(date.minute).to.equal(5);
+        expect(date.second).to.equal(2);
+        expect(date.milisecond).to.equal(0);
+        expect(date.weekDay).to.equal(0);
+    });
+
 
 
 

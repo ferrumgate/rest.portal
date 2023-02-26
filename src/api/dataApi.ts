@@ -34,3 +34,17 @@ routerDataAuthenticated.get('/country',
         return res.status(200).json({ items: Countries });
 
     }))
+
+routerDataAuthenticated.get('/timezone',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`getting timezone list`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const items = Util.timeZoneList();
+
+        return res.status(200).json({ items: items });
+
+    }))
