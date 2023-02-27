@@ -12,6 +12,8 @@ import { HelperService } from "./helperService";
 import { logger } from "../common";
 import { Gateway, Network } from "../model/network";
 import { Service } from "../model/service";
+import { AuthSession } from "../model/authSession";
+import { Util } from "../util";
 
 
 export interface UserNetworkListResponse {
@@ -20,6 +22,7 @@ export interface UserNetworkListResponse {
     needs2FA?: boolean,
     needsIp?: boolean,
     needsGateway?: boolean;
+    needsTime?: boolean;
 
 }
 
@@ -51,7 +54,9 @@ export enum PolicyAuthnErrors {
     GatewayNotValid,
     NetworkNotFound,
     NetworkNotValid,
-    RuleDenyMatch = 10,
+    SessionNotFound,
+    SessionNotValid,
+
     NoRuleMatch = 100
 }
 
@@ -73,8 +78,10 @@ export class PolicyService {
 
     }
 
-    async checkUserIdOrGroupId(rule: AuthenticationRule | AuthorizationRule, user: User) {
-        if (!rule.userOrgroupIds.length) return true;
+    /**
+     * @summary check rule includes @param user
+     */
+    async isUserIdOrGroupIdAllowed(rule: AuthenticationRule | AuthorizationRule, user: User) {
 
         if (rule.userOrgroupIds.includes(user.id))
             return true;
@@ -84,7 +91,11 @@ export class PolicyService {
         return false;
 
     }
-    async check2FA(rule: AuthenticationRule | AuthorizationRule, checkValue: boolean) {
+
+    /**
+     * @summary check if rule needs 2FA
+     */
+    async is2FA(rule: AuthenticationRule | AuthorizationRule, checkValue: boolean) {
         if (!rule.profile.is2FA) return true
         else
             if (checkValue) return true;
@@ -92,8 +103,12 @@ export class PolicyService {
                 return false;
 
     }
-    async checkIps(rule: AuthenticationRule, clientIp: string) {
-        if (!rule.profile.ips?.length) return true;
+
+    /**
+     * @summary check if rule ips includes client ip
+     */
+    async isCustomWhiteListContains(rule: AuthenticationRule, clientIp: string) {
+        if (!rule.profile.ips?.length) return false;
         const client = ip.createAddress(clientIp);
         for (const ipprofile of rule.profile.ips) {
 
@@ -103,15 +118,103 @@ export class PolicyService {
         return false;
 
     }
+
+    /**
+     * @summary  check if ip intelligence whitelist includes client ip
+     */
+    async isIpIntelligenceWhiteListContains(rule: AuthenticationRule, clientIp: string) {
+        if (!rule.profile.ipIntelligence?.isWhiteList) return false;
+        const item = await this.configService.getIpIntelligenceWhiteListItemByIp(clientIp);
+        if (item) return true;
+        return false;
+    }
+
+    /**
+     * @summary check if ip intelligence blacklist includes client ip
+     */
+    async isIpIntelligenceBlackListContains(rule: AuthenticationRule, clientIp: string) {
+        if (!rule.profile.ipIntelligence?.isBlackList) return false;
+        const item = await this.configService.getIpIntelligenceBlackListItemByIp(clientIp);
+        if (item) return true;
+        return false;
+    }
+
+    /**
+     * @summary check if ip is proxy ip or hosting ip or a crawler ip
+     */
+    async isIpIntelligenceBlackIp(rule: AuthenticationRule, session: AuthSession) {
+        if (rule.profile.ipIntelligence?.isHosting && session.isHostingIp)
+            return true;
+        if (rule.profile.ipIntelligence?.isCrawler && session.isCrawlerIp)
+            return true;
+        if (rule.profile.ipIntelligence?.isProxy && session.isProxyIp)
+            return true;
+        return false;
+    }
+
+
+
+    /**
+     * @summary check if ip country  
+     */
+    async isIpIntelligenceCountryContains(rule: AuthenticationRule, countryCode?: string) {
+        if (!rule.profile.locations?.length) return true;
+        if (!countryCode) return true;//local ip addresses
+        if (rule.profile.locations?.find(x => x.country == countryCode)) return true;
+        return false;
+    }
+
+    /**
+ * @summary check if ip country  
+ */
+    async isTimeAllowed(rule: AuthenticationRule) {
+        if (!rule.profile.times?.length) return true;
+        for (const zone of rule.profile.times) {
+            const time = Util.timeInZone(zone.timezone);
+            if (zone.days.includes(time.weekDay)) {
+                let start = zone.startTime || 0;
+                let end = zone.endTime || 24 * 60;
+                let timeminute = time.hour * 60 + time.minute;
+                if (start <= timeminute && timeminute <= end)
+                    return true;
+            }
+
+        }
+
+        return false;
+    }
+
+    async isIpIntelligenceAllowed(rule: AuthenticationRule, session: AuthSession, clientIp: string) {
+        //check white lists
+        if (await this.isCustomWhiteListContains(rule, clientIp))
+            return true;
+        //check global white list
+        if (await this.isIpIntelligenceWhiteListContains(rule, clientIp))
+            return true;
+        //check global black list
+
+        if (await this.isIpIntelligenceBlackListContains(rule, clientIp))
+            return false;
+
+        //check proxy ip
+        if (await this.isIpIntelligenceBlackIp(rule, session))
+            return false;
+
+        //check country
+        if (await this.isIpIntelligenceCountryContains(rule, session.countryCode))
+            return true;
+
+        return false;
+    }
+
+
+
     errorNumber = PolicyAuthnErrors.NoError;
     /**
      * @summary check user can create a tunnel, check ips, etc...
-     * @param user 
-     * @param is2FAValidated user logined with 2FA
-     * @param tunnel 
      * @returns 
      */
-    async authenticate(user: User, is2FAValidated: boolean, tunnel: Tunnel | undefined) {
+    async authenticate(user: User, session: AuthSession | undefined, tunnel: Tunnel | undefined) {
         //get tunnel basic information
         this.errorNumber = PolicyAuthnErrors.NoError;
         //const tunnel = await this.tunnelService.getTunnel(tunnelKey);
@@ -125,6 +228,19 @@ export class PolicyService {
 
             throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrTunnelNotFoundOrNotValid, 'secure tunnel failed');
         }
+
+        if (!session) {
+            this.errorNumber = PolicyAuthnErrors.SessionNotFound;
+
+            throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrUserSessionNotFoundInvalid, 'secure tunnel failed');
+        }
+        if (!session.id || !session.userId) {
+            this.errorNumber = PolicyAuthnErrors.SessionNotValid;
+
+            throw new RestfullException(401, ErrorCodes.ErrTunnelFailed, ErrorCodesInternal.ErrUserSessionNotFoundInvalid, 'secure tunnel failed');
+        }
+
+        const is2FAValidated = session.is2FA;
 
 
         const gateway = await this.configService.getGateway(tunnel.gatewayId);
@@ -155,17 +271,15 @@ export class PolicyService {
         for (const rule of rules) {
             if (!rule.isEnabled)
                 continue;
-            let f1 = await this.checkUserIdOrGroupId(rule, user);
-            let f2 = await this.check2FA(rule, is2FAValidated);
-            let f3 = await this.checkIps(rule, tunnel.clientIp);
-            if (f1 && f2 && f3) {
-                if (rule.action == 'allow') {
-                    return rule;
-                }
-                else {
-                    this.errorNumber = PolicyAuthnErrors.RuleDenyMatch;
-                    throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrRuleDenyMatch, 'not authenticated');
-                }
+            let f1 = await this.isUserIdOrGroupIdAllowed(rule, user);
+            let f2 = await this.is2FA(rule, is2FAValidated);
+            let f3 = await this.isIpIntelligenceAllowed(rule, session, tunnel.clientIp);
+            let f4 = await this.isTimeAllowed(rule);
+
+
+            if (f1 && f2 && f3 && f4) {
+
+                return rule;
 
             }
 
@@ -180,7 +294,7 @@ export class PolicyService {
      * @summary find networks that user can connect or why not connect
      * @returns 
      */
-    async userNetworks(user: User, is2FAValidated: boolean, clientIp: string) {
+    async userNetworks(user: User, session: AuthSession, clientIp: string) {
 
         this.errorNumber = 0;
         let result: UserNetworkListResponse[] = [];
@@ -205,23 +319,30 @@ export class PolicyService {
             for (const rule of rules) {
                 if (!rule.isEnabled)
                     continue;
-                let f1 = await this.checkUserIdOrGroupId(rule, user);
-                let f2 = await this.check2FA(rule, is2FAValidated);
-                let f3 = await this.checkIps(rule, clientIp);
-                if (f1 && f2 && f3) {
-                    if (rule.action == 'allow') {
-                        const gateways = await this.configService.getGatewaysByNetworkId(network.id);
-                        if (!gateways.find(x => x.isEnabled)) {
-                            result.push({ network: network, action: 'deny', needsGateway: true });
-                        } else
-                            result.push({ network: network, action: 'allow', })
-                        break
-                    }
-                    else {
-                        break
-                    }
+                let f1 = await this.isUserIdOrGroupIdAllowed(rule, user);
+                let f2 = await this.is2FA(rule, session.is2FA);
+                let f3 = await this.isIpIntelligenceAllowed(rule, session, clientIp);
+                let f4 = await this.isTimeAllowed(rule);
+
+                if (f1 && f2 && f3 && f4) {
+
+                    const gateways = await this.configService.getGatewaysByNetworkId(network.id);
+                    if (!gateways.find(x => x.isEnabled)) {
+                        result.push({ network: network, action: 'deny', needsGateway: true });
+                    } else
+                        result.push({ network: network, action: 'allow', })
+                    break
+
+
                 } else if (f1) {
-                    result.push({ network: network, action: 'deny', needs2FA: !f2, needsIp: !f3 });
+                    result.push(
+                        {
+                            network: network,
+                            action: 'deny',
+                            needs2FA: !f2,
+                            needsIp: !f3,
+                            needsTime: !f4
+                        });
                     break;
                 }
             }
@@ -331,8 +452,8 @@ export class PolicyService {
             if (!rule.isEnabled)
                 continue;
 
-            let f1 = await this.checkUserIdOrGroupId(rule, user);
-            let f2 = await this.check2FA(rule, tunnel.is2FA || false);
+            let f1 = await this.isUserIdOrGroupIdAllowed(rule, user);
+            let f2 = await this.is2FA(rule, tunnel.is2FA || false);
             if (f1 && f2) {
 
                 logger.debug(`policy authz calculate trackId: ${tunnel.trackId} serviceId:${serviceId} rule matched: ${rule.id}`);

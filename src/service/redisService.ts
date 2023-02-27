@@ -109,7 +109,10 @@ export class RedisPipelineService {
     }
 
     async hset(key: string, values: any): Promise<RedisPipelineService> {
-
+        Object.keys(values).forEach(x => {
+            if (values[x] == undefined)
+                delete values[x];
+        })
         this.pipeline = await this.pipeline.hset(key, values);
         return this;
 
@@ -357,7 +360,10 @@ export class RedisService {
     }
 
     async hset(key: string, values: any): Promise<number> {
-
+        Object.keys(values).forEach(x => {
+            if (values[x] == undefined)
+                delete values[x];
+        })
         return await this.redis.hset(key, values)
 
     }

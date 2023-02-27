@@ -524,6 +524,13 @@ export const Util = {
             milisecond: z.millisecond(),
             weekDay: z.day()
         }
+    },
+    deleteUndefinedProps(obj: any) {
+        Object.keys(obj).forEach(x => {
+            if (obj[x] == undefined)
+                delete obj[x];
+        })
+        return obj;
     }
 
 }

@@ -1387,7 +1387,6 @@ describe('redisConfigService', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1413,7 +1412,6 @@ describe('redisConfigService', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1440,7 +1438,6 @@ describe('redisConfigService', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1467,7 +1464,6 @@ describe('redisConfigService', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1496,7 +1492,6 @@ describe('redisConfigService', async () => {
         let rule1: AuthenticationRule = {
             id: '1',
             name: "zero trust1",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1510,7 +1505,6 @@ describe('redisConfigService', async () => {
         let rule2: AuthenticationRule = {
             id: '2',
             name: "zero trust2",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1525,7 +1519,6 @@ describe('redisConfigService', async () => {
         let rule3: AuthenticationRule = {
             id: '3',
             name: "zero trust3",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1850,7 +1843,6 @@ describe('redisConfigService', async () => {
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: [aUser.id],
             profile: {},
@@ -2028,7 +2020,6 @@ describe('redisConfigService', async () => {
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: network.id,
             userOrgroupIds: [aUser.id],
             profile: {},
@@ -2172,7 +2163,6 @@ describe('redisConfigService', async () => {
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: [aGroup.id],
             profile: {},
@@ -2467,6 +2457,26 @@ describe('redisConfigService', async () => {
         expect(item).exist;
         const item2 = await configService.getIpIntelligenceBlackListItemByIp('192.168.1.50');
         expect(item2).not.exist;
+
+        const item3 = await configService.getIpIntelligenceBlackListItem(add.id);
+        expect(item3).exist;
+
+
+    }).timeout(20000);
+
+    it('getIpIntelligenceBlackListItemByIp2/getIpIntelligenceBlackListItem2', async () => {
+
+
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.ipIntelligence.whiteList = [];
+        await configService.init();
+
+        const add = { id: Util.randomNumberString(), val: '0.0.0.0/0', insertDate: new Date().toISOString() }
+        const items = await configService.saveIpIntelligenceBlackListItem(add);
+        const item = await configService.getIpIntelligenceBlackListItemByIp('192.168.0.50');
+        expect(item).exist;
+        const item2 = await configService.getIpIntelligenceBlackListItemByIp('192.168.1.50');
+        expect(item2).exist;
 
         const item3 = await configService.getIpIntelligenceBlackListItem(add.id);
         expect(item3).exist;

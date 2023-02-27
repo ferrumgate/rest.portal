@@ -1045,7 +1045,7 @@ describe('configService', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
+
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1070,7 +1070,7 @@ describe('configService', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
+
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1096,7 +1096,7 @@ describe('configService', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
+
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1122,7 +1122,7 @@ describe('configService', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
+
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1150,7 +1150,7 @@ describe('configService', async () => {
         let rule1: AuthenticationRule = {
             id: '1',
             name: "zero trust1",
-            action: 'allow',
+
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1165,7 +1165,7 @@ describe('configService', async () => {
         let rule2: AuthenticationRule = {
             id: '2',
             name: "zero trust2",
-            action: 'allow',
+
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1181,7 +1181,6 @@ describe('configService', async () => {
         let rule3: AuthenticationRule = {
             id: '3',
             name: "zero trust3",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -1509,7 +1508,7 @@ describe('configService', async () => {
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
+
             networkId: 'networkId',
             userOrgroupIds: [aUser.id],
             profile: {},
@@ -1683,7 +1682,7 @@ describe('configService', async () => {
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
+
             networkId: network.id,
             userOrgroupIds: [aUser.id],
             profile: {},
@@ -1840,7 +1839,6 @@ describe('configService', async () => {
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: [aGroup.id],
             profile: {},

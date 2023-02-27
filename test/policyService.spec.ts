@@ -15,6 +15,7 @@ import { User } from '../src/model/user';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
 import { ESService } from '../src/service/esService';
 import { Tunnel } from '../src/model/tunnel';
+import { AuthSession } from '../src/model/authSession';
 
 
 
@@ -37,7 +38,7 @@ describe('policyService ', async () => {
             fs.rmSync(filename);
         done();
     })
-    it('checkUserIdOrGroupId', async () => {
+    it('isUserIdOrGroupIdAllowed', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         await configService.setES({ host: host, user: user, pass: pass })
@@ -45,7 +46,6 @@ describe('policyService ', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -57,13 +57,13 @@ describe('policyService ', async () => {
         }
 
         const policyService = new PolicyService(configService)
-        let result = await policyService.checkUserIdOrGroupId(rule, { id: 'x', groupIds: [] } as any)
+        let result = await policyService.isUserIdOrGroupIdAllowed(rule, { id: 'x', groupIds: [] } as any)
         expect(result).to.be.false;
 
-        let result2 = await policyService.checkUserIdOrGroupId(rule, { id: 'somegroupid', groupIds: [] } as any)
+        let result2 = await policyService.isUserIdOrGroupIdAllowed(rule, { id: 'somegroupid', groupIds: [] } as any)
         expect(result2).to.be.true;
 
-        let result3 = await policyService.checkUserIdOrGroupId(rule, { id: 'adae', groupIds: ['somegroupid'] } as any)
+        let result3 = await policyService.isUserIdOrGroupIdAllowed(rule, { id: 'adae', groupIds: ['somegroupid'] } as any)
         expect(result3).to.be.true;
 
 
@@ -71,7 +71,7 @@ describe('policyService ', async () => {
     }).timeout(5000);
 
 
-    it('check2FA', async () => {
+    it('is2FA', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         await configService.setES({ host: host, user: user, pass: pass })
@@ -79,7 +79,6 @@ describe('policyService ', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {},
@@ -91,17 +90,17 @@ describe('policyService ', async () => {
         }
 
         const policyService = new PolicyService(configService);
-        let result = await policyService.check2FA(rule, false)
+        let result = await policyService.is2FA(rule, false)
         expect(result).to.be.true;
 
-        let result2 = await policyService.check2FA(rule, true)
+        let result2 = await policyService.is2FA(rule, true)
         expect(result2).to.be.true;
 
         rule.profile.is2FA = true;
-        let result3 = await policyService.check2FA(rule, false)
+        let result3 = await policyService.is2FA(rule, false)
         expect(result3).to.be.false;
 
-        let result4 = await policyService.check2FA(rule, true)
+        let result4 = await policyService.is2FA(rule, true)
         expect(result4).to.be.true;
 
 
@@ -109,7 +108,7 @@ describe('policyService ', async () => {
     }).timeout(5000);
 
 
-    it('checkIps', async () => {
+    it('isCustomWhiteListContains', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         await configService.setES({ host: host, user: user, pass: pass })
@@ -117,7 +116,6 @@ describe('policyService ', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: 'networkId',
             userOrgroupIds: ['somegroupid'],
             profile: {
@@ -131,22 +129,331 @@ describe('policyService ', async () => {
         }
 
         const policyService = new PolicyService(configService);
-        let result = await policyService.checkIps(rule, '1.2.3,4')
-        expect(result).to.be.true;
+        let result = await policyService.isCustomWhiteListContains(rule, '1.2.3,4')
+        expect(result).to.be.false;
 
         rule.profile.ips = [{ ip: '192.168.0.1' }]
-        let result2 = await policyService.checkIps(rule, '192.168.0.1')
+        let result2 = await policyService.isCustomWhiteListContains(rule, '192.168.0.1')
         expect(result2).to.be.true;
 
         rule.profile.ips = [{ ip: '192.168.0.1' }, { ip: '192.168.9.10/32' }, { ip: '192.168.10.0/24' }]
-        let result3 = await policyService.checkIps(rule, '192.168.9.10')
+        let result3 = await policyService.isCustomWhiteListContains(rule, '192.168.9.10')
         expect(result3).to.be.true;
 
-        let result4 = await policyService.checkIps(rule, '192.168.10.15')
+
+
+        let result4 = await policyService.isCustomWhiteListContains(rule, '192.168.10.15')
         expect(result4).to.be.true;
 
-        let result5 = await policyService.checkIps(rule, '192.168.9.11')
+        let result5 = await policyService.isCustomWhiteListContains(rule, '192.168.9.11')
         expect(result5).to.be.false;
+
+
+
+    }).timeout(5000);
+
+
+    it('isIpIntelligenceWhiteListContains', async () => {
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {
+
+            },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+
+        }
+
+        const policyService = new PolicyService(configService);
+        let result = await policyService.isIpIntelligenceWhiteListContains(rule, '1.2.3,4')
+        expect(result).to.be.false;
+
+        rule.profile.ipIntelligence = { isBlackList: false, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: true }
+        configService.config.ipIntelligence.whiteList.push({ id: 'adfa', insertDate: '', val: '192.168.0.1/32' })
+        let result2 = await policyService.isIpIntelligenceWhiteListContains(rule, '192.168.0.1')
+        expect(result2).to.be.true;
+
+
+        rule.profile.ipIntelligence = { isBlackList: false, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: true }
+        configService.config.ipIntelligence.whiteList.push({ id: 'adfa1', insertDate: '', val: '192.168.0.1/32' })
+        configService.config.ipIntelligence.whiteList.push({ id: 'adfa2', insertDate: '', val: '192.168.9.10/32' })
+        configService.config.ipIntelligence.whiteList.push({ id: 'adfa3', insertDate: '', val: '192.168.10.0/24' })
+        let result3 = await policyService.isIpIntelligenceWhiteListContains(rule, '192.168.9.10')
+        expect(result3).to.be.true;
+
+
+        let result4 = await policyService.isIpIntelligenceWhiteListContains(rule, '192.168.10.15')
+        expect(result4).to.be.true;
+
+        let result5 = await policyService.isIpIntelligenceWhiteListContains(rule, '192.168.9.11')
+        expect(result5).to.be.false;
+
+
+
+    }).timeout(5000);
+
+
+    it('isIpIntelligenceBlackListContains', async () => {
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {
+
+            },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+
+        }
+
+        const policyService = new PolicyService(configService);
+        let result = await policyService.isIpIntelligenceBlackListContains(rule, '1.2.3,4')
+        expect(result).to.be.false;
+
+        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false }
+        configService.config.ipIntelligence.blackList.push({ id: 'adfa', insertDate: '', val: '192.168.0.1/32' })
+        let result2 = await policyService.isIpIntelligenceBlackListContains(rule, '192.168.0.1')
+        expect(result2).to.be.true;
+
+
+        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false }
+        configService.config.ipIntelligence.blackList.push({ id: 'adfa1', insertDate: '', val: '192.168.0.1/32' })
+        configService.config.ipIntelligence.blackList.push({ id: 'adfa2', insertDate: '', val: '192.168.9.10/32' })
+        configService.config.ipIntelligence.blackList.push({ id: 'adfa3', insertDate: '', val: '192.168.10.0/24' })
+        let result3 = await policyService.isIpIntelligenceBlackListContains(rule, '192.168.9.10')
+        expect(result3).to.be.true;
+
+
+        let result4 = await policyService.isIpIntelligenceBlackListContains(rule, '192.168.10.15')
+        expect(result4).to.be.true;
+
+        let result5 = await policyService.isIpIntelligenceBlackListContains(rule, '192.168.9.11')
+        expect(result5).to.be.false;
+
+
+
+    }).timeout(5000);
+
+
+
+    it('isIpIntelligenceBlackIp', async () => {
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {
+
+            },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+
+        }
+
+        const policyService = new PolicyService(configService);
+        let result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: true, isHostingIp: false, isProxyIp: false } as AuthSession);
+        expect(result).to.be.false;
+
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: true, isHosting: false, isProxy: false };
+        result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: true, isHostingIp: false, isProxyIp: false } as AuthSession);
+        expect(result).to.be.true;
+
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: true, isProxy: false };
+        result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: false, isHostingIp: true, isProxyIp: false } as AuthSession);
+        expect(result).to.be.true;
+
+
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: true };
+        result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: false, isHostingIp: false, isProxyIp: true } as AuthSession);
+        expect(result).to.be.true;
+
+
+    }).timeout(5000);
+
+    it('isIpIntelligenceCountryContains', async () => {
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {
+
+            },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+
+        }
+
+        const policyService = new PolicyService(configService);
+        let result = await policyService.isIpIntelligenceCountryContains(rule);
+        expect(result).to.be.true;
+
+        rule.profile.locations = [
+            { country: 'TR' }
+        ]
+        result = await policyService.isIpIntelligenceCountryContains(rule);
+        expect(result).to.be.true;
+
+        result = await policyService.isIpIntelligenceCountryContains(rule, 'TR');
+        expect(result).to.be.true;
+
+        result = await policyService.isIpIntelligenceCountryContains(rule, 'UK');
+        expect(result).to.be.false;
+
+
+
+    }).timeout(5000);
+
+
+    it('isTimeAllowed', async () => {
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {
+
+            },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+
+        }
+
+        const policyService = new PolicyService(configService);
+        let result = await policyService.isTimeAllowed(rule);
+        expect(result).to.be.true;
+
+        const dayOfWeek = new Date().getDay() + 1;
+        rule.profile.times = [
+            { timezone: 'America/New_York', days: [dayOfWeek < 7 ? dayOfWeek : 0] }
+        ]
+
+        result = await policyService.isTimeAllowed(rule);
+        expect(result).to.be.false;
+
+        rule.profile.times = [
+            { timezone: 'America/New_York', days: [dayOfWeek < 7 ? dayOfWeek : 0], startTime: 0, endTime: 1 }
+        ]
+
+        result = await policyService.isTimeAllowed(rule);
+        expect(result).to.be.false;
+
+        rule.profile.times = [
+            { timezone: 'America/New_York', days: [0, 1, 2, 3, 4, 5, 6] }
+        ]
+
+        result = await policyService.isTimeAllowed(rule);
+        expect(result).to.be.true;
+
+
+
+
+    }).timeout(5000);
+
+
+    it('isIpIntelligenceAllowed', async () => {
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {
+
+            },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+
+        }
+
+        const policyService = new PolicyService(configService);
+        rule.profile.ips = [{ ip: '1.1.1.1/32' }];
+        let result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.1.1.1');
+        expect(result).to.be.true;
+
+
+        rule.profile.ips = [];
+        configService.config.ipIntelligence.whiteList = [{ val: '1.2.3.4/32' } as any]
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: true, isCrawler: false, isHosting: false, isProxy: false }
+        result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.2.3.4');
+        expect(result).to.be.true;
+
+
+        rule.profile.ips = [];
+        configService.config.ipIntelligence.whiteList = [];
+        configService.config.ipIntelligence.blackList = [{ val: '1.2.3.4/32' } as any]
+        rule.profile.ipIntelligence = { isBlackList: true, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
+        result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.2.3.4');
+        expect(result).to.be.false;
+
+
+        rule.profile.ips = [];
+        configService.config.ipIntelligence.whiteList = [];
+        configService.config.ipIntelligence.blackList = []
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: true, isHosting: true, isProxy: true }
+        result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true } as any, '1.2.3.4');
+        expect(result).to.be.false;
+
+
+        rule.profile.ips = [];
+        configService.config.ipIntelligence.whiteList = [];
+        configService.config.ipIntelligence.blackList = []
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
+        rule.profile.locations = [{ country: 'TR' }]
+        result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true, countryCode: 'TR' } as any, '1.2.3.4');
+        expect(result).to.be.true;
+
+
+
+        rule.profile.ips = [];
+        configService.config.ipIntelligence.whiteList = [];
+        configService.config.ipIntelligence.blackList = []
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
+        rule.profile.locations = [{ country: 'UK' }]
+        result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true, countryCode: 'TR' } as any, '1.2.3.4');
+        expect(result).to.be.false;
+
+
+
 
 
 
@@ -190,10 +497,24 @@ describe('policyService ', async () => {
 
         //no tunnel with this key
         try {
-            let result = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, undefined)
+            const session: AuthSession = { id: '1', is2FA: true, userId: '1' } as AuthSession;
+            let result = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any,
+                session, undefined)
 
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(1);
+
+
+        // no session
+
+        try {
+            const session: AuthSession = { id: '1', is2FA: true } as AuthSession;
+            const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: 'non absent gateway' };
+            let result = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any,
+                session, tun)
+
+        } catch (err) { }
+        expect(policyService.errorNumber).to.equal(8);
 
 
         //no gateway
@@ -201,7 +522,9 @@ describe('policyService ', async () => {
         try {
             const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: 'non absent gateway' };
             await redisService.hset(`/tunnel/id/testsession`, tun);
-            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, tun)
+            const session: AuthSession = { id: '1', is2FA: true, userId: '1' } as AuthSession;
+            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any,
+                session, tun)
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(3);
 
@@ -213,8 +536,10 @@ describe('policyService ', async () => {
             newGateway.networkId = 'not absent';
             configService.config.gateways = [newGateway];
             const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: newGateway.id };
+            const session: AuthSession = { id: '1', is2FA: true, userId: '1' } as AuthSession;
             await redisService.hset(`/tunnel/id/testsession`, tun);
-            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, tun)
+            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any,
+                session, tun)
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(5);
 
@@ -224,7 +549,6 @@ describe('policyService ', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'deny',
             networkId: net.id,
             userOrgroupIds: ['somegroupid'],
             profile: {
@@ -235,6 +559,9 @@ describe('policyService ', async () => {
             updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString()
         }
+
+
+
         configService.config.authenticationPolicy.rules = [rule];
 
         try {
@@ -242,23 +569,28 @@ describe('policyService ', async () => {
             configService.config.gateways = [gateway];
             const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
             await redisService.hset(`/tunnel/id/testsession`, tun);
-            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, tun)
-        } catch (err) { }
-        expect(policyService.errorNumber).to.equal(10);
-
-
-
-        rule.action = 'allow';
-        configService.config.authenticationPolicy.rules = [rule];
-
-        try {
-
-            configService.config.gateways = [gateway];
-            const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
-            await redisService.hset(`/tunnel/id/testsession`, tun);
-            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, true, tun)
+            const session: AuthSession = { id: '1', is2FA: true, userId: '1', ip: '10.0.0.2' } as AuthSession;
+            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, session, tun)
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(0);
+
+
+        //
+        try {
+
+            configService.config.gateways = [gateway];
+            rule.profile.ips = [];
+            configService.config.ipIntelligence.blackList = [{ val: '0.0.0.0/0', id: '12', insertDate: '' }];
+            rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false };
+            const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
+            await redisService.hset(`/tunnel/id/testsession`, tun);
+            const session: AuthSession = { id: '1', is2FA: true, userId: '1', ip: '10.0.0.2' } as AuthSession;
+            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, session, tun)
+        } catch (err) { }
+        expect(policyService.errorNumber).to.equal(100);
+
+
+
 
 
 
@@ -383,9 +715,6 @@ describe('policyService ', async () => {
         } catch (err) { }
         expect(policyService.authorizeErrorNumber).to.equal(5);
         configService.config.services = [service];
-
-
-
         //service disabled
         service.isEnabled = false;
         configService.config.services = [service];
@@ -444,6 +773,8 @@ describe('policyService ', async () => {
         expect(policyService.authorizeErrorNumber).to.equal(0); //success
 
     }).timeout(5000);
+
+
     it('userNetworks', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
@@ -488,7 +819,6 @@ describe('policyService ', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'deny',
             networkId: net.id,
             userOrgroupIds: ['somegroupid'],
             profile: {
@@ -503,40 +833,83 @@ describe('policyService ', async () => {
         }
         configService.config.authenticationPolicy.rules = [rule];
 
-
+        const session: AuthSession = { is2FA: true, ip: '1.1.1.1' } as AuthSession;
+        const tunnel: Tunnel = { clientIp: '1.1.1.1' };
 
         const policyService = new PolicyService(configService);
         //prepare for test
         net.isEnabled = false; net2.isEnabled = false;
-        let result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, true, '1.1.1.1');
+        let result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
         expect(result.length).to.be.equal(0);
 
         //prepare for test
         net.isEnabled = true, net2.isEnabled = true;
-        rule.action = 'allow';
-        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, true, '1.1.1.1');
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
         expect(result.length).to.be.equal(1);
         expect(result[0].action).to.be.equal('allow');
 
 
+
         configService.config.gateways = [];
-        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, true, '1.1.1.1');
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
         expect(result.length).to.be.equal(1);
         expect(result[0].needsGateway).to.be.true;
 
+        session.is2FA = false;
         //push it back
         configService.config.gateways = [gateway];
-        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, false, '1.1.1.1');
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
         expect(result.length).to.be.equal(1);
         expect(result[0].needs2FA).to.be.true;
         expect(result[0].needsIp).to.be.false;
+        expect(result[0].needsTime).to.be.false;
+
 
         rule.profile.ips?.push({ ip: '1.2.3.4' });
-        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, false, '1.1.1.1');
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
         expect(result.length).to.be.equal(1);
         expect(result[0].needs2FA).to.be.true;
+        expect(result[0].needsIp).to.be.false;
+        expect(result[0].needsTime).to.be.false;
 
+        // 2fa is true, all ips are in blacklist
+        session.is2FA = true;
+        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true };
+        configService.config.ipIntelligence.blackList.push({ id: '123', insertDate: '', val: '0.0.0.0/0' });
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
+        expect(result.length).to.be.equal(1);
+        expect(result[0].needs2FA).to.be.false;
         expect(result[0].needsIp).to.be.true;
+        expect(result[0].needsTime).to.be.false;
+
+        // 2fa is true, all ips are in blacklist, only 1.1.1.1 is in whitelist
+        session.is2FA = true;
+        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true };
+        configService.config.ipIntelligence.blackList.push({ id: '123', insertDate: '', val: '0.0.0.0/0' });
+        configService.config.ipIntelligence.whiteList.push({ id: '123', insertDate: '', val: session.ip + '/32' });
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
+        expect(result.length).to.be.equal(1);
+        expect(result[0].action).to.be.equal('allow');
+
+
+
+        // 2fa is true, all ips are in blacklist, only 1.1.1.1 is in whitelist but time problem 
+        session.is2FA = true;
+        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true };
+        configService.config.ipIntelligence.blackList.push({ id: '123', insertDate: '', val: '0.0.0.0/0' });
+        configService.config.ipIntelligence.whiteList.push({ id: '123', insertDate: '', val: session.ip + '/32' });
+        const dayOfWeek = new Date().getDay() + 1;
+        rule.profile.times = [
+            { timezone: 'America/New_York', days: [dayOfWeek < 7 ? dayOfWeek : 0] }
+        ]
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
+        expect(result.length).to.be.equal(1);
+        expect(result[0].needs2FA).to.be.false;
+        expect(result[0].needsIp).to.be.false;
+        expect(result[0].needsTime).to.be.true;
+
+
+
 
 
 

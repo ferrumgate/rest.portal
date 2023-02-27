@@ -139,7 +139,7 @@ describe('clientApi ', async () => {
 
     it('POST /client/tunnel', async () => {
         await appService.configService.saveAuthenticationPolicyRule({
-            id: '123', action: 'allow', isEnabled: true, name: 'test', networkId: net.id, profile: {}, userOrgroupIds: [user.id], updateDate: new Date().toISOString(),
+            id: '123', isEnabled: true, name: 'test', networkId: net.id, profile: {}, userOrgroupIds: [user.id], updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString()
         })
         const session = await appService.sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');

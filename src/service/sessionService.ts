@@ -25,7 +25,8 @@ export class SessionService {
 
 
     }
-    async createSession(user: User, is2FA: boolean, clientIp: string, authSource: string) {
+    async createSession(user: User, is2FA: boolean, clientIp: string, authSource: string,
+        countryCode?: string, countryName?: string, isProxyIp?: boolean, isHostingIp?: boolean, isCrawlerIp?: boolean) {
         const session: AuthSession = {
             id: Util.randomNumberString(64),
             insertDate: new Date().toISOString(),
@@ -34,6 +35,11 @@ export class SessionService {
             source: authSource || 'unknown',
             userId: user.id,
             username: user.username,
+            countryCode: countryCode,
+            countryName: countryName,
+            isProxyIp: isProxyIp,
+            isCrawlerIp: isCrawlerIp,
+            isHostingIp: isHostingIp
         }
         const sidkey = `/session/id/${session.id}`;
         const pipeline = await this.redisService.multi()
@@ -42,6 +48,7 @@ export class SessionService {
         await pipeline.exec();
         return session;
     }
+
     async createFakeSession(user: User, is2FA: boolean, clientIp: string, authSource: string) {
         const session: AuthSession = {
             id: Util.randomNumberString(64),
@@ -75,6 +82,9 @@ export class SessionService {
 
         if (Object.keys(authSession).length) {
             authSession.is2FA = Util.convertToBoolean(authSession.is2FA);
+            authSession.isCrawlerIp = Util.convertToBoolean(authSession.isCrawlerIp);
+            authSession.isProxyIp = Util.convertToBoolean(authSession.isProxyIp);
+            authSession.isHostingIp = Util.convertToBoolean(authSession.isHostingIp);
 
             return authSession;
         }
@@ -135,6 +145,9 @@ export class SessionService {
             const sessions = await pipeline.exec() as AuthSession[];
             const validSessions = sessions.filter(session => {
                 session.is2FA = Util.convertToBoolean(session.is2FA);
+                session.isCrawlerIp = Util.convertToBoolean(session.isCrawlerIp);
+                session.isProxyIp = Util.convertToBoolean(session.isProxyIp);
+                session.isHostingIp = Util.convertToBoolean(session.isHostingIp);
                 return true;
             })
             validSessions.forEach(x => {

@@ -69,7 +69,9 @@ describe('sessionService', () => {
         const { user } = createSampleData();
         const session = await sessionService.createSession(user, true, '1.2.3.4', 'local');
         const session2 = await sessionService.getSession(session.id);
-
+        delete session2?.isCrawlerIp
+        delete session2?.isProxyIp;
+        delete session2?.isHostingIp;
         expect(session).deep.equal(session2);
 
 
