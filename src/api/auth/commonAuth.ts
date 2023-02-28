@@ -94,6 +94,11 @@ export function attachActivitySession(req: any, session?: AuthSession) {
         req.activity.sessionId = session.id;
         req.activity.authSource = session.source;
         req.activity.is2FA = session.is2FA;
+        req.activity.countryCode = session.countryCode;
+        req.activity.countryName = session.countryName;
+        req.activity.isProxyIp = session.isProxyIp;
+        req.activity.isCrawlerIp = session.isCrawlerIp;
+        req.activity.isHostingIp = session.isHostingIp;
     }
     // follow request
     req.activity.requestId = req.activity.requestId || Util.randomNumberString(64);

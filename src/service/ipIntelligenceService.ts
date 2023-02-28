@@ -168,7 +168,7 @@ class IPifyOrg extends IpIntelligenceSourceApi {
     override async query(ip: string, timeout: number) {
         const response = await this.get(ip, timeout);
         //match from our country list
-        const country = Countries.find(x => x.isoCode == response.location.country);
+        const country = Countries.find(x => x.isoCode == response.location.countryCode);
         if (!country) return null;
         const intel: IpIntelligenceItem = {
             ip: ip,

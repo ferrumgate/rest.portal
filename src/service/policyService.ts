@@ -160,7 +160,7 @@ export class PolicyService {
     async isIpIntelligenceCountryContains(rule: AuthenticationRule, countryCode?: string) {
         if (!rule.profile.locations?.length) return true;
         if (!countryCode) return true;//local ip addresses
-        if (rule.profile.locations?.find(x => x.country == countryCode)) return true;
+        if (rule.profile.locations?.find(x => x.countryCode == countryCode)) return true;
         return false;
     }
 

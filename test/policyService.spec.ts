@@ -317,7 +317,7 @@ describe('policyService ', async () => {
         expect(result).to.be.true;
 
         rule.profile.locations = [
-            { country: 'TR' }
+            { countryCode: 'TR' }
         ]
         result = await policyService.isIpIntelligenceCountryContains(rule);
         expect(result).to.be.true;
@@ -438,7 +438,7 @@ describe('policyService ', async () => {
         configService.config.ipIntelligence.whiteList = [];
         configService.config.ipIntelligence.blackList = []
         rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
-        rule.profile.locations = [{ country: 'TR' }]
+        rule.profile.locations = [{ countryCode: 'TR' }]
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true, countryCode: 'TR' } as any, '1.2.3.4');
         expect(result).to.be.true;
 
@@ -448,7 +448,7 @@ describe('policyService ', async () => {
         configService.config.ipIntelligence.whiteList = [];
         configService.config.ipIntelligence.blackList = []
         rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
-        rule.profile.locations = [{ country: 'UK' }]
+        rule.profile.locations = [{ countryCode: 'UK' }]
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true, countryCode: 'TR' } as any, '1.2.3.4');
         expect(result).to.be.false;
 

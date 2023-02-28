@@ -40,12 +40,12 @@ export function cloneTimeProfile(p: TimeProfile): TimeProfile {
     }
 }
 export interface LocationProfile {
-    country: string;
+    countryCode: string;
 }
 
 export function cloneLocationProfile(p: LocationProfile): LocationProfile {
     return {
-        country: p.country
+        countryCode: p.countryCode
     }
 }
 

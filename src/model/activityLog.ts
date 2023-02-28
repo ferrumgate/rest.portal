@@ -48,4 +48,10 @@ export interface ActivityLog {
     destinationIp?: string;
     destinationPort?: number;
     networkProtocol?: string;
+
+    countryCode?: string;
+    countryName?: string;
+    isProxyIp?: boolean;
+    isHostingIp?: boolean;
+    isCrawlerIp?: boolean;
 }
