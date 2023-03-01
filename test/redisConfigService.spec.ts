@@ -106,7 +106,7 @@ describe('redisConfigService', async () => {
         await configService.logWatcher.watcher.read();
         await configService.logWatcher.watcher.read();
         await configService.logWatcher.watcher.read();
-        await Util.sleep(10000);
+        await Util.sleep(1000);
         expect(logs.length).to.equal(2);
         expect(logs[0].type).to.equal('put');
         expect(logs[1].type).to.equal('del');

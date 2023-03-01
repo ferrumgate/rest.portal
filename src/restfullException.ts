@@ -93,6 +93,9 @@ export class ErrorCodesInternal extends ErrorCodes {
     static ErrServiceNotValid: string = "ErrServiceNotValid";
     static ErrNetworkNotValid: string = "ErrNetworkNotValid";
     static ErrNoRuleMatch: string = "ErrNoRuleMatch";
+    static ErrNo2FAMatch: string = "ErrNo2FAMatch";
+    static ErrNoLocationMatch: string = "ErrNoLocationMatch";
+    static ErrNoTimeMatch: string = "ErrNoTimeMatch";
     static ErrRuleDenyMatch: string = "ErrRuleDenyMatch";
     static ErrGatewayNotFound: string = "ErrGatewayNotFound";
     static ErrGatewayNotValid: string = "ErrGatewayNotValid";
@@ -122,5 +125,6 @@ export class ErrorCodesInternal extends ErrorCodes {
     static ErrOnlyAuthLocalIsValid: string = "ErrOnlyAuthLocalIsValid";
     static ErrIpIntelligenceSourceNotFound: string = "ErrIpIntelligenceSourceNotFound";
     static ErrIpIntelligenceBWItemNotFound: string = "ErrIpIntelligenceBWItemNotFound";
+
 
 }

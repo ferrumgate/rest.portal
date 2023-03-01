@@ -185,15 +185,16 @@ export class PolicyService {
     }
 
     async isIpIntelligenceAllowed(rule: AuthenticationRule, session: AuthSession, clientIp: string) {
+        let ip = clientIp.split('#')[0];//ip can be like 1.2.3.4#34233 ip#port
         //check white lists
-        if (await this.isCustomWhiteListContains(rule, clientIp))
+        if (await this.isCustomWhiteListContains(rule, ip))
             return true;
         //check global white list
-        if (await this.isIpIntelligenceWhiteListContains(rule, clientIp))
+        if (await this.isIpIntelligenceWhiteListContains(rule, ip))
             return true;
         //check global black list
 
-        if (await this.isIpIntelligenceBlackListContains(rule, clientIp))
+        if (await this.isIpIntelligenceBlackListContains(rule, ip))
             return false;
 
         //check proxy ip
@@ -266,6 +267,9 @@ export class PolicyService {
 
             throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrNetworkNotValid, 'no network');
         }
+        //try to log more error code
+        let error = ErrorCodesInternal.ErrNoRuleMatch;
+        //logger.info(`policy authentication check ${JSON.stringify(session)}  ${JSON.stringify(tunnel)}}`);
         const policy = await this.configService.getAuthenticationPolicy();
         const rules = await policy.rules.filter(x => x.networkId == network.id);
         for (const rule of rules) {
@@ -282,12 +286,20 @@ export class PolicyService {
                 return rule;
 
             }
+            if (f1) {
+                if (!f2)
+                    error = ErrorCodesInternal.ErrNo2FAMatch;
+                else
+                    if (!f3)
+                        error = ErrorCodesInternal.ErrNoLocationMatch;
+                    else error = ErrorCodesInternal.ErrNoTimeMatch;
+
+            }
 
         }
         //no rule match
         this.errorNumber = PolicyAuthnErrors.NoRuleMatch;
-
-        throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrNoRuleMatch, 'not authenticated');
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, error, 'not authenticated');
     }
 
     /**
