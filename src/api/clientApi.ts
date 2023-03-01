@@ -15,6 +15,8 @@ import { HelperService } from "../service/helperService";
 import { getNetworkByGatewayId } from "./commonApi";
 import { AuthSession } from "../model/authSession";
 import { attachActivity, attachActivitySession, attachActivityTunnel, attachActivityUser, saveActivity, saveActivityError } from "./auth/commonAuth";
+import { Gateway } from "../model/network";
+import { Network } from "../model/network";
 
 
 
@@ -72,6 +74,8 @@ routerClientTunnelAuthenticated.post('/',
     asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
     asyncHandler(async (req: any, res: any, next: any) => {
         let tunnel: Tunnel | undefined;
+        let gateway: Gateway | undefined;
+        let network: Network | undefined;
         try {
             const appService = req.appService as AppService;
             const configService = appService.configService;
@@ -91,12 +95,21 @@ routerClientTunnelAuthenticated.post('/',
 
             await inputService.checkIfExists(tunnelKey);
             await inputService.checkStringLength(tunnelKey, 63);
-            HelperService.isValidUser(user);
-            HelperService.isValidSession(session);
 
             //for better logging
             tunnel = await tunnelService.getTunnel(tunnelKey);
             attachActivityTunnel(req, tunnel);
+            //get gateway and network for better
+            if (tunnel?.gatewayId) {
+                gateway = await configService.getGateway(tunnel.gatewayId);
+                if (gateway?.networkId)
+                    network = await configService.getNetwork(gateway?.networkId);
+            }
+
+            HelperService.isValidUser(user);
+            HelperService.isValidSession(session);
+
+
 
             const rule = await policyService.authenticate(user, session, tunnel);
             tunnel = await tunnelService.createTunnel(user, tunnelKey, session);
@@ -106,6 +119,10 @@ routerClientTunnelAuthenticated.post('/',
             await saveActivity(req, 'create tunnel', (log) => {
                 log.authnRuleId = rule.id;
                 log.authnRuleName = rule.name;
+                log.gatewayId = gateway?.id;
+                log.gatewayName = gateway?.name;
+                log.networkId = network?.id;
+                log.networkName = network?.name;
 
             });
 
@@ -113,7 +130,10 @@ routerClientTunnelAuthenticated.post('/',
 
         } catch (err) {
             await saveActivityError(req, 'create tunnel', err, (log) => {
-
+                log.gatewayId = gateway?.id;
+                log.gatewayName = gateway?.name;
+                log.networkId = network?.id;
+                log.networkName = network?.name;
             });
             throw err;
         }
