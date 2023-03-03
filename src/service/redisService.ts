@@ -109,7 +109,10 @@ export class RedisPipelineService {
     }
 
     async hset(key: string, values: any): Promise<RedisPipelineService> {
-
+        Object.keys(values).forEach(x => {
+            if (values[x] == undefined)
+                delete values[x];
+        })
         this.pipeline = await this.pipeline.hset(key, values);
         return this;
 
@@ -170,6 +173,23 @@ export class RedisPipelineService {
         this.pipeline = await this.pipeline.linsert(key, 'AFTER', ref, val);
         return this.pipeline;
     }
+    async zadd(key: string, member: string, val: number) {
+        this.pipeline = await this.pipeline.zadd(key, val, member);
+        return this.pipeline;
+    }
+    async zrem(key: string, member: string) {
+        this.pipeline = await this.pipeline.zrem(key, member);
+        return this.pipeline;
+    }
+    async zrangebyscore(key: string, min: number | '-inf', max: number | '+inf', offset: number, count: number) {
+        this.pipeline = await this.pipeline.zrange(key, min, max, 'BYSCORE', 'LIMIT', offset, count);
+        return this.pipeline;
+    }
+    async zrangebylex(key: string, min: string | '-inf', max: string | '+inf', offset: number, count: number) {
+        this.pipeline = await this.pipeline.zrange(key, min, max, 'BYLEX', 'LIMIT', offset, count);
+        return this.pipeline;
+    }
+
 
 
 }
@@ -340,7 +360,10 @@ export class RedisService {
     }
 
     async hset(key: string, values: any): Promise<number> {
-
+        Object.keys(values).forEach(x => {
+            if (values[x] == undefined)
+                delete values[x];
+        })
         return await this.redis.hset(key, values)
 
     }
@@ -569,6 +592,29 @@ export class RedisService {
     async xack(stream: string, groupname: string, ids: string[]) {
         await this.redis.xack(stream, groupname, ...ids);
     }
+
+
+    async zadd(key: string, member: string, val: number) {
+        return await this.redis.zadd(key, val, member);
+
+    }
+    async zrem(key: string, member: string) {
+        return await this.redis.zrem(key, member);
+    }
+    async zrangebyscore(key: string, min: number | '-inf' | '+inf', max: number | '+inf' | '-inf', offset: number, count: number, reverse = false) {
+        if (!reverse)
+            return await this.redis.zrange(key, min, max, 'BYSCORE', 'LIMIT', offset, count);
+        else
+            return await this.redis.zrange(key, min, max, 'BYSCORE', 'REV', 'LIMIT', offset, count);
+    }
+    async zrangebylex(key: string, min: string | '-inf' | '+inf', max: string | '+inf' | '-inf', offset: number, count: number, reverse = false) {
+        if (!reverse)
+            return await this.redis.zrange(key, min, max, 'BYLEX', 'LIMIT', offset, count);
+        else
+            return await this.redis.zrange(key, min, max, 'BYLEX', 'REV', 'LIMIT', offset, count);
+    }
+
+
 
 
 

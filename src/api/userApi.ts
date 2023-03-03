@@ -267,7 +267,7 @@ routerUserAuthenticated.get('/current/network',
         const currentSession = req.currentSession as AuthSession;
 
 
-        const networks = await policyService.userNetworks(currentUser, currentSession?.is2FA, currentSession?.ip);
+        const networks = await policyService.userNetworks(currentUser, currentSession, currentSession?.ip);
         const results = networks.map(x => {
             return {
                 id: x.network.id, name: x.network.name,

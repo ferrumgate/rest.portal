@@ -17,6 +17,7 @@ import { AuthCommon, BaseAuth } from "../model/authSettings";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Group } from "../model/group";
 import { ESSetting } from "../model/esSetting";
+import { IpIntelligenceBWItem, IpIntelligenceSource } from "../model/IpIntelligence";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -321,6 +322,43 @@ export class AuditService {
 
     async search(req: SearchAuditLogsRequest) {
         return await this.esService.searchAuditLogs(req);
+    }
+
+    async logDeleteIpIntelligenceWhiteList(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceBWItem) {
+        await this.executeDelete(currentSession, currentUser, before,
+            'ip intelligence whitelist deleted',
+            `${before?.val || ''}`)
+    }
+    async logDeleteIpIntelligenceBlackList(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceBWItem) {
+        await this.executeDelete(currentSession, currentUser, before,
+            'ip intelligence blacklist deleted',
+            `${before?.val || ''}`)
+    }
+
+    async logSaveIpIntelligenceBlackListItem(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceBWItem, after?: IpIntelligenceBWItem) {
+        await this.executeSave(currentSession, currentUser, before, after,
+            `ip intelligence blacklist item ${before ? 'updated' : 'created'}`,
+            `${before?.val || after?.val}`,)
+    }
+    async logSaveIpIntelligenceWhiteListItem(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceBWItem, after?: IpIntelligenceBWItem) {
+        await this.executeSave(currentSession, currentUser, before, after,
+            `ip intelligence whitelist item ${before ? 'updated' : 'created'}`,
+            `${before?.val || after?.val}`,)
+    }
+
+    async logSaveIpIntelligenceSource(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceSource, after?: IpIntelligenceSource) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `ip intelligence source ${before ? 'updated' : 'created'}`,
+            `${before?.name || after?.name}`,)
+
+    }
+    async logDeleteIpIntelligenceSource(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceSource, after?: IpIntelligenceSource) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `ip intelligence source deleted}`,
+            `${before?.name}`,)
+
     }
 
 

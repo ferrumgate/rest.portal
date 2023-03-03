@@ -7,7 +7,9 @@ export interface Tunnel {
     id?: string;
     // assigned interface name
     tun?: string;
-    //connected client id
+    /**
+     * @summary connected client ip and port like 1.2.3.4#34343    
+     */
     clientIp?: string;
     // peer client ip
     assignedClientIp?: string;

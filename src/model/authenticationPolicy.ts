@@ -9,7 +9,6 @@ export interface AuthenticationRule {
     userOrgroupIds: string[];
     profile: AuthenticationProfile;
     isEnabled: boolean;
-    action: 'allow' | 'deny';
     insertDate: string;
     updateDate: string;
 
@@ -18,7 +17,6 @@ export interface AuthenticationRule {
 export function cloneAuthenticationRule(val: AuthenticationRule): AuthenticationRule {
     return {
         id: val.id,
-        action: val.action,
         name: val.name,
         networkId: val.networkId,
         userOrgroupIds: val.userOrgroupIds ? Array.from(val.userOrgroupIds) : [],

@@ -25,6 +25,8 @@ import { ErrorCodes } from "../restfullException";
 import { RedisConfigService } from "./redisConfigService";
 import { SystemLogService } from "./systemLogService";
 import { ConfigWatch, RPath } from "../model/config";
+import { IpIntelligenceBWItem } from "../model/IpIntelligence";
+
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -259,6 +261,18 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'es':
                             this.config.es = await this.redisConfig.rGet(path) || {};
                             break;
+                        case 'ipIntelligence/blackList':
+                            //await this.processArray(this.config.ipIntelligence.blackList, path, item, val.id);
+                            break;
+                        case 'ipIntelligence/whiteList':
+                            //await this.processArray(this.config.ipIntelligence.whiteList, path, item, val.id);
+                            break;
+                        case 'ipIntelligence/sources':
+                            await this.processArray(this.config.ipIntelligence.sources, path, item, val.id);
+                            break;
+
+
+
                         default:
                             throw new Error(`not implemented path ${item.path}`)
                     }
@@ -285,9 +299,13 @@ export class RedisConfigWatchService extends ConfigService {
     async processConfigChanged(watch: WatchItem<ConfigWatch<any>>) {
 
     }
-
-
-
+    //this items must not cache, because they can be big
+    async getIpIntelligenceBlackListItemByIp(ip: string): Promise<IpIntelligenceBWItem | null | undefined> {
+        return await this.redisConfig.getIpIntelligenceBlackListItemByIp(ip);
+    }
+    async getIpIntelligenceWhiteListItemByIp(ip: string): Promise<IpIntelligenceBWItem | null | undefined> {
+        return await this.redisConfig.getIpIntelligenceWhiteListItemByIp(ip);
+    }
 }
 
 

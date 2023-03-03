@@ -26,6 +26,7 @@ import { SystemLog, SystemLogService } from "./systemLogService";
 import { DhcpService } from "./dhcpService";
 import { RedisConfigWatchCachedService } from "./redisConfigWatchCachedService";
 import { ConfigWatch } from "../model/config";
+import { IpIntelligenceService } from "./ipIntelligenceService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -53,6 +54,7 @@ export class AppService {
     public summaryService: SummaryService;
     public systemLogService: SystemLogService;
     public dhcpService: DhcpService;
+    public ipIntelligenceService: IpIntelligenceService;
     /**
      *
      */
@@ -70,7 +72,8 @@ export class AppService {
         activity?: ActivityService,
         summary?: SummaryService,
         dhcp?: DhcpService,
-        systemLog?: SystemLogService
+        systemLog?: SystemLogService,
+        ipIntelligenceService?: IpIntelligenceService
     ) {
         //create self signed certificates for JWT
         this.systemLogService = systemLog || new SystemLogService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`)
@@ -98,6 +101,7 @@ export class AppService {
         this.policyService = policy || new PolicyService(this.configService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
+        this.ipIntelligenceService = ipIntelligenceService || new IpIntelligenceService(this.configService, this.redisService);
 
 
 
@@ -143,6 +147,8 @@ export class AppService {
         this.configService.events.on('configChanged', async (data: ConfigWatch<any>) => {
             if (data.path == '/config/es')
                 await this.startReconfigureES();
+            if (data.path == '/config/ipIntelligence/sources')
+                await this.ipIntelligenceService.reConfigure();//no need to start configure
         });
         await this.startReconfigureES();
 

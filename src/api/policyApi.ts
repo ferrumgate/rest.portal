@@ -157,7 +157,6 @@ routerAuthenticationPolicyAuthenticated.put('/rule',
         if (!rule) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrAuthzRuleNotFound, 'no rule');
 
         await inputService.checkNotEmpty(input.name);
-        await inputService.checkNotEmpty(input.action);
         await inputService.checkNotEmpty(input.networkId);
         await inputService.checkIfExists(input.profile);
 
@@ -190,7 +189,6 @@ routerAuthenticationPolicyAuthenticated.post('/rule',
 
 
         await inputService.checkNotEmpty(input.name);
-        await inputService.checkNotEmpty(input.action);
         await inputService.checkNotEmpty(input.networkId);
         await inputService.checkIfExists(input.profile);
         input.id = Util.randomNumberString(16);

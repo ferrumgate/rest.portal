@@ -20,6 +20,7 @@ import { stringify } from "querystring";
 import { userInfo } from "os";
 import { AuthSession } from "../model/authSession";
 import { attachActivity, attachActivitySession, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
+import { Countries } from "../model/country";
 
 
 
@@ -216,6 +217,7 @@ routerAuth.post('/accesstoken',
             const sessionService = appService.sessionService;
             const inputService = appService.inputService;
             const systemlogService = appService.systemLogService;
+            const ipIntelligenceService = appService.ipIntelligenceService;
             //tunnel field is the tunnel tunnel key
             const request = req.body as { key: string, exchangeKey?: string };
             if (!request.key) {
@@ -238,8 +240,14 @@ routerAuth.post('/accesstoken',
                 throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodes.ErrInternalError, "something went wrong");
             }
 
+            // ip intelligence
+            //if ip is not local ip, then get ip intelligence data
+            const ipIntel = await ipIntelligenceService.query(req.clientIp);
+
+
             //create a session
-            const authSession = await sessionService.createSession(req.currentUser, access.is2FA, req.clientIp, req.activity?.authSource || 'unknown');
+            const authSession = await sessionService.createSession(req.currentUser, access.is2FA, req.clientIp, req.activity?.authSource || 'unknown',
+                ipIntel?.countryCode, ipIntel?.countryName, ipIntel?.isProxy, ipIntel?.isHosting, ipIntel?.isCrawler);
             await systemlogService.write({ path: '/system/sessions/create', type: 'put', val: authSession });
             req.currentSession = authSession;
             attachActivitySession(req, authSession);

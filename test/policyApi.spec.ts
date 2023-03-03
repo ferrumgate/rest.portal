@@ -30,7 +30,6 @@ function createSampleDataAuthenticaton() {
     let rule1: AuthenticationRule = {
         id: '1',
         name: "zero trust1",
-        action: 'allow',
         networkId: 'networkId',
         userOrgroupIds: ['somegroupid'],
         profile: {},
@@ -44,7 +43,6 @@ function createSampleDataAuthenticaton() {
     let rule2: AuthenticationRule = {
         id: '2',
         name: "zero trust2",
-        action: 'allow',
         networkId: 'networkId',
         userOrgroupIds: ['somegroupid'],
         profile: {},
@@ -57,7 +55,6 @@ function createSampleDataAuthenticaton() {
     let rule3: AuthenticationRule = {
         id: '3',
         name: "zero trust3",
-        action: 'allow',
         networkId: 'networkId',
         userOrgroupIds: ['somegroupid'],
         profile: {},
@@ -672,8 +669,6 @@ describe('policy', async () => {
         rule1.id = response.body.id;
 
         expectToDeepEqual(response.body, rule1);
-
-
 
     }).timeout(50000);
 

@@ -591,7 +591,10 @@ export class ESService {
                             browserVersion: {
                                 type: "keyword"
                             },
-                            country: {
+                            countryName: {
+                                type: "keyword"
+                            },
+                            countryCode: {
                                 type: "keyword"
                             },
                             sourceIp: {
@@ -619,6 +622,15 @@ export class ESService {
                             },
                             networkProtocol: {
                                 type: "keyword"
+                            },
+                            isProxyIp: {
+                                type: 'boolean'
+                            },
+                            isHostingIp: {
+                                type: 'boolean'
+                            },
+                            isCrawlerIp: {
+                                type: 'boolean'
                             }
 
 

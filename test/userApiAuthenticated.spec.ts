@@ -416,7 +416,6 @@ describe('userApiAuthenticated', async () => {
         let rule: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
-            action: 'allow',
             networkId: net.id,
             userOrgroupIds: ['someid'],
             profile: {

@@ -8,4 +8,9 @@ export interface AuthSession {
     is2FA: boolean;
     //isPAM: boolean;
     source: string;
+    countryCode?: string;
+    countryName?: string;
+    isProxyIp?: boolean;
+    isHostingIp?: boolean;
+    isCrawlerIp?: boolean;
 }
