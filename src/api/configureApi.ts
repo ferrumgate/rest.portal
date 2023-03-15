@@ -9,6 +9,8 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
+import { saveSystemDnsService } from "./serviceApi";
+import { AuthSession } from "../model/authSession";
 
 
 interface Configure {
@@ -33,12 +35,14 @@ routerConfigureAuthenticated.post('/',
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
         //check user must admin, and system must not be configured before
         const user = req.currentUser as User;
         if (user.username !== 'admin') {
             logger.error(`current user is not admin`)
             throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodes.ErrDataVerifyFailed, "not authorized");
         }
+        const currentSession = req.currentSession as AuthSession;
         const roles = await configService.getUserRoles(user);
         if (!roles.find(x => x.id == RBACDefault.roleAdmin.id)) {
             logger.error(`current user role is not admin`)
@@ -98,6 +102,9 @@ routerConfigureAuthenticated.post('/',
         defaultNetwork.serviceNetwork = data.serviceNetwork;
         defaultNetwork.sshHost = data.sshHost;
         await configService.saveNetwork(defaultNetwork);
+
+        //save default dns
+        await saveSystemDnsService(defaultNetwork, configService, auditService, currentSession, user);
 
         return res.status(200).json({});
 

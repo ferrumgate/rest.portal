@@ -311,9 +311,10 @@ export class RedisConfigService extends ConfigService {
 
     }
     async rFlushAll(pipeline?: RedisPipelineService) {
+        const keys = await this.redis.getAllKeys('/config/*');
         const lpipeline = pipeline || await this.redis.multi();
-        const path = '/config/*';
-        await lpipeline.delete(path);
+        //const path = '/config/*';
+        await lpipeline.del(keys);
         const log = { path: '/config/flush', type: 'put', val: 1, before: 0 }
         await this.logWatcher.write(log, lpipeline);
         await this.systemLogWatcher.write(log, lpipeline)
@@ -1719,12 +1720,9 @@ export class RedisConfigService extends ConfigService {
         await pipeline.exec();
         this.config = this.createConfig();
 
-
-
-
     }
 
-
+    /////////////////// ip intelligence /////////////////////////////
 
     override async getIpIntelligenceBlackList() {
         this.isReady();

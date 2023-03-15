@@ -53,10 +53,12 @@ export class InputService {
      * @summary check if fqdn is valid
      * @param domain 
      */
-    checkDomain(domain: string) {
-        if (!domain) throw new RestfullException(400, ErrorCodes.ErrDomainNotValid, ErrorCodes.ErrDomainNotValid, 'fqdn is invalid');
+    checkDomain(domain: string, throwException = true) {
+        if (!domain && throwException) throw new RestfullException(400, ErrorCodes.ErrDomainNotValid, ErrorCodes.ErrDomainNotValid, 'fqdn is invalid');
+        if (!domain) return false;
         const result = validator.isFQDN(domain, { require_tld: false });
-        if (!result) throw new RestfullException(400, ErrorCodes.ErrDomainNotValid, ErrorCodes.ErrDomainNotValid, 'fqdn is invalid');
+        if (!result && throwException) throw new RestfullException(400, ErrorCodes.ErrDomainNotValid, ErrorCodes.ErrDomainNotValid, 'fqdn is invalid');
+        return result;
     }
 
     checkHost(domainIp: string) {
