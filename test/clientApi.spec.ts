@@ -11,6 +11,7 @@ import { Network } from '../src/model/network';
 import { Gateway } from '../src/model/network';
 import fs from 'fs';
 import { config } from 'process';
+import { Service } from '../src/model/service';
 chai.use(chaiHttp);
 const expect = chai.expect;
 
@@ -57,6 +58,23 @@ describe('clientApi ', async () => {
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString()
     }
+    let service1: Service = {
+        id: Util.randomNumberString(),
+        name: 'mysql-dev',
+        isEnabled: true,
+        labels: [],
+        host: '1.2.3.4',
+        networkId: net.id,
+        tcp: 3306,
+        protocol: 'dns',
+        isSystem: true,
+        assignedIp: '10.0.0.1',
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString(),
+        count: 1
+
+
+    }
 
     before(async () => {
 
@@ -70,6 +88,7 @@ describe('clientApi ', async () => {
         await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
+        await configService.saveService(service1);
         await redisService.flushAll();
         configService.config.users = [];
         await configService.saveUser(user);
@@ -102,6 +121,8 @@ describe('clientApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.assignedIp).to.equal(tunnel.assignedClientIp);
         expect(response.body.serviceNetwork).to.equal('172.18.0.0/24');
+        expect(response.body.resolvSearch).to.equal(`${net.name}.${await configService.getDomain()}`);
+        expect(response.body.resolvIp).to.equal(service1.assignedIp);
 
     }).timeout(50000);
 

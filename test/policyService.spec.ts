@@ -38,6 +38,7 @@ describe('policyService ', async () => {
             fs.rmSync(filename);
         done();
     })
+
     it('isUserIdOrGroupIdAllowed', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
@@ -65,6 +66,10 @@ describe('policyService ', async () => {
 
         let result3 = await policyService.isUserIdOrGroupIdAllowed(rule, { id: 'adae', groupIds: ['somegroupid'] } as any)
         expect(result3).to.be.true;
+
+        rule.userOrgroupIds = [];//empty 
+        let result4 = await policyService.isUserIdOrGroupIdAllowed(rule, { id: 'adae', groupIds: ['somegroupid'] } as any)
+        expect(result4).to.be.true;
 
 
 

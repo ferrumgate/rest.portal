@@ -23,6 +23,8 @@ import { ESSetting } from "../model/esSetting";
 import { stringify } from "querystring";
 import { IpIntelligenceBWItem, IpIntelligenceCountryList, IpIntelligenceFilterCategory, IpIntelligenceSource } from "../model/IpIntelligence";
 import IPCIDR from "ip-cidr";
+import { DomainIntelligenceBWItem, DomainIntelligenceSource } from "../model/domainIntelligence";
+
 
 
 
@@ -1582,7 +1584,7 @@ export class ConfigService {
     async setConfig(cfg: Config) {
 
     }
-
+    ///////// ip intelligence /////////////////////////////////////
     async getIpIntelligenceBlackList() {
         this.isReady(); this.isReadable();
         const config = this.clone(this.config.ipIntelligence.blackList);

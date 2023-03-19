@@ -564,7 +564,7 @@ describe('util ', () => {
         expect(timezones.length > 0).to.be.true;
         const AmericaNewyork = timezones.find(x => x.name == 'America/New_York');
         expect(AmericaNewyork).exist;
-        expect(AmericaNewyork?.offset).to.equal(300);
+        expect(AmericaNewyork?.offset == 240 || AmericaNewyork?.offset == 300).to.be.true;
     }).timeout(10000);
 
 

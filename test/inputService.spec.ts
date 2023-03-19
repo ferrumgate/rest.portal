@@ -125,6 +125,14 @@ describe('inputService ', async () => {
         }
         expect(error).to.be.false;
 
+        error = false;
+        try {
+            expect(inputService.checkDomain('ferrumgate'));
+        } catch (ignore) {
+            error = true;
+        }
+        expect(error).to.be.false;
+
         done();
 
     }).timeout(5000);

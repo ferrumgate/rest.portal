@@ -58,6 +58,12 @@ export class RedisPipelineService {
         return this;
 
     }
+    async del(keys: string[]): Promise<RedisPipelineService> {
+
+        this.pipeline = await this.pipeline.del(...keys)
+        return this;
+
+    }
 
     async containsKey(key: string): Promise<RedisPipelineService> {
 
@@ -206,6 +212,9 @@ export class RedisService {
         this.redis = this.createRedisClient(host, password, type);
 
     }
+    clone() {
+        return new RedisService(this.host, this.password, this.type);
+    }
 
 
     protected createRedisClient(host?: string, password: string | undefined = undefined, type: 'single' | 'cluster' | 'sentinel' = 'single'): IORedis.Redis | IORedis.Cluster {
@@ -313,6 +322,11 @@ export class RedisService {
     async delete(key: string): Promise<number> {
 
         return await this.redis.del(key)
+
+    }
+    async del(keys: string[]): Promise<number> {
+
+        return await this.redis.del(...keys)
 
     }
 
@@ -540,7 +554,7 @@ export class RedisService {
         return await this.redis.smembers(key);
     }
 
-    async getAllKeys(search: string, type?: string) {
+    async getAllKeys(search: string, type?: string, limit = 0) {
         let pos = "0";
         let keyList: string[] = [];
         while (true) {
@@ -550,6 +564,9 @@ export class RedisService {
                 break;
             }
             pos = cursor;
+            if (limit)
+                if (keyList.length >= limit)
+                    break;
         }
         return keyList;
     }

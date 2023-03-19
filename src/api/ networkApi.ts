@@ -12,6 +12,9 @@ import { RBACDefault } from "../model/rbac";
 import { authorizeAsAdmin } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
+import { Service } from "../model/service";
+import { getEmptyServiceIp, saveSystemDnsService } from "./serviceApi";
+import { config } from "process";
 
 
 /////////////////////////////////  network //////////////////////////////////
@@ -118,6 +121,8 @@ routerNetworkAuthenticated.put('/',
         const network = await configService.getNetwork(input.id);
         if (!network) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNetworkNotFound, 'no network');
 
+        await inputService.checkDomain(input.name);
+
         await inputService.checkCidr(input.clientNetwork);
         await inputService.checkCidr(input.serviceNetwork);
         if (input.sshHost)
@@ -154,6 +159,7 @@ routerNetworkAuthenticated.post('/',
         const input = req.body as Network;
         input.id = Util.randomNumberString(16);
 
+        await inputService.checkDomain(input.name);
         await inputService.checkCidr(input.clientNetwork);
         await inputService.checkCidr(input.serviceNetwork);
         if (input.sshHost)
@@ -169,6 +175,14 @@ routerNetworkAuthenticated.post('/',
         safe.updateDate = new Date().toISOString();
         const { before, after } = await configService.saveNetwork(safe);
         await auditService.logSaveNetwork(currentSession, currentUser, before, after);
+
+
+        //create default dns service
+        await saveSystemDnsService(safe, configService, auditService, currentSession, currentUser);
+
+
+
+
         return res.status(200).json(safe);
 
     }))
