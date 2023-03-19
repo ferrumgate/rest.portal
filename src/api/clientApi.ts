@@ -39,8 +39,14 @@ routerClientTunnelAuthenticated.get('/ip',
         const tunnel = req.currentTunnel as Tunnel;
 
         const network = await getNetworkByGatewayId(configService, tunnel.gatewayId);
+        const services = await configService.getServicesByNetworkId(network.id);
+        const rootFqdn = await configService.getDomain();
+        const dnsService = services.find(x => x.isSystem && x.protocol == 'dns');
         return res.status(200).json(
-            { assignedIp: tunnel.assignedClientIp, serviceNetwork: network.serviceNetwork }
+            {
+                assignedIp: tunnel.assignedClientIp, serviceNetwork: network.serviceNetwork,
+                resolvIp: dnsService?.assignedIp, resolvSearch: `${network.name}.${rootFqdn}`
+            }
         );
     })
 );

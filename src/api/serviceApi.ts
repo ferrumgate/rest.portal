@@ -129,6 +129,12 @@ routerServiceAuthenticated.put('/',
         //copy orijinal 
         safe.insertDate = service.insertDate;
         safe.updateDate = new Date().toISOString();
+        if (service.isSystem) {//system services cannot change some fields
+            safe.name = service.name;
+            safe.networkId = service.networkId;
+            safe.isEnabled = service.isEnabled;
+            safe.isSystem = service.isSystem;
+        }
         const { before, after } = await configService.saveService(safe);
         await auditService.logSaveService(currentSession, currentUser, before, after);
         return res.status(200).json(safe);

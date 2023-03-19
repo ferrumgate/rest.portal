@@ -82,7 +82,7 @@ export class PolicyService {
      * @summary check rule includes @param user
      */
     async isUserIdOrGroupIdAllowed(rule: AuthenticationRule | AuthorizationRule, user: User) {
-
+        if (!rule.userOrgroupIds.length) return true;
         if (rule.userOrgroupIds.includes(user.id))
             return true;
         if (rule.userOrgroupIds.find(x => user.groupIds.includes(x)))
