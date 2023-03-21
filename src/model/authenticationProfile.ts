@@ -11,6 +11,8 @@ export function cloneIpProfile(p: IpProfile): IpProfile {
 export interface IpIntelligenceProfile {
     isWhiteList: boolean;
     isBlackList: boolean;
+    whiteLists: string[];
+    blackLists: string[];
     isProxy: boolean;
     isHosting: boolean;
     isCrawler: boolean;
@@ -19,6 +21,8 @@ export function cloneIpIntelligenceProfile(p: IpIntelligenceProfile): IpIntellig
     return {
         isWhiteList: p.isWhiteList,
         isBlackList: p.isBlackList,
+        blackLists: Array.from(p.blackLists),
+        whiteLists: Array.from(p.whiteLists),
         isCrawler: p.isCrawler,
         isHosting: p.isHosting,
         isProxy: p.isProxy

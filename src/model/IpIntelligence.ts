@@ -34,7 +34,41 @@ export interface IpIntelligence {
     blackList: IpIntelligenceBWItem[],
     //intelligence sources
     sources: IpIntelligenceSource[];
+    lists: IpIntelligenceList[];
 
+}
+
+export interface IpIntelligenceList {
+    id: string;
+    name: string;
+    http?: {
+        url: string;
+        checkFrequency: number;//minutes
+
+    };
+    file?: {
+        source?: string;
+
+    };
+    updateDate: string;
+    insertDate: string;
+}
+
+export interface IpIntelligenceListStatus {
+    lastCheck?: string;
+    lastStatus?: string;
+    lastError?: string;
+    hash?: string;
+    isChanged?: boolean;
+}
+
+export interface IpIntelligenceListFiles {
+    [key: string]: { page: number, hash: string };
+}
+export interface IpIntelligenceListItem {
+    id: string;
+    cidr: string;
+    listId: string;
 }
 
 

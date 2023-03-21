@@ -208,7 +208,7 @@ export class TunnelService {
         while (cont) {
             const [cursor, results] = await this.redisService.scan('/tunnel/id/*', pos, 10000, 'hash');
             pos = cursor;
-            const pipeline = await this.redisService.multi();
+            const pipeline = await this.redisService.pipeline();
             for (const key of results) {
                 await pipeline.hgetAll(key);
             }

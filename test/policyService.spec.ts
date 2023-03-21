@@ -182,13 +182,13 @@ describe('policyService ', async () => {
         let result = await policyService.isIpIntelligenceWhiteListContains(rule, '1.2.3,4')
         expect(result).to.be.false;
 
-        rule.profile.ipIntelligence = { isBlackList: false, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: true }
+        rule.profile.ipIntelligence = { isBlackList: false, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: true, blackLists: [], whiteLists: [] };
         configService.config.ipIntelligence.whiteList.push({ id: 'adfa', insertDate: '', val: '192.168.0.1/32' })
         let result2 = await policyService.isIpIntelligenceWhiteListContains(rule, '192.168.0.1')
         expect(result2).to.be.true;
 
 
-        rule.profile.ipIntelligence = { isBlackList: false, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: true }
+        rule.profile.ipIntelligence = { isBlackList: false, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: true, blackLists: [], whiteLists: [] };
         configService.config.ipIntelligence.whiteList.push({ id: 'adfa1', insertDate: '', val: '192.168.0.1/32' })
         configService.config.ipIntelligence.whiteList.push({ id: 'adfa2', insertDate: '', val: '192.168.9.10/32' })
         configService.config.ipIntelligence.whiteList.push({ id: 'adfa3', insertDate: '', val: '192.168.10.0/24' })
@@ -231,13 +231,13 @@ describe('policyService ', async () => {
         let result = await policyService.isIpIntelligenceBlackListContains(rule, '1.2.3,4')
         expect(result).to.be.false;
 
-        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false }
+        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false, blackLists: [], whiteLists: [] };
         configService.config.ipIntelligence.blackList.push({ id: 'adfa', insertDate: '', val: '192.168.0.1/32' })
         let result2 = await policyService.isIpIntelligenceBlackListContains(rule, '192.168.0.1')
         expect(result2).to.be.true;
 
 
-        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false }
+        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false, blackLists: [], whiteLists: [] };
         configService.config.ipIntelligence.blackList.push({ id: 'adfa1', insertDate: '', val: '192.168.0.1/32' })
         configService.config.ipIntelligence.blackList.push({ id: 'adfa2', insertDate: '', val: '192.168.9.10/32' })
         configService.config.ipIntelligence.blackList.push({ id: 'adfa3', insertDate: '', val: '192.168.10.0/24' })
@@ -281,16 +281,16 @@ describe('policyService ', async () => {
         let result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: true, isHostingIp: false, isProxyIp: false } as AuthSession);
         expect(result).to.be.false;
 
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: true, isHosting: false, isProxy: false };
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: true, isHosting: false, isProxy: false, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: true, isHostingIp: false, isProxyIp: false } as AuthSession);
         expect(result).to.be.true;
 
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: true, isProxy: false };
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: true, isProxy: false, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: false, isHostingIp: true, isProxyIp: false } as AuthSession);
         expect(result).to.be.true;
 
 
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: true };
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: true, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: false, isHostingIp: false, isProxyIp: true } as AuthSession);
         expect(result).to.be.true;
 
@@ -418,7 +418,7 @@ describe('policyService ', async () => {
 
         rule.profile.ips = [];
         configService.config.ipIntelligence.whiteList = [{ val: '1.2.3.4/32' } as any]
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: true, isCrawler: false, isHosting: false, isProxy: false }
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: true, isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.2.3.4');
         expect(result).to.be.true;
 
@@ -426,7 +426,7 @@ describe('policyService ', async () => {
         rule.profile.ips = [];
         configService.config.ipIntelligence.whiteList = [];
         configService.config.ipIntelligence.blackList = [{ val: '1.2.3.4/32' } as any]
-        rule.profile.ipIntelligence = { isBlackList: true, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
+        rule.profile.ipIntelligence = { isBlackList: true, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.2.3.4');
         expect(result).to.be.false;
 
@@ -434,7 +434,7 @@ describe('policyService ', async () => {
         rule.profile.ips = [];
         configService.config.ipIntelligence.whiteList = [];
         configService.config.ipIntelligence.blackList = []
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: true, isHosting: true, isProxy: true }
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: true, isHosting: true, isProxy: true, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true } as any, '1.2.3.4');
         expect(result).to.be.false;
 
@@ -442,7 +442,7 @@ describe('policyService ', async () => {
         rule.profile.ips = [];
         configService.config.ipIntelligence.whiteList = [];
         configService.config.ipIntelligence.blackList = []
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [] };
         rule.profile.locations = [{ countryCode: 'TR' }]
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true, countryCode: 'TR' } as any, '1.2.3.4');
         expect(result).to.be.true;
@@ -452,7 +452,7 @@ describe('policyService ', async () => {
         rule.profile.ips = [];
         configService.config.ipIntelligence.whiteList = [];
         configService.config.ipIntelligence.blackList = []
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
+        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [] };
         rule.profile.locations = [{ countryCode: 'UK' }]
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true, countryCode: 'TR' } as any, '1.2.3.4');
         expect(result).to.be.false;
@@ -586,7 +586,7 @@ describe('policyService ', async () => {
             configService.config.gateways = [gateway];
             rule.profile.ips = [];
             configService.config.ipIntelligence.blackList = [{ val: '0.0.0.0/0', id: '12', insertDate: '' }];
-            rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false };
+            rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false, blackLists: [], whiteLists: [] };
             const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
             await redisService.hset(`/tunnel/id/testsession`, tun);
             const session: AuthSession = { id: '1', is2FA: true, userId: '1', ip: '10.0.0.2' } as AuthSession;
@@ -879,7 +879,7 @@ describe('policyService ', async () => {
 
         // 2fa is true, all ips are in blacklist
         session.is2FA = true;
-        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true };
+        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true, blackLists: [], whiteLists: [] };
         configService.config.ipIntelligence.blackList.push({ id: '123', insertDate: '', val: '0.0.0.0/0' });
         result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
         expect(result.length).to.be.equal(1);
@@ -889,7 +889,7 @@ describe('policyService ', async () => {
 
         // 2fa is true, all ips are in blacklist, only 1.1.1.1 is in whitelist
         session.is2FA = true;
-        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true };
+        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true, blackLists: [], whiteLists: [] };
         configService.config.ipIntelligence.blackList.push({ id: '123', insertDate: '', val: '0.0.0.0/0' });
         configService.config.ipIntelligence.whiteList.push({ id: '123', insertDate: '', val: session.ip + '/32' });
         result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
@@ -900,7 +900,7 @@ describe('policyService ', async () => {
 
         // 2fa is true, all ips are in blacklist, only 1.1.1.1 is in whitelist but time problem 
         session.is2FA = true;
-        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true };
+        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true, blackLists: [], whiteLists: [] };
         configService.config.ipIntelligence.blackList.push({ id: '123', insertDate: '', val: '0.0.0.0/0' });
         configService.config.ipIntelligence.whiteList.push({ id: '123', insertDate: '', val: session.ip + '/32' });
         const dayOfWeek = new Date().getDay() + 1;

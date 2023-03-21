@@ -1,12 +1,28 @@
 import Axios, { AxiosRequestConfig } from "axios";
 import { Util } from "../util";
 import { Countries } from "../model/country";
-import { IpIntelligenceItem, IpIntelligenceSource } from "../model/IpIntelligence";
+import {
+    IpIntelligenceItem, IpIntelligenceList,
+    IpIntelligenceListFiles,
+    IpIntelligenceListItem,
+    IpIntelligenceListStatus, IpIntelligenceSource
+} from "../model/IpIntelligence";
 import { ConfigService } from "./configService";
-import { RedisService } from "./redisService";
-
-
-
+import { RedisPipelineService, RedisService } from "./redisService";
+import fsp from 'fs/promises'
+import axios from "axios";
+import * as fs from 'fs';
+import * as stream from 'stream';
+import { promisify } from 'util';
+import { tmpdir } from "os";
+import { createHash } from 'node:crypto'
+import md5 from 'md5-file';
+import { logger } from "../common";
+import events from "events";
+import isCidr from 'ip-cidr';
+import { InputService } from "./inputService";
+import IPCIDR from "ip-cidr";
+import { contentSecurityPolicy } from "helmet";
 
 export abstract class IpIntelligenceSourceApi {
 
@@ -258,6 +274,393 @@ export class IpIntelligenceService {
         return null;
 
     }
+
+
+}
+
+
+export class IpIntelligenceListService {
+    /**
+     *
+     */
+    constructor(protected redisService: RedisService, protected inputService: InputService) {
+
+    }
+    async downloadFileFromRedis(key: string, filename: string) {
+        const file = await this.redisService.get(key, false) as Buffer;
+        await fsp.writeFile(filename, file);
+    }
+    async downloadFileFromRedisH(key: string, field: string, filename: string) {
+        const file = await this.redisService.hgetBuffer(key, field) as Buffer;
+        await fsp.writeFile(filename, file);
+    }
+
+    async downloadFileFromUrl(url: string, filename: string) {
+        await Util.downloadFile(url, filename);
+    }
+
+    async hashOfFile(filename: string) {
+        return await md5(filename);
+    }
+
+
+
+
+
+    async splitFile(folder: string, filename: string, max: number) {
+        let files: Map<number, { handle: fsp.FileHandle, page: number, items: string[], filepath: string }> = new Map();
+        try {
+
+
+            const random = Buffer.from('etriduncg7aiwriurmlheg6aroxclt1k');
+
+
+            await Util.readFileLineByLine(filename, async (line) => {
+                try {
+                    if (line)
+                        if (this.inputService.checkCidr(line, false) || this.inputService.checkIp(line, false)) {
+                            const hash = Util.fastHashLow(line, random);
+                            const file = hash % max;
+                            const filepath = `${folder}/${file}_file`;
+                            if (!files.has(file)) {
+                                const fileHandle = await fsp.open(filepath, 'w+');//truncate and open
+                                files.set(file, { handle: fileHandle, page: file, items: [], filepath: filepath });
+                            }
+                            const model = files.get(file);
+                            model?.items.push(line);
+                            if (model && model.items.length > 10000) {
+                                await model.handle.write(model.items.join('\n') + '\n');
+                                model.items = [];
+                            }
+                        }
+                } catch (ignore) {
+
+                }
+                return true;
+            });
+            for (const opened of files) {
+                if (opened[1].items.length)
+                    await opened[1].handle.write(opened[1].items.join('\n') + '\n');
+            }
+            let retItems = [];
+            for (const f of files) {
+                retItems.push({ filename: f[1].filepath, page: f[1].page, hash: await this.hashOfFile(f[1].filepath) });
+            }
+            return retItems;
+        } finally {
+            for (const opened of files) {
+                try {
+                    await opened[1].handle.close();
+                } catch (ignore) { }
+            }
+        }
+
+    }
+    async getListStatus(item: IpIntelligenceList): Promise<IpIntelligenceListStatus | null> {
+
+        const val = (await this.redisService.get(`/intelligence/ip/list/${item.id}/status`, true));
+        return val as any;
+    }
+    async saveListStatus(item: IpIntelligenceList, status: IpIntelligenceListStatus, pipeline?: RedisPipelineService) {
+        return await (this.redisService || pipeline).set(`/intelligence/ip/list/${item.id}/status`, status);
+    }
+    async deleteListStatus(item: IpIntelligenceList, pipeline?: RedisPipelineService) {
+        return await (this.redisService || pipeline).delete(`/intelligence/ip/list/${item.id}/status`);
+    }
+
+
+    async getDbFileList(item: IpIntelligenceList): Promise<IpIntelligenceListFiles | null> {
+        const items = await this.redisService.hgetAll(`/intelligence/ip/list/${item.id}/files`) as any;
+        Object.keys(items).forEach(y => {
+            items[y] = JSON.parse(items[y])
+        })
+        return items as IpIntelligenceListFiles;
+    }
+    async saveDbFileList(item: IpIntelligenceList, files: IpIntelligenceListFiles, pipeline?: RedisPipelineService) {
+        const cloned = JSON.parse(JSON.stringify(files));
+        Object.keys(cloned).forEach(y => {
+            cloned[y] = JSON.stringify(cloned[y]);
+        })
+        return await (this.redisService || pipeline).hset(`/intelligence/ip/list/${item.id}/files`, cloned);
+    }
+    async deleteDbFileList(item: IpIntelligenceList, pipeline?: RedisPipelineService) {
+        return await (this.redisService || pipeline).delete(`/intelligence/ip/list/${item.id}/files`);
+    }
+    async deleteDbFileList2(item: IpIntelligenceList, page: number, pipeline?: RedisPipelineService) {
+        return await (this.redisService || pipeline).hdel(`/intelligence/ip/list/${item.id}/files`, [page.toString()]);
+    }
+    async saveListFile(item: IpIntelligenceList, filename: string, pipeline?: RedisPipelineService) {
+        const key = `/intelligence/ip/list/${item.id}/file`;
+        const multi = pipeline || await this.redisService.multi();
+        const buffer = await fsp.readFile(filename, { encoding: 'binary' });
+        await multi.hset(key, { content: buffer });
+        if (!pipeline)
+            await multi.exec();
+    }
+
+    async deleteListFile(item: IpIntelligenceList, pipeline?: RedisPipelineService) {
+        const key = `/intelligence/ip/list/${item.id}/file`;
+        const multi = pipeline || await this.redisService.multi();
+        await multi.delete(key);
+        if (!pipeline)
+            await multi.exec();
+    }
+
+    async deleteFromStore(item: IpIntelligenceList, page: number, pipeline?: RedisPipelineService) {
+        const trx = pipeline || await this.redisService.multi();
+        const startKey = `0x00000000000000000000000000000000:${item.id}:${page >= 0 ? this.pageToIndex(page) : '0000'}`;
+        const endKey = `0xffffffffffffffffffffffffffffffff:${item.id}:${page >= 0 ? this.pageToIndex(page) : 'ffff'}`;
+
+        const keyRange = `/intelligence/ip/list/index/range`
+        const keyIp = `/intelligence/ip/list/index/ip`
+        await trx.zrembylex(keyRange, startKey, endKey);
+        await trx.zrembylex(keyIp, startKey, endKey);
+
+        const keyItem = `/intelligence/ip/list/${item.id}/page/${page}`
+        await trx.delete(keyItem);
+        if (!pipeline)
+            await trx.exec();
+
+    }
+
+    private pageToIndex(page: number) {
+        if (page < 10) return `000` + page;
+        if (page < 100) return `00` + page;
+        if (page < 1000) return `0` + page;
+        return page;
+    }
+    async saveToStore(item: IpIntelligenceList, file: string, page: number, hash: string, pipeline?: RedisPipelineService) {
+        const trx = pipeline || await this.redisService.multi();
+        await Util.readFileLineByLine(file, async (line: string) => {
+
+            if (!line.includes('/'))//must be cidr
+                if (line.includes(":"))
+                    line += '/128';
+                else
+                    line += '/32';
+            const cidr = new IPCIDR(line);
+            const start = cidr.addressStart.correctForm();
+            const end = cidr.addressEnd.correctForm();
+            const keyRange = `/intelligence/ip/list/index/range`
+            const keyIp = `/intelligence/ip/list/index/ip`
+            //const litem: IpIntelligenceListItem = { id: Util.randomNumberString(16), cidr: line, listId: item.id };
+            const keyItem = `/intelligence/ip/list/${item.id}/page/${page}`
+            const startKey = `${Util.ipToHex(start)}:${item.id}:${this.pageToIndex(page)}`;
+            const endKey = `${Util.ipToHex(end)}:${item.id}:${this.pageToIndex(page)}`;
+
+            if (endKey != startKey) {
+                await trx.zadd(keyRange, startKey, 0);
+                await trx.zadd(keyRange, endKey, 0);
+            } else {
+                await trx.zadd(keyIp, startKey, 0);
+            }
+            await trx.zadd(keyItem, line, 0);
+            return true;
+        })
+        if (!pipeline)
+            await trx.exec();
+    }
+
+    /**
+     * @param ip 
+     * @returns first founded list id
+     */
+    async getByIp(ip: string) {
+        const keyRange = `/intelligence/ip/list/index/range`
+        const keyIp = `/intelligence/ip/list/index/ip`
+
+        const startKey = `${Util.ipToHex(ip)}:`;
+        let founded = '';
+        const items = await this.redisService.zrangebylex(keyIp, `[${startKey}`, `+`, 0, 1);
+        if (items.length) {
+            const listId = items[0].split(':')[1];
+            if (!listId) return null;
+            founded = listId;
+        } else {
+            const items2 = await this.redisService.zrangebylex(keyRange, `[${startKey}`, `+`, 0, 1);
+            if (!items2.length) return null;
+            const listId = items2[0].split(':')[1];
+            if (!listId) return null;
+            founded = listId;
+        }
+        return founded;
+
+    }
+
+    async deleteList(item: IpIntelligenceList) {
+        //we need to get all  pages of list first
+        const [cursor, pages] = await this.redisService.scan(`/intelligence/ip/list/${item.id}/page/*`, '0', 50000);
+        const trx = await this.redisService.multi();
+        await this.deleteDbFileList(item, trx);
+        await this.deleteFromStore(item, -1, trx);
+        await this.deleteListStatus(item, trx);
+        await this.deleteListFile(item, trx);
+        await trx.del(pages);
+        await trx.exec();
+    }
+
+    /**
+     * we wrote for support downloading files
+     * @param item 
+     * @param cont 
+     * @param callback 
+     * @returns 
+     */
+    async getAllListItems(item: IpIntelligenceList, cont: () => boolean, callback?: (item: string) => Promise<void>) {
+
+
+        let retList: string[] = [];
+        const [cursor, pages] = await this.redisService.scan(`/intelligence/ip/list/${item.id}/page/*`, '0', 50000);
+        for (const spage of pages) {
+            let page = 0;
+            let pageSize = 10000;
+            while (cont) {
+                let keypos = '';
+                const keyItem = spage
+                const ips = await this.redisService.zrangebylex(keyItem, `${keypos ? '(' : '['}${keypos}`, `+`, page * pageSize, pageSize);
+
+                if (callback)
+                    for (const t of ips) {
+                        await callback(t);
+                        keypos = t;
+                    }
+                else {
+                    retList.push(...ips);
+                    keypos = ips[ips.length - 1];
+                }
+
+                if (!ips.length)
+                    break;
+                page++;
+            }
+        }
+        return retList;
+
+    }
+
+
+    async process(item: IpIntelligenceList) {
+        logger.info(`ip intelligence processing item ${item.name}`);
+        if (!item.http && !item.file) return;//no file
+
+
+        let status: IpIntelligenceListStatus | null = null;
+        const tmpDirectory = `/tmp/${Util.randomNumberString()}`;
+
+        try {
+            status = await this.getListStatus(item);
+            await fsp.mkdir(tmpDirectory, { recursive: true });
+            const tmpFilename = `${tmpDirectory}/${Util.randomNumberString()}`
+            let hash = '';
+            if (item.http) {
+                logger.info(`ip intelligence downloading ${item.name} data from ${item.http.url}`);
+                await this.downloadFileFromUrl(item.http.url, tmpFilename);
+                hash = status?.hash || '';
+
+            } else
+                if (item.file) {
+                    logger.info(`ip intelligence downloading ${item.name} data from file`);
+                    const key = `/intelligence/ip/list/${item.id}/file`;
+                    await this.downloadFileFromRedisH(key, 'content', tmpFilename);
+                    hash = status?.hash || '';
+                }
+            const fileHash = await this.hashOfFile(tmpFilename);
+            if (hash == fileHash) {
+                logger.info(`ip intelligence ${item.name} file not changed`);
+                return;
+            }
+            logger.info(`ip intelligence splitting file ${tmpFilename}`)
+            const files = await this.splitFile(tmpDirectory, tmpFilename, 10000);
+            // make map for fast iteration
+            const filesMap: Map<number, { page: number, hash: string, filename: string }> = new Map();
+            for (const file of files) {
+                filesMap.set(file.page, file);
+            }
+
+            const dbFiles = await this.getDbFileList(item) || {};
+            //make map for fast iteration
+            const dbFilesMap: Map<number, { page: number, hash: string }> = new Map();
+            Object.keys(dbFiles).forEach(y => {
+                dbFilesMap.set(Number(y), dbFiles[y]);
+            })
+
+            let isChanged = false;
+            //compare each other
+            for (const iterator of dbFilesMap.values()) {
+                if (!filesMap.has(iterator.page)) {//delete this from database
+                    logger.info(`ip intelligence ${item.name} deleting page:${iterator.page}`)
+                    const multi = await this.redisService.multi();
+                    await this.deleteFromStore(item, iterator.page, multi);
+                    await this.deleteDbFileList2(item, iterator.page, multi);
+                    await multi.exec();
+                    isChanged = true;
+                }
+            }
+
+            for (const iterator of filesMap.values()) {//save or update
+                //delete this from database first, because hash changed of file
+                if (dbFilesMap.has(iterator.page)) {
+                    if (dbFilesMap.get(iterator.page)?.hash != iterator.hash) {
+                        logger.info(`ip intelligence ${item.name} updating page:${iterator.page}`);
+                        const multi = await this.redisService.multi();
+                        await this.deleteFromStore(item, iterator.page, multi);
+                        await this.deleteDbFileList2(item, iterator.page, multi);
+                        await multi.exec();
+
+                        const multi2 = await this.redisService.multi();
+                        await this.saveToStore(item, iterator.filename, iterator.page, iterator.hash);
+                        const savelist: IpIntelligenceListFiles = {};
+                        savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
+                        await this.saveDbFileList(item, savelist);
+                        await multi2.exec();
+                        isChanged = true;
+                    }
+                } else {
+                    logger.info(`ip intelligence ${item.name} saving page:${iterator.page}`)
+                    const multi2 = await this.redisService.multi();
+                    await this.saveToStore(item, iterator.filename, iterator.page, iterator.hash, multi2);
+                    const savelist: IpIntelligenceListFiles = {};
+                    savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
+                    await this.saveDbFileList(item, savelist);
+                    await multi2.exec();
+                    isChanged = true;
+                }
+            }
+
+
+            let saveStatus: IpIntelligenceListStatus = {
+                hash: hash,
+                lastCheck: new Date().toISOString(),
+                lastError: '',
+                lastStatus: 'ok',
+                isChanged: isChanged
+            }
+            await this.saveListStatus(item, saveStatus);
+
+
+
+        } catch (err: any) {
+            let saveStatus: IpIntelligenceListStatus = {
+                hash: status?.hash || '',
+                lastCheck: new Date().toISOString(),
+                lastError: err.message,
+                lastStatus: 'error',
+                isChanged: false
+            }
+            try {
+                await this.saveListStatus(item, saveStatus);
+            } catch (ignore) { }
+            throw err;
+        }
+
+        finally {
+            try {
+                await fsp.rm(tmpDirectory, { recursive: true, force: true });
+            } catch (ignore) { }
+        }
+
+    }
+
 
 
 

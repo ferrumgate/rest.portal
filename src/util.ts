@@ -20,6 +20,8 @@ import { decode, encode } from '@msgpack/msgpack';
 import IPCIDR from 'ip-cidr';
 import moment from 'moment-timezone';
 import { TimeZone } from './model/timezone';
+import highwayhash from 'highwayhash';
+import nreadlines from 'n-readlines';
 
 export interface IpRange {
     start: string;
@@ -531,6 +533,47 @@ export const Util = {
                 delete obj[x];
         })
         return obj;
+    },
+
+
+    fastHashLow(s: string, random: Buffer): number {
+
+        return highwayhash.asUInt32Low(random, Buffer.from(s));
+
+    },
+    fastHashHigh(s: string, random: Buffer): number {
+
+        return highwayhash.asUInt32Low(random, Buffer.from(s));
+
+    },
+    fastHashBuffer(s: string, random: Buffer): Buffer {
+
+        return highwayhash.asBuffer(random, Buffer.from(s));
+
+    },
+    fastHashString(s: string, random: Buffer): string {
+
+        return highwayhash.asString(random, Buffer.from(s));
+
+    },
+    readFileLineByLine: async (filename: string, callback: (line: string) => Promise<boolean>) => {
+
+        const liner = new nreadlines(filename);
+        let line: Buffer | null | false = null;
+        while (line = liner.next()) {
+            try {
+                if (line.at(line.byteLength - 1) == 0x0d) {
+                    line = line.subarray(0, line.byteLength - 1);
+                }
+                const result = await callback(line.toString('utf-8').trim());
+                if (!result) break;
+            } catch (ignore) {
+                console.log(ignore);
+                break;
+            }
+        }
+
     }
+
 
 }

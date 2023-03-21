@@ -270,6 +270,9 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'ipIntelligence/sources':
                             await this.processArray(this.config.ipIntelligence.sources, path, item, val.id);
                             break;
+                        case 'ipIntelligence/lists':
+                            await this.processArray(this.config.ipIntelligence.lists, path, item, val.id);
+                            break;
 
 
 
