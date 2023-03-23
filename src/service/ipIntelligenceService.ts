@@ -363,6 +363,7 @@ export class IpIntelligenceListService {
         return val as any;
     }
     async getListStatusBulk(items: IpIntelligenceList[]): Promise<IpIntelligenceListStatus[]> {
+        if (!items.length) return [];
         const pipeline = await this.redisService.pipeline();
         for (const item of items) {
             await pipeline.get(`/intelligence/ip/list/${item.id}/status`, false);
@@ -579,6 +580,7 @@ export class IpIntelligenceListService {
                 logger.info(`ip intelligence ${item.name} file not changed`);
                 return;
             }
+            hash = fileHash;
             logger.info(`ip intelligence splitting file ${tmpFilename}`)
             const files = await this.splitFile(tmpDirectory, tmpFilename, 10000);
             // make map for fast iteration

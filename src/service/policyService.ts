@@ -14,6 +14,8 @@ import { Gateway, Network } from "../model/network";
 import { Service } from "../model/service";
 import { AuthSession } from "../model/authSession";
 import { Util } from "../util";
+import { IpIntelligence } from "../model/IpIntelligence";
+import { IpIntelligenceService } from "./ipIntelligenceService";
 
 
 export interface UserNetworkListResponse {
@@ -72,7 +74,7 @@ export class PolicyService {
     /**
      *
      */
-    constructor(private configService: ConfigService,
+    constructor(private configService: ConfigService, private ipIntelligenceService: IpIntelligenceService
     ) {
 
 
@@ -122,22 +124,22 @@ export class PolicyService {
     /**
      * @summary  check if ip intelligence whitelist includes client ip
      */
-    async isIpIntelligenceWhiteListContains(rule: AuthenticationRule, clientIp: string) {
+    /* async isIpIntelligenceWhiteListContains(rule: AuthenticationRule, clientIp: string) {
         if (!rule.profile.ipIntelligence?.isWhiteList) return false;
         const item = await this.configService.getIpIntelligenceWhiteListItemByIp(clientIp);
         if (item) return true;
         return false;
-    }
+    } */
 
     /**
      * @summary check if ip intelligence blacklist includes client ip
      */
-    async isIpIntelligenceBlackListContains(rule: AuthenticationRule, clientIp: string) {
-        if (!rule.profile.ipIntelligence?.isBlackList) return false;
-        const item = await this.configService.getIpIntelligenceBlackListItemByIp(clientIp);
-        if (item) return true;
-        return false;
-    }
+    /*  async isIpIntelligenceBlackListContains(rule: AuthenticationRule, clientIp: string) {
+         if (!rule.profile.ipIntelligence?.isBlackList) return false;
+         const item = await this.configService.getIpIntelligenceBlackListItemByIp(clientIp);
+         if (item) return true;
+         return false;
+     } */
 
     /**
      * @summary check if ip is proxy ip or hosting ip or a crawler ip
@@ -190,12 +192,12 @@ export class PolicyService {
         if (await this.isCustomWhiteListContains(rule, ip))
             return true;
         //check global white list
-        if (await this.isIpIntelligenceWhiteListContains(rule, ip))
-            return true;
+        //if (await this.isIpIntelligenceWhiteListContains(rule, ip))
+        //    return true;
         //check global black list
 
-        if (await this.isIpIntelligenceBlackListContains(rule, ip))
-            return false;
+        //if (await this.isIpIntelligenceBlackListContains(rule, ip))
+        //    return false;
 
         //check proxy ip
         if (await this.isIpIntelligenceBlackIp(rule, session))

@@ -9,8 +9,8 @@ import { Util } from '../src/util';
 import { Network } from '../src/model/network';
 
 import chaiExclude from 'chai-exclude';
-import { IpIntelligence, IpIntelligenceSource } from '../src/model/IpIntelligence';
-import { IpIntelligenceBWItem } from '../src/model/IpIntelligence';
+import { IpIntelligence, IpIntelligenceList, IpIntelligenceListStatus, IpIntelligenceSource } from '../src/model/IpIntelligence';
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -50,15 +50,15 @@ describe('ipIntelligenceApi', async () => {
     before(async () => {
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
         await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await appService.configService.setIsConfigured(1);
     })
 
     beforeEach(async () => {
         appService.configService.config.users = [];
         appService.configService.config.networks = [];
         appService.configService.config.gateways = [];
-        appService.configService.config.ipIntelligence.blackList = [];
-        appService.configService.config.ipIntelligence.whiteList = [];
         appService.configService.config.ipIntelligence.sources = [];
+        appService.configService.config.ipIntelligence.lists = [];
         await redisService.flushAll();
     })
 
@@ -72,16 +72,18 @@ describe('ipIntelligenceApi', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-        const bwitem: IpIntelligenceBWItem = {
+        const item: IpIntelligenceSource = {
             id: Util.randomNumberString(),
-            val: '192.168.0.1/24',
+            name: 'abc', type: 'acdf', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
         }
-        await appService.configService.saveIpIntelligenceBlackListItem(bwitem);
 
+        await appService.configService.saveIpIntelligenceSource(item);
+
+        // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/ip/intelligence/blacklist?ids=${bwitem.id}`)
+                .get(`/ip/intelligence/source`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -90,327 +92,12 @@ describe('ipIntelligenceApi', async () => {
                         resolve(res);
                 });
         })
+
         expect(response.status).to.equal(401);
 
     }).timeout(50000);
 
 
-    it('GET /ip/intelligence/blacklist?ids= will return 200', async () => {
-        //prepare data
-        await appService.configService.saveUser(user);
-
-        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-        const bwitem: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.0.1/24',
-            insertDate: new Date().toISOString(),
-        }
-        await appService.configService.saveIpIntelligenceBlackListItem(bwitem);
-
-
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .get(`/ip/intelligence/blacklist?ids=${bwitem.id}`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-        expect(response.body).exist;
-
-        expectToDeepEqual(response.body.items[0], bwitem);
-
-    }).timeout(50000);
-
-
-
-
-
-    it('GET /ip/intelligence/blacklist?ip= will return 200', async () => {
-        //prepare data
-        await appService.configService.saveUser(user);
-        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-        const bwitem: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.0.1/24',
-            insertDate: new Date().toISOString(),
-        }
-        await appService.configService.saveIpIntelligenceBlackListItem(bwitem);
-
-        const bwitem2: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.1.1/24',
-            insertDate: new Date().toISOString(),
-        }
-        await appService.configService.saveIpIntelligenceBlackListItem(bwitem2);
-
-        const bwitem3: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.1.1/28',
-            insertDate: new Date().toISOString(),
-        }
-        await appService.configService.saveIpIntelligenceBlackListItem(bwitem3);
-
-        // test search 
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .get(`/ip/intelligence/blacklist?ip=192.168.1.2`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        //console.log(response.body);
-        expect(response.status).to.equal(200);
-        expect(response.body).exist;
-        expect(response.body.items.length).to.equal(1);
-
-        expectToDeepEqual(response.body.items[0], bwitem2);
-
-        //test ids
-
-        response = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .get(`/ip/intelligence/blacklist?ip=192.168.3.2`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-        expect(response.body).exist;
-        expect(response.body.items.length).to.equal(0);
-
-
-    }).timeout(50000);
-
-
-
-    it('DELETE /network/id will return 200', async () => {
-        //prepare data
-        await appService.configService.saveUser(user);
-        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-        const bwitem: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.0.1/24',
-            insertDate: new Date().toISOString(),
-        }
-        await appService.configService.saveIpIntelligenceBlackListItem(bwitem);
-
-
-
-
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .delete(`/ip/intelligence/blacklist/${bwitem.id}`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-        const netdb = await appService.configService.getIpIntelligenceBlackListItem(bwitem.id);
-        expect(netdb).not.exist;
-
-    }).timeout(50000);
-
-
-
-
-
-    it('POST /ip/intelligence/blacklist will return 200', async () => {
-        //prepare data
-        await appService.configService.saveUser(user);
-        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-        const bwitem: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.0.0/24',
-            insertDate: new Date().toISOString(),
-        }
-
-
-
-        // test search 
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .post(`/ip/intelligence/blacklist`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .send({ items: [bwitem] })
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-        expect(response.body).exist;
-
-
-        expectToDeepEqual(response.body.results[0].item, bwitem);
-        expect(response.body.results[0].item).exist;
-        expect(response.body.results[0].errMsg).not.exist;
-
-
-    }).timeout(50000);
-
-
-    it('POST /ip/intelligence/blacklist will return with allready exists and', async () => {
-        //prepare data
-        await appService.configService.saveUser(user);
-        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
-
-        const bwitem: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.0.0/24',
-            insertDate: new Date().toISOString(),
-        }
-
-        await appService.configService.saveIpIntelligenceBlackListItem(bwitem);
-
-
-
-        // test search 
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .post(`/ip/intelligence/blacklist`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .send({ items: [bwitem] })
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-        expect(response.body).exist;
-
-
-        expectToDeepEqual(response.body.results[0].item, bwitem);
-        expect(response.body.results[0].item).exist;
-        expect(response.body.results[0].errMsg).exist;
-
-
-    }).timeout(50000);
-
-    it('POST /ip/intelligence/blacklist will return with allready exists', async () => {
-        //prepare data
-        await appService.configService.saveUser(user);
-        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
-
-        const bwitem: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.0.0/24',
-            insertDate: new Date().toISOString(),
-        }
-
-        await appService.configService.saveIpIntelligenceBlackListItem(bwitem);
-
-        // this ip allready exits
-        const bwitem2: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.0.1/32',
-            insertDate: new Date().toISOString(),
-        }
-
-        // test search 
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .post(`/ip/intelligence/blacklist`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .send({ items: [bwitem2] })
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-        expect(response.body).exist;
-
-
-        expectToDeepEqual(response.body.results[0].item, bwitem2);
-        expect(response.body.results[0].item).exist;
-        expect(response.body.results[0].errMsg).exist;
-
-
-    }).timeout(50000);
-
-    it('POST /ip/intelligence/blacklist will return with allready exists', async () => {
-        //prepare data
-        await appService.configService.saveUser(user);
-        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
-
-        const bwitem: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.0.0/16',
-            insertDate: new Date().toISOString(),
-        }
-
-        await appService.configService.saveIpIntelligenceBlackListItem(bwitem);
-
-        //this block allready exits
-        const bwitem2: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.0.0/24',
-            insertDate: new Date().toISOString(),
-        }
-
-        // test search 
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .post(`/ip/intelligence/blacklist`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .send({ items: [bwitem2] })
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-        expect(response.body).exist;
-
-
-        expectToDeepEqual(response.body.results[0].item, bwitem2);
-        expect(response.body.results[0].item).exist;
-        expect(response.body.results[0].errMsg).exist;
-
-
-    }).timeout(50000);
 
 
     //// ip intelligence source 
@@ -564,6 +251,360 @@ describe('ipIntelligenceApi', async () => {
         expect(items[0].apiKey).to.equal('def');
 
     }).timeout(50000);
+
+
+
+    it('GET /ip/intelligence/list will return items', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+        let id = Util.randomNumberString();
+        const item: IpIntelligenceList = {
+            id: id, labels: ['test'],
+            name: 'abc', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(), file: { source: 'test.txt' }
+        }
+        const status: IpIntelligenceListStatus = {
+            id: item.id
+        }
+
+        await appService.configService.saveIpIntelligenceList(item);
+        await appService.ipIntelligenceService.listService.saveListStatus(item, status);
+
+        // test all 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/ip/intelligence/list`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body.items).exist;
+        expect(response.body.itemsStatus).exist;
+
+        expectToDeepEqual(response.body.items[0], item);
+        expectToDeepEqual(response.body.itemsStatus[0], status);
+
+
+        // test search 
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/ip/intelligence/list?search=te`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body.items).exist;
+        expect(response.body.itemsStatus).exist;
+
+        expectToDeepEqual(response.body.items[0], item);
+        expectToDeepEqual(response.body.itemsStatus[0], status);
+
+        // test search ip
+        //prepare ips
+        item.id = id;//set it back
+        const tmpFolder = `/tmp/${Util.randomNumberString()}`;
+
+        fs.mkdirSync(tmpFolder);
+        const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
+        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+        await appService.ipIntelligenceService.listService.saveListFile(item, tmpFolderFile);
+        //process
+        await appService.ipIntelligenceService.listService.process(item);
+
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/ip/intelligence/list?search=192.168.0.4`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body.items).exist;
+        expect(response.body.itemsStatus).exist;
+
+        expectToDeepEqual(response.body.items[0], item);
+        expect(response.body.itemsStatus[0].hash).exist;
+        console.log(response.body.itemsStatus);
+
+
+
+
+
+
+    }).timeout(50000);
+
+
+
+    it('DELETE /ip/intelligence/list', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+        let id = Util.randomNumberString();
+        const item: IpIntelligenceList = {
+            id: id, labels: ['test'],
+            name: 'abc', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(), file: { source: 'test.txt' }
+        }
+        const status: IpIntelligenceListStatus = {
+            id: item.id
+        }
+
+        await appService.configService.saveIpIntelligenceList(item);
+        await appService.ipIntelligenceService.listService.saveListStatus(item, status);
+
+
+        //prepare ips
+        item.id = id;//set it back
+        const tmpFolder = `/tmp/${Util.randomNumberString()}`;
+
+        fs.mkdirSync(tmpFolder);
+        const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
+        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+        await appService.ipIntelligenceService.listService.saveListFile(item, tmpFolderFile);
+        //process
+        await appService.ipIntelligenceService.listService.process(item);
+
+        // test all 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .delete(`/ip/intelligence/list/${item.id}`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+
+        const result = await appService.configService.getIpIntelligenceList(id);
+        expect(result).not.exist;
+        const result2 = await appService.ipIntelligenceService.listService.getListStatus(item);
+        expect(result2).not.exist;
+        const listId = await appService.ipIntelligenceService.listService.getByIp('1.1.1.1')
+        expect(listId).not.exist;
+
+
+
+    }).timeout(50000);
+
+
+    it('POST /ip/intelligence/list', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const filekey = Util.randomNumberString();
+
+        const item: IpIntelligenceList = {
+            id: '',
+            labels: ['test'],
+            name: 'abc', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(), file: { source: 'test.txt', key: filekey }
+        }
+
+        const tmpFolder = `/tmp/uploads`;
+
+        fs.mkdirSync(tmpFolder, { recursive: true });
+        const tmpFolderFile = `${tmpFolder}/${filekey}`;
+        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+
+        // test all 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/ip/intelligence/list`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(item)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        const savedItem = response.body as IpIntelligenceList;
+
+        const result = await appService.configService.getIpIntelligenceList(savedItem.id);
+        expect(result).exist;
+        const result2 = await redisService.exists(`/intelligence/ip/list/${savedItem.id}/file`)
+        expect(result2).to.be.true;
+
+
+
+
+    }).timeout(50000);
+
+
+
+    it('PUT /ip/intelligence/list', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const filekey = Util.randomNumberString();
+
+        const item: IpIntelligenceList = {
+            id: Util.randomNumberString(),
+            labels: ['test'],
+            name: 'abc', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(), file: { source: 'test.txt' }
+        }
+
+        const status: IpIntelligenceListStatus = {
+            id: item.id
+        }
+
+        await appService.configService.saveIpIntelligenceList(item);
+        await appService.ipIntelligenceService.listService.saveListStatus(item, status);
+
+        const tmpFolder = `/tmp/uploads`;
+
+        fs.mkdirSync(tmpFolder, { recursive: true });
+        const tmpFolderFile = `${tmpFolder}/${filekey}`;
+        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+        item.name = 'abo';
+        if (item.file)
+            item.file.key = filekey;
+        // test all 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put(`/ip/intelligence/list`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(item)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        const savedItem = response.body as IpIntelligenceList;
+
+        const result: IpIntelligenceList | undefined = await appService.configService.getIpIntelligenceList(savedItem.id);
+        expect(result).exist;
+        expect(result?.name).to.equal('abo');
+        const result2 = await redisService.exists(`/intelligence/ip/list/${savedItem.id}/file`)
+        expect(result2).to.be.true;
+
+
+
+
+    }).timeout(50000);
+
+
+    it('POST /ip/intelligence/list/file', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+        const tmpFolder = `/tmp/uploads`;
+
+        fs.mkdirSync(tmpFolder, { recursive: true });
+        const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
+        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/ip/intelligence/list/file`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .set('content-type', 'multipart/form-data')
+                .attach('file', tmpFolderFile, 'file.txt')
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        const savedItem = response.body.key as string
+        expect(savedItem).exist;
+        expect(fs.existsSync('/tmp/uploads/' + savedItem)).to.be.true;
+
+
+
+
+    }).timeout(50000);
+
+
+    it('GET /ip/intelligence/list/:id/file', async () => {
+        //prepare data
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+        let id = Util.randomNumberString();
+        const item: IpIntelligenceList = {
+            id: id, labels: ['test'],
+            name: 'abc', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(), file: { source: 'test.txt' }
+        }
+        const status: IpIntelligenceListStatus = {
+            id: item.id
+        }
+
+        await appService.configService.saveIpIntelligenceList(item);
+        await appService.ipIntelligenceService.listService.saveListStatus(item, status);
+
+
+        //prepare ips
+        item.id = id;//set it back
+        const tmpFolder = `/tmp/${Util.randomNumberString()}`;
+
+        fs.mkdirSync(tmpFolder);
+        const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
+        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+        await appService.ipIntelligenceService.listService.saveListFile(item, tmpFolderFile);
+        //process
+        await appService.ipIntelligenceService.listService.process(item);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/ip/intelligence/list/${item.id}/file`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.text).exist;
+
+
+
+    }).timeout(50000);
+
+
+
+
+
+
 
 
 

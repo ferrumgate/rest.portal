@@ -49,8 +49,6 @@ export type RPath =
     'authorizationPolicy/rules' |
     'authorizationPolicy/rulesOrder' |
     'es' | 'flush' |
-    'ipIntelligence/blackList' |
-    'ipIntelligence/whiteList' |
     'ipIntelligence/sources' |
     'ipIntelligence/lists';
 

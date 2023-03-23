@@ -98,10 +98,11 @@ export class AppService {
         this.esService = es || new ESService(this.configService);
         this.activityService = activity || new ActivityService(this.redisService, this.esService);
         this.auditService = audit || new AuditService(this.configService, this.redisService, this.esService);
-        this.policyService = policy || new PolicyService(this.configService);
+        this.ipIntelligenceService = ipIntelligenceService || new IpIntelligenceService(this.configService, this.redisService, this.inputService);
+        this.policyService = policy || new PolicyService(this.configService, this.ipIntelligenceService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
-        this.ipIntelligenceService = ipIntelligenceService || new IpIntelligenceService(this.configService, this.redisService, this.inputService);
+
 
 
 
