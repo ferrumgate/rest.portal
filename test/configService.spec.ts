@@ -2242,7 +2242,7 @@ describe('configService', async () => {
 
         const filter = await configService.getIpIntelligenceLists();
         expect(filter.length).to.equal(0);
-        const item = { name: 'test', type: 'test', id: Util.randomNumberString(), insertDate: '', updateDate: '' };
+        const item = { name: 'test', type: 'test', id: Util.randomNumberString(), insertDate: '', updateDate: '', labels: [] };
         await configService.saveIpIntelligenceList(
             item
         );

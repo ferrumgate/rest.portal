@@ -13,6 +13,8 @@ import { GatewayService } from '../src/service/gatewayService';
 import chaiExclude from 'chai-exclude';
 import { IpIntelligenceSource } from '../src/model/IpIntelligence';
 import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
+import { InputService } from '../src/service/inputService';
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -33,6 +35,7 @@ describe.skip('ipIntelligenceService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', filename);
     const redisService = new RedisService();
+    const inputService = new InputService();
 
     before(async () => {
         await configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
@@ -51,7 +54,7 @@ describe.skip('ipIntelligenceService', async () => {
         //await configService.saveIpIntelligenceSource(source);
         let errorOccured = false;
         try {
-            const intel = new IpIntelligenceService(configService, redisService);
+            const intel = new IpIntelligenceService(configService, redisService, inputService);
             const result = await intel.check(source);
         } catch (err) {
             errorOccured = true;
@@ -69,7 +72,7 @@ describe.skip('ipIntelligenceService', async () => {
         }
         //await configService.saveIpIntelligenceSource(source);
 
-        const intel = new IpIntelligenceService(configService, redisService);
+        const intel = new IpIntelligenceService(configService, redisService, inputService);
         const result = await intel.check(source);
         expect(result).exist;
         expect(result?.countryCode).exist;
@@ -88,7 +91,7 @@ describe.skip('ipIntelligenceService', async () => {
         //await configService.saveIpIntelligenceSource(source);
         let errorOccured = false;
         try {
-            const intel = new IpIntelligenceService(configService, redisService);
+            const intel = new IpIntelligenceService(configService, redisService, inputService);
             const result = await intel.check(source);
         } catch (err) {
             errorOccured = true;
@@ -106,7 +109,7 @@ describe.skip('ipIntelligenceService', async () => {
             apiKey: ipDataCoApiKey,
         }
         //await configService.saveIpIntelligenceSource(source);
-        const intel = new IpIntelligenceService(configService, redisService);
+        const intel = new IpIntelligenceService(configService, redisService, inputService);
         const result = await intel.check(source);
         expect(result).exist;
         expect(result?.countryCode).exist;
@@ -127,7 +130,7 @@ describe.skip('ipIntelligenceService', async () => {
         //await configService.saveIpIntelligenceSource(source);
         let errorOccured = false;
         try {
-            const intel = new IpIntelligenceService(configService, redisService);
+            const intel = new IpIntelligenceService(configService, redisService, inputService);
             const result = await intel.check(source);
         } catch (err) {
             errorOccured = true;
@@ -145,7 +148,7 @@ describe.skip('ipIntelligenceService', async () => {
             apiKey: ipifyOrgApiKey, isSecurityPlan: true
         }
         //await configService.saveIpIntelligenceSource(source);
-        const intel = new IpIntelligenceService(configService, redisService);
+        const intel = new IpIntelligenceService(configService, redisService, inputService);
         const result = await intel.check(source);
         expect(result).exist;
         expect(result?.countryCode).exist;
@@ -166,7 +169,7 @@ describe.skip('ipIntelligenceService', async () => {
              *
              */
             constructor(configService: ConfigService, redisService: RedisService) {
-                super(configService, redisService);
+                super(configService, redisService, inputService);
 
             }
             getClass() {
@@ -189,7 +192,7 @@ describe.skip('ipIntelligenceService', async () => {
         }
         await configService.saveIpIntelligenceSource(source);
 
-        const intel = new IpIntelligenceService(configService, redisService);
+        const intel = new IpIntelligenceService(configService, redisService, inputService);
         const result = await intel.query('1.1.1.1');
         expect(result).exist;
         expect(result?.countryCode).exist;

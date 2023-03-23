@@ -1989,7 +1989,7 @@ export class RedisConfigService extends ConfigService {
     override async getIpIntelligenceLists(): Promise<IpIntelligenceList[]> {
         this.isReady();
         this.config.ipIntelligence.lists = await this.rGetAll('ipIntelligence/lists');
-        return await super.getIpIntelligenceSources();
+        return await super.getIpIntelligenceLists();
     }
     override async getIpIntelligenceList(id: string) {
         this.isReady();
@@ -2004,7 +2004,7 @@ export class RedisConfigService extends ConfigService {
     async saveIpIntelligenceList(list: IpIntelligenceList) {
         this.isReady();
         this.config.ipIntelligence.lists = [];
-        const src = await this.rGetWith<IpIntelligenceSource>('ipIntelligence/lists', list.id);
+        const src = await this.rGetWith<IpIntelligenceList>('ipIntelligence/lists', list.id);
         if (src) this.config.ipIntelligence.lists.push(src);
         let ret = await super.saveIpIntelligenceList(list);
         const pipeline = await this.redis.multi();
@@ -2016,7 +2016,7 @@ export class RedisConfigService extends ConfigService {
     async deleteIpIntelligenceList(id: string) {
         this.isReady();
 
-        this.config.ipIntelligence.sources = [];
+        this.config.ipIntelligence.lists = [];
 
         const list = await this.rGetWith<IpIntelligenceList>('ipIntelligence/lists', id);
         if (list) {

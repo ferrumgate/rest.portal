@@ -17,7 +17,7 @@ import { AuthCommon, BaseAuth } from "../model/authSettings";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Group } from "../model/group";
 import { ESSetting } from "../model/esSetting";
-import { IpIntelligenceBWItem, IpIntelligenceSource } from "../model/IpIntelligence";
+import { IpIntelligenceBWItem, IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -357,6 +357,21 @@ export class AuditService {
 
         await this.executeSave(currentSession, currentUser, before, after,
             `ip intelligence source deleted}`,
+            `${before?.name}`,)
+
+    }
+
+    async logSaveIpIntelligenceList(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceList, after?: IpIntelligenceList) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `ip intelligence list ${before ? 'updated' : 'created'}`,
+            `${before?.name || after?.name}`,)
+
+    }
+    async logDeleteIpIntelligenceList(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceList, after?: IpIntelligenceList) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `ip intelligence list deleted}`,
             `${before?.name}`,)
 
     }

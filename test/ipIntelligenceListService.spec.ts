@@ -90,11 +90,13 @@ describe('ipIntelligenceListService', async () => {
 
     it('getListStatus/saveListStatus/deleteListStatus', async () => {
 
-        const status: IpIntelligenceListStatus = {
-            hash: 'adfa', lastCheck: 'adf', lastError: '', lastStatus: ''
-        }
+
         const item: IpIntelligenceList = {
-            id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: ''
+            id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '', labels: [],
+        }
+        const status: IpIntelligenceListStatus = {
+            id: item.id,
+            hash: 'adfa', lastCheck: 'adf', lastError: '',
         }
 
         const intel = new IpIntelligenceListService(redisService, inputService);
@@ -115,7 +117,7 @@ describe('ipIntelligenceListService', async () => {
     it('getDbFileList/saveDbFileList/deleteDbFileList/deleteDbFileList2', async () => {
 
         const item: IpIntelligenceList = {
-            id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: ''
+            id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '', labels: [],
         }
 
         const files: IpIntelligenceListFiles = {
@@ -155,7 +157,8 @@ describe('ipIntelligenceListService', async () => {
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
         fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8");
         const item: IpIntelligenceList = {
-            id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: ''
+            id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
+            labels: [],
         }
 
         const files: IpIntelligenceListFiles = {
@@ -189,6 +192,7 @@ describe('ipIntelligenceListService', async () => {
         fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8");
         const item: IpIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
+            labels: [],
             file: {
                 source: "test.txt"
             }
@@ -244,6 +248,7 @@ describe('ipIntelligenceListService', async () => {
 
         const item: IpIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
+            labels: [],
             http: {
                 url: 'https://snort-org-site.s3.amazonaws.com/production/document_files/files/000/022/328/original/ip_filter.blf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAU7AK5ITMJQBJPARJ%2F20230321%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230321T144308Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=44af69f4e0b1cfad5cefc3ae63c5e23e6843849fe15350bd54caa959e4c5d9d1',
                 checkFrequency: 1
@@ -283,6 +288,7 @@ describe('ipIntelligenceListService', async () => {
         fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8");
         const item: IpIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
+            labels: [],
             file: {
                 source: "test.txt"
             }
@@ -320,6 +326,7 @@ describe('ipIntelligenceListService', async () => {
         fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8");
         const item: IpIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
+            labels: [],
             file: {
                 source: "test.txt"
             }
@@ -352,6 +359,7 @@ describe('ipIntelligenceListService', async () => {
 
         const item: IpIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
+            labels: [],
             file: {
                 source: "test.txt"
             }

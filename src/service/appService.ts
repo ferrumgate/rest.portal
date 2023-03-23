@@ -101,7 +101,7 @@ export class AppService {
         this.policyService = policy || new PolicyService(this.configService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
-        this.ipIntelligenceService = ipIntelligenceService || new IpIntelligenceService(this.configService, this.redisService);
+        this.ipIntelligenceService = ipIntelligenceService || new IpIntelligenceService(this.configService, this.redisService, this.inputService);
 
 
 

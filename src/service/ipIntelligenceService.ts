@@ -203,9 +203,10 @@ class IPifyOrg extends IpIntelligenceSourceApi {
 export class IpIntelligenceService {
     protected api: IpIntelligenceSourceApi | null = null;
     protected apiCount = -1;
+    listService!: IpIntelligenceListService;
     constructor(private config: ConfigService,
-        private redis: RedisService) {
-
+        private redisIntel: RedisService, private inputService: InputService) {
+        this.listService = new IpIntelligenceListService(redisIntel, inputService);
     }
     protected async createApi(force = false) {
         if (force || this.apiCount == -1) {
@@ -263,11 +264,11 @@ export class IpIntelligenceService {
 
         if (this.api) {
             //check from cache
-            const item = await this.redis.get(`/ip/intelligence/${ip}`, true);
+            const item = await this.redisIntel.get(`/ip/intelligence/${ip}`, true);
             if (item) return item as IpIntelligenceItem;
             const result = await this.api.query(ip, 3000);
             if (result) {
-                await this.redis.set(`/ip/intelligence/${ip}`, result, { ttl: 6 * 60 * 60 * 1000 });//set 6 hours ttl
+                await this.redisIntel.set(`/ip/intelligence/${ip}`, result, { ttl: 6 * 60 * 60 * 1000 });//set 6 hours ttl
             }
             return result;
         }
@@ -361,6 +362,15 @@ export class IpIntelligenceListService {
         const val = (await this.redisService.get(`/intelligence/ip/list/${item.id}/status`, true));
         return val as any;
     }
+    async getListStatusBulk(items: IpIntelligenceList[]): Promise<IpIntelligenceListStatus[]> {
+        const pipeline = await this.redisService.pipeline();
+        for (const item of items) {
+            await pipeline.get(`/intelligence/ip/list/${item.id}/status`, false);
+        }
+        const results = await pipeline.exec() as string[];
+        return results.filter(x => x).map(x => JSON.parse(x));
+    }
+
     async saveListStatus(item: IpIntelligenceList, status: IpIntelligenceListStatus, pipeline?: RedisPipelineService) {
         return await (this.redisService || pipeline).set(`/intelligence/ip/list/${item.id}/status`, status);
     }
@@ -629,11 +639,12 @@ export class IpIntelligenceListService {
 
 
             let saveStatus: IpIntelligenceListStatus = {
+                id: item.id,
                 hash: hash,
                 lastCheck: new Date().toISOString(),
                 lastError: '',
-                lastStatus: 'ok',
-                isChanged: isChanged
+                isChanged: isChanged,
+                hasFile: files.length > 0
             }
             await this.saveListStatus(item, saveStatus);
 
@@ -641,11 +652,12 @@ export class IpIntelligenceListService {
 
         } catch (err: any) {
             let saveStatus: IpIntelligenceListStatus = {
+                id: item.id,
                 hash: status?.hash || '',
                 lastCheck: new Date().toISOString(),
                 lastError: err.message,
-                lastStatus: 'error',
-                isChanged: false
+                isChanged: false,
+                hasFile: status?.hasFile
             }
             try {
                 await this.saveListStatus(item, saveStatus);

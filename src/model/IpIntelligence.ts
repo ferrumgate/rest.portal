@@ -48,18 +48,21 @@ export interface IpIntelligenceList {
     };
     file?: {
         source?: string;
+        key?: string;
 
     };
+    labels?: string[];
     updateDate: string;
     insertDate: string;
 }
 
 export interface IpIntelligenceListStatus {
+    id: string;
     lastCheck?: string;
-    lastStatus?: string;
     lastError?: string;
     hash?: string;
     isChanged?: boolean;
+    hasFile?: boolean;
 }
 
 export interface IpIntelligenceListFiles {
@@ -81,4 +84,28 @@ export interface IpIntelligenceItem {
     isProxy: boolean;
     isHosting: boolean;
     isCrawler: boolean;
+}
+
+
+export function cloneIpIntelligenceList(obj: IpIntelligenceList): IpIntelligenceList {
+    let item: IpIntelligenceList = {
+        id: obj.id, insertDate: obj.insertDate, updateDate: obj.updateDate, name: obj.name, labels: obj.labels
+    }
+    if (obj.file)
+        item.file = {
+            source: obj.file.source
+        }
+    if (obj.http)
+        item.http = {
+            checkFrequency: obj.http.checkFrequency,
+            url: obj.http.url
+        }
+    return item;
+}
+
+export function cloneIpIntelligenceSource(obj: IpIntelligenceSource): IpIntelligenceSource {
+    return {
+        id: obj.id, insertDate: obj.insertDate, updateDate: obj.updateDate, name: obj.name, type: obj.type,
+        apiKey: obj.apiKey
+    }
 }
