@@ -1,7 +1,7 @@
 import fsp from 'fs/promises';
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 import glob from 'glob'
-import { logger } from '../common';
+import { logger } from '../../common';
 
 export interface ScheduledTask {
     start(...args: any): Promise<void>;
@@ -10,7 +10,7 @@ export interface ScheduledTask {
     stop(): Promise<void>;
 }
 
-export class ClearTmpFolder implements ScheduledTask {
+export class ClearTmpFolderTask implements ScheduledTask {
 
     protected timerUploadFolder: any;
 

@@ -401,7 +401,7 @@ describe('ipIntelligenceApi', async () => {
         expect(result).not.exist;
         const result2 = await appService.ipIntelligenceService.listService.getListStatus(item);
         expect(result2).not.exist;
-        const listId = await appService.ipIntelligenceService.listService.getByIp('1.1.1.1')
+        const listId = await appService.ipIntelligenceService.listService.getByIp(item.id, '1.1.1.1')
         expect(listId).not.exist;
 
 

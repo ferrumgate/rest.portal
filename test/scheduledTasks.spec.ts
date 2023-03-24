@@ -5,7 +5,7 @@ import { InputService } from '../src/service/inputService';
 import fsp from 'fs/promises';
 import { Util } from '../src/util';
 import fs from 'fs';
-import { ClearTmpFolder } from '../src/service/scheduledTasks';
+import { ClearTmpFolderTask } from '../src/service/system/scheduledTasks';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -18,7 +18,7 @@ describe('ScheduledTasks', async () => {
     beforeEach(async () => {
 
     })
-    it('ClearTmpFolder', async () => {
+    it('ClearTmpFolderTask', async () => {
         const folder = `/tmp/${Util.randomNumberString()}`;
         await fsp.mkdir(folder, { recursive: true })
         const filename = `${folder}/${Util.randomNumberString()}`;
@@ -35,7 +35,7 @@ describe('ScheduledTasks', async () => {
         expect(fs.existsSync(filename)).to.be.true;
         expect(fs.existsSync(filename2)).to.be.true;
 
-        const tmpClear = new ClearTmpFolder(folder);
+        const tmpClear = new ClearTmpFolderTask(folder);
         await tmpClear.clearUploadFolder(1);
 
         expect(fs.existsSync(filename)).to.be.false;

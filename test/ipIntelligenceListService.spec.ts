@@ -71,7 +71,6 @@ describe('ipIntelligenceListService', async () => {
     it('splitFile', async () => {
 
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
-
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
         fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8\n//testme");
@@ -168,16 +167,16 @@ describe('ipIntelligenceListService', async () => {
 
         const intel = new IpIntelligenceListService(redisService, inputService);
         await intel.saveToStore(item, tmpFolderFile, 0, '');
-        expect(await redisService.exists(`/intelligence/ip/list/index/range`)).to.be.true;
-        expect(await redisService.exists(`/intelligence/ip/list/index/ip`)).to.be.true;
+        expect(await redisService.exists(`/intelligence/ip/list/${item.id}/index/range`)).to.be.true;
+        expect(await redisService.exists(`/intelligence/ip/list/${item.id}/index/ip`)).to.be.true;
         expect(await redisService.exists(`/intelligence/ip/list/${item.id}/page/0`)).to.be.true;
 
 
 
         await intel.deleteFromStore(item, 0);
 
-        expect((await redisService.zrangebylex(`/intelligence/ip/list/index/range`, '-', '+', 0, 1000)).length).to.equal(0);
-        expect((await redisService.zrangebylex(`/intelligence/ip/list/index/ip`, '-', '+', 0, 1000)).length).to.equal(0);
+        expect((await redisService.zrangebylex(`/intelligence/ip/list/${item.id}/index/range`, '-', '+', 0, 1000)).length).to.equal(0);
+        expect((await redisService.zrangebylex(`/intelligence/ip/list/${item.id}/index/ip`, '-', '+', 0, 1000)).length).to.equal(0);
         expect(await redisService.exists(`/intelligence/ip/list/${item.id}/page/0`)).to.be.false;
 
 
@@ -367,24 +366,33 @@ describe('ipIntelligenceListService', async () => {
 
         const intel = new IpIntelligenceListService(redisService, inputService);
 
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3\n192.168.0.1/32\n192.168.9.10/32\n192.168.10.0/24");
         await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
         await intel.process(item);
-        const id = await intel.getByIp('1.1.1.1')
+        const id = await intel.getByIp(item.id, '1.1.1.1')
         expect(id).exist;
 
-        const id2 = await intel.getByIp('192.168.0.0')
+        const id2 = await intel.getByIp(item.id, '192.168.0.0')
         expect(id2).exist;
 
-        const id3 = await intel.getByIp('192.168.0.1')
+        const id3 = await intel.getByIp(item.id, '192.168.0.1')
         expect(id3).exist;
 
 
 
-        const id5 = await intel.getByIp('192.168.1.10')
+        const id5 = await intel.getByIp(item.id, '192.168.1.10')
         expect(id5).not.exist;
 
+        const id6 = await intel.getByIp(item.id, '192.168.9.10')
+        expect(id6).exist;
+
+
+        const id7 = await intel.getByIp(item.id, '192.168.10.15')
+        expect(id7).exist;
+
+        const id8 = await intel.getByIp(item.id, '192.168.9.10')
+        expect(id8).not.exist;
 
     }).timeout(50000);
 

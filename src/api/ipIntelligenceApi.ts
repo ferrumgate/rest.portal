@@ -249,12 +249,14 @@ routerIpIntelligenceAuthenticated.get('/list',
         const inputService = appService.inputService;
         let lists: IpIntelligenceList[] = [];
         if (search && inputService.checkIp(search, false)) {
-            const listId = await ipIntelligence.listService.getByIp(search);
-            if (listId) {
-                const item = await configService.getIpIntelligenceList(listId);
-                if (item)
-                    lists.push(item);
+            const allLists = await configService.getIpIntelligenceLists();
+            for (const l of allLists) {
+                const listId = await ipIntelligence.listService.getByIp(l.id, search);
+                if (listId) {
+                    lists.push(l);
+                }
             }
+
 
         } else {
             lists = await configService.getIpIntelligenceLists();

@@ -27,6 +27,7 @@ import { DhcpService } from "./dhcpService";
 import { RedisConfigWatchCachedService } from "./redisConfigWatchCachedService";
 import { ConfigWatch } from "../model/config";
 import { IpIntelligenceService } from "./ipIntelligenceService";
+import { ScheduledTasksService } from "./system/sheduledTasksService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -173,6 +174,7 @@ export class AppService {
 export class AppSystemService {
 
     public redisSlaveWatcher: RedisWatcherService;
+    public scheduledTasks: ScheduledTasksService;
     // public configPublicListener: ConfigPublicListener;
 
 
@@ -180,9 +182,10 @@ export class AppSystemService {
     /**
      *
      */
-    constructor(app: AppService, redisSlaveWatcher?: RedisWatcherService, configPublic?: ConfigPublicListener
+    constructor(app: AppService, redisSlaveWatcher?: RedisWatcherService, scheduledTasks?: ScheduledTasksService
     ) {
         this.redisSlaveWatcher = redisSlaveWatcher || new RedisWatcherService(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS);
+        this.scheduledTasks = scheduledTasks || new ScheduledTasksService();
         //  this.configPublicListener = configPublic || new ConfigPublicListener(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
 
 
@@ -192,6 +195,7 @@ export class AppSystemService {
     }
     async start() {
         await this.redisSlaveWatcher.start();
+        await this.scheduledTasks.start();
 
 
         //await this.configPublicListener.start();
@@ -200,6 +204,7 @@ export class AppSystemService {
     }
     async stop() {
         await this.redisSlaveWatcher.stop();
+        await this.scheduledTasks.stop();
 
         //await this.configPublicListener.stop();
         //await this.auditLogToES.stop();

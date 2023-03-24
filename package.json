@@ -5,7 +5,7 @@
   "main": "index.js",
   "typings": "lib.d.ts",
   "scripts": {
-    "test": "JENCODE=json CONFIGSERVICE_TYPE=CONFIG  NODE_ENV=development NODE_TEST=true DEBUG2=nock.*  ES_HOST=https://192.168.88.250:9200     ES_USER=elastic ES_PASS=123456 node   ./node_modules/mocha/bin/mocha --exit --timeout 30000 --require ts-node/register  test/**/scheduledTasks.spec.ts",
+    "test": "JENCODE=json CONFIGSERVICE_TYPE=CONFIG  NODE_ENV=development NODE_TEST=true DEBUG2=nock.*  ES_HOST=https://192.168.88.250:9200     ES_USER=elastic ES_PASS=123456 node   ./node_modules/mocha/bin/mocha --exit --timeout 30000 --require ts-node/register  test/**/ipIntelligenceListService.spec.ts",
     "testintegration": "DEBUG=nock.* node ./node_modules/mocha/bin/mocha --exit  --require ts-node/register test/**/*.spec.integration.ts",
     "build": "tsc && cp -R src/service/templates build/src/service/ && cp ferrumgate.* build/ && cp package.json ./build/src/ && sed -i  s/index.js/lib.js/g ./build/src/package.json",
     "start": "tsc && NODE_ENV=development node ./build/src/index.js",
@@ -33,6 +33,7 @@
     "email-validator": "^2.0.4",
     "express": "^4.18.2",
     "extract-zip": "^2.0.1",
+    "glob": "^9.3.2",
     "helmet": "^6.0.1",
     "highwayhash": "^3.1.1",
     "ioredis": "^5.2.4",

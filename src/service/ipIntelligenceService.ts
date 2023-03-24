@@ -169,7 +169,7 @@ class IPifyOrg extends IpIntelligenceSourceApi {
         };
         const searchParams = new URLSearchParams();
         searchParams.append('apiKey', this.apikey);
-        searchParams.append('ipAddress', ip);
+        searchParams.append('ipAddresss', ip);
 
 
         const url = `${this.url}?${searchParams.toString()}`;
@@ -422,8 +422,8 @@ export class IpIntelligenceListService {
         const startKey = `0x00000000000000000000000000000000:${item.id}:${page >= 0 ? this.pageToIndex(page) : '0000'}`;
         const endKey = `0xffffffffffffffffffffffffffffffff:${item.id}:${page >= 0 ? this.pageToIndex(page) : 'ffff'}`;
 
-        const keyRange = `/intelligence/ip/list/index/range`
-        const keyIp = `/intelligence/ip/list/index/ip`
+        const keyRange = `/intelligence/ip/list/${item.id}/index/range`
+        const keyIp = `/intelligence/ip/list/${item.id}/index/ip`
         await trx.zrembylex(keyRange, startKey, endKey);
         await trx.zrembylex(keyIp, startKey, endKey);
 
@@ -452,8 +452,8 @@ export class IpIntelligenceListService {
             const cidr = new IPCIDR(line);
             const start = cidr.addressStart.correctForm();
             const end = cidr.addressEnd.correctForm();
-            const keyRange = `/intelligence/ip/list/index/range`
-            const keyIp = `/intelligence/ip/list/index/ip`
+            const keyRange = `/intelligence/ip/list/${item.id}/index/range`
+            const keyIp = `/intelligence/ip/list/${item.id}/index/ip`
             //const litem: IpIntelligenceListItem = { id: Util.randomNumberString(16), cidr: line, listId: item.id };
             const keyItem = `/intelligence/ip/list/${item.id}/page/${page}`
             const startKey = `${Util.ipToHex(start)}:${item.id}:${this.pageToIndex(page)}`;
@@ -476,9 +476,9 @@ export class IpIntelligenceListService {
      * @param ip 
      * @returns first founded list id
      */
-    async getByIp(ip: string) {
-        const keyRange = `/intelligence/ip/list/index/range`
-        const keyIp = `/intelligence/ip/list/index/ip`
+    async getByIp(listId: string, ip: string) {
+        const keyRange = `/intelligence/ip/list/${listId}/index/range`
+        const keyIp = `/intelligence/ip/list/${listId}/index/ip`
 
         const startKey = `${Util.ipToHex(ip)}:`;
         let founded = '';
@@ -576,67 +576,71 @@ export class IpIntelligenceListService {
                     hash = status?.hash || '';
                 }
             const fileHash = await this.hashOfFile(tmpFilename);
-            if (hash == fileHash) {
-                logger.info(`ip intelligence ${item.name} file not changed`);
-                return;
-            }
-            hash = fileHash;
-            logger.info(`ip intelligence splitting file ${tmpFilename}`)
-            const files = await this.splitFile(tmpDirectory, tmpFilename, 10000);
-            // make map for fast iteration
-            const filesMap: Map<number, { page: number, hash: string, filename: string }> = new Map();
-            for (const file of files) {
-                filesMap.set(file.page, file);
-            }
-
-            const dbFiles = await this.getDbFileList(item) || {};
-            //make map for fast iteration
-            const dbFilesMap: Map<number, { page: number, hash: string }> = new Map();
-            Object.keys(dbFiles).forEach(y => {
-                dbFilesMap.set(Number(y), dbFiles[y]);
-            })
-
             let isChanged = false;
-            //compare each other
-            for (const iterator of dbFilesMap.values()) {
-                if (!filesMap.has(iterator.page)) {//delete this from database
-                    logger.info(`ip intelligence ${item.name} deleting page:${iterator.page}`)
-                    const multi = await this.redisService.multi();
-                    await this.deleteFromStore(item, iterator.page, multi);
-                    await this.deleteDbFileList2(item, iterator.page, multi);
-                    await multi.exec();
-                    isChanged = true;
+            let hasFile = false;
+            if (hash != fileHash) {
+                hash = fileHash;
+                logger.info(`ip intelligence splitting file ${tmpFilename}`)
+                const files = await this.splitFile(tmpDirectory, tmpFilename, 10000);
+                hasFile = files.length > 0;
+                // make map for fast iteration
+                const filesMap: Map<number, { page: number, hash: string, filename: string }> = new Map();
+                for (const file of files) {
+                    filesMap.set(file.page, file);
                 }
-            }
 
-            for (const iterator of filesMap.values()) {//save or update
-                //delete this from database first, because hash changed of file
-                if (dbFilesMap.has(iterator.page)) {
-                    if (dbFilesMap.get(iterator.page)?.hash != iterator.hash) {
-                        logger.info(`ip intelligence ${item.name} updating page:${iterator.page}`);
+
+                const dbFiles = await this.getDbFileList(item) || {};
+                //make map for fast iteration
+                const dbFilesMap: Map<number, { page: number, hash: string }> = new Map();
+                Object.keys(dbFiles).forEach(y => {
+                    dbFilesMap.set(Number(y), dbFiles[y]);
+                })
+
+
+                //compare each other
+                for (const iterator of dbFilesMap.values()) {
+                    if (!filesMap.has(iterator.page)) {//delete this from database
+                        logger.info(`ip intelligence ${item.name} deleting page:${iterator.page}`)
                         const multi = await this.redisService.multi();
                         await this.deleteFromStore(item, iterator.page, multi);
                         await this.deleteDbFileList2(item, iterator.page, multi);
                         await multi.exec();
+                        isChanged = true;
+                    }
+                }
 
+                for (const iterator of filesMap.values()) {//save or update
+                    //delete this from database first, because hash changed of file
+                    if (dbFilesMap.has(iterator.page)) {
+                        if (dbFilesMap.get(iterator.page)?.hash != iterator.hash) {
+                            logger.info(`ip intelligence ${item.name} updating page:${iterator.page}`);
+                            const multi = await this.redisService.multi();
+                            await this.deleteFromStore(item, iterator.page, multi);
+                            await this.deleteDbFileList2(item, iterator.page, multi);
+                            await multi.exec();
+
+                            const multi2 = await this.redisService.multi();
+                            await this.saveToStore(item, iterator.filename, iterator.page, iterator.hash);
+                            const savelist: IpIntelligenceListFiles = {};
+                            savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
+                            await this.saveDbFileList(item, savelist);
+                            await multi2.exec();
+                            isChanged = true;
+                        }
+                    } else {
+                        logger.info(`ip intelligence ${item.name} saving page:${iterator.page}`)
                         const multi2 = await this.redisService.multi();
-                        await this.saveToStore(item, iterator.filename, iterator.page, iterator.hash);
+                        await this.saveToStore(item, iterator.filename, iterator.page, iterator.hash, multi2);
                         const savelist: IpIntelligenceListFiles = {};
                         savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
                         await this.saveDbFileList(item, savelist);
                         await multi2.exec();
                         isChanged = true;
                     }
-                } else {
-                    logger.info(`ip intelligence ${item.name} saving page:${iterator.page}`)
-                    const multi2 = await this.redisService.multi();
-                    await this.saveToStore(item, iterator.filename, iterator.page, iterator.hash, multi2);
-                    const savelist: IpIntelligenceListFiles = {};
-                    savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
-                    await this.saveDbFileList(item, savelist);
-                    await multi2.exec();
-                    isChanged = true;
                 }
+            } else {
+                logger.info(`ip intelligence ${item.name} file not changed`);
             }
 
 
@@ -646,7 +650,7 @@ export class IpIntelligenceListService {
                 lastCheck: new Date().toISOString(),
                 lastError: '',
                 isChanged: isChanged,
-                hasFile: files.length > 0
+                hasFile: hasFile
             }
             await this.saveListStatus(item, saveStatus);
 
