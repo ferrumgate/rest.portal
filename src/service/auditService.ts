@@ -355,6 +355,13 @@ export class AuditService {
             `${before?.name}`,)
 
     }
+    async logResetIpIntelligenceList(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceList, after?: IpIntelligenceList) {
+
+        await this.executeSave(currentSession, currentUser, before, before,
+            `ip intelligence list reseted}`,
+            `${before?.name}`,)
+
+    }
 
 
 

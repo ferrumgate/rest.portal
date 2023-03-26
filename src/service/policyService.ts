@@ -141,10 +141,12 @@ export class PolicyService {
      */
     async isIpIntelligenceWhiteListContains(rule: AuthenticationRule, clientIp: string) {
         if (!rule.profile.ipIntelligence?.whiteLists?.length) return false;
+
+        const items = await this.ipIntelligenceService.listService.getByIpAll(clientIp);
         for (const ite of rule.profile.ipIntelligence?.whiteLists) {
-            const item = await this.ipIntelligenceService.listService.getByIp(ite, clientIp);
-            if (item) return true;
+            if (items.items.includes(ite)) return true;
         }
+
         return false;
     }
 
@@ -153,9 +155,9 @@ export class PolicyService {
      */
     async isIpIntelligenceBlackListContains(rule: AuthenticationRule, clientIp: string) {
         if (!rule.profile.ipIntelligence?.blackLists?.length) return false;
+        const items = await this.ipIntelligenceService.listService.getByIpAll(clientIp);
         for (const ite of rule.profile.ipIntelligence?.blackLists) {
-            const item = await this.ipIntelligenceService.listService.getByIp(ite, clientIp);
-            if (item) return true;
+            if (items.items.includes(ite)) return true;
         }
         return false;
     }

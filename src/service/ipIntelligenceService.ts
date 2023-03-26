@@ -23,6 +23,7 @@ import isCidr from 'ip-cidr';
 import { InputService } from "./inputService";
 import IPCIDR from "ip-cidr";
 import { contentSecurityPolicy } from "helmet";
+import { ESService } from "./esService";
 
 export abstract class IpIntelligenceSourceApi {
 
@@ -205,8 +206,8 @@ export class IpIntelligenceService {
     protected apiCount = -1;
     listService!: IpIntelligenceListService;
     constructor(private config: ConfigService,
-        private redisIntel: RedisService, private inputService: InputService) {
-        this.listService = new IpIntelligenceListService(redisIntel, inputService);
+        private redisIntel: RedisService, private inputService: InputService, private esService: ESService) {
+        this.listService = new IpIntelligenceListService(redisIntel, inputService, esService);
     }
     protected async createApi(force = false) {
         if (force || this.apiCount == -1) {
@@ -284,7 +285,7 @@ export class IpIntelligenceListService {
     /**
      *
      */
-    constructor(protected redisService: RedisService, protected inputService: InputService) {
+    constructor(protected redisService: RedisService, protected inputService: InputService, protected esService: ESService) {
 
     }
     async downloadFileFromRedis(key: string, filename: string) {
@@ -417,31 +418,16 @@ export class IpIntelligenceListService {
             await multi.exec();
     }
 
-    async deleteFromStore(item: IpIntelligenceList, page: number, pipeline?: RedisPipelineService) {
-        const trx = pipeline || await this.redisService.multi();
-        const startKey = `0x00000000000000000000000000000000:${item.id}:${page >= 0 ? this.pageToIndex(page) : '0000'}`;
-        const endKey = `0xffffffffffffffffffffffffffffffff:${item.id}:${page >= 0 ? this.pageToIndex(page) : 'ffff'}`;
-
-        const keyRange = `/intelligence/ip/list/${item.id}/index/range`
-        const keyIp = `/intelligence/ip/list/${item.id}/index/ip`
-        await trx.zrembylex(keyRange, startKey, endKey);
-        await trx.zrembylex(keyIp, startKey, endKey);
-
-        const keyItem = `/intelligence/ip/list/${item.id}/page/${page}`
-        await trx.delete(keyItem);
-        if (!pipeline)
-            await trx.exec();
+    async deleteFromStore(item: IpIntelligenceList, page?: number) {
+        await this.esService.deleteIpIntelligenceList({ id: item.id, page: page });
 
     }
 
-    private pageToIndex(page: number) {
-        if (page < 10) return `000` + page;
-        if (page < 100) return `00` + page;
-        if (page < 1000) return `0` + page;
-        return page;
-    }
-    async saveToStore(item: IpIntelligenceList, file: string, page: number, hash: string, pipeline?: RedisPipelineService) {
-        const trx = pipeline || await this.redisService.multi();
+
+
+    async saveToStore(item: IpIntelligenceList, file: string, page: number) {
+
+        let items: [IpIntelligenceListItem, string][] = [];
         await Util.readFileLineByLine(file, async (line: string) => {
 
             if (!line.includes('/'))//must be cidr
@@ -450,64 +436,53 @@ export class IpIntelligenceListService {
                 else
                     line += '/32';
             const cidr = new IPCIDR(line);
-            const start = cidr.addressStart.correctForm();
-            const end = cidr.addressEnd.correctForm();
-            const keyRange = `/intelligence/ip/list/${item.id}/index/range`
-            const keyIp = `/intelligence/ip/list/${item.id}/index/ip`
-            //const litem: IpIntelligenceListItem = { id: Util.randomNumberString(16), cidr: line, listId: item.id };
-            const keyItem = `/intelligence/ip/list/${item.id}/page/${page}`
-            const startKey = `${Util.ipToHex(start)}:${item.id}:${this.pageToIndex(page)}`;
-            const endKey = `${Util.ipToHex(end)}:${item.id}:${this.pageToIndex(page)}`;
+            let val: IpIntelligenceListItem =
+                { id: item.id, insertDate: new Date().toISOString(), network: cidr.toString(), page: page };
 
-            if (endKey != startKey) {
-                await trx.zadd(keyRange, startKey, 0);
-                await trx.zadd(keyRange, endKey, 0);
-            } else {
-                await trx.zadd(keyIp, startKey, 0);
+
+            const tmp = await this.esService.ipIntelligenceListCreateIndexIfNotExits(val)
+            items.push(tmp);
+            if (items.length >= 1000) {
+                await this.esService.ipIntelligenceListItemSave(items);
+                items = [];
             }
-            await trx.zadd(keyItem, line, 0);
             return true;
         })
-        if (!pipeline)
-            await trx.exec();
+        if (items.length) {
+            await this.esService.ipIntelligenceListItemSave(items);
+            items = [];
+        }
     }
 
     /**
+     * search in listId
      * @param ip 
      * @returns first founded list id
      */
     async getByIp(listId: string, ip: string) {
-        const keyRange = `/intelligence/ip/list/${listId}/index/range`
-        const keyIp = `/intelligence/ip/list/${listId}/index/ip`
+        const items = await this.esService.searchIpIntelligenceList({ searchIp: ip, id: listId });
+        return items.items.length ? items.items[0] : null;
 
-        const startKey = `${Util.ipToHex(ip)}:`;
-        let founded = '';
-        const items = await this.redisService.zrangebylex(keyIp, `[${startKey}`, `+`, 0, 1);
-        if (items.length) {
-            const listId = items[0].split(':')[1];
-            if (!listId) return null;
-            founded = listId;
-        } else {
-            const items2 = await this.redisService.zrangebylex(keyRange, `[${startKey}`, `+`, 0, 1);
-            if (!items2.length) return null;
-            const listId = items2[0].split(':')[1];
-            if (!listId) return null;
-            founded = listId;
-        }
-        return founded;
+    }
+    /**
+     * search in all lists
+     * @param ip 
+     * @returns first founded list id
+     */
+    async getByIpAll(ip: string) {
+        return await this.esService.searchIpIntelligenceList({ searchIp: ip });
 
     }
 
     async deleteList(item: IpIntelligenceList) {
         //we need to get all  pages of list first
-        const [cursor, pages] = await this.redisService.scan(`/intelligence/ip/list/${item.id}/page/*`, '0', 50000);
+
         const trx = await this.redisService.multi();
         await this.deleteDbFileList(item, trx);
-        await this.deleteFromStore(item, -1, trx);
         await this.deleteListStatus(item, trx);
         await this.deleteListFile(item, trx);
-        await trx.del(pages);
         await trx.exec();
+        await this.deleteFromStore(item);
     }
 
     /**
@@ -518,34 +493,31 @@ export class IpIntelligenceListService {
      * @returns 
      */
     async getAllListItems(item: IpIntelligenceList, cont: () => boolean, callback?: (item: string) => Promise<void>) {
+        let items: string[] = [];
+        await this.esService.scrollIpIntelligenceList({ id: item.id }, cont, async (val: IpIntelligenceListItem) => {
+            if (callback)
+                await callback(val.network);
+            else items.push(val.network);
+        })
+        return items;
 
-
-        let retList: string[] = [];
-        const [cursor, pages] = await this.redisService.scan(`/intelligence/ip/list/${item.id}/page/*`, '0', 50000);
-        for (const spage of pages) {
-            let page = 0;
-            let pageSize = 10000;
-            while (cont) {
-                let keypos = '';
-                const keyItem = spage
-                const ips = await this.redisService.zrangebylex(keyItem, `${keypos ? '(' : '['}${keypos}`, `+`, page * pageSize, pageSize);
-
-                if (callback)
-                    for (const t of ips) {
-                        await callback(t);
-                        keypos = t;
-                    }
-                else {
-                    retList.push(...ips);
-                    keypos = ips[ips.length - 1];
-                }
-
-                if (!ips.length)
-                    break;
-                page++;
+    }
+    async resetList(item: IpIntelligenceList) {
+        let status = await this.getListStatus(item);
+        if (!status) {
+            status = {
+                id: item.id
             }
         }
-        return retList;
+        status.hash = '';
+        status.lastError = 'reset';
+        status.lastCheck = new Date().toISOString()
+        await this.deleteFromStore(item);
+        const trx = await this.redisService.multi();
+        await this.saveListStatus(item, status, trx);
+        await this.deleteListStatus(item, trx);
+        await this.deleteDbFileList(item, trx);
+        await trx.exec();
 
     }
 
@@ -602,8 +574,9 @@ export class IpIntelligenceListService {
                 for (const iterator of dbFilesMap.values()) {
                     if (!filesMap.has(iterator.page)) {//delete this from database
                         logger.info(`ip intelligence ${item.name} deleting page:${iterator.page}`)
+
+                        await this.deleteFromStore(item, iterator.page);
                         const multi = await this.redisService.multi();
-                        await this.deleteFromStore(item, iterator.page, multi);
                         await this.deleteDbFileList2(item, iterator.page, multi);
                         await multi.exec();
                         isChanged = true;
@@ -615,13 +588,14 @@ export class IpIntelligenceListService {
                     if (dbFilesMap.has(iterator.page)) {
                         if (dbFilesMap.get(iterator.page)?.hash != iterator.hash) {
                             logger.info(`ip intelligence ${item.name} updating page:${iterator.page}`);
+
+                            await this.deleteFromStore(item, iterator.page);
                             const multi = await this.redisService.multi();
-                            await this.deleteFromStore(item, iterator.page, multi);
                             await this.deleteDbFileList2(item, iterator.page, multi);
                             await multi.exec();
 
                             const multi2 = await this.redisService.multi();
-                            await this.saveToStore(item, iterator.filename, iterator.page, iterator.hash);
+                            await this.saveToStore(item, iterator.filename, iterator.page);
                             const savelist: IpIntelligenceListFiles = {};
                             savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
                             await this.saveDbFileList(item, savelist);
@@ -631,7 +605,7 @@ export class IpIntelligenceListService {
                     } else {
                         logger.info(`ip intelligence ${item.name} saving page:${iterator.page}`)
                         const multi2 = await this.redisService.multi();
-                        await this.saveToStore(item, iterator.filename, iterator.page, iterator.hash, multi2);
+                        await this.saveToStore(item, iterator.filename, iterator.page);
                         const savelist: IpIntelligenceListFiles = {};
                         savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
                         await this.saveDbFileList(item, savelist);

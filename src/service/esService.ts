@@ -12,8 +12,12 @@ import { logger } from '../common';
 import { RedisConfigWatchCachedService } from './redisConfigWatchCachedService';
 import { RedisConfigService } from './redisConfigService';
 import { ConfigWatch } from '../model/config';
+import { IpIntelligenceList, IpIntelligenceListItem } from '../model/IpIntelligence';
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
+
+
+
 export interface ESAuditLog extends AuditLog {
 
 }
@@ -109,6 +113,27 @@ export interface ESAggItem {
     sub?: ESAggItem[]
 
 }
+
+// ip intelligence
+export interface ESIpIntelligenceListItem extends IpIntelligenceListItem {
+
+}
+
+export interface SearchIpIntelligenceListRequest {
+    id?: string;
+    searchIp: string;
+
+}
+
+export interface DeleteIpIntelligenceListRequest {
+    id: string;
+    page?: number;
+}
+export interface ScrollIpIntelligenceListRequest {
+    id: string;
+}
+
+
 /**
  * @summary elastic service
  */
@@ -116,6 +141,7 @@ export class ESService {
 
     private auditIndexes: Map<string, string> = new Map<string, string>();
     private activityIndexes: Map<string, string> = new Map<string, string>();
+    private ipIntelligenceListIndexes: Map<string, string> = new Map<string, string>();
     private client!: ES.Client;
     host?: string;
     username?: string;
@@ -123,7 +149,7 @@ export class ESService {
     /**
      *  
      */
-    constructor(configService: ConfigService, host?: string, username?: string, password?: string) {
+    constructor(configService: ConfigService, host?: string, username?: string, password?: string, private refreshInterval = '60s') {
         this.host = host;
         this.username = username;
         this.password = password;
@@ -151,8 +177,10 @@ export class ESService {
         this.client = new ES.Client(option);
 
     }
-    async reConfigure(host: string, username?: string, password?: string) {
+    async reConfigure(host: string, username?: string, password?: string, refresh_interval?: string) {
         try {
+            if (refresh_interval)
+                this.refreshInterval = refresh_interval;
             if (this.host != host || this.username != username || this.password != password) {
                 logger.info(`reconfigure es to host: ${host}`);
                 this.host = host;
@@ -227,7 +255,7 @@ export class ESService {
                         index: {
                             number_of_replicas: 1,
                             number_of_shards: 1,
-                            "refresh_interval": "60s",
+                            "refresh_interval": this.refreshInterval,
                             translog: {
                                 "durability": "async",
                                 "sync_interval": "10s",
@@ -297,6 +325,7 @@ export class ESService {
 
 
 
+
     async auditSave(items: [ESAuditLog, string][]): Promise<void> {
         await this.createClient();
         let result: any[] = [];
@@ -308,6 +337,200 @@ export class ESService {
             body: result
         })
     }
+
+
+    ////ip intelligence list 
+    async ipIntelligenceListCreateIndexIfNotExits(item: IpIntelligenceListItem): Promise<[ESIpIntelligenceListItem, string]> {
+        await this.createClient();
+        let date = Date.now();
+        let index = `ip-intelligence-list-${item.id.toLowerCase()}`;
+        let esitem: ESIpIntelligenceListItem =
+        {
+            ...item
+
+        };
+        if (this.ipIntelligenceListIndexes.has(index)) return [esitem, index];
+
+        let exists = (await this.client.indices.exists({ index: index }));
+        if (!exists) {
+
+
+            await this.client.indices.create({
+                index: index,
+                body: {
+                    settings: {
+                        index: {
+                            number_of_replicas: 1,
+                            number_of_shards: 1,
+                            "refresh_interval": this.refreshInterval,
+                            translog: {
+                                "durability": "async",
+                                "sync_interval": "10s",
+                                "flush_threshold_size": "1gb"
+                            }
+
+
+                        }
+                    },
+                    mappings: {
+
+
+                        properties: {
+                            insertDate: {
+                                type: 'date', // type is a required attribute if index is specified
+
+                            },
+
+                            id: {
+                                type: "keyword"
+
+                            },
+
+                            page: {
+                                type: "integer"
+
+                            },
+                            network: {
+                                type: "ip_range",
+                                fields: {
+                                    value: {
+                                        "type": "keyword"
+                                    }
+                                }
+
+
+                            }
+                        }
+
+                    }
+                }
+            })
+
+
+        }
+        this.ipIntelligenceListIndexes.set(index, index);
+        return [esitem, index];
+    }
+
+    async ipIntelligenceListItemSave(items: [ESIpIntelligenceListItem, string][]): Promise<void> {
+        await this.createClient();
+        let result: any[] = [];
+        let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
+        mapped.forEach(x => {
+            result = result.concat(x);
+        });
+        await this.client.bulk({
+            body: result
+        })
+    }
+
+    async searchIpIntelligenceList(req: SearchIpIntelligenceListRequest) {
+        await this.createClient();
+        let request = {
+            ignore_unavailable: true,
+            index: `ip-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`,
+            body: {
+
+                size: 0,
+                query: {
+                    bool: {
+                        must: [
+                            {
+                                term: {
+                                    network: req.searchIp
+                                }
+                            }
+                        ]
+                    }
+                },
+                "aggs": {
+                    "id_agg": {
+                        "terms": { "field": "id" }
+                    }
+                }
+            }
+        };
+
+
+        const result = await this.client.search(request) as any;
+        return { items: result?.aggregations?.id_agg?.buckets?.map((x: any) => x.key) as string[] || [] }
+
+    }
+
+    async deleteIpIntelligenceList(req: DeleteIpIntelligenceListRequest) {
+        await this.createClient();
+        if (req.page == undefined) {
+            //delete index
+            const del = `ip-intelligence-list-${req.id.toLowerCase()}`;
+            await this.deleteIndexes([del])
+            this.ipIntelligenceListIndexes.delete(del);
+            return { deletedCount: 1 }
+        } else {
+            //delete by query
+            let request = {
+                ignore_unavailable: true,
+                index: `ip-intelligence-list-${req.id.toLowerCase()}`,
+                body: {
+
+
+                    query: {
+                        bool: {
+                            must: [
+                                {
+                                    term: {
+                                        id: req.id
+                                    }
+                                },
+                                {
+                                    term: {
+                                        page: req.page
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            };
+
+
+            const result = await this.client.deleteByQuery(request);
+            return { deletedCount: result.deleted }
+        }
+
+    }
+
+    async scrollIpIntelligenceList(req: ScrollIpIntelligenceListRequest, cont: () => boolean, callback: (item: IpIntelligenceListItem) => Promise<void>) {
+        await this.createClient();
+        let request = {
+            ignore_unavailable: true,
+            index: `ip-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`,
+            scroll: '1m',
+            body: {
+                query: {
+                    "match_all": {}
+                }
+
+            }
+        };
+
+
+        let { _scroll_id, hits } = await this.client.search(request, {}) as any;
+
+        while (cont() && hits && hits.hits.length) {
+            for (const item of hits.hits.map((x: any) => x._source)) {
+                await callback(item);
+            }
+            let result = await this.client.scroll({ scroll_id: _scroll_id, scroll: '1m' })
+            _scroll_id = result._scroll_id;
+            hits = result.hits;
+
+        }
+
+
+    }
+
+
+
 
     addToQuery(item: string | undefined, field: string, dest: any[]) {
 
@@ -422,7 +645,7 @@ export class ESService {
 
 
 
-    ////audit 
+    ////activity 
     async activityCreateIndexIfNotExits(item: ActivityLog): Promise<[ESActivityLog, string]> {
         await this.createClient();
         let index = `ferrumgate-activity-${this.dateFormat(item.insertDate)}`;
@@ -444,7 +667,7 @@ export class ESService {
                         index: {
                             number_of_replicas: Number(process.env.ES_REPLICAS) || 2,
                             number_of_shards: Number(process.env.ES_SHARDS) || 1,
-                            "refresh_interval": "60s",
+                            "refresh_interval": this.refreshInterval,
                             translog: {
                                 "durability": "async",
                                 "sync_interval": "10s",

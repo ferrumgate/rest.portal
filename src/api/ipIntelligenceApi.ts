@@ -249,13 +249,9 @@ routerIpIntelligenceAuthenticated.get('/list',
         const inputService = appService.inputService;
         let lists: IpIntelligenceList[] = [];
         if (search && inputService.checkIp(search, false)) {
+            const listIds = await ipIntelligence.listService.getByIpAll(search);
             const allLists = await configService.getIpIntelligenceLists();
-            for (const l of allLists) {
-                const listId = await ipIntelligence.listService.getByIp(l.id, search);
-                if (listId) {
-                    lists.push(l);
-                }
-            }
+            allLists.filter(x => listIds.items.includes(x.id)).forEach(y => lists.push(y));
 
 
         } else {
@@ -299,6 +295,32 @@ routerIpIntelligenceAuthenticated.delete('/list/:id',
         const { before } = await configService.deleteIpIntelligenceList(list.id);
         await auditService.logDeleteIpIntelligenceList(currentSession, currentUser, before);
 
+        return res.status(200).json({});
+
+    }))
+
+
+routerIpIntelligenceAuthenticated.put('/list/:id/reset',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        logger.info(`delete ip intelligence list with id: ${id}`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const auditService = appService.auditService;
+        const ipIntelligence = appService.ipIntelligenceService;
+
+        const list = await configService.getIpIntelligenceList(id);
+        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellegence list');
+
+        await ipIntelligence.listService.resetList(list);
+        await auditService.logResetIpIntelligenceList(currentSession, currentUser, list, list);
         return res.status(200).json({});
 
     }))

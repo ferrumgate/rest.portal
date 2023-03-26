@@ -58,10 +58,18 @@ export interface IpIntelligenceListStatus {
 export interface IpIntelligenceListFiles {
     [key: string]: { page: number, hash: string };
 }
+
+/**
+ * shows a list item
+ */
 export interface IpIntelligenceListItem {
+
+    // list id
     id: string;
-    cidr: string;
-    listId: string;
+    page: number;
+    // value
+    network: string;
+    insertDate: string;
 }
 
 
