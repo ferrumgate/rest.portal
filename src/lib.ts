@@ -29,3 +29,5 @@ export { AuthenticationRule, AuthenticationPolicy } from './model/authentication
 export { AuthorizationRule, AuthorizationPolicy } from './model/authorizationPolicy';
 export { InputService } from './service/inputService';
 export { SessionService } from './service/sessionService';
+export { IpIntelligence, IpIntelligenceList } from './model/IpIntelligence'
+export { IpIntelligenceService, IpIntelligenceListService } from './service/ipIntelligenceService';

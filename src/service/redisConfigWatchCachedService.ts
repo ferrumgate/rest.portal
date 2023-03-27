@@ -1,7 +1,7 @@
 import NodeCache from "node-cache";
 import { ConfigWatch } from "../model/config";
 import { RPath } from "../model/config";
-import { AuthenticationRule, AuthorizationRule, WatchItem } from "../lib";
+import { AuthenticationRule, AuthorizationRule, IpIntelligenceList, WatchItem } from "../lib";
 import { Group } from "../model/group";
 import { Gateway } from "../model/network";
 import { Network } from "../model/network";
@@ -9,6 +9,7 @@ import { Service } from "../model/service";
 import { User } from "../model/user";
 import { ItemWithId, RedisConfigWatchService } from "./redisConfigWatchService";
 import { SSLCertificate } from "../model/sslCertificate";
+import { IpIntelligenceSource } from "../model/IpIntelligence";
 
 class NodeCacheForThis extends NodeCache {
     override get<T>(key: string): T | undefined {
@@ -41,6 +42,8 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
         this.config.services.forEach(x => this.nodeCache.set(x.id, x));
         this.config.authorizationPolicy.rules.forEach(x => this.nodeCache.set(x.id, x));
         this.config.authenticationPolicy.rules.forEach(x => this.nodeCache.set(x.id, x));
+        this.config.ipIntelligence.lists.forEach(x => this.nodeCache.set(x.id, x));
+        this.config.ipIntelligence.sources.forEach(x => this.nodeCache.set(x.id, x));
         this.isFilled = true;
         this.events.emit('ready');
 
@@ -77,6 +80,14 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
     override async getAuthenticationPolicyRule(id: string): Promise<AuthenticationRule | undefined> {
         return await this.nodeCache.get(id);
     }
+
+    override async getIpIntelligenceList(id: string): Promise<IpIntelligenceList | undefined> {
+        return await this.nodeCache.get(id);
+    }
+    override async getIpIntelligenceSource(id: string): Promise<IpIntelligenceSource | undefined> {
+        return await this.nodeCache.get(id);
+    }
+
 
 
     override async processConfigChanged(watch: WatchItem<ConfigWatch<any>>) {
