@@ -492,9 +492,24 @@ describe('ipIntelligenceListService', async () => {
 
         const id = await intel.getByIpAll('192.168.10.1')
         expect(id.items.length == 2).to.be.true;
-        expect(id.items[1]).to.equal(item.id);
-        expect(id.items[0]).to.equal(item2.id);
+        expect(id.items.find(x => x == item.id)).exist
+        expect(id.items.find(y => y == item2.id)).exist;
 
+
+
+
+    }).timeout(50000);
+
+
+    it('compareSystemHealth', async () => {
+
+        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+
+        await redisService.set('/intelligence/ip/list/1/file', 0);
+        await redisService.set('/intelligence/ip/list/1/status', 0);
+        await intel.compareSystemHealth([{ id: '2' } as any]);
+        const item = await redisService.get('/intelligence/ip/list/1/file', false);
+        expect(item).not.exist;
 
 
 

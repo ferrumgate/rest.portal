@@ -1797,6 +1797,29 @@ export class RedisConfigService extends ConfigService {
         await pipeline.exec();
         return ret;
     }
+    async triggerIpIntelligenceListDeleted(list: IpIntelligenceList, pipeline: RedisPipelineService) {
+        //await this.rSave('authenticationPolicy/rules', ret.before, ret.after, pipeline);
+
+        for (const it of this.config.authenticationPolicy.rules) {
+            let before = null;
+            let changed = false;
+            if (it.profile.ipIntelligence?.blackLists.includes(list.id)) {
+                before = Util.clone(it);
+                it.profile.ipIntelligence.blackLists = it.profile.ipIntelligence.blackLists.filter(x => list.id != x);
+                changed = true;
+            }
+            if (it.profile.ipIntelligence?.whiteLists.includes(list.id)) {
+                if (!before)
+                    before = Util.clone(it);
+                it.profile.ipIntelligence.whiteLists = it.profile.ipIntelligence.whiteLists.filter(x => list.id != x);
+                changed = true;
+            }
+            if (changed) {
+                await this.rSave('authenticationPolicy/rules', before, it, pipeline);
+            }
+        }
+    }
+
     async deleteIpIntelligenceList(id: string) {
         this.isReady();
 
@@ -1805,7 +1828,9 @@ export class RedisConfigService extends ConfigService {
         const list = await this.rGetWith<IpIntelligenceList>('ipIntelligence/lists', id);
         if (list) {
             this.config.ipIntelligence.lists.push(list);
+            this.config.authenticationPolicy = await this.getAuthenticationPolicy();
             const pipeline = await this.redis.multi();
+            await this.triggerIpIntelligenceListDeleted(list, pipeline);
             await this.rDel('ipIntelligence/lists', list, pipeline);
             await this.saveLastUpdateTime(pipeline);
             await pipeline.exec();

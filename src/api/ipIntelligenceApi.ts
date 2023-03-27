@@ -292,6 +292,7 @@ routerIpIntelligenceAuthenticated.delete('/list/:id',
         if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellegence list');
 
         await ipIntelligence.listService.deleteList(list);
+
         const { before } = await configService.deleteIpIntelligenceList(list.id);
         await auditService.logDeleteIpIntelligenceList(currentSession, currentUser, before);
 
