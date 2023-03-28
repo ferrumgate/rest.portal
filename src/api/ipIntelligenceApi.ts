@@ -202,6 +202,9 @@ routerIpIntelligenceAuthenticated.post('/list/file',
     }))
 
 
+
+
+
 routerIpIntelligenceAuthenticated.get('/list/:id/file',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -209,6 +212,7 @@ routerIpIntelligenceAuthenticated.get('/list/:id/file',
     asyncHandler(upload.single('file')),
     asyncHandler(async (req: any, res: any, next: any) => {
         let id = req.params.id;
+
         logger.info(`downloading a file`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
@@ -223,17 +227,20 @@ routerIpIntelligenceAuthenticated.get('/list/:id/file',
             logger.warn(`system is not configured yet`);
             throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
         }
+
         const list = await configService.getIpIntelligenceList(id);
         if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellegence list');
 
-        res.set({ "Content-Disposition": `attachment; filename="${list.id}_${list.name}_${new Date().toISOString()}"` });
-        res.status(200);
+        res.attachment(`${list.name}_${new Date().toISOString()}`);
         await ipIntelligence.listService.getAllListItems(list, () => true, async (item: string) => {
             res.write(item);
             res.write('\n');
         })
+        res.write('\n');
         return res.end();
+
     }))
+
 
 
 routerIpIntelligenceAuthenticated.get('/list',
@@ -322,6 +329,11 @@ routerIpIntelligenceAuthenticated.put('/list/:id/reset',
 
         await ipIntelligence.listService.resetList(list);
         await auditService.logResetIpIntelligenceList(currentSession, currentUser, list, list);
+
+        list.updateDate = new Date().toISOString();
+        const { before, after } = await configService.saveIpIntelligenceList(list);
+        await auditService.logSaveIpIntelligenceList(currentSession, currentUser, before, after);
+
         return res.status(200).json({});
 
     }))
@@ -362,6 +374,7 @@ routerIpIntelligenceAuthenticated.put('/list',
         if (fileUploadedName && after) {//log file to redis intelligence
             const path = `/tmp/uploads/${fileUploadedName}`
             await ipIntelligenceService.listService.saveListFile(after, path);
+            await ipIntelligenceService.listService.deleteListStatus(after);
             await fsp.unlink(path);
         }
 

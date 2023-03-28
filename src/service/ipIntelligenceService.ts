@@ -425,7 +425,7 @@ export class IpIntelligenceListService {
 
     async compareSystemHealth(items: IpIntelligenceList[]) {
         const keys = await this.redisService.getAllKeys('/intelligence/ip/list/*');
-        const itemIds = items.map(x => x.id.toLowerCase());
+        const itemIds = items.map(x => x.id);
         const pipe = await this.redisService.pipeline();//we did it pipeline,not multi
         for (const it of keys) {
             const ids = it.replace('/intelligence/ip/list/', '').split('/')

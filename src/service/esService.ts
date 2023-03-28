@@ -174,6 +174,7 @@ export class ESService {
         }
         this.auditIndexes = new Map<string, string>();
         this.activityIndexes = new Map<string, string>();
+        this.ipIntelligenceListIndexes = new Map<string, string>();
         this.client = new ES.Client(option);
 
     }
