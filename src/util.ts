@@ -22,6 +22,11 @@ import moment from 'moment-timezone';
 import { TimeZone } from './model/timezone';
 import highwayhash from 'highwayhash';
 import nreadlines from 'n-readlines';
+import decompress from 'decompress';
+const decompressTargz = require('decompress-targz');
+import dir from 'recursive-readdir';
+const mergeFiles = require('merge-files');
+
 
 export interface IpRange {
     start: string;
@@ -573,7 +578,21 @@ export const Util = {
             }
         }
 
+    },
+    extractTarGz: async (filename: string, destFolder: string) => {
+        return await decompress(filename, destFolder, {
+            plugins: [
+                decompressTargz()
+            ]
+        })
+    },
+    listAllFiles: async (folder: string) => {
+        return await dir(folder);
+    },
+    mergeAllFiles: async (files: string[], dest: string) => {
+        return await mergeFiles(files, dest);
     }
+
 
 
 }

@@ -41,6 +41,8 @@ export interface IpIntelligenceList {
         key?: string;
 
     };
+    splitter?: string;
+    splitterIndex?: number;
     labels?: string[];
     updateDate: string;
     insertDate: string;
@@ -87,7 +89,8 @@ export interface IpIntelligenceItem {
 
 export function cloneIpIntelligenceList(obj: IpIntelligenceList): IpIntelligenceList {
     let item: IpIntelligenceList = {
-        id: obj.id, insertDate: obj.insertDate, updateDate: obj.updateDate, name: obj.name, labels: obj.labels
+        id: obj.id, insertDate: obj.insertDate, updateDate: obj.updateDate, name: obj.name, labels: obj.labels,
+        splitter: obj.splitter, splitterIndex: obj.splitterIndex
     }
     if (obj.file)
         item.file = {

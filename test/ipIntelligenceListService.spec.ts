@@ -72,7 +72,7 @@ describe('ipIntelligenceListService', async () => {
         await redisService.hset("/test", { test: data });
         const tmpFile = `/tmp/${Util.randomNumberString()}`;
         const intel = new IpIntelligenceListService(redisService, inputService, esService);
-        await intel.downloadFileFromRedisH("/test", 'test', tmpFile);
+        await intel.downloadFileFromRedisH("/test", 'test', tmpFile, 'test', '/tmp');
         expect(fs.existsSync(tmpFile)).to.be.true;
 
     }).timeout(500000);
@@ -514,6 +514,49 @@ describe('ipIntelligenceListService', async () => {
 
 
     }).timeout(50000);
+
+    it('prepareFile', async () => {
+
+        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const baseFolder = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(baseFolder);
+
+        const filenameZip = `${baseFolder}/${Util.randomNumberString()}`
+        fs.copyFileSync('./test/data/test.zip', filenameZip);
+        await intel.prepareFile('test.zip', filenameZip, baseFolder);
+        const contentZip = fs.readFileSync(filenameZip).toString();
+        expect(contentZip).to.equal('something');
+
+
+
+        const filenameTarGz = `${baseFolder}/${Util.randomNumberString()}`
+        fs.copyFileSync('./test/data/test.tar.gz', filenameTarGz);
+        await intel.prepareFile('test.tar.gz', filenameTarGz, baseFolder);
+        const contentTarGz = fs.readFileSync(filenameTarGz).toString();
+        expect(contentTarGz).to.equal('something');
+
+
+    }).timeout(50000);
+
+    /*     it('manuel', async () => {
+    
+            const item2: IpIntelligenceList = {
+                id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
+                labels: [],
+                http: {
+                    url: 'https://feodotracker.abuse.ch/downloads/ipblocklist.csv',
+                    checkFrequency: 1
+                },
+                splitter: ',', splitterIndex: 1
+            }
+    
+            const intel = new IpIntelligenceListService(redisService, inputService, esService);
+            await intel.process(item2)
+            console.log(intel);
+    
+    
+        }).timeout(50000); */
+
 
 
 

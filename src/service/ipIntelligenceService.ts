@@ -292,13 +292,39 @@ export class IpIntelligenceListService {
         const file = await this.redisService.get(key, false) as Buffer;
         await fsp.writeFile(filename, file);
     }
-    async downloadFileFromRedisH(key: string, field: string, filename: string) {
+    async prepareFile(originalFilename: string, filename: string, baseDirectory: string) {
+        const nextDir = `${baseDirectory}/${Util.randomNumberString()}`
+        await fsp.mkdir(nextDir);
+        if (originalFilename.endsWith('.zip')) {
+            logger.info(`extracting zip file`);
+            await Util.extractZipFile(filename, nextDir);
+            //find all files
+            const files = await Util.listAllFiles(nextDir);
+            await fsp.unlink(filename);
+            // and merge them
+            await Util.mergeAllFiles(files.sort((a, b) => a.localeCompare(b)), filename);
+        } else
+            if (originalFilename.endsWith('.tar.gz')) {
+                logger.info(`extracting zip file`);
+                await Util.extractTarGz(filename, nextDir);
+                //find all files
+                const files = await Util.listAllFiles(nextDir);
+                await fsp.unlink(filename);
+                // and merge them
+                await Util.mergeAllFiles(files.sort((a, b) => a.localeCompare(b)), filename);
+            }
+    }
+    async downloadFileFromRedisH(key: string, field: string, filename: string, originalFileName: string, baseDirectory: string) {
         const file = await this.redisService.hgetBuffer(key, field) as Buffer;
         await fsp.writeFile(filename, file);
+        await this.prepareFile(originalFileName, filename, baseDirectory);
     }
 
-    async downloadFileFromUrl(url: string, filename: string) {
+    async downloadFileFromUrl(url: string, baseDirectory: string, filename: string) {
         await Util.downloadFile(url, filename);
+        await this.prepareFile(url, filename, baseDirectory);
+
+
     }
 
     async hashOfFile(filename: string) {
@@ -309,7 +335,7 @@ export class IpIntelligenceListService {
 
 
 
-    async splitFile(folder: string, filename: string, max: number) {
+    async splitFile(folder: string, filename: string, max: number, splitter?: string, splitterIndex?: number) {
         let files: Map<number, { handle: fsp.FileHandle, page: number, items: string[], filepath: string }> = new Map();
         try {
 
@@ -319,24 +345,33 @@ export class IpIntelligenceListService {
 
             await Util.readFileLineByLine(filename, async (line) => {
                 try {
-                    if (line)
-                        if (this.inputService.checkCidr(line, false) || this.inputService.checkIp(line, false)) {
-                            const hash = Util.fastHashLow(line, random);
-                            const file = hash % max;
-                            const filepath = `${folder}/${file}_file`;
-                            if (!files.has(file)) {
-                                const fileHandle = await fsp.open(filepath, 'w+');//truncate and open
-                                files.set(file, { handle: fileHandle, page: file, items: [], filepath: filepath });
-                            }
-                            const model = files.get(file);
-                            model?.items.push(line);
-                            if (model && model.items.length > 10000) {
-                                await model.handle.write(model.items.join('\n') + '\n');
-                                model.items = [];
-                            }
-                        }
-                } catch (ignore) {
+                    if (line) {
+                        if (splitter) {//split line
+                            const parts = line.split(splitter);
+                            line = splitterIndex ? parts[splitterIndex] : parts[0];
+                            if (line)
+                                line = line.replace(/"/g, '').replace(/'/g, '').trim();
+                        } else
+                            line = line.trim();
+                        if (line)
+                            if (this.inputService.checkCidr(line, false) || this.inputService.checkIp(line, false)) {
+                                const hash = Util.fastHashLow(line, random);
+                                const file = hash % max;
+                                const filepath = `${folder}/${file}_file`;
+                                if (!files.has(file)) {
+                                    const fileHandle = await fsp.open(filepath, 'w+');//truncate and open
+                                    files.set(file, { handle: fileHandle, page: file, items: [], filepath: filepath });
+                                }
+                                const model = files.get(file);
+                                model?.items.push(line);
+                                if (model && model.items.length > 10000) {
+                                    await model.handle.write(model.items.join('\n') + '\n');
+                                    model.items = [];
+                                }
 
+                            }
+                    }
+                } catch (ignore) {
                 }
                 return true;
             });
@@ -553,14 +588,14 @@ export class IpIntelligenceListService {
             let hash = '';
             if (item.http) {
                 logger.info(`ip intelligence downloading ${item.name} data from ${item.http.url}`);
-                await this.downloadFileFromUrl(item.http.url, tmpFilename);
+                await this.downloadFileFromUrl(item.http.url, tmpDirectory, tmpFilename);
                 hash = status?.hash || '';
 
             } else
                 if (item.file) {
                     logger.info(`ip intelligence downloading ${item.name} data from file`);
                     const key = `/intelligence/ip/list/${item.id}/file`;
-                    await this.downloadFileFromRedisH(key, 'content', tmpFilename);
+                    await this.downloadFileFromRedisH(key, 'content', tmpFilename, item.file.source || '', tmpDirectory);
                     hash = status?.hash || '';
                 }
             const fileHash = await this.hashOfFile(tmpFilename);
@@ -569,7 +604,7 @@ export class IpIntelligenceListService {
             if (hash != fileHash) {
                 hash = fileHash;
                 logger.info(`ip intelligence splitting file ${tmpFilename}`)
-                const files = await this.splitFile(tmpDirectory, tmpFilename, 10000);
+                const files = await this.splitFile(tmpDirectory, tmpFilename, 10000, item.splitter, item.splitterIndex);
                 hasFile = files.length > 0;
                 // make map for fast iteration
                 const filesMap: Map<number, { page: number, hash: string, filename: string }> = new Map();

@@ -376,6 +376,8 @@ routerIpIntelligenceAuthenticated.put('/list',
             await ipIntelligenceService.listService.saveListFile(after, path);
             await ipIntelligenceService.listService.deleteListStatus(after);
             await fsp.unlink(path);
+        } else if (after) {
+            await ipIntelligenceService.listService.deleteListStatus(after);
         }
 
         return res.status(200).json(safe);

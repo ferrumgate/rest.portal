@@ -619,6 +619,51 @@ describe('util ', () => {
 
     });
 
+    it('extractTarGz', async () => {
+        const tmp = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmp);
+
+        const ops = await Util.extractTarGz("./test/data/test.tar.gz", tmp);
+        expect(fs.existsSync(`${tmp}/test.txt`)).to.be.true;
+
+
+    });
+
+    it('listAllFiles', async () => {
+        const tmp = `/tmp/${Util.randomNumberString()}`;
+
+        const tmp1 = `${tmp}/${Util.randomNumberString()}`;
+        const tmp2 = `${tmp1}/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmp2, { recursive: true });
+        fs.writeFileSync(`${tmp}/a.txt`, "test");
+        fs.writeFileSync(`${tmp1}/b.txt`, "test");
+        fs.writeFileSync(`${tmp2}/c.txt`, "test");
+
+
+        const ops = await Util.listAllFiles(tmp);
+        //console.log(ops);
+        expect(ops.length).to.equal(3);
+    });
+
+    it('mergeAllFiles', async () => {
+        const tmp = `/tmp/${Util.randomNumberString()}`;
+
+        const tmp1 = `${tmp}/${Util.randomNumberString()}`;
+        const tmp2 = `${tmp1}/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmp2, { recursive: true });
+        fs.writeFileSync(`${tmp}/a.txt`, "test");
+        fs.writeFileSync(`${tmp1}/b.txt`, "test");
+        fs.writeFileSync(`${tmp2}/c.txt`, "test");
+
+
+        const ops = await Util.listAllFiles(tmp);
+        ops.sort((a, b) => a.localeCompare(b));
+        const dest = `${tmp}/d.txt`;
+        await Util.mergeAllFiles(ops, dest);
+        expect(fs.existsSync(dest)).to.be.true;
+
+    });
+
 
 
 
