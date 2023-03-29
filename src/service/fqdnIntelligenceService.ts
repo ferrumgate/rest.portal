@@ -64,7 +64,7 @@ export class FqdnIntelligenceService {
 
         if (keys.length) {
 
-            const pipe = await this.redis.multi();
+            const pipe = await this.redis.pipeline();
             for (const k of keys) {
                 await pipe.hgetAll(k);
             }
@@ -113,7 +113,7 @@ export class FqdnIntelligenceService {
     async rGetBigObjs<Nullable>(paths: FqdnPath[], probs: string[], callback?: (val: Nullable | null) => Promise<Nullable[]>) {
 
         let rpaths = paths.map(x => this.pathCalculate(x));
-        const pipe = await this.redis.multi();
+        const pipe = await this.redis.pipeline();
         for (const rpath of rpaths) {
             await pipe.hgetAll(rpath);
         }

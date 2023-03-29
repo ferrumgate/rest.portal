@@ -12,175 +12,15 @@ import { RBACDefault } from "../model/rbac";
 import { authorizeAsAdmin } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
-import { IpIntelligenceBWItem, IpIntelligenceSource } from "../model/IpIntelligence";
+import { cloneIpIntelligenceList, cloneIpIntelligenceSource, IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
 import IPCIDR from "ip-cidr";
-
+import fsp from 'fs/promises'
+import multer from 'multer';
+import { once } from "events";
+const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 } });
 
 /////////////////////////////////  ip intelligence //////////////////////////////////
 export const routerIpIntelligenceAuthenticated = express.Router();
-
-
-
-routerIpIntelligenceAuthenticated.get('(\/blacklist|\/whitelist)',
-    asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
-    asyncHandler(async (req: any, res: any, next: any) => {
-        const isBlackListRequest = req.path.includes('/blacklist');
-        const ip = req.query.ip;
-        const ids = req.query.ids as string;
-        const page = req.query.page;
-        const pageSize = req.query.pageSize;
-        logger.info(`query ip intelligence ${isBlackListRequest ? 'blacklist' : 'whitelist'}`);
-        const appService = req.appService as AppService;
-        const configService = appService.configService;
-        let items: IpIntelligenceBWItem[] = [];
-        let total = 0;
-        if (ip) {
-            const data =
-                isBlackListRequest ?
-                    await configService.getIpIntelligenceBlackListItemByIp(ip.toLowerCase()) :
-                    await configService.getIpIntelligenceWhiteListItemByIp(ip.toLowerCase());
-            if (data)
-                items.push(data);
-            total = items.length;
-
-        } else
-            if (ids) {
-                const parts = ids.split(',');
-                for (const id of parts) {
-                    const data = isBlackListRequest ?
-                        await configService.getIpIntelligenceBlackListItem(id) :
-                        await configService.getIpIntelligenceWhiteListItem(id);
-                    if (data)
-                        items.push(data);
-                }
-                total = items.length;
-
-            } else {
-                if (!pageSize) {
-                    const data = isBlackListRequest ?
-                        await configService.getIpIntelligenceBlackList() :
-                        await configService.getIpIntelligenceWhiteList();
-                    total = data.length;
-                    items = items.concat(data);
-                } else {
-                    const data = isBlackListRequest ?
-                        await configService.getIpIntelligenceBlackListBy(page, pageSize) :
-                        await configService.getIpIntelligenceWhiteListBy(page, pageSize);
-                    total = data.total;
-                    items = items.concat(data.items);
-                }
-            }
-
-        return res.status(200).json({ total: total, items: items });
-
-    }))
-
-routerIpIntelligenceAuthenticated.delete('(\/blacklist|\/whitelist)/:id',
-    asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
-    asyncHandler(async (req: any, res: any, next: any) => {
-        const isBlackListRequest = req.path.includes('/blacklist');
-        const { id } = req.params;
-        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
-        const currentUser = req.currentUser as User;
-        const currentSession = req.currentSession as AuthSession;
-
-        logger.info(`delete ip intelligence ${isBlackListRequest ? 'blacklist' : 'whitelist'} with id: ${id}`);
-        const appService = req.appService as AppService;
-        const configService = appService.configService;
-        const auditService = appService.auditService;
-
-        const item = isBlackListRequest ?
-            await configService.getIpIntelligenceBlackListItem(id) :
-            await configService.getIpIntelligenceWhiteListItem(id);
-        if (!item) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceBWItemNotFound, 'no bw item found');
-
-
-        const { before } = isBlackListRequest ?
-            await configService.deleteIpIntelligenceBlackListItem(item.id) :
-            await configService.deleteIpIntelligenceWhiteListItem(item.id);
-        isBlackListRequest ?
-            await auditService.logDeleteIpIntelligenceBlackList(currentSession, currentUser, before) :
-            await auditService.logDeleteIpIntelligenceWhiteList(currentSession, currentUser, before);
-        return res.status(200).json({});
-
-    }))
-
-
-function cloneIpIntelligenceBWItem(data: IpIntelligenceBWItem): IpIntelligenceBWItem {
-    return { id: data.id, insertDate: data.insertDate, val: data.val, description: data.description };
-}
-routerIpIntelligenceAuthenticated.post('(\/blacklist|\/whitelist)',
-    asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
-    asyncHandler(authorizeAsAdmin),
-    asyncHandler(async (req: any, res: any, next: any) => {
-        const isBlackListRequest = req.path.includes('/blacklist');
-        logger.info(`saving a new ip intelligence ${isBlackListRequest ? 'blacklist' : 'whitelist'}`);
-        const currentUser = req.currentUser as User;
-        const currentSession = req.currentSession as AuthSession;
-        const appService = req.appService as AppService;
-        const configService = appService.configService;
-        const inputService = appService.inputService;
-        const auditService = appService.auditService;
-
-        const inputs = req.body as { items: IpIntelligenceBWItem[] };
-        let results: { item: IpIntelligenceBWItem, errMsg?: string }[] = [];
-        let results2: IpIntelligenceBWItem[] = [];
-        //first check all of input data , if they are valid
-        for (const input of inputs.items) {
-            try {
-                input.id = Util.randomNumberString(16);
-                input.insertDate = new Date().toISOString();
-
-                await inputService.checkCidr(input.val);
-                results2.push(input);
-            } catch (err: any) {
-                logger.error(err);
-                results.push({ item: input, errMsg: err.message })
-            }
-        }
-
-        //check if they exits
-        for (const input of results2) {
-            try {
-                const cidr = new IPCIDR(input.val);
-                input.val = Util.cidrNormalize(input.val);
-                let exists = false;
-                const existItem = isBlackListRequest ?
-                    await configService.getIpIntelligenceBlackListItemByIp(cidr.addressStart.correctForm()) :
-                    await configService.getIpIntelligenceWhiteListItemByIp(cidr.addressStart.correctForm());
-                if (existItem) {
-                    const existsItemCidr = new IPCIDR(existItem.val);
-                    const isStartContains = existsItemCidr.contains(cidr.addressStart.correctForm());
-                    const isEndContains = existsItemCidr.contains(cidr.addressEnd.correctForm());
-                    if (isStartContains && isEndContains)
-                        exists = true;
-
-                }
-                if (exists) {
-                    results.push({ item: input, errMsg: 'already exists' });
-                } else {
-                    const safe = cloneIpIntelligenceBWItem(input);
-                    const { before, after } = isBlackListRequest ?
-                        await configService.saveIpIntelligenceBlackListItem(safe) :
-                        await configService.saveIpIntelligenceWhiteListItem(safe);
-                    isBlackListRequest ?
-                        await auditService.logSaveIpIntelligenceBlackListItem(currentSession, currentUser, before, after) :
-                        await auditService.logSaveIpIntelligenceWhiteListItem(currentSession, currentUser, before, after);
-                    results.push({ item: input })
-                }
-            } catch (err: any) {
-                logger.error(err);
-                results.push({ item: input, errMsg: err.message })
-            }
-        }
-        return res.status(200).json({ results: results });
-
-    }))
 
 
 
@@ -222,12 +62,6 @@ routerIpIntelligenceAuthenticated.delete('/source/:id',
         return res.status(200).json({});
 
     }))
-function cloneIpIntelligenceSource(obj: IpIntelligenceSource): IpIntelligenceSource {
-    return {
-        id: obj.id, insertDate: obj.insertDate, updateDate: obj.updateDate, name: obj.name, type: obj.type,
-        apiKey: obj.apiKey
-    }
-}
 
 routerIpIntelligenceAuthenticated.put('/source',
     asyncHandler(passportInit),
@@ -314,6 +148,297 @@ routerIpIntelligenceAuthenticated.post('/source/check',
         return res.status(200).json({});
 
     }))
+
+
+// ip/intelligence/list
+
+
+routerIpIntelligenceAuthenticated.post('/list/file',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(upload.single('file')),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        logger.info(`uploading a file`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        const isSystemConfigured = await configService.getIsConfigured();
+        if (!isSystemConfigured) {
+            logger.warn(`system is not configured yet`);
+            throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+        }
+        const file = req.file;
+        const key = Util.randomNumberString(16);
+        /* let readStream: fs.ReadStream | null = null;
+        let writeStream: fs.WriteStream | null = null;
+        try {
+
+            await fsp.mkdir('/tmp/files');
+            const path = `/tmp/files/${key}`
+            writeStream = fs.createWriteStream(path);
+            readStream = fs.createReadStream(file.path)
+            readStream.on('close', () => { writeStream?.close(); writeStream = null; readStream = null; });
+            readStream.pipe(writeStream);
+            await once(readStream, 'close');
+
+        } finally {
+            await fsp.unlink(file.path);
+            writeStream?.close();
+
+        } */
+
+        await fsp.mkdir('/tmp/uploads', { recursive: true });
+        const path = `/tmp/uploads/${key}`
+        const buf = await fsp.readFile(file.path, { encoding: 'binary' });
+        await fsp.writeFile(path, buf);
+
+        return res.status(200).json({ key: key });
+
+    }))
+
+
+
+
+
+routerIpIntelligenceAuthenticated.get('/list/:id/file',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(upload.single('file')),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        let id = req.params.id;
+
+        logger.info(`downloading a file`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        const ipIntelligence = appService.ipIntelligenceService;
+
+        const isSystemConfigured = await configService.getIsConfigured();
+        if (!isSystemConfigured) {
+            logger.warn(`system is not configured yet`);
+            throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+        }
+
+        const list = await configService.getIpIntelligenceList(id);
+        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellegence list');
+
+        res.attachment(`${list.name}_${new Date().toISOString()}`);
+        await ipIntelligence.listService.getAllListItems(list, () => true, async (item: string) => {
+            res.write(item);
+            res.write('\n');
+        })
+        res.write('\n');
+        return res.end();
+
+    }))
+
+
+
+routerIpIntelligenceAuthenticated.get('/list',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const search = req.query.search;
+        logger.info(`query ip intelligence list`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const ipIntelligence = appService.ipIntelligenceService;
+        const inputService = appService.inputService;
+        let lists: IpIntelligenceList[] = [];
+        if (search && inputService.checkIp(search, false)) {
+            const listIds = await ipIntelligence.listService.getByIpAll(search);
+            const allLists = await configService.getIpIntelligenceLists();
+            allLists.filter(x => listIds.items.includes(x.id)).forEach(y => lists.push(y));
+
+
+        } else {
+            lists = await configService.getIpIntelligenceLists();
+            if (search) {
+                lists = lists.filter(x => {
+                    if (x.name.toLowerCase().includes(search)) return true;
+                    if (x.labels?.find(y => y.toLowerCase().includes(search))) return true;
+                    if (x.http?.url.includes(search)) return true;
+                    if (x.file?.source?.includes(search)) return true;
+                    return false;
+                })
+            }
+        }
+        let statusList = await ipIntelligence.listService.getListStatusBulk(lists);
+        return res.status(200).json({ items: lists, itemsStatus: statusList });
+
+    }))
+
+
+routerIpIntelligenceAuthenticated.delete('/list/:id',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        logger.info(`delete ip intelligence list with id: ${id}`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const auditService = appService.auditService;
+        const ipIntelligence = appService.ipIntelligenceService;
+
+        const list = await configService.getIpIntelligenceList(id);
+        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellegence list');
+
+        await ipIntelligence.listService.deleteList(list);
+
+        const { before } = await configService.deleteIpIntelligenceList(list.id);
+        await auditService.logDeleteIpIntelligenceList(currentSession, currentUser, before);
+
+        return res.status(200).json({});
+
+    }))
+
+
+routerIpIntelligenceAuthenticated.put('/list/:id/reset',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        logger.info(`delete ip intelligence list with id: ${id}`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const auditService = appService.auditService;
+        const ipIntelligence = appService.ipIntelligenceService;
+
+        const list = await configService.getIpIntelligenceList(id);
+        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellegence list');
+
+        await ipIntelligence.listService.resetList(list);
+        await auditService.logResetIpIntelligenceList(currentSession, currentUser, list, list);
+
+        list.updateDate = new Date().toISOString();
+        const { before, after } = await configService.saveIpIntelligenceList(list);
+        await auditService.logSaveIpIntelligenceList(currentSession, currentUser, before, after);
+
+        return res.status(200).json({});
+
+    }))
+
+
+routerIpIntelligenceAuthenticated.put('/list',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const input = req.body as IpIntelligenceList;
+        logger.info(`changing ip intelligence list ${input.id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        const ipIntelligenceService = appService.ipIntelligenceService;
+
+        await inputService.checkNotEmpty(input.id);
+        await inputService.checkNotEmpty(input.name);
+        if (input.http) {
+            await inputService.checkNotEmpty(input.http.url);
+        }
+        const list = await configService.getIpIntelligenceList(input.id);
+        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intelligence source');
+
+        //if item is file
+        let fileUploadedName = input.file?.key;//we must set here, next fuction will delete this
+
+        const safe = cloneIpIntelligenceList(input);
+        safe.insertDate = list.insertDate;
+        safe.updateDate = new Date().toISOString();
+        const { before, after } = await configService.saveIpIntelligenceList(safe);
+        await auditService.logSaveIpIntelligenceList(currentSession, currentUser, before, after);
+        if (fileUploadedName && after) {//log file to redis intelligence
+            const path = `/tmp/uploads/${fileUploadedName}`
+            await ipIntelligenceService.listService.saveListFile(after, path);
+            await ipIntelligenceService.listService.deleteListStatus(after);
+            await fsp.unlink(path);
+        } else if (after) {
+            await ipIntelligenceService.listService.deleteListStatus(after);
+        }
+
+        return res.status(200).json(safe);
+
+    }))
+
+
+routerIpIntelligenceAuthenticated.post('/list',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(upload.single('file')),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        logger.info(`saving a new ip intelligence list`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        const ipIntelligenceService = appService.ipIntelligenceService;
+
+        const input = req.body as IpIntelligenceList;
+        input.id = Util.randomNumberString(16);
+
+        await inputService.checkNotEmpty(input.name);
+        if (input.http) {
+            await inputService.checkNotEmpty(input.http.url);
+        }
+        if (input.file) {
+            await inputService.checkNotEmpty(input.file.source);
+        }
+        //if item is file
+        let fileUploadedName = input.file?.key;//we must set here, next fuction will delete this
+
+        const safe = cloneIpIntelligenceList(input);
+        safe.insertDate = new Date().toISOString();
+        safe.updateDate = new Date().toISOString();
+
+
+
+
+        const { before, after } = await configService.saveIpIntelligenceList(safe);
+        await auditService.logSaveIpIntelligenceList(currentSession, currentUser, before, after);
+        if (fileUploadedName && after) {//log file to redis intelligence
+            const path = `/tmp/uploads/${fileUploadedName}`
+            await ipIntelligenceService.listService.saveListFile(after, path);
+            await fsp.unlink(path);
+        }
+        return res.status(200).json(safe);
+
+    }))
+
+
+
+
+
+
+
+
+
 
 
 

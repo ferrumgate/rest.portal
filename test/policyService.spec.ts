@@ -16,6 +16,12 @@ import { AuthorizationRule } from '../src/model/authorizationPolicy';
 import { ESService } from '../src/service/esService';
 import { Tunnel } from '../src/model/tunnel';
 import { AuthSession } from '../src/model/authSession';
+import { IpIntelligenceListService } from '../src/service/ipIntelligenceService';
+import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
+import { InputService } from '../src/service/inputService';
+import { config } from 'process';
+import { IpIntelligenceList } from '../src/model/IpIntelligence';
+
 
 
 
@@ -26,22 +32,28 @@ const expect = chai.expect;
 
 
 
-
 describe('policyService ', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     const host = 'https://192.168.88.250:9200';
     const user = 'elastic';
     const pass = '123456';
-    beforeEach((done) => {
+
+    beforeEach(async () => {
 
         if (fs.existsSync(filename))
             fs.rmSync(filename);
-        done();
+
     })
+
 
     it('isUserIdOrGroupIdAllowed', async () => {
         const redisService = new RedisService();
+
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
@@ -57,7 +69,7 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService)
+        const policyService = new PolicyService(configService, ipintel)
         let result = await policyService.isUserIdOrGroupIdAllowed(rule, { id: 'x', groupIds: [] } as any)
         expect(result).to.be.false;
 
@@ -79,6 +91,10 @@ describe('policyService ', async () => {
     it('is2FA', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
@@ -94,7 +110,7 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService);
+        const policyService = new PolicyService(configService, ipintel);
         let result = await policyService.is2FA(rule, false)
         expect(result).to.be.true;
 
@@ -116,6 +132,10 @@ describe('policyService ', async () => {
     it('isCustomWhiteListContains', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
@@ -133,15 +153,15 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService);
+        const policyService = new PolicyService(configService, ipintel);
         let result = await policyService.isCustomWhiteListContains(rule, '1.2.3,4')
         expect(result).to.be.false;
 
-        rule.profile.ips = [{ ip: '192.168.0.1' }]
+        rule.profile.whiteListIps = [{ ip: '192.168.0.1' }]
         let result2 = await policyService.isCustomWhiteListContains(rule, '192.168.0.1')
         expect(result2).to.be.true;
 
-        rule.profile.ips = [{ ip: '192.168.0.1' }, { ip: '192.168.9.10/32' }, { ip: '192.168.10.0/24' }]
+        rule.profile.whiteListIps = [{ ip: '192.168.0.1' }, { ip: '192.168.9.10/32' }, { ip: '192.168.10.0/24' }]
         let result3 = await policyService.isCustomWhiteListContains(rule, '192.168.9.10')
         expect(result3).to.be.true;
 
@@ -158,9 +178,13 @@ describe('policyService ', async () => {
     }).timeout(5000);
 
 
-    it('isIpIntelligenceWhiteListContains', async () => {
+    it('isCustomBlackListContains', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
@@ -178,20 +202,86 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService);
+        const policyService = new PolicyService(configService, ipintel);
+        let result = await policyService.isCustomBlackListContains(rule, '1.2.3,4')
+        expect(result).to.be.false;
+
+        rule.profile.blackListIps = [{ ip: '192.168.0.1' }]
+        let result2 = await policyService.isCustomBlackListContains(rule, '192.168.0.1')
+        expect(result2).to.be.true;
+
+        rule.profile.blackListIps = [{ ip: '192.168.0.1' }, { ip: '192.168.9.10/32' }, { ip: '192.168.10.0/24' }]
+        let result3 = await policyService.isCustomBlackListContains(rule, '192.168.9.10')
+        expect(result3).to.be.true;
+
+
+
+        let result4 = await policyService.isCustomBlackListContains(rule, '192.168.10.15')
+        expect(result4).to.be.true;
+
+        let result5 = await policyService.isCustomBlackListContains(rule, '192.168.9.11')
+        expect(result5).to.be.false;
+
+
+
+    }).timeout(5000);
+
+    function writeToTmpFile(content: string) {
+        const tmpFolder = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmpFolder);
+        const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
+        fs.writeFileSync(tmpFolderFile, content);
+        return tmpFolderFile;
+    }
+
+    it('isIpIntelligenceWhiteListContains', async () => {
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: 'networkId',
+            userOrgroupIds: ['somegroupid'],
+            profile: {
+
+            },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+
+        }
+
+        const policyService = new PolicyService(configService, ipintel);
         let result = await policyService.isIpIntelligenceWhiteListContains(rule, '1.2.3,4')
         expect(result).to.be.false;
 
-        rule.profile.ipIntelligence = { isBlackList: false, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: true }
-        configService.config.ipIntelligence.whiteList.push({ id: 'adfa', insertDate: '', val: '192.168.0.1/32' })
+        const list: IpIntelligenceList = {
+            id: Util.randomNumberString(),
+            name: 'test', insertDate: new Date().toISOString(), updateDate: new Date().toISOString(),
+
+        }
+        await configService.saveIpIntelligenceList(list);
+        let tmpFile = writeToTmpFile("192.168.0.1/32")
+        await ipintel.listService.saveToStore(list, tmpFile, 0);
+        await Util.sleep(1000);
+
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [list.id] };
         let result2 = await policyService.isIpIntelligenceWhiteListContains(rule, '192.168.0.1')
         expect(result2).to.be.true;
 
 
-        rule.profile.ipIntelligence = { isBlackList: false, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: true }
-        configService.config.ipIntelligence.whiteList.push({ id: 'adfa1', insertDate: '', val: '192.168.0.1/32' })
-        configService.config.ipIntelligence.whiteList.push({ id: 'adfa2', insertDate: '', val: '192.168.9.10/32' })
-        configService.config.ipIntelligence.whiteList.push({ id: 'adfa3', insertDate: '', val: '192.168.10.0/24' })
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [list.id] };
+        tmpFile = writeToTmpFile("192.168.0.1/32\n192.168.9.10/32\n192.168.10.0/24")
+        await ipintel.listService.deleteFromStore(list, 0);
+        await ipintel.listService.saveToStore(list, tmpFile, 0);
+        await Util.sleep(1000);
         let result3 = await policyService.isIpIntelligenceWhiteListContains(rule, '192.168.9.10')
         expect(result3).to.be.true;
 
@@ -210,6 +300,10 @@ describe('policyService ', async () => {
     it('isIpIntelligenceBlackListContains', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService()
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
@@ -227,20 +321,35 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService);
+        const policyService = new PolicyService(configService, ipintel);
         let result = await policyService.isIpIntelligenceBlackListContains(rule, '1.2.3,4')
         expect(result).to.be.false;
 
-        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false }
-        configService.config.ipIntelligence.blackList.push({ id: 'adfa', insertDate: '', val: '192.168.0.1/32' })
+        const list: IpIntelligenceList = {
+            id: Util.randomNumberString(),
+            name: 'test', insertDate: new Date().toISOString(), updateDate: new Date().toISOString(),
+        }
+
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [list.id], whiteLists: [] };
+
+        //save
+
+        await configService.saveIpIntelligenceList(list);
+        let tmpFile = writeToTmpFile("192.168.0.1/32")
+        await ipintel.listService.saveToStore(list, tmpFile, 0);
+        await Util.sleep(1000);
+
+
         let result2 = await policyService.isIpIntelligenceBlackListContains(rule, '192.168.0.1')
         expect(result2).to.be.true;
 
 
-        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false }
-        configService.config.ipIntelligence.blackList.push({ id: 'adfa1', insertDate: '', val: '192.168.0.1/32' })
-        configService.config.ipIntelligence.blackList.push({ id: 'adfa2', insertDate: '', val: '192.168.9.10/32' })
-        configService.config.ipIntelligence.blackList.push({ id: 'adfa3', insertDate: '', val: '192.168.10.0/24' })
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [list.id], whiteLists: [] };
+
+        tmpFile = writeToTmpFile("192.168.0.1/32\n192.168.9.10/32\n192.168.10.0/24")
+        await ipintel.listService.saveToStore(list, tmpFile, 0);
+        await Util.sleep(1000);
+
         let result3 = await policyService.isIpIntelligenceBlackListContains(rule, '192.168.9.10')
         expect(result3).to.be.true;
 
@@ -251,6 +360,12 @@ describe('policyService ', async () => {
         let result5 = await policyService.isIpIntelligenceBlackListContains(rule, '192.168.9.11')
         expect(result5).to.be.false;
 
+        //list is not in blacklist
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: ['someother'], whiteLists: [] };
+
+        let result6 = await policyService.isIpIntelligenceBlackListContains(rule, '192.168.9.10')
+        expect(result6).to.be.false;
+
 
 
     }).timeout(5000);
@@ -260,6 +375,10 @@ describe('policyService ', async () => {
     it('isIpIntelligenceBlackIp', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
@@ -277,29 +396,35 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService);
+        const policyService = new PolicyService(configService, ipintel);
         let result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: true, isHostingIp: false, isProxyIp: false } as AuthSession);
         expect(result).to.be.false;
 
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: true, isHosting: false, isProxy: false };
+        rule.profile.ipIntelligence = { isCrawler: true, isHosting: false, isProxy: false, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: true, isHostingIp: false, isProxyIp: false } as AuthSession);
         expect(result).to.be.true;
 
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: true, isProxy: false };
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: true, isProxy: false, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: false, isHostingIp: true, isProxyIp: false } as AuthSession);
         expect(result).to.be.true;
 
 
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: true };
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: true, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceBlackIp(rule, { isCrawlerIp: false, isHostingIp: false, isProxyIp: true } as AuthSession);
         expect(result).to.be.true;
 
 
     }).timeout(5000);
 
+
+
     it('isIpIntelligenceCountryContains', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
@@ -317,7 +442,7 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService);
+        const policyService = new PolicyService(configService, ipintel);
         let result = await policyService.isIpIntelligenceCountryContains(rule);
         expect(result).to.be.true;
 
@@ -338,9 +463,14 @@ describe('policyService ', async () => {
     }).timeout(5000);
 
 
+
     it('isTimeAllowed', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
@@ -358,7 +488,7 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService);
+        const policyService = new PolicyService(configService, ipintel);
         let result = await policyService.isTimeAllowed(rule);
         expect(result).to.be.true;
 
@@ -389,10 +519,26 @@ describe('policyService ', async () => {
 
     }).timeout(5000);
 
+    async function saveIpList(configService: ConfigService, ipintel: IpIntelligenceService, content: string) {
+        const list: IpIntelligenceList = {
+            id: Util.randomNumberString(),
+            name: 'test', insertDate: new Date().toISOString(), updateDate: new Date().toISOString(),
+
+        }
+        await configService.saveIpIntelligenceList(list);
+        let tmpFile = writeToTmpFile(content);
+        await ipintel.listService.saveToStore(list, tmpFile, 0);
+        await Util.sleep(1000);
+        return list;
+    }
 
     it('isIpIntelligenceAllowed', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService()
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
         let rule: AuthenticationRule = {
@@ -410,55 +556,59 @@ describe('policyService ', async () => {
 
         }
 
-        const policyService = new PolicyService(configService);
-        rule.profile.ips = [{ ip: '1.1.1.1/32' }];
+        const policyService = new PolicyService(configService, ipintel);
+        rule.profile.whiteListIps = [{ ip: '1.1.1.1/32' }];
+        rule.profile.blackListIps = [];
         let result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.1.1.1');
         expect(result).to.be.true;
 
 
-        rule.profile.ips = [];
-        configService.config.ipIntelligence.whiteList = [{ val: '1.2.3.4/32' } as any]
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: true, isCrawler: false, isHosting: false, isProxy: false }
-        result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.2.3.4');
-        expect(result).to.be.true;
-
-
-        rule.profile.ips = [];
-        configService.config.ipIntelligence.whiteList = [];
-        configService.config.ipIntelligence.blackList = [{ val: '1.2.3.4/32' } as any]
-        rule.profile.ipIntelligence = { isBlackList: true, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
-        result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.2.3.4');
+        rule.profile.blackListIps = [{ ip: '1.1.1.1/32' }];
+        rule.profile.whiteListIps = [];
+        result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.1.1.1');
         expect(result).to.be.false;
 
 
-        rule.profile.ips = [];
-        configService.config.ipIntelligence.whiteList = [];
-        configService.config.ipIntelligence.blackList = []
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: true, isHosting: true, isProxy: true }
+        rule.profile.whiteListIps = [];
+        rule.profile.blackListIps = [];
+        const list1 = await saveIpList(configService, ipintel, '1.2.3.4/32');
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [list1.id] };
+        result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.2.3.4');
+        expect(result).to.be.true;
+        await esService.reset();
+
+
+        rule.profile.whiteListIps = [];
+        rule.profile.blackListIps = [];
+        const list2 = await saveIpList(configService, ipintel, '1.2.3.4/32');
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [list2.id], whiteLists: [] };
+        result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.2.3.4');
+        expect(result).to.be.false;
+        await esService.reset();
+
+
+        rule.profile.whiteListIps = [];
+        rule.profile.blackListIps = [];
+        rule.profile.ipIntelligence = { isCrawler: true, isHosting: true, isProxy: true, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true } as any, '1.2.3.4');
         expect(result).to.be.false;
 
 
-        rule.profile.ips = [];
-        configService.config.ipIntelligence.whiteList = [];
-        configService.config.ipIntelligence.blackList = []
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
+        rule.profile.whiteListIps = [];
+        rule.profile.blackListIps = [];
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [] };
         rule.profile.locations = [{ countryCode: 'TR' }]
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true, countryCode: 'TR' } as any, '1.2.3.4');
         expect(result).to.be.true;
 
 
 
-        rule.profile.ips = [];
-        configService.config.ipIntelligence.whiteList = [];
-        configService.config.ipIntelligence.blackList = []
-        rule.profile.ipIntelligence = { isBlackList: false, isWhiteList: false, isCrawler: false, isHosting: false, isProxy: false }
+        rule.profile.whiteListIps = [];
+        rule.profile.blackListIps = [];
+        rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [] };
         rule.profile.locations = [{ countryCode: 'UK' }]
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true, countryCode: 'TR' } as any, '1.2.3.4');
         expect(result).to.be.false;
-
-
-
 
 
 
@@ -469,6 +619,10 @@ describe('policyService ', async () => {
     it('authenticate', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
 
@@ -498,7 +652,7 @@ describe('policyService ', async () => {
         let redisValue = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
         await redisService.hset(`/tunnel/id/testsession`, redisValue);
 
-        const policyService = new PolicyService(configService);
+        const policyService = new PolicyService(configService, ipintel);
 
         //no tunnel with this key
         try {
@@ -558,7 +712,7 @@ describe('policyService ', async () => {
             userOrgroupIds: ['somegroupid'],
             profile: {
                 is2FA: true,
-                ips: [{ ip: '10.0.0.0/24' }]
+                whiteListIps: [{ ip: '10.0.0.0/24' }]
             },
             isEnabled: true,
             updateDate: new Date().toISOString(),
@@ -584,9 +738,9 @@ describe('policyService ', async () => {
         try {
 
             configService.config.gateways = [gateway];
-            rule.profile.ips = [];
-            configService.config.ipIntelligence.blackList = [{ val: '0.0.0.0/0', id: '12', insertDate: '' }];
-            rule.profile.ipIntelligence = { isBlackList: true, isCrawler: false, isHosting: false, isProxy: false, isWhiteList: false };
+            rule.profile.whiteListIps = [];
+            const list = await saveIpList(configService, ipintel, '0.0.0.0/0');
+            rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [list.id], whiteLists: [] };
             const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
             await redisService.hset(`/tunnel/id/testsession`, tun);
             const session: AuthSession = { id: '1', is2FA: true, userId: '1', ip: '10.0.0.2' } as AuthSession;
@@ -596,24 +750,18 @@ describe('policyService ', async () => {
 
 
 
-
-
-
-
-
-
-
-
-
     }).timeout(5000);
 
 
-    const esHost = 'https://192.168.88.250:9200';
-    const esUser = "elastic";
-    const esPass = '123456';
+
     it('authorize', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
 
@@ -659,9 +807,9 @@ describe('policyService ', async () => {
         await redisService.set(`/tunnel/ip/10.0.0.2`, 'testsession');
         await redisService.set(`/tunnel/trackId/3`, 'testsession');
 
-        const es = new ESService(configService, esHost, esUser, esPass);
 
-        const policyService = new PolicyService(configService);
+
+        const policyService = new PolicyService(configService, ipintel);
 
         //no client with this key
         try {
@@ -780,9 +928,15 @@ describe('policyService ', async () => {
     }).timeout(5000);
 
 
+
     it('userNetworks', async () => {
         const redisService = new RedisService();
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
         await configService.setES({ host: host, user: user, pass: pass })
         configService.config.authenticationPolicy.rules = [];
 
@@ -828,7 +982,7 @@ describe('policyService ', async () => {
             userOrgroupIds: ['somegroupid'],
             profile: {
                 is2FA: true,
-                ips: []
+                whiteListIps: []
             },
             isEnabled: true,
             updateDate: new Date().toISOString(),
@@ -841,7 +995,7 @@ describe('policyService ', async () => {
         const session: AuthSession = { is2FA: true, ip: '1.1.1.1' } as AuthSession;
         const tunnel: Tunnel = { clientIp: '1.1.1.1' };
 
-        const policyService = new PolicyService(configService);
+        const policyService = new PolicyService(configService, ipintel);
         //prepare for test
         net.isEnabled = false; net2.isEnabled = false;
         let result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
@@ -870,7 +1024,7 @@ describe('policyService ', async () => {
         expect(result[0].needsTime).to.be.false;
 
 
-        rule.profile.ips?.push({ ip: '1.2.3.4' });
+        rule.profile.whiteListIps?.push({ ip: '1.2.3.4' });
         result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
         expect(result.length).to.be.equal(1);
         expect(result[0].needs2FA).to.be.true;
@@ -879,8 +1033,9 @@ describe('policyService ', async () => {
 
         // 2fa is true, all ips are in blacklist
         session.is2FA = true;
-        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true };
-        configService.config.ipIntelligence.blackList.push({ id: '123', insertDate: '', val: '0.0.0.0/0' });
+        const list1 = await saveIpList(configService, ipintel, '0.0.0.0/0');
+        rule.profile.ipIntelligence = { isCrawler: true, isHosting: true, isProxy: true, blackLists: [list1.id], whiteLists: [] };
+
         result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
         expect(result.length).to.be.equal(1);
         expect(result[0].needs2FA).to.be.false;
@@ -889,9 +1044,8 @@ describe('policyService ', async () => {
 
         // 2fa is true, all ips are in blacklist, only 1.1.1.1 is in whitelist
         session.is2FA = true;
-        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true };
-        configService.config.ipIntelligence.blackList.push({ id: '123', insertDate: '', val: '0.0.0.0/0' });
-        configService.config.ipIntelligence.whiteList.push({ id: '123', insertDate: '', val: session.ip + '/32' });
+        const list2 = await saveIpList(configService, ipintel, session.ip + '/32');
+        rule.profile.ipIntelligence = { isCrawler: true, isHosting: true, isProxy: true, blackLists: [list1.id], whiteLists: [list2.id] };
         result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
         expect(result.length).to.be.equal(1);
         expect(result[0].action).to.be.equal('allow');
@@ -900,9 +1054,8 @@ describe('policyService ', async () => {
 
         // 2fa is true, all ips are in blacklist, only 1.1.1.1 is in whitelist but time problem 
         session.is2FA = true;
-        rule.profile.ipIntelligence = { isBlackList: true, isCrawler: true, isHosting: true, isProxy: true, isWhiteList: true };
-        configService.config.ipIntelligence.blackList.push({ id: '123', insertDate: '', val: '0.0.0.0/0' });
-        configService.config.ipIntelligence.whiteList.push({ id: '123', insertDate: '', val: session.ip + '/32' });
+        rule.profile.ipIntelligence = { isCrawler: true, isHosting: true, isProxy: true, blackLists: [list1.id], whiteLists: [list2.id] };
+
         const dayOfWeek = new Date().getDay() + 1;
         rule.profile.times = [
             { timezone: 'America/New_York', days: [dayOfWeek < 7 ? dayOfWeek : 0] }
@@ -916,13 +1069,9 @@ describe('policyService ', async () => {
 
 
 
-
-
     })
 
 
 
 
 })
-
-

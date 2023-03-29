@@ -21,7 +21,6 @@ import { WatchItem } from '../src/service/watchService';
 import { authenticate } from 'passport';
 import { SystemLogService } from '../src/service/systemLogService';
 import { ConfigWatch } from '../src/model/config';
-import { calculateIpIntelligenceBWItemId, IpIntelligenceBWItem } from '../src/model/IpIntelligence';
 import IPCIDR from 'ip-cidr';
 import * as ipaddr from 'ip-address';
 import { calculateCountryId } from '../src/model/country';
@@ -2355,195 +2354,6 @@ describe('redisConfigService', async () => {
     });
 
 
-    it('saveIpIntelligenceBlackListItem/getIpIntelligenceBlackListItem', async () => {
-
-        //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.blackList = [];
-        await configService.init();
-
-        const add = { id: Util.randomNumberString(), val: '192.168.0.0/24', insertDate: new Date().toISOString() };
-        await configService.saveIpIntelligenceBlackListItem(add);
-        const items = await configService.getIpIntelligenceBlackList()
-        expect(items.length).to.equal(1);
-
-        await configService.deleteIpIntelligenceBlackListItem(add.id);
-        const items2 = await configService.getIpIntelligenceBlackList()
-        expect(items2.length).to.equal(0);
-
-
-    });
-
-    it('saveIpIntelligenceWhiteListItem/getIpIntelligenceWhiteListItem', async () => {
-
-        //first create a config and save to redis
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.whiteList = [];
-        await configService.init();
-
-        const add = { id: Util.randomNumberString(), val: '192.168.0.0/24', insertDate: new Date().toISOString() };
-        await configService.saveIpIntelligenceWhiteListItem(add);
-        const items = await configService.getIpIntelligenceWhiteList()
-        expect(items.length).to.equal(1);
-
-        await configService.deleteIpIntelligenceWhiteListItem(add.id);
-        const items2 = await configService.getIpIntelligenceWhiteList()
-        expect(items2.length).to.equal(0);
-
-    });
-
-
-
-
-
-
-
-    it('saveIpIntelligenceListItemIndex/deleteIpIntelligenceListItemIndex', async () => {
-
-        const network: IpIntelligenceBWItem = {
-            id: Util.randomNumberString(),
-            val: '192.168.0.0/24',
-            insertDate: new Date().toISOString()
-        };
-
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.whiteList = [];
-        await configService.init();
-
-
-        await configService.saveIpIntelligenceListItemIndex('whiteList', network);
-        const item = await configService.getIpIntelligenceListItemIndex('whiteList', '192.168.0.10');
-        expect(item).exist
-
-        await configService.deleteIpIntelligenceListItemIndex('whiteList', network);
-        const item2 = await configService.getIpIntelligenceListItemIndex('whiteList', '192.168.0.10');
-        expect(item2).not.exist;
-
-
-    }).timeout(20000);
-
-
-
-    it('getIpIntelligenceWhiteListItemByIp/getIpIntelligenceWhiteListItem', async () => {
-
-
-
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.whiteList = [];
-        await configService.init();
-
-        const add = { id: Util.randomNumberString(), val: '192.168.0.10/24', insertDate: new Date().toISOString() };
-        const items = await configService.saveIpIntelligenceWhiteListItem(add);
-        const item1 = await configService.getIpIntelligenceWhiteListItemByIp('192.168.0.50');
-        expect(item1).exist;
-        const item2 = await configService.getIpIntelligenceWhiteListItemByIp('192.168.1.50');
-        expect(item2).not.exist;
-
-        const item3 = await configService.getIpIntelligenceWhiteListItem(add.id);
-        expect(item3).exist;
-
-    }).timeout(20000);
-
-    it('getIpIntelligenceBlackListItemByIp/getIpIntelligenceBlackListItem', async () => {
-
-
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.whiteList = [];
-        await configService.init();
-
-        const add = { id: Util.randomNumberString(), val: '192.168.0.10/24', insertDate: new Date().toISOString() }
-        const items = await configService.saveIpIntelligenceBlackListItem(add);
-        const item = await configService.getIpIntelligenceBlackListItemByIp('192.168.0.50');
-        expect(item).exist;
-        const item2 = await configService.getIpIntelligenceBlackListItemByIp('192.168.1.50');
-        expect(item2).not.exist;
-
-        const item3 = await configService.getIpIntelligenceBlackListItem(add.id);
-        expect(item3).exist;
-
-
-    }).timeout(20000);
-
-    it('getIpIntelligenceBlackListItemByIp2/getIpIntelligenceBlackListItem2', async () => {
-
-
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.whiteList = [];
-        await configService.init();
-
-        const add = { id: Util.randomNumberString(), val: '0.0.0.0/0', insertDate: new Date().toISOString() }
-        const items = await configService.saveIpIntelligenceBlackListItem(add);
-        const item = await configService.getIpIntelligenceBlackListItemByIp('192.168.0.50');
-        expect(item).exist;
-        const item2 = await configService.getIpIntelligenceBlackListItemByIp('192.168.1.50');
-        expect(item2).exist;
-
-        const item3 = await configService.getIpIntelligenceBlackListItem(add.id);
-        expect(item3).exist;
-
-
-    }).timeout(20000);
-
-    it('getIpIntelligenceBlackListBy', async () => {
-
-
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.whiteList = [];
-        await configService.init();
-
-        const add1 = { id: Util.randomNumberString(), val: '192.168.0.10/24', insertDate: new Date().toISOString() }
-        await configService.saveIpIntelligenceBlackListItem(add1);
-
-        const add2 = { id: Util.randomNumberString(), val: '192.168.1.10/24', insertDate: new Date().toISOString() }
-        await configService.saveIpIntelligenceBlackListItem(add2);
-
-        const add3 = { id: Util.randomNumberString(), val: '192.168.2.10/24', insertDate: new Date().toISOString() }
-        await configService.saveIpIntelligenceBlackListItem(add3);
-
-
-        const item = await configService.getIpIntelligenceBlackListBy(0, 2);
-        expect(item.total).to.equal(3);
-        expect(item.items.length).to.equal(2);
-
-        const item2 = await configService.getIpIntelligenceBlackListBy(1, 2);
-        expect(item2.total).to.equal(3);
-        expect(item2.items.length).to.equal(1);
-
-
-
-
-    }).timeout(20000);
-    it('getIpIntelligenceWhiteListBy', async () => {
-
-
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.ipIntelligence.whiteList = [];
-        await configService.init();
-
-        const add1 = { id: Util.randomNumberString(), val: '192.168.0.10/24', insertDate: new Date().toISOString() }
-        await configService.saveIpIntelligenceWhiteListItem(add1);
-
-        const add2 = { id: Util.randomNumberString(), val: '192.168.1.10/24', insertDate: new Date().toISOString() }
-        await configService.saveIpIntelligenceWhiteListItem(add2);
-
-        const add3 = { id: Util.randomNumberString(), val: '192.168.2.10/24', insertDate: new Date().toISOString() }
-        await configService.saveIpIntelligenceWhiteListItem(add3);
-
-
-        const item = await configService.getIpIntelligenceWhiteListBy(0, 2);
-        expect(item.total).to.equal(3);
-        expect(item.items.length).to.equal(2);
-
-        const item2 = await configService.getIpIntelligenceWhiteListBy(1, 2);
-        expect(item2.total).to.equal(3);
-        expect(item2.items.length).to.equal(1);
-
-
-
-
-    }).timeout(20000);
-
-
     it('getIpIntelligenceSources/saveIpIntelligenceSource/deleteIpIntelligenceSource', async () => {
 
         //first create a config and save to redis
@@ -2563,6 +2373,32 @@ describe('redisConfigService', async () => {
         await configService.deleteIpIntelligenceSource(item.id);
         const source3 = await configService.getIpIntelligenceSources();
         expect(source3.length).to.equal(0);
+
+
+    });
+
+    it('getIpIntelligenceList/saveIpIntelligenceList/deleteIpIntelligenceList', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.ipIntelligence.sources = [];
+        await configService.init();
+
+        const lists = await configService.getIpIntelligenceLists();
+        expect(lists.length).to.equal(0);
+
+        const item = { name: 'test', type: 'test2', id: Util.randomNumberString(), insertDate: '', updateDate: '' };
+        await configService.saveIpIntelligenceList(item);
+
+        const source2 = await configService.getIpIntelligenceLists();
+        expect(source2.length).to.equal(1);
+
+        const source3 = await configService.getIpIntelligenceList(source2[0].id);
+        expect(source3).exist;
+
+        await configService.deleteIpIntelligenceSource(item.id);
+        const source4 = await configService.getIpIntelligenceSources();
+        expect(source4.length).to.equal(0);
 
 
     });

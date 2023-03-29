@@ -77,7 +77,8 @@ export class ErrorCodes {
     static ErrConflictData: string = 'ErrConflictData';
     static ErrSystemIsNotReady: string = "ErrConfigIsNotReady";
     static ErrEmailConfigNeed: string = 'ErrEmailConfigNeed';
-    static ErrFqdnIsNotValid: string = 'ErrFqdnIsNotValid'
+    static ErrFqdnIsNotValid: string = 'ErrFqdnIsNotValid';
+    static ErrIpNotValid: string = 'ErrIpNotValid'
 
 
 }

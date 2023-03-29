@@ -13,6 +13,9 @@ import { GatewayService } from '../src/service/gatewayService';
 import chaiExclude from 'chai-exclude';
 import { IpIntelligenceSource } from '../src/model/IpIntelligence';
 import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
+import { InputService } from '../src/service/inputService';
+import { ESService } from '../src/service/esService';
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -33,6 +36,7 @@ describe.skip('ipIntelligenceService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', filename);
     const redisService = new RedisService();
+    const inputService = new InputService();
 
     before(async () => {
         await configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
@@ -48,10 +52,11 @@ describe.skip('ipIntelligenceService', async () => {
             insertDate: '', name: 'ipapi.com', type: 'ipapi.com', updateDate: '',
             apiKey: ipApiComApiKey, isFreePlan: false
         }
+        const esService = new ESService(configService);
         //await configService.saveIpIntelligenceSource(source);
         let errorOccured = false;
         try {
-            const intel = new IpIntelligenceService(configService, redisService);
+            const intel = new IpIntelligenceService(configService, redisService, inputService, esService);
             const result = await intel.check(source);
         } catch (err) {
             errorOccured = true;
@@ -68,8 +73,8 @@ describe.skip('ipIntelligenceService', async () => {
             apiKey: ipApiComApiKey, isFreePlan: true, isSecurityPlan: false
         }
         //await configService.saveIpIntelligenceSource(source);
-
-        const intel = new IpIntelligenceService(configService, redisService);
+        const esService = new ESService(configService);
+        const intel = new IpIntelligenceService(configService, redisService, inputService, esService);
         const result = await intel.check(source);
         expect(result).exist;
         expect(result?.countryCode).exist;
@@ -85,10 +90,11 @@ describe.skip('ipIntelligenceService', async () => {
             insertDate: '', name: 'ipdata.co', type: 'ipdata.co', updateDate: '',
             apiKey: '',
         }
+        const esService = new ESService(configService);
         //await configService.saveIpIntelligenceSource(source);
         let errorOccured = false;
         try {
-            const intel = new IpIntelligenceService(configService, redisService);
+            const intel = new IpIntelligenceService(configService, redisService, inputService, esService);
             const result = await intel.check(source);
         } catch (err) {
             errorOccured = true;
@@ -105,8 +111,9 @@ describe.skip('ipIntelligenceService', async () => {
             insertDate: '', name: 'ipdata.co', type: 'ipdata.co', updateDate: '',
             apiKey: ipDataCoApiKey,
         }
+        const esService = new ESService(configService);
         //await configService.saveIpIntelligenceSource(source);
-        const intel = new IpIntelligenceService(configService, redisService);
+        const intel = new IpIntelligenceService(configService, redisService, inputService, esService);
         const result = await intel.check(source);
         expect(result).exist;
         expect(result?.countryCode).exist;
@@ -124,10 +131,11 @@ describe.skip('ipIntelligenceService', async () => {
             insertDate: '', name: 'ipify.org', type: 'ipify.org', updateDate: '',
             apiKey: 'adfasd',
         }
+        const esService = new ESService(configService);
         //await configService.saveIpIntelligenceSource(source);
         let errorOccured = false;
         try {
-            const intel = new IpIntelligenceService(configService, redisService);
+            const intel = new IpIntelligenceService(configService, redisService, inputService, esService);
             const result = await intel.check(source);
         } catch (err) {
             errorOccured = true;
@@ -145,7 +153,8 @@ describe.skip('ipIntelligenceService', async () => {
             apiKey: ipifyOrgApiKey, isSecurityPlan: true
         }
         //await configService.saveIpIntelligenceSource(source);
-        const intel = new IpIntelligenceService(configService, redisService);
+        const esService = new ESService(configService);
+        const intel = new IpIntelligenceService(configService, redisService, inputService, esService);
         const result = await intel.check(source);
         expect(result).exist;
         expect(result?.countryCode).exist;
@@ -161,19 +170,20 @@ describe.skip('ipIntelligenceService', async () => {
             apiKey: ipifyOrgApiKey, isSecurityPlan: true
         }
         await configService.saveIpIntelligenceSource(source);
+        const esService = new ESService(configService);
         class Mock extends IpIntelligenceService {
             /**
              *
              */
-            constructor(configService: ConfigService, redisService: RedisService) {
-                super(configService, redisService);
+            constructor(configService: ConfigService, redisService: RedisService, esService: ESService) {
+                super(configService, redisService, inputService, esService);
 
             }
             getClass() {
                 return this.api;
             }
         }
-        const intel = new Mock(configService, redisService);
+        const intel = new Mock(configService, redisService, esService);
         expect(intel.getClass()).not.exist;
         const result = await intel.reConfigure();
         expect(intel.getClass()).exist;
@@ -188,14 +198,17 @@ describe.skip('ipIntelligenceService', async () => {
             apiKey: ipifyOrgApiKey, isSecurityPlan: true
         }
         await configService.saveIpIntelligenceSource(source);
+        const esService = new ESService(configService);
 
-        const intel = new IpIntelligenceService(configService, redisService);
+        const intel = new IpIntelligenceService(configService, redisService, inputService, esService);
         const result = await intel.query('1.1.1.1');
         expect(result).exist;
         expect(result?.countryCode).exist;
 
 
     }).timeout(500000);
+
+
 
 
 

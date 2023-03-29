@@ -420,7 +420,9 @@ describe('userApiAuthenticated', async () => {
             userOrgroupIds: ['someid'],
             profile: {
                 is2FA: false,
-                ips: []
+                blackListIps: [],
+                whiteListIps: []
+
             },
             isEnabled: true,
             updateDate: new Date().toISOString(),

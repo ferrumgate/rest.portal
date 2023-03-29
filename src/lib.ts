@@ -1,7 +1,7 @@
 
 export { logger } from './common';
 export { ErrorCodes, RestfullException } from "./restfullException";
-export { ESService, ESServiceLimited } from './service/esService';
+export { ESService, ESServiceLimited, ESServiceExtended } from './service/esService';
 export { RedisService, RedisPipelineService, RedisServiceManuel } from './service/redisService';
 export { ConfigService } from './service/configService';
 export { RedisWatcherService } from './service/redisWatcherService';
@@ -29,3 +29,5 @@ export { AuthenticationRule, AuthenticationPolicy } from './model/authentication
 export { AuthorizationRule, AuthorizationPolicy } from './model/authorizationPolicy';
 export { InputService } from './service/inputService';
 export { SessionService } from './service/sessionService';
+export { IpIntelligence, IpIntelligenceList } from './model/IpIntelligence'
+export { IpIntelligenceService, IpIntelligenceListService } from './service/ipIntelligenceService';

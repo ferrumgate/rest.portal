@@ -5,6 +5,7 @@ import { logger } from '../common';
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../restfullException';
 import isCidr from 'ip-cidr';
 import validator from 'validator';
+import { isIPv4, isIPv6 } from 'node:net';
 
 /**
  * @summary checks input data
@@ -43,10 +44,25 @@ export class InputService {
      * @param net 
      * @returns throw exception or return 4 (ipv4) or 6 (ipv6)
      */
-    checkCidr(net: string) {
-        if (!net) throw new RestfullException(400, ErrorCodes.ErrNetworkCidrNotValid, ErrorCodes.ErrNetworkCidrNotValid, 'cidr is invalid');
+    checkCidr(net: string, throwException = true) {
+        if (!net && throwException) throw new RestfullException(400, ErrorCodes.ErrNetworkCidrNotValid, ErrorCodes.ErrNetworkCidrNotValid, 'cidr is invalid');
+        if (!net) return false;
         const result = isCidr.isValidCIDR(net);
-        if (!result) throw new RestfullException(400, ErrorCodes.ErrNetworkCidrNotValid, ErrorCodes.ErrNetworkCidrNotValid, 'cidr is invalid');
+        if (!result && throwException) throw new RestfullException(400, ErrorCodes.ErrNetworkCidrNotValid, ErrorCodes.ErrNetworkCidrNotValid, 'cidr is invalid');
+        return result
+
+    }
+    /**
+     * 
+     * @param net 
+     * @returns throw exception or return 4 (ipv4) or 6 (ipv6)
+     */
+    checkIp(ip: string, throwException = true) {
+        if (!ip && throwException) throw new RestfullException(400, ErrorCodes.ErrIpNotValid, ErrorCodes.ErrNetworkCidrNotValid, 'cidr is invalid');
+        if (!ip) return false;
+        const result = isIPv4(ip) || isIPv6(ip);
+        if (!result && throwException) throw new RestfullException(400, ErrorCodes.ErrNetworkCidrNotValid, ErrorCodes.ErrNetworkCidrNotValid, 'cidr is invalid');
+        return result
 
     }
     /**

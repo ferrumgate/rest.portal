@@ -5,8 +5,11 @@ import * as IORedis from 'ioredis';
  */
 export class RedisPipelineService {
     protected pipeline: IORedis.ChainableCommander;
-    constructor(redis: IORedis.Redis | IORedis.Cluster) {
-        this.pipeline = redis.multi();
+    constructor(redis: IORedis.Redis | IORedis.Cluster, pipe = false) {
+        if (pipe)
+            this.pipeline = redis.pipeline();
+        else
+            this.pipeline = redis.multi();
 
     }
     async exec(): Promise<any> {
@@ -107,6 +110,10 @@ export class RedisPipelineService {
         return this;
 
     }
+    async hdel(key: string, fields: string[]) {
+        this.pipeline = await this.pipeline.hdel(key, ...fields);
+        return this;
+    }
     async hgetAll(key: string): Promise<RedisPipelineService> {
 
         this.pipeline = await this.pipeline.hgetall(key);
@@ -195,6 +202,10 @@ export class RedisPipelineService {
         this.pipeline = await this.pipeline.zrange(key, min, max, 'BYLEX', 'LIMIT', offset, count);
         return this.pipeline;
     }
+    async zrembylex(key: string, min: string, max: string) {
+        this.pipeline = await this.pipeline.zremrangebylex(key, `[${min}`, `[${max}`);
+        return this.pipeline;
+    }
 
 
 
@@ -277,7 +288,7 @@ export class RedisService {
     async set(key: string, value: any, options?: any): Promise<void> {
 
         let valueStr = value;
-        if (typeof value !== 'string' && typeof value !== 'number') {
+        if (typeof value !== 'string' && typeof value !== 'number' && !(value instanceof Buffer)) {
             valueStr = JSON.stringify(value);
         }
         if (!options || !options.ttl)
@@ -285,10 +296,11 @@ export class RedisService {
         else
             await this.redis.set(key, valueStr, 'PX', options.ttl);
     }
+
     async setnx(key: string, value: any, ttl?: number): Promise<boolean> {
 
         let valueStr = value;
-        if (typeof value !== 'string' && typeof value !== 'number') {
+        if (typeof value !== 'string' && typeof value !== 'number' && !(value instanceof Buffer)) {
             valueStr = JSON.stringify(value);
         }
         if (!ttl)
@@ -350,6 +362,9 @@ export class RedisService {
         await this.redis.pexpire(key, milisecond);
 
     }
+    async exists(key: string) {
+        return (await this.redis.exists(key)) > 0;
+    }
 
     async persist(key: string): Promise<void> {
         await this.redis.persist(key);
@@ -360,6 +375,9 @@ export class RedisService {
     }
     async multi(): Promise<RedisPipelineService> {
         return new RedisPipelineService(this.redis);
+    }
+    async pipeline(): Promise<RedisPipelineService> {
+        return new RedisPipelineService(this.redis, true);
     }
 
 
@@ -386,10 +404,17 @@ export class RedisService {
         return await this.redis.hget(key, field);
 
     }
+    async hgetBuffer(key: string, field: string): Promise<Buffer | null> {
+        return await this.redis.hgetBuffer(key, field);
+
+    }
     async hgetAll(key: string): Promise<Record<string, string>> {
 
         return await this.redis.hgetall(key);
 
+    }
+    async hdel(key: string, fields: string[]) {
+        return await this.redis.hdel(key, ...fields);
     }
     async hmgetAll(key: string, fields: string[]): Promise<Record<string, string> | null> {
 
@@ -629,6 +654,10 @@ export class RedisService {
             return await this.redis.zrange(key, min, max, 'BYLEX', 'LIMIT', offset, count);
         else
             return await this.redis.zrange(key, min, max, 'BYLEX', 'REV', 'LIMIT', offset, count);
+    }
+
+    async zrembylex(key: string, min: string, max: string) {
+        return await this.redis.zremrangebylex(key, `[${min}`, `[${max}`);
     }
 
 

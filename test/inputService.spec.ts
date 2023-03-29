@@ -106,6 +106,27 @@ describe('inputService ', async () => {
     }).timeout(5000);
 
 
+    it('checkIp ', (done) => {
+        const inputService = new InputService();
+        let error = false;
+
+        let result = inputService.checkIp('10.0.0.1', false)
+        expect(result).to.be.true;
+
+        let result2 = inputService.checkIp('::1', false)
+        expect(result2).to.be.true;
+
+        let result3 = inputService.checkIp('10.0.1', false)
+        expect(result3).to.be.false;
+
+        let result4 = inputService.checkIp('10.0.0.1/24', false)
+        expect(result4).to.be.false;
+        done();
+
+
+    }).timeout(5000);
+
+
     it('checkDomain ', (done) => {
         const inputService = new InputService();
         let error = false;

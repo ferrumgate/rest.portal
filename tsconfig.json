@@ -63,6 +63,7 @@
     "./src/**/*.ts",
     "./test/**/*.ts",
     "./**/*.json",
-    "test/configServiceTestData.js"
+    "test/configServiceTestData.js",
+    "test/ipIntelligenceListService.spects"
   ]
 }

@@ -6,7 +6,7 @@ import fs from 'fs';
 
 import nock from 'nock';
 import IPCIDR from 'ip-cidr';
-
+import crypto from 'crypto';
 
 
 
@@ -575,6 +575,93 @@ describe('util ', () => {
         expect(date.second).to.equal(2);
         expect(date.milisecond).to.equal(0);
         expect(date.weekDay).to.equal(0);
+    });
+
+    it('fastHash', () => {
+        const key = Buffer.from('ev5wfjxn8xd0zv2vb61y3hlsbbsfpcjs');
+        const result = Util.fastHashBuffer("test", key);
+        const result2 = Util.fastHashBuffer("test", key);
+        expect(result.toString()).to.equal(result2.toString());
+
+
+    });
+    it('downloadfile', () => {
+
+        Util.downloadFile('https://ferrumgate.com/assets/img/logo.svg', "/tmp/abc.svg");
+
+    });
+
+    it('readFile', async () => {
+        const tmp = `/tmp/${Util.randomNumberString()}`;
+        fs.writeFileSync(tmp, "hello world\nhello world\n");
+        let counter = 0;
+        let items: string[] = [];
+        await Util.readFileLineByLine(tmp, async (line: string) => {
+            counter++;
+            items.push(line);
+            return true;
+        })
+        expect(counter).to.equal(2);
+        expect(items[0]).to.equal('hello world');
+
+        // windows new line test
+        const tmp2 = `/tmp/${Util.randomNumberString()}`;
+        fs.writeFileSync(tmp2, "hello world\r\nhello world\r\n");
+        counter = 0;
+        items = [];
+        await Util.readFileLineByLine(tmp2, async (line: string) => {
+            counter++;
+            items.push(line);
+            return true;
+        })
+        expect(counter).to.equal(2);
+        expect(items[0]).to.equal('hello world');
+
+    });
+
+    it('extractTarGz', async () => {
+        const tmp = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmp);
+
+        const ops = await Util.extractTarGz("./test/data/test.tar.gz", tmp);
+        expect(fs.existsSync(`${tmp}/test/test.txt`)).to.be.true;
+
+
+    });
+
+    it('listAllFiles', async () => {
+        const tmp = `/tmp/${Util.randomNumberString()}`;
+
+        const tmp1 = `${tmp}/${Util.randomNumberString()}`;
+        const tmp2 = `${tmp1}/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmp2, { recursive: true });
+        fs.writeFileSync(`${tmp}/a.txt`, "test");
+        fs.writeFileSync(`${tmp1}/b.txt`, "test");
+        fs.writeFileSync(`${tmp2}/c.txt`, "test");
+
+
+        const ops = await Util.listAllFiles(tmp);
+        //console.log(ops);
+        expect(ops.length).to.equal(3);
+    });
+
+    it('mergeAllFiles', async () => {
+        const tmp = `/tmp/${Util.randomNumberString()}`;
+
+        const tmp1 = `${tmp}/${Util.randomNumberString()}`;
+        const tmp2 = `${tmp1}/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmp2, { recursive: true });
+        fs.writeFileSync(`${tmp}/a.txt`, "test");
+        fs.writeFileSync(`${tmp1}/b.txt`, "test");
+        fs.writeFileSync(`${tmp2}/c.txt`, "test");
+
+
+        const ops = await Util.listAllFiles(tmp);
+        ops.sort((a, b) => a.localeCompare(b));
+        const dest = `${tmp}/d.txt`;
+        await Util.mergeAllFiles(ops, dest);
+        expect(fs.existsSync(dest)).to.be.true;
+
     });
 
 

@@ -682,9 +682,6 @@ describe('configApi ', async () => {
                 .post('/config/import/' + key)
                 .set(`Authorization`, `Bearer ${token}`)
                 .set('content-type', 'multipart/form-data')
-                .field('email', 'myemail@gmail.com')
-                .field('firstname', 'slim')
-                .field('lastname', 'shady')
                 .attach('config', fs.readFileSync(randomfile), 'file.png')
                 .end((err, res) => {
                     if (err)

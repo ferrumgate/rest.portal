@@ -14,6 +14,8 @@ import { Gateway, Network } from "../model/network";
 import { Service } from "../model/service";
 import { AuthSession } from "../model/authSession";
 import { Util } from "../util";
+import { IpIntelligence } from "../model/IpIntelligence";
+import { IpIntelligenceService } from "./ipIntelligenceService";
 
 
 export interface UserNetworkListResponse {
@@ -72,7 +74,7 @@ export class PolicyService {
     /**
      *
      */
-    constructor(private configService: ConfigService,
+    constructor(private configService: ConfigService, private ipIntelligenceService: IpIntelligenceService
     ) {
 
 
@@ -108,9 +110,9 @@ export class PolicyService {
      * @summary check if rule ips includes client ip
      */
     async isCustomWhiteListContains(rule: AuthenticationRule, clientIp: string) {
-        if (!rule.profile.ips?.length) return false;
+        if (!rule.profile.whiteListIps?.length) return false;
         const client = ip.createAddress(clientIp);
-        for (const ipprofile of rule.profile.ips) {
+        for (const ipprofile of rule.profile.whiteListIps) {
 
             if (client.isInSubnet(ip.createAddress(ipprofile.ip)))
                 return true;
@@ -120,12 +122,31 @@ export class PolicyService {
     }
 
     /**
+    * @summary check if rule ips includes client ip
+    */
+    async isCustomBlackListContains(rule: AuthenticationRule, clientIp: string) {
+        if (!rule.profile.blackListIps?.length) return false;
+        const client = ip.createAddress(clientIp);
+        for (const ipprofile of rule.profile.blackListIps) {
+
+            if (client.isInSubnet(ip.createAddress(ipprofile.ip)))
+                return true;
+        }
+        return false;
+
+    }
+
+    /* /**
      * @summary  check if ip intelligence whitelist includes client ip
      */
     async isIpIntelligenceWhiteListContains(rule: AuthenticationRule, clientIp: string) {
-        if (!rule.profile.ipIntelligence?.isWhiteList) return false;
-        const item = await this.configService.getIpIntelligenceWhiteListItemByIp(clientIp);
-        if (item) return true;
+        if (!rule.profile.ipIntelligence?.whiteLists?.length) return false;
+
+        const items = await this.ipIntelligenceService.listService.getByIpAll(clientIp);
+        for (const ite of rule.profile.ipIntelligence?.whiteLists) {
+            if (items.items.includes(ite)) return true;
+        }
+
         return false;
     }
 
@@ -133,9 +154,11 @@ export class PolicyService {
      * @summary check if ip intelligence blacklist includes client ip
      */
     async isIpIntelligenceBlackListContains(rule: AuthenticationRule, clientIp: string) {
-        if (!rule.profile.ipIntelligence?.isBlackList) return false;
-        const item = await this.configService.getIpIntelligenceBlackListItemByIp(clientIp);
-        if (item) return true;
+        if (!rule.profile.ipIntelligence?.blackLists?.length) return false;
+        const items = await this.ipIntelligenceService.listService.getByIpAll(clientIp);
+        for (const ite of rule.profile.ipIntelligence?.blackLists) {
+            if (items.items.includes(ite)) return true;
+        }
         return false;
     }
 
@@ -189,13 +212,17 @@ export class PolicyService {
         //check white lists
         if (await this.isCustomWhiteListContains(rule, ip))
             return true;
-        //check global white list
+        // check ip intelligence lists
         if (await this.isIpIntelligenceWhiteListContains(rule, ip))
             return true;
-        //check global black list
 
+        //check black lists
+        if (await this.isCustomBlackListContains(rule, ip))
+            return false;
+        // check ip intelligence lists
         if (await this.isIpIntelligenceBlackListContains(rule, ip))
             return false;
+
 
         //check proxy ip
         if (await this.isIpIntelligenceBlackIp(rule, session))
