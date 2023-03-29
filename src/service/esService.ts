@@ -1390,14 +1390,14 @@ export class ESServiceExtended extends ESService {
      */
     interval: any;
     configService: ConfigService;
-    constructor(configService: ConfigService, bcastService: BroadcastService, host?: string, username?: string, password?: string) {
+    constructor(configService: ConfigService, host?: string, username?: string, password?: string) {
         super(configService, host, username, password);
         this.configService = configService;
         this.configService.events.on('ready', async () => {
             logger.info(`config service is ready`);
             await this.startReconfigureES();
         })
-        bcastService.on('configChanged', async (evt: ConfigWatch<any>) => {
+        this.configService.events.on('configChanged', async (evt: ConfigWatch<any>) => {
             if (evt.path.startsWith('/config/es')) {
                 logger.info(`es config changed`)
                 await this.startReconfigureES();
