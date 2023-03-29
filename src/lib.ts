@@ -1,7 +1,7 @@
 
 export { logger } from './common';
 export { ErrorCodes, RestfullException } from "./restfullException";
-export { ESService, ESServiceLimited } from './service/esService';
+export { ESService, ESServiceLimited, ESServiceExtended } from './service/esService';
 export { RedisService, RedisPipelineService, RedisServiceManuel } from './service/redisService';
 export { ConfigService } from './service/configService';
 export { RedisWatcherService } from './service/redisWatcherService';

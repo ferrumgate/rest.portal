@@ -624,7 +624,7 @@ describe('util ', () => {
         fs.mkdirSync(tmp);
 
         const ops = await Util.extractTarGz("./test/data/test.tar.gz", tmp);
-        expect(fs.existsSync(`${tmp}/test.txt`)).to.be.true;
+        expect(fs.existsSync(`${tmp}/test/test.txt`)).to.be.true;
 
 
     });

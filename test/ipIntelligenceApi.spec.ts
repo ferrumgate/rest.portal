@@ -686,7 +686,7 @@ describe('ipIntelligenceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expect(response.text).exist;
+        expect(response.type).to.equal('application/octet-stream');
 
 
 
