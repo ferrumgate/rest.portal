@@ -408,7 +408,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('services', this.config.services, pipeline);
         await this.rSave('captcha', undefined, this.config.captcha, pipeline);
         await this.rSave('jwtSSLCertificate', undefined, this.config.jwtSSLCertificate, pipeline);
-        await this.rSave('sslCertificate', undefined, this.config.sslCertificate, pipeline);
+        await this.rSave('webSSLCertificate', undefined, this.config.webSSLCertificate, pipeline);
         await this.rSave('caSSLCertificate', undefined, this.config.caSSLCertificate, pipeline);
         await this.rSave('domain', undefined, this.config.domain, pipeline);
         await this.rSave('url', undefined, this.config.url, pipeline);
@@ -432,24 +432,24 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('lastUpdateTime', this.config.lastUpdateTime, this.config.lastUpdateTime, pipeline);
         //create certs
         {
-            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.com");
+            const { privateKey, publicCrt } = await Util.createSelfSignedCrt("ferrumgate.com");
             await this.rSave('jwtSSLCertificate', undefined, {
                 privateKey: privateKey,
-                publicKey: publicKey,
+                publicKey: publicCrt,
             }, pipeline);
         }
         {
-            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.zero");
+            const { privateKey, publicCrt } = await Util.createSelfSignedCrt("ferrumgate.zero");
             await this.rSave('caSSLCertificate', undefined, {
                 privateKey: privateKey,
-                publicKey: publicKey,
+                publicKey: publicCrt,
             }, pipeline);
         }
         {
-            const { privateKey, publicKey } = await Util.createSelfSignedCrt("secure.ferrumgate.zero");
-            await this.rSave('sslCertificate', undefined, {
+            const { privateKey, publicCrt } = await Util.createSelfSignedCrt("secure.ferrumgate.zero");
+            await this.rSave('webSSLCertificate', undefined, {
                 privateKey: privateKey,
-                publicKey: publicKey,
+                publicKey: publicCrt,
             }, pipeline);
         }
 
@@ -742,13 +742,19 @@ export class RedisConfigService extends ConfigService {
 
     override async getJWTSSLCertificate(): Promise<SSLCertificate> {
         this.isReady();
-        this.config.jwtSSLCertificate = await this.rGet<SSLCertificate>('jwtSSLCertificate') || {};
+        this.config.jwtSSLCertificate = await this.rGet<SSLCertificate>('jwtSSLCertificate') || {
+            id: Util.randomNumberString(), name: 'JWT', insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(), labels: []
+        };
         return await super.getJWTSSLCertificate();
     }
 
     override async setJWTSSLCertificate(cert: SSLCertificate | {}) {
         this.isReady();
-        this.config.jwtSSLCertificate = await this.rGet<SSLCertificate>('jwtSSLCertificate') || {};
+        this.config.jwtSSLCertificate = await this.rGet<SSLCertificate>('jwtSSLCertificate') || {
+            id: Util.randomNumberString(), name: 'JWT', insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(), labels: []
+        };
         const ret = await super.setJWTSSLCertificate(cert);
         const pipeline = await this.redis.multi();
         await this.rSave('jwtSSLCertificate', ret.before, ret.after, pipeline);
@@ -759,18 +765,29 @@ export class RedisConfigService extends ConfigService {
 
     override async getCASSLCertificate(): Promise<SSLCertificate> {
         this.isReady();
-        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {};
+        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {
+            id: Util.randomNumberString(), name: 'CA', insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(), labels: []
+        };
         return await super.getCASSLCertificate();
     }
     override async getCASSLCertificatePublic(): Promise<string | null | undefined> {
         this.isReady();
-        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {};
+        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {
+            id: Util.randomNumberString(), name: 'CA', insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            labels: []
+        };
         return await super.getCASSLCertificatePublic();
     }
 
     override async setCASSLCertificate(cert: SSLCertificate | {}) {
         this.isReady();
-        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {};
+        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {
+            id: Util.randomNumberString(), name: 'CA', insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            labels: []
+        };
         const ret = await super.setCASSLCertificate(cert);
         const pipeline = await this.redis.multi();
         await this.rSave('caSSLCertificate', ret.before, ret.after, pipeline);
@@ -778,6 +795,60 @@ export class RedisConfigService extends ConfigService {
         await pipeline.exec();
         return ret;
     }
+
+    //intermedidate certificates
+    /// Group
+
+    override async getInSSLCertificate(id: string): Promise<SSLCertificate | undefined> {
+        this.isReady();
+        this.config.inSSLCertificates = await this.rGetAll('inSSLCertificates');
+        return await super.getInSSLCertificate(id);
+
+    }
+
+    override async getInSSLCertificateAll() {
+        this.isReady();
+        this.config.inSSLCertificates = await this.rGetAll('inSSLCertificates');
+        return await super.getInSSLCertificateAll();
+    }
+
+
+    override  async deleteInSSLCertificate(id: string) {
+        this.isReady();
+        this.config.inSSLCertificates = [];
+        const cert = await this.rGetWith<SSLCertificate>('inSSLCertificates', id);
+
+        if (cert) {
+            this.config.inSSLCertificates.push(cert);
+
+            const pipeline = await this.redis.multi();
+
+            await this.rDel('inSSLCertificates', cert, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+
+        }
+        return this.createTrackEvent(cert);
+
+
+    }
+
+    override async saveInSSLCertificate(cert: SSLCertificate) {
+        this.isReady();
+        this.config.inSSLCertificates = [];
+        const crt = await this.rGetWith<SSLCertificate>('inSSLCertificates', cert.id);
+        if (crt)
+            this.config.inSSLCertificates.push(crt);
+
+        let ret = await super.saveInSSLCertificate(cert);
+        const pipeline = await this.redis.multi();
+        await this.rSave('inSSLCertificates', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+
+    }
+
 
     //TODO test
     override async getEmailSetting(): Promise<EmailSetting> {
@@ -1641,9 +1712,27 @@ export class RedisConfigService extends ConfigService {
         this.config.auth.saml = {
             providers: await this.rGetAll('auth/saml/providers')
         }
-        cfg.jwtSSLCertificate = await this.rGet('jwtSSLCertificate') || {};
-        cfg.sslCertificate = await this.rGet('sslCertificate') || {};
-        cfg.caSSLCertificate = await this.rGet('caSSLCertificate') || {};
+        cfg.jwtSSLCertificate = await this.rGet('jwtSSLCertificate') || {
+            id: Util.randomNumberString(),
+            name: 'JWT',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            labels: []
+        };
+        cfg.webSSLCertificate = await this.rGet('webSSLCertificate') || {
+            id: Util.randomNumberString(),
+            name: 'SSL',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            labels: []
+        };
+        cfg.caSSLCertificate = await this.rGet('caSSLCertificate') || {
+            id: Util.randomNumberString(),
+            name: 'CA',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            labels: []
+        };
         cfg.users = await this.rGetAll('users');
         cfg.groups = await this.rGetAll('groups');
         cfg.services = await this.rGetAll('services');
@@ -1684,7 +1773,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('services', cfg.services, pipeline);
         await this.rSave('captcha', undefined, cfg.captcha, pipeline);
         await this.rSave('jwtSSLCertificate', undefined, cfg.jwtSSLCertificate, pipeline);
-        await this.rSave('sslCertificate', undefined, cfg.sslCertificate, pipeline);
+        await this.rSave('webSSLCertificate', undefined, cfg.webSSLCertificate, pipeline);
         await this.rSave('caSSLCertificate', undefined, cfg.caSSLCertificate, pipeline);
         await this.rSave('domain', undefined, cfg.domain, pipeline);
         await this.rSave('url', undefined, cfg.url, pipeline);
@@ -1709,7 +1798,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('jwtSSLCertificate', undefined, cfg.jwtSSLCertificate, pipeline);
         await this.rSave('caSSLCertificate', undefined, cfg.caSSLCertificate, pipeline);
 
-        await this.rSave('sslCertificate', undefined, cfg.sslCertificate, pipeline);
+        await this.rSave('webSSLCertificate', undefined, cfg.webSSLCertificate, pipeline);
         await this.rSave('es', undefined, cfg.es, pipeline);
 
 

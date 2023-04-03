@@ -400,7 +400,7 @@ describe('util ', () => {
         const domain = `${Util.randomNumberString(8)}.com`;
         const output = await Util.createSelfSignedCrt(domain, `/tmp/${random}`);
         expect(output.privateKey).exist;
-        expect(output.publicKey).exist;
+        expect(output.publicCrt).exist;
         expect(fs.existsSync(`/tmp/${random}/${domain}.crt`)).to.be.true
         expect(fs.existsSync(`/tmp/${random}/${domain}.key`)).to.be.true
 
@@ -413,9 +413,9 @@ describe('util ', () => {
 
 
         const domain = `${Util.randomNumberString(8)}.com`;
-        const output = await Util.createCASignedCrt(domain, ca, `/tmp/${random}`);
+        const output = await Util.createCASignedCrt(domain, domain, ca, '3650', `/tmp/${random}`);
         expect(output.privateKey).exist;
-        expect(output.publicKey).exist;
+        expect(output.publicCrt).exist;
         expect(fs.existsSync(`/tmp/${random}/${domain}.crt`)).to.be.true
         expect(fs.existsSync(`/tmp/${random}/${domain}.key`)).to.be.true
 
@@ -426,15 +426,15 @@ describe('util ', () => {
 
 
         const domain = `test.com`;
-        const output = await Util.createCASignedCrt(domain, ca);
-        const x = await Util.getCertificateInfo(output.publicKey, ca.publicKey);
+        const output = await Util.createCASignedCrt(domain, domain, ca);
+        const x = await Util.getCertificateInfo(output.publicCrt, ca.publicCrt);
         expect(x.isValid).to.be.true;
         expect(x.remainingMS > 0);
 
 
         const cahostname2 = `cahost2`;
         const ca2 = await Util.createSelfSignedCrt(cahostname2);
-        const x2 = await Util.getCertificateInfo(output.publicKey, ca2.publicKey);
+        const x2 = await Util.getCertificateInfo(output.publicCrt, ca2.publicCrt);
         expect(x2.isValid).to.be.false;
         expect(x2.remainingMS > 0);
 
@@ -449,15 +449,15 @@ describe('util ', () => {
 
 
         const domain = `test.com`;
-        const output = await Util.createCASignedCrt(domain, ca);
-        const x = await Util.getCertificateInfo(output.publicKey, ca.publicKey);
+        const output = await Util.createCASignedCrt(domain, domain, ca);
+        const x = await Util.getCertificateInfo(output.publicCrt, ca.publicCrt);
         expect(x.isValid).to.be.true;
         expect(x.remainingMS > 0);
 
 
         const cahostname2 = `cahost2`;
         const ca2 = await Util.createSelfSignedCrt(cahostname2);
-        const x2 = await Util.getCertificateInfo(output.publicKey, ca2.publicKey);
+        const x2 = await Util.getCertificateInfo(output.publicCrt, ca2.publicCrt);
         expect(x2.isValid).to.be.false;
         expect(x2.remainingMS > 0);
 

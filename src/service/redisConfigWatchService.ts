@@ -214,13 +214,34 @@ export class RedisConfigWatchService extends ConfigService {
                             await this.processArray(this.config.auth.saml.providers, path, item, val.id);
                             break;
                         case 'jwtSSLCertificate':
-                            this.config.jwtSSLCertificate = await this.redisConfig.rGet(path) || {};
+                            this.config.jwtSSLCertificate = await this.redisConfig.rGet(path) || {
+                                id: Util.randomNumberString(),
+                                name: 'JWT',
+                                insertDate: new Date().toISOString(),
+                                updateDate: new Date().toISOString(),
+                                labels: []
+                            };
                             break;
-                        case 'sslCertificate':
-                            this.config.sslCertificate = await this.redisConfig.rGet(path) || {};
+                        case 'webSSLCertificate':
+                            this.config.webSSLCertificate = await this.redisConfig.rGet(path) || {
+                                id: Util.randomNumberString(),
+                                name: 'JWT',
+                                insertDate: new Date().toISOString(),
+                                updateDate: new Date().toISOString(),
+                                labels: []
+                            };
                             break;
                         case 'caSSLCertificate':
-                            this.config.caSSLCertificate = await this.redisConfig.rGet(path) || {};
+                            this.config.caSSLCertificate = await this.redisConfig.rGet(path) || {
+                                id: Util.randomNumberString(),
+                                name: 'JWT',
+                                insertDate: new Date().toISOString(),
+                                updateDate: new Date().toISOString(),
+                                labels: []
+                            };
+                            break;
+                        case 'inSSLCertificates':
+                            await this.processArray(this.config.inSSLCertificates, path, item, val.id);
                             break;
                         case 'users':
                             await this.processArray(this.config.users, path, item, val.id);
@@ -267,10 +288,8 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'ipIntelligence/lists':
                             await this.processArray(this.config.ipIntelligence.lists, path, item, val.id);
                             break;
-
-
-
                         default:
+                            logger.warn(`not implemented path ${item.path}`);
                             throw new Error(`not implemented path ${item.path}`)
                     }
                     logger.info(`config changed ${watch.val.path} -> ${watch.val.type} id:${watch.val.val?.id || 'unknown'}`)

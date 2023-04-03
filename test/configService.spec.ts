@@ -15,6 +15,7 @@ import { AuthorizationRule } from '../src/model/authorizationPolicy';
 
 import chaiExclude from 'chai-exclude';
 import { ConfigWatch } from '../src/model/config';
+import { SSLCertificate } from '../src/model/sslCertificate';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -2033,6 +2034,121 @@ describe('configService', async () => {
 
 
     });
+
+
+    it('getInSSLCertificate', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.inSSLCertificates = [];
+        let crt: SSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'web',
+            labels: [],
+            insertDate: new Date().toISOString(),
+            privateKey: 'adfa', publicCrt: 'adf223a',
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveInSSLCertificate(crt);
+
+        const returned = await configService.getInSSLCertificate(crt.id);
+        expect(exclude(returned)).to.deep.equal(exclude(crt));
+
+
+    });
+
+
+
+    it('getInSSLCertificateAll', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.groups = [];
+        let crt: SSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            privateKey: 'adfasf', publicCrt: 'asdfaadfasdfae',
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveInSSLCertificate(crt);
+
+        let crt2: SSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'south',
+            labels: ['test'],
+            insertDate: new Date().toISOString(),
+            privateKey: 'asdfasfa', publicCrt: 'asdfasdfawe',
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveInSSLCertificate(crt2);
+
+        const returned = await configService.getInSSLCertificateAll();
+        expect(returned.length).to.be.equal(2);
+        expect(exclude(returned[0])).to.deep.equal(exclude(crt));
+
+    });
+
+    it('saveInSSLCertificateAll', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.groups = [];
+        let crt: SSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            privateKey: 'asdfaf', publicCrt: 'adfafweadfaf',
+            updateDate: new Date().toISOString(),
+
+        }
+        //add
+        await configService.saveInSSLCertificate(crt);
+
+        crt.name = 'north2';
+        //add
+        await configService.saveInSSLCertificate(crt);
+
+        const returned = await configService.getInSSLCertificate(crt.id)
+
+        expect(exclude(returned)).to.deep.equal(exclude(crt));
+
+    });
+
+    it('deleteInSSLCertificate', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        configService.config.groups = [];
+        let crt: SSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            privateKey: 'asdfa', publicCrt: 'asdfasdfa'
+
+        }
+        //add
+        await configService.saveInSSLCertificate(crt);
+
+        await configService.deleteInSSLCertificate(crt.id);
+        const returned = await configService.getInSSLCertificate(crt.id)
+
+        expect(returned).not.exist;
+
+
+    });
+
 
 
 

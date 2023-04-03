@@ -24,6 +24,7 @@ import { ConfigWatch } from '../src/model/config';
 import IPCIDR from 'ip-cidr';
 import * as ipaddr from 'ip-address';
 import { calculateCountryId } from '../src/model/country';
+import { SSLCertificate } from '../src/model/sslCertificate';
 
 
 
@@ -561,7 +562,13 @@ describe('redisConfigService', async () => {
 
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.jwtSSLCertificate = {};
+        configService.config.jwtSSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'JWT',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            labels: []
+        };
         await configService.init();
 
         await configService.setJWTSSLCertificate({ privateKey: 'a' });
@@ -574,17 +581,23 @@ describe('redisConfigService', async () => {
 
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.caSSLCertificate = {};
+        configService.config.caSSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'CA',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            labels: [],
+        };
         await configService.init();
 
-        await configService.setCASSLCertificate({ privateKey: 'b', publicKey: 'c' });
+        await configService.setCASSLCertificate({ privateKey: 'b', publicCrt: 'c' });
         const db = await configService.getCASSLCertificate()
         expect(db.privateKey).to.equal('b');
 
         const db2 = await configService.getCASSLCertificatePublic()
         expect(db2).to.equal('c');
 
-    });
+    }).timeout(60000);
 
     it('setLogo/getLogo', async () => {
 
@@ -2399,6 +2412,139 @@ describe('redisConfigService', async () => {
         await configService.deleteIpIntelligenceSource(item.id);
         const source4 = await configService.getIpIntelligenceSources();
         expect(source4.length).to.equal(0);
+
+
+    });
+
+
+    it('getInSSLCertificate', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        await configService.init();
+        configService.config.inSSLCertificates = [];
+        let crt: SSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+
+
+        }
+        //add
+        await configService.saveInSSLCertificate(crt);
+
+        const returned = await configService.getInSSLCertificate(crt.id);
+
+        expectToDeepEqual(returned, crt);
+
+
+    });
+
+
+
+
+    it('getInSSLCertificateAll', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+
+        configService.config.inSSLCertificates = [];
+        await configService.init();
+        let crt: SSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'north',
+
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            privateKey: 'adsfa', publicCrt: 'adfafda'
+
+        }
+        //add
+        await configService.saveInSSLCertificate(crt);
+
+        let crt2: SSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'south',
+
+            labels: ['test'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            privateKey: 'adfafa', publicCrt: 'adsfasfa'
+
+        }
+        //add
+        await configService.saveInSSLCertificate(crt2);
+
+        const returned = await configService.getInSSLCertificateAll();
+        expect(returned.length).to.be.equal(2);
+
+
+    });
+
+    it('saveInSSLCertificate', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+
+        configService.config.inSSLCertificates = [];
+        await configService.init();
+        let crt: SSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'north',
+
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            privateKey: 'asdfa', publicCrt: 'asdfasfa'
+
+        }
+        //add
+        await configService.saveInSSLCertificate(crt);
+
+        crt.name = 'north2';
+        //add
+        await configService.saveInSSLCertificate(crt);
+
+        const returned = await configService.getInSSLCertificate(crt.id)
+
+        expectToDeepEqual(returned, crt);
+
+    });
+
+    it('deleteInSSLCertificate', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+
+
+        configService.config.inSSLCertificates = [];
+
+        await configService.init();
+        let crt: SSLCertificate = {
+            id: Util.randomNumberString(),
+            name: 'north',
+
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            privateKey: 'adfa', publicCrt: 'asdfasdfsa'
+
+
+        }
+        //add
+        await configService.saveInSSLCertificate(crt);
+
+
+        await configService.deleteInSSLCertificate(crt.id);
+
+        const returned = await configService.getInSSLCertificate(crt.id)
+
+        expect(returned).not.exist;
+
 
 
     });

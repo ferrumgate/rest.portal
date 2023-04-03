@@ -34,8 +34,9 @@ export type RPath =
     'auth/ldap/providers' |
     'auth/saml/providers' |
     'jwtSSLCertificate' |
-    'sslCertificate' |
+    'webSSLCertificate' |
     'caSSLCertificate' |
+    'inSSLCertificates' |
     'users' |
     'groups' |
     'services' |
@@ -81,9 +82,14 @@ export interface Config {
     url: string;
     auth: AuthSettings,
     jwtSSLCertificate: SSLCertificate,
-    sslCertificate: SSLCertificate,
+    webSSLCertificate: SSLCertificate,
     caSSLCertificate: SSLCertificate,
-    //sshCertificate: SSHCertificate,
+    /**
+     * @summary intermediate certificates
+     */
+    inSSLCertificates: SSLCertificate[],
+    sslCertificates: SSLCertificate[];
+
 
     users: User[];
     groups: Group[];
