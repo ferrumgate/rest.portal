@@ -36,7 +36,7 @@ describe('userApiInvite', async () => {
     }
     before(async () => {
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
-        await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await appService.configService.init();
     })
 
     beforeEach(async () => {

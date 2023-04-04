@@ -9,7 +9,7 @@ import { RedLockService } from "./redLockService";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Captcha } from "../model/captcha";
-import { SSLCertificate } from "../model/sslCertificate";
+import { SSLCertificate, SSLCertificateCategory, SSLCertificateEx } from "../model/cert";
 import { EmailSetting } from "../model/emailSetting";
 import { LogoSetting } from "../model/logoSetting";
 import { AuthSettings, BaseOAuth, BaseSaml } from "../model/authSettings";
@@ -32,6 +32,7 @@ import { IpIntelligenceCountryList } from "../model/IpIntelligence";
 import IPCIDR from "ip-cidr";
 import { isIPv4 } from "net";
 import * as ipaddr from 'ip-address';
+import { UtilPKI } from "../utilPKI";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -431,26 +432,79 @@ export class RedisConfigService extends ConfigService {
         }
         await this.rSave('lastUpdateTime', this.config.lastUpdateTime, this.config.lastUpdateTime, pipeline);
         //create certs
+
         {
-            const { privateKey, publicCrt } = await Util.createSelfSignedCrt("ferrumgate.com");
+            const { publicCrt, privateKey } = await this.createCert('JWT CA', 'ferrumgate', 10950, []);
             await this.rSave('jwtSSLCertificate', undefined, {
+                ...this.config.jwtSSLCertificate,
                 privateKey: privateKey,
-                publicKey: publicCrt,
+                publicCrt: publicCrt,
             }, pipeline);
         }
+        let caPublicCrt, caPrivateKey;
         {
-            const { privateKey, publicCrt } = await Util.createSelfSignedCrt("ferrumgate.zero");
+            const { publicCrt, privateKey } = await this.createCert('ROOT CA', 'ferrumgate', 10950, []);
             await this.rSave('caSSLCertificate', undefined, {
+                ...this.config.caSSLCertificate,
                 privateKey: privateKey,
-                publicKey: publicCrt,
+                publicCrt: publicCrt,
             }, pipeline);
+            caPublicCrt = publicCrt;
+            caPrivateKey = privateKey;
+
         }
+        let inWebCrt: string, inWebKey: string;
+        let inWeb: SSLCertificateEx;
         {
-            const { privateKey, publicCrt } = await Util.createSelfSignedCrt("secure.ferrumgate.zero");
-            await this.rSave('webSSLCertificate', undefined, {
+            const result = await UtilPKI.createCertificate(
+                {
+                    CN: 'Intermediate Web', O: 'ferrumgate', hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
+                    isCA: false, notAfter: new Date().addDays(10950),
+                    notBefore: new Date().addDays(-1), sans: [],
+                    serial: Util.randomBetween(1000000000, 10000000000),
+                    ca: {
+                        hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
+                        privateKey: caPrivateKey || '', publicCrt: caPublicCrt || ''
+                    }
+                })
+            inWebKey = await UtilPKI.toPEM(result.privateKeyBuffer, 'PRIVATE KEY');
+            inWebCrt = await UtilPKI.toPEM(result.certificateBuffer, 'CERTIFICATE');
+            inWeb = {
+                ...this.defaultCertificate('Intermediate Web', 'web'),
+                id: Util.randomNumberString(),
+                parentId: this.config.caSSLCertificate.idEx,
+                publicCrt: inWebCrt,
+                privateKey: inWebKey,
+
+            }
+            await this.rSave('inSSLCertificates', undefined, inWeb, pipeline);
+        }
+        //save web certtificate
+        {
+            //sign with intermediate web
+            const result = await UtilPKI.createCertificate(
+                {
+                    CN: 'Web', O: 'ferrumgate', hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
+                    isCA: false, notAfter: new Date().addDays(3650),
+                    notBefore: new Date().addDays(-1), sans: [{ type: "domain", value: this.config.domain }],
+                    serial: Util.randomBetween(1000000000, 10000000000),
+                    ca: {
+                        hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
+                        privateKey: inWebKey,
+                        publicCrt: inWebCrt
+                    }
+                })
+            const privateKey = await UtilPKI.toPEM(result.privateKeyBuffer, 'PRIVATE KEY');
+            const publicCrt = await UtilPKI.toPEM(result.certificateBuffer, 'CERTIFICATE');
+            let cert: SSLCertificate = {
+                ...this.config.webSSLCertificate,
+                parentId: inWeb.id,
+                publicCrt: publicCrt,
                 privateKey: privateKey,
-                publicKey: publicCrt,
-            }, pipeline);
+
+            }
+
+            await this.rSave('webSSLCertificate', undefined, cert, pipeline);
         }
 
         await pipeline.exec();
@@ -740,21 +794,16 @@ export class RedisConfigService extends ConfigService {
         return ret;
     }
 
-    override async getJWTSSLCertificate(): Promise<SSLCertificate> {
+    override async getJWTSSLCertificateSensitive(): Promise<SSLCertificate> {
         this.isReady();
-        this.config.jwtSSLCertificate = await this.rGet<SSLCertificate>('jwtSSLCertificate') || {
-            id: Util.randomNumberString(), name: 'JWT', insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString(), labels: []
-        };
-        return await super.getJWTSSLCertificate();
+        this.config.jwtSSLCertificate = await this.rGet<SSLCertificate>('jwtSSLCertificate') || this.defaultCertificate('JWT', 'jwt');
+        return await super.getJWTSSLCertificateSensitive();
     }
+
 
     override async setJWTSSLCertificate(cert: SSLCertificate | {}) {
         this.isReady();
-        this.config.jwtSSLCertificate = await this.rGet<SSLCertificate>('jwtSSLCertificate') || {
-            id: Util.randomNumberString(), name: 'JWT', insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString(), labels: []
-        };
+        this.config.jwtSSLCertificate = await this.rGet<SSLCertificate>('jwtSSLCertificate') || this.defaultCertificate('JWT', 'jwt');
         const ret = await super.setJWTSSLCertificate(cert);
         const pipeline = await this.redis.multi();
         await this.rSave('jwtSSLCertificate', ret.before, ret.after, pipeline);
@@ -763,31 +812,33 @@ export class RedisConfigService extends ConfigService {
         return ret;
     }
 
-    override async getCASSLCertificate(): Promise<SSLCertificate> {
+    override async getWebSSLCertificateSensitive(): Promise<SSLCertificate> {
         this.isReady();
-        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {
-            id: Util.randomNumberString(), name: 'CA', insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString(), labels: []
-        };
-        return await super.getCASSLCertificate();
+        this.config.webSSLCertificate = await this.rGet<SSLCertificate>('webSSLCertificate') || this.defaultCertificate('Web', 'web');
+        return await super.getWebSSLCertificateSensitive();
     }
-    override async getCASSLCertificatePublic(): Promise<string | null | undefined> {
+
+    override async setWebSSLCertificate(cert: SSLCertificate | {}) {
         this.isReady();
-        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {
-            id: Util.randomNumberString(), name: 'CA', insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString(),
-            labels: []
-        };
-        return await super.getCASSLCertificatePublic();
+        this.config.webSSLCertificate = await this.rGet<SSLCertificate>('webSSLCertificate') || this.defaultCertificate('Web', 'web');
+        const ret = await super.setWebSSLCertificate(cert);
+        const pipeline = await this.redis.multi();
+        await this.rSave('webSSLCertificate', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
     }
+
+    override async getCASSLCertificateSensitive(): Promise<SSLCertificate> {
+        this.isReady();
+        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || this.defaultCertificate('CA', 'ca');
+        return await super.getCASSLCertificateSensitive();
+    }
+
 
     override async setCASSLCertificate(cert: SSLCertificate | {}) {
         this.isReady();
-        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || {
-            id: Util.randomNumberString(), name: 'CA', insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString(),
-            labels: []
-        };
+        this.config.caSSLCertificate = await this.rGet<SSLCertificate>('caSSLCertificate') || this.defaultCertificate('CA', 'ca');
         const ret = await super.setCASSLCertificate(cert);
         const pipeline = await this.redis.multi();
         await this.rSave('caSSLCertificate', ret.before, ret.after, pipeline);
@@ -799,24 +850,24 @@ export class RedisConfigService extends ConfigService {
     //intermedidate certificates
     /// Group
 
-    override async getInSSLCertificate(id: string): Promise<SSLCertificate | undefined> {
+    override async getInSSLCertificateSensitive(id: string): Promise<SSLCertificateEx | undefined> {
         this.isReady();
         this.config.inSSLCertificates = await this.rGetAll('inSSLCertificates');
-        return await super.getInSSLCertificate(id);
+        return await super.getInSSLCertificateSensitive(id);
 
     }
 
-    override async getInSSLCertificateAll() {
+    override async getInSSLCertificateAllSensitive() {
         this.isReady();
         this.config.inSSLCertificates = await this.rGetAll('inSSLCertificates');
-        return await super.getInSSLCertificateAll();
+        return await super.getInSSLCertificateAllSensitive();
     }
 
 
     override  async deleteInSSLCertificate(id: string) {
         this.isReady();
         this.config.inSSLCertificates = [];
-        const cert = await this.rGetWith<SSLCertificate>('inSSLCertificates', id);
+        const cert = await this.rGetWith<SSLCertificateEx>('inSSLCertificates', id);
 
         if (cert) {
             this.config.inSSLCertificates.push(cert);
@@ -833,10 +884,10 @@ export class RedisConfigService extends ConfigService {
 
     }
 
-    override async saveInSSLCertificate(cert: SSLCertificate) {
+    override async saveInSSLCertificate(cert: SSLCertificateEx) {
         this.isReady();
         this.config.inSSLCertificates = [];
-        const crt = await this.rGetWith<SSLCertificate>('inSSLCertificates', cert.id);
+        const crt = await this.rGetWith<SSLCertificateEx>('inSSLCertificates', cert.id);
         if (crt)
             this.config.inSSLCertificates.push(crt);
 
@@ -848,6 +899,9 @@ export class RedisConfigService extends ConfigService {
         return ret;
 
     }
+
+
+
 
 
     //TODO test
@@ -1713,25 +1767,25 @@ export class RedisConfigService extends ConfigService {
             providers: await this.rGetAll('auth/saml/providers')
         }
         cfg.jwtSSLCertificate = await this.rGet('jwtSSLCertificate') || {
-            id: Util.randomNumberString(),
+            idEx: Util.randomNumberString(16),
             name: 'JWT',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: []
+            labels: [], isEnabled: true, category: 'jwt'
         };
         cfg.webSSLCertificate = await this.rGet('webSSLCertificate') || {
-            id: Util.randomNumberString(),
+            idEx: Util.randomNumberString(16),
             name: 'SSL',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: []
+            labels: [], isEnabled: true, category: 'jwt'
         };
         cfg.caSSLCertificate = await this.rGet('caSSLCertificate') || {
-            id: Util.randomNumberString(),
+            idEx: Util.randomNumberString(16),
             name: 'CA',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: []
+            labels: [], isEnabled: true, category: 'ca'
         };
         cfg.users = await this.rGetAll('users');
         cfg.groups = await this.rGetAll('groups');

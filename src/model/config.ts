@@ -8,8 +8,7 @@ import { LogoSetting } from "./logoSetting";
 import { Gateway, Network } from "./network";
 import { RBAC, Right, Role } from "./rbac";
 import { Service } from "./service";
-import { SSHCertificate } from "./sshCertificate";
-import { SSLCertificate } from "./sslCertificate";
+import { SSLCertificate, SSLCertificateEx } from "./cert";
 import { ESSetting } from "./esSetting";
 import { User } from "./user";
 import { IpIntelligence } from "./IpIntelligence";
@@ -87,8 +86,8 @@ export interface Config {
     /**
      * @summary intermediate certificates
      */
-    inSSLCertificates: SSLCertificate[],
-    sslCertificates: SSLCertificate[];
+    inSSLCertificates: SSLCertificateEx[],
+
 
 
     users: User[];

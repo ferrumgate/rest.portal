@@ -24,7 +24,7 @@ import { ConfigWatch } from '../src/model/config';
 import IPCIDR from 'ip-cidr';
 import * as ipaddr from 'ip-address';
 import { calculateCountryId } from '../src/model/country';
-import { SSLCertificate } from '../src/model/sslCertificate';
+import { SSLCertificate, SSLCertificateEx } from '../src/model/cert';
 
 
 
@@ -39,6 +39,16 @@ function expectToDeepEqual(a: any, b: any) {
     delete b.insertDate;
     delete b.updateDate;
     delete b.password;
+    expect(a).to.deep.equal(b);
+}
+function expectCertToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete a.password;
+    delete b.insertDate;
+    delete b.updateDate;
+    delete b.password;
+    delete b.privateKey;
     expect(a).to.deep.equal(b);
 }
 
@@ -563,17 +573,44 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.jwtSSLCertificate = {
-            id: Util.randomNumberString(),
+            idEx: Util.randomNumberString(),
             name: 'JWT',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: []
+            labels: [], isEnabled: true
         };
         await configService.init();
 
         await configService.setJWTSSLCertificate({ privateKey: 'a' });
-        const db = await configService.getJWTSSLCertificate()
+        const db = await configService.getJWTSSLCertificateSensitive()
         expect(db.privateKey).to.equal('a');
+
+        const db2 = await configService.getJWTSSLCertificate()
+        expect(db2.privateKey).not.exist;
+
+
+    });
+
+    it('setWebSSLCertificate/getWebSSLCertificate', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.webSSLCertificate = {
+            idEx: Util.randomNumberString(),
+            name: 'Web',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            labels: [], isEnabled: true
+        };
+        await configService.init();
+
+        await configService.setWebSSLCertificate({ privateKey: 'a' });
+        const db = await configService.getWebSSLCertificateSensitive()
+        expect(db.privateKey).to.equal('a');
+
+        const db2 = await configService.getWebSSLCertificate()
+        expect(db2.privateKey).not.exist;
+
 
     });
 
@@ -582,20 +619,22 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.caSSLCertificate = {
-            id: Util.randomNumberString(),
+            idEx: Util.randomNumberString(),
             name: 'CA',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: [],
+            labels: [], isEnabled: true
         };
         await configService.init();
 
         await configService.setCASSLCertificate({ privateKey: 'b', publicCrt: 'c' });
-        const db = await configService.getCASSLCertificate()
+        const db = await configService.getCASSLCertificateSensitive()
         expect(db.privateKey).to.equal('b');
 
-        const db2 = await configService.getCASSLCertificatePublic()
-        expect(db2).to.equal('c');
+        const db2 = await configService.getCASSLCertificate()
+        expect(db2.privateKey).not.exist;
+
+
 
     }).timeout(60000);
 
@@ -2423,12 +2462,13 @@ describe('redisConfigService', async () => {
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         await configService.init();
         configService.config.inSSLCertificates = [];
-        let crt: SSLCertificate = {
+        let crt: SSLCertificateEx = {
             id: Util.randomNumberString(),
             name: 'north',
             labels: [],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            isEnabled: true,
 
 
 
@@ -2436,9 +2476,14 @@ describe('redisConfigService', async () => {
         //add
         await configService.saveInSSLCertificate(crt);
 
-        const returned = await configService.getInSSLCertificate(crt.id);
+        const returned = await configService.getInSSLCertificateSensitive(crt.id);
 
         expectToDeepEqual(returned, crt);
+
+        const returned2 = await configService.getInSSLCertificate(crt.id);
+        expect(returned2).exist;
+        expect(returned2?.privateKey).not.exist;
+
 
 
     });
@@ -2453,34 +2498,36 @@ describe('redisConfigService', async () => {
 
         configService.config.inSSLCertificates = [];
         await configService.init();
-        let crt: SSLCertificate = {
+        let crt: SSLCertificateEx = {
             id: Util.randomNumberString(),
             name: 'north',
 
             labels: ['test2'],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            privateKey: 'adsfa', publicCrt: 'adfafda'
+            privateKey: 'adsfa', publicCrt: 'adfafda',
+            isEnabled: true
 
         }
         //add
         await configService.saveInSSLCertificate(crt);
 
-        let crt2: SSLCertificate = {
+        let crt2: SSLCertificateEx = {
             id: Util.randomNumberString(),
             name: 'south',
 
             labels: ['test'],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            privateKey: 'adfafa', publicCrt: 'adsfasfa'
+            privateKey: 'adfafa', publicCrt: 'adsfasfa',
+            isEnabled: true
 
         }
         //add
         await configService.saveInSSLCertificate(crt2);
 
         const returned = await configService.getInSSLCertificateAll();
-        expect(returned.length).to.be.equal(2);
+        expect(returned.length).to.be.equal(3);//one more from default web intermediate
 
 
     });
@@ -2492,14 +2539,15 @@ describe('redisConfigService', async () => {
 
         configService.config.inSSLCertificates = [];
         await configService.init();
-        let crt: SSLCertificate = {
+        let crt: SSLCertificateEx = {
             id: Util.randomNumberString(),
             name: 'north',
 
             labels: ['test2'],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            privateKey: 'asdfa', publicCrt: 'asdfasfa'
+            privateKey: 'asdfa', publicCrt: 'asdfasfa',
+            isEnabled: true
 
         }
         //add
@@ -2509,7 +2557,7 @@ describe('redisConfigService', async () => {
         //add
         await configService.saveInSSLCertificate(crt);
 
-        const returned = await configService.getInSSLCertificate(crt.id)
+        const returned = await configService.getInSSLCertificateSensitive(crt.id)
 
         expectToDeepEqual(returned, crt);
 
@@ -2524,14 +2572,15 @@ describe('redisConfigService', async () => {
         configService.config.inSSLCertificates = [];
 
         await configService.init();
-        let crt: SSLCertificate = {
+        let crt: SSLCertificateEx = {
             id: Util.randomNumberString(),
             name: 'north',
 
             labels: ['test2'],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            privateKey: 'adfa', publicCrt: 'asdfasdfsa'
+            privateKey: 'adfa', publicCrt: 'asdfasdfsa',
+            isEnabled: true
 
 
         }
@@ -2548,6 +2597,9 @@ describe('redisConfigService', async () => {
 
 
     });
+
+
+
 
 
 

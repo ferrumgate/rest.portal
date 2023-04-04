@@ -433,6 +433,7 @@ async function start() {
     if (!process.env.NODE_TEST) {
         const appService = (app.appService as AppService);
         await appService.start();
+
     }
 
 
@@ -449,9 +450,9 @@ async function start() {
         logger.info('service started on ', port);
     })
 
-
-
 }
+
+
 
 
 init().then(async () => {

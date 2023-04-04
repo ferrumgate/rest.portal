@@ -46,7 +46,7 @@ describe('userApiAuthenticated', async () => {
     before(async () => {
         const random = Util.randomNumberString();
         await appService.configService.setConfigPath(`/tmp/rest.portal.config${random}.yaml`);
-        await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await appService.configService.init();
     })
 
     beforeEach(async () => {

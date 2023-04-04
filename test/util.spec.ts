@@ -398,7 +398,7 @@ describe('util ', () => {
     it('createSelfSignedCrt ', async () => {
         const random = Util.randomNumberString();
         const domain = `${Util.randomNumberString(8)}.com`;
-        const output = await Util.createSelfSignedCrt(domain, `/tmp/${random}`);
+        const output = await Util.createSelfSignedCrt(domain, '3650', `/tmp/${random}`);
         expect(output.privateKey).exist;
         expect(output.publicCrt).exist;
         expect(fs.existsSync(`/tmp/${random}/${domain}.crt`)).to.be.true
@@ -409,7 +409,7 @@ describe('util ', () => {
     it('createCASignedCrt ', async () => {
         const random = Util.randomNumberString();
         const cahostname = `${Util.randomNumberString(8)}.com`;
-        const ca = await Util.createSelfSignedCrt(cahostname, `/tmp/${random}`);
+        const ca = await Util.createSelfSignedCrt(cahostname, '3650', `/tmp/${random}`);
 
 
         const domain = `${Util.randomNumberString(8)}.com`;

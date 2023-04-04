@@ -145,6 +145,7 @@ export class AppService {
         //prepare es
         this.configService.events.on('ready', async () => {
             await this.startReconfigureES();
+
         })
         this.configService.events.on('configChanged', async (data: ConfigWatch<any>) => {
             if (data.path == '/config/es')
@@ -164,6 +165,7 @@ export class AppService {
         await this.activityService.stop();
         await this.auditService.stop();
     }
+
 
 }
 /**

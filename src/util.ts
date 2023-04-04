@@ -608,6 +608,11 @@ export const Util = {
     mergeAllFiles: async (files: string[], dest: string) => {
         return await mergeFiles(files, dest);
     },
+    randomBetween(min: number, max: number) {
+        return Math.floor(
+            Math.random() * (max - min) + min
+        )
+    }
 
 
 

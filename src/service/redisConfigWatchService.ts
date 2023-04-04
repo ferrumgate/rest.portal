@@ -9,7 +9,7 @@ import { RedLockService } from "./redLockService";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Captcha } from "../model/captcha";
-import { SSLCertificate } from "../model/sslCertificate";
+import { SSLCertificate } from "../model/cert";
 import { EmailSetting } from "../model/emailSetting";
 import { LogoSetting } from "../model/logoSetting";
 import { AuthSettings, BaseOAuth, BaseSaml } from "../model/authSettings";
@@ -214,31 +214,13 @@ export class RedisConfigWatchService extends ConfigService {
                             await this.processArray(this.config.auth.saml.providers, path, item, val.id);
                             break;
                         case 'jwtSSLCertificate':
-                            this.config.jwtSSLCertificate = await this.redisConfig.rGet(path) || {
-                                id: Util.randomNumberString(),
-                                name: 'JWT',
-                                insertDate: new Date().toISOString(),
-                                updateDate: new Date().toISOString(),
-                                labels: []
-                            };
+                            this.config.jwtSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificate('JWT', 'jwt');
                             break;
                         case 'webSSLCertificate':
-                            this.config.webSSLCertificate = await this.redisConfig.rGet(path) || {
-                                id: Util.randomNumberString(),
-                                name: 'JWT',
-                                insertDate: new Date().toISOString(),
-                                updateDate: new Date().toISOString(),
-                                labels: []
-                            };
+                            this.config.webSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificateEx('Web', 'web');
                             break;
                         case 'caSSLCertificate':
-                            this.config.caSSLCertificate = await this.redisConfig.rGet(path) || {
-                                id: Util.randomNumberString(),
-                                name: 'JWT',
-                                insertDate: new Date().toISOString(),
-                                updateDate: new Date().toISOString(),
-                                labels: []
-                            };
+                            this.config.caSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificate('ROOT CA', 'ca');
                             break;
                         case 'inSSLCertificates':
                             await this.processArray(this.config.inSSLCertificates, path, item, val.id);

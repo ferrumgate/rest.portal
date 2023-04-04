@@ -168,7 +168,7 @@ describe('authApi', async () => {
 
 
         await configService.setUrl('http://local.ferrumgate.com:8080')
-        await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await configService.init();
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
         await redisService.flushAll();

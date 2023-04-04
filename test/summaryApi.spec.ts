@@ -25,7 +25,7 @@ describe('summaryApi', async () => {
     before(async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         await configService.setConfigPath(filename);
-        await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await configService.init();
     })
 
     beforeEach(async () => {

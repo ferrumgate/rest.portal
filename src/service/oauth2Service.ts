@@ -56,7 +56,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
     private async generateToken(type: "access" | "refresh", user: OAuth2Server.User, client: OAuth2Server.Client): Promise<string> {
         let payload = this.generatePayload(type, user, client);
 
-        let secret = (await this.config.getJWTSSLCertificate()).privateKey || '';
+        let secret = (await this.config.getJWTSSLCertificateSensitive()).privateKey || '';
         let token = JWT.sign(payload, secret, config.JWT_SING_OPTIONS);
         return token;
     }
