@@ -3,7 +3,6 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { ConfigService } from '../src/service/configService';
 import { Util } from '../src/util';
 import { RedisService } from '../src/service/redisService';
@@ -51,7 +50,7 @@ describe('ipIntelligenceListService', async () => {
         await configService.loadConfigFromFile();
     })
     beforeEach(async () => {
-        await (app.appService as AppService).redisService.flushAll();
+        await redisService.flushAll();
         await esService.reset();
         await Util.sleep(1000);
     })

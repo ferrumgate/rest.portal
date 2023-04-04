@@ -3,10 +3,11 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { TemplateService } from '../src/service/templateService';
 import { ConfigService } from '../src/service/configService';
 import { Util } from '../src/util';
+import { RedisService } from '../src/service/redisService';
+
 
 
 chai.use(chaiHttp);
@@ -18,14 +19,14 @@ const expect = chai.expect;
 describe('templateService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', filename);
-
+    const redisService = new RedisService();
     before(async () => {
         await configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
         await configService.saveConfigToFile();
         await configService.loadConfigFromFile();
     })
     beforeEach(async () => {
-        await (app.appService as AppService).redisService.flushAll();
+        await redisService.flushAll();
     })
     it('createEmailConfirmation', async () => {
 

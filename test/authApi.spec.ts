@@ -3,13 +3,14 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { AuthSettings } from '../src/model/authSettings';
 import * as twofactor from 'node-2fa';
 import { Gateway } from '../src/model/network';
 import { Network } from '../src/model/network';
+import { ExpressApp } from '../src';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -18,7 +19,9 @@ const expect = chai.expect;
 
 
 describe('authApi', async () => {
-    const appService = (app.appService) as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
     const redisService = appService.redisService;
     const configService = appService.configService;
     const user: User = {
@@ -73,6 +76,12 @@ describe('authApi', async () => {
         updateDate: new Date().toISOString(),
 
     }
+    before(async () => {
+        await expressApp.start();
+    })
+    after(async () => {
+        await expressApp.stop();
+    })
 
     beforeEach(async () => {
 

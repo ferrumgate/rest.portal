@@ -3,13 +3,13 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Group } from '../src/model/group';
 import { Network } from '../src/model/network';
 import { Gateway } from '../src/model/network';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
+import { ExpressApp } from '../src';
 
 
 chai.use(chaiHttp);
@@ -21,7 +21,9 @@ const expect = chai.expect;
  * authenticated user api tests
  */
 describe('userApiAuthenticated', async () => {
-    const appService = app.appService as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
     const redisService = appService.redisService;
     const sessionService = appService.sessionService;
     function getSampleUser() {
@@ -44,9 +46,13 @@ describe('userApiAuthenticated', async () => {
         return user;
     }
     before(async () => {
+        await expressApp.start();
         const random = Util.randomNumberString();
         await appService.configService.setConfigPath(`/tmp/rest.portal.config${random}.yaml`);
         await appService.configService.init();
+    })
+    after(async () => {
+        await expressApp.stop();
     })
 
     beforeEach(async () => {

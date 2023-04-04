@@ -3,12 +3,13 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+
 import { Util } from '../src/util';
 import { Network } from '../src/model/network';
 import { Gateway } from '../src/model/network';
 import { AuditLog } from '../src/model/auditLog';
 import { ESService } from '../src/service/esService';
+import { ExpressApp } from '../src';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -19,13 +20,16 @@ const esUser = "elastic";
 const esPass = '123456';
 
 describe('auditApi ', async () => {
-    const appService = (app.appService) as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
     const redisService = appService.redisService;
     const configService = appService.configService;
     const sessionService = appService.sessionService;
 
 
     before(async () => {
+        await expressApp.start();
         if (fs.existsSync('/tmp/config.yaml'))
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
@@ -63,6 +67,9 @@ describe('auditApi ', async () => {
             }
         ];
 
+    })
+    after(async () => {
+        await expressApp.stop();
     })
     it('only admin user can callit', async () => {
         const session = await sessionService.createSession({ id: 'admin2' } as any, false, '1.1.1.1', 'local');

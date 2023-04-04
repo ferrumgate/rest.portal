@@ -2,9 +2,9 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Email, EmailService } from '../src/service/emailService';
+import { ExpressApp } from '../src';
 
 
 chai.use(chaiHttp);
@@ -14,7 +14,10 @@ const expect = chai.expect;
 
 
 describe('userApiConfirm', async () => {
-    const appService = app.appService as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
+
     const redisService = appService.redisService;
     const emailService = appService.emailService;
     const configService = appService.configService;
@@ -29,7 +32,13 @@ describe('userApiConfirm', async () => {
 
     }
     before(async () => {
+        await expressApp.start();
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
+        await appService.configService.setIsConfigured(1);
+        await appService.configService.init();
+    })
+    after(async () => {
+        await expressApp.stop();
     })
 
     beforeEach(async () => {

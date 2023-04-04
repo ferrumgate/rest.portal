@@ -3,7 +3,7 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Gateway } from '../src/model/network';
@@ -13,19 +13,29 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 
 
-
+const eshost = 'https://192.168.88.250:9200';
+const esuser = 'elastic';
+const espass = '123456';
 /**
  * authenticated user api tests
  */
 describe('summaryApi', async () => {
-    const appService = app.appService as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
     const redisService = appService.redisService;
     const sessionService = appService.sessionService;
     const configService = appService.configService;
     before(async () => {
+        await expressApp.start();
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         await configService.setConfigPath(filename);
         await configService.init();
+        await appService.configService.setIsConfigured(1);
+        await appService.esService.reConfigure(eshost, esuser, espass, '1s');
+    })
+    after(async () => {
+        await expressApp.stop();
     })
 
     beforeEach(async () => {

@@ -2,7 +2,8 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+import { ExpressApp } from '../src/index';
+
 
 
 chai.use(chaiHttp);
@@ -13,8 +14,18 @@ const expect = chai.expect;
 
 describe('test', async () => {
 
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
+
+    before(async () => {
+        await expressApp.start();
+    })
+    after(async () => {
+        await expressApp.stop();
+    })
     beforeEach(async () => {
-        await (app.appService as AppService).redisService.flushAll();
+        await appService.redisService.flushAll();
     })
 
     it('GET /test', async () => {

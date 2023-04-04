@@ -3,7 +3,7 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
 import { AuthLocal } from '../src/model/authSettings';
 import { Email, EmailService } from '../src/service/emailService';
@@ -17,17 +17,23 @@ const expect = chai.expect;
 
 
 describe('registerApi', async () => {
-    const appService = app.appService as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
     const emailService = appService.emailService;
     const configService = appService.configService;
     const redisService = appService.redisService;
     before(async () => {
+        await expressApp.start();
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
         await appService.configService.setEmailSetting({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
 
         await appService.configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
         await appService.configService.saveConfigToFile();
         await appService.configService.loadConfigFromFile();
+    })
+    after(async () => {
+        await expressApp.stop();
     })
 
     beforeEach(async () => {

@@ -1,9 +1,6 @@
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs, { read } from 'fs';
-import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { IntelligenceLogService } from '../src/service/intelligenceLogService';
 import { RedisService, Util } from '../src/lib';
 

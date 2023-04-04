@@ -3,7 +3,6 @@ import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
 import fs, { read } from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { IntelligenceLogService } from '../src/service/intelligenceLogService';
 import { RedisConfigService, RedisService, SystemLogService, Util } from '../src/lib';
 import { FqdnIntelligenceService } from '../src/service/fqdnIntelligenceService';

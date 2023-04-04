@@ -3,7 +3,7 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
 import { Email, EmailService } from '../src/service/emailService';
 
@@ -15,7 +15,10 @@ const expect = chai.expect;
 
 
 describe('userApiResetPassword', async () => {
-    const appService = app.appService as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
+
     const redisService = appService.redisService;
     const emailService = appService.emailService;
     const configService = appService.configService;
@@ -31,12 +34,18 @@ describe('userApiResetPassword', async () => {
 
     }
     before(async () => {
+        await expressApp.start();
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
         await appService.configService.setEmailSetting({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })
 
         await appService.configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
         await appService.configService.saveConfigToFile();
         await appService.configService.loadConfigFromFile();
+        await appService.configService.setIsConfigured(1);
+        await appService.configService.init();
+    })
+    after(async () => {
+        await expressApp.stop();
     })
 
     beforeEach(async () => {

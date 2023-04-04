@@ -2,7 +2,7 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Tunnel } from '../src/model/tunnel';
@@ -19,7 +19,9 @@ const expect = chai.expect;
 
 
 describe('clientApi ', async () => {
-    const appService = (app.appService) as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
     const redisService = appService.redisService;
     const configService = appService.configService;
 
@@ -77,8 +79,11 @@ describe('clientApi ', async () => {
     }
 
     before(async () => {
+        await expressApp.start();
 
-
+    })
+    after(async () => {
+        await expressApp.stop();
     })
 
 

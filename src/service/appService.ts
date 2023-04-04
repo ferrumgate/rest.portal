@@ -28,6 +28,8 @@ import { RedisConfigWatchCachedService } from "./redisConfigWatchCachedService";
 import { ConfigWatch } from "../model/config";
 import { IpIntelligenceService } from "./ipIntelligenceService";
 import { ScheduledTasksService } from "./system/sheduledTasksService";
+
+import { currentExpressAppImp } from "../";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -56,6 +58,7 @@ export class AppService {
     public systemLogService: SystemLogService;
     public dhcpService: DhcpService;
     public ipIntelligenceService: IpIntelligenceService;
+
     /**
      *
      */
@@ -137,6 +140,25 @@ export class AppService {
         }
     }
 
+    intervalHttps: any = null;
+    public async startReconfigureHttps() {
+        try {
+            await currentExpressAppImp.startHttps();
+            if (this.intervalHttps)
+                clearIntervalAsync(this.intervalHttps);
+            this.intervalHttps = null;
+
+        } catch (err) {
+            logger.error(err);
+            if (!this.intervalHttps) {
+                this.intervalHttps = setIntervalAsync(async () => {
+                    await this.startReconfigureHttps();
+                }, 5000);
+
+            }
+        }
+    }
+
     async start() {
 
 
@@ -145,6 +167,7 @@ export class AppService {
         //prepare es
         this.configService.events.on('ready', async () => {
             await this.startReconfigureES();
+            await this.startReconfigureHttps();
 
         })
         this.configService.events.on('configChanged', async (data: ConfigWatch<any>) => {
@@ -152,6 +175,8 @@ export class AppService {
                 await this.startReconfigureES();
             if (data.path == '/config/ipIntelligence/sources')
                 await this.ipIntelligenceService.reConfigure();//no need to start configure
+            if (data.path == '/config/webSSLCertificate')
+                await this.startReconfigureHttps();
         });
         await this.startReconfigureES();
 
