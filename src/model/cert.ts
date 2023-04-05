@@ -18,7 +18,7 @@ export interface SSLCertificate {
     isEnabled: boolean;
     parentId?: string;
     category?: SSLCertificateCategory;
-
+    isSystem?: boolean;
 
 }
 export interface SSLCertificateEx extends SSLCertificate {

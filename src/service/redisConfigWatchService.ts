@@ -217,7 +217,7 @@ export class RedisConfigWatchService extends ConfigService {
                             this.config.jwtSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificate('JWT', 'jwt');
                             break;
                         case 'webSSLCertificate':
-                            this.config.webSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificateEx('Web', 'web');
+                            this.config.webSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificate('Web', 'web');
                             break;
                         case 'caSSLCertificate':
                             this.config.caSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificate('ROOT CA', 'ca');

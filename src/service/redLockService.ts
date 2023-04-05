@@ -21,7 +21,7 @@ export class RedLockService {
     private resourceKey = '';
     constructor(private redis: RedisService) {
 
-        this.randomKey = Util.randomNumberString();
+        this.randomKey = Util.randomNumberString(16);
         this.events = new EventEmitter;
     }
 

@@ -46,11 +46,21 @@ export class ExpressApp {
     httpsServer: any;
     appService: AppService;
     appSystemService: AppSystemService;
+    //bridge between appService and this parent class
+    static https = {
+        start: async () => {
+
+        }
+
+    }
     constructor() {
         this.app = express();
         this.appService = new AppService();
         this.appSystemService = new AppSystemService(this.appService);
-        currentExpressAppImp.startHttps = this.startHttps;
+        this.app.appService = this.appService;
+        ExpressApp.https.start = async () => {
+            await this.startHttps();
+        }
     }
     async init() {
 
@@ -439,19 +449,18 @@ export class ExpressApp {
         await this.init();
 
         if (!process.env.NODE_TEST) {
-            const appService = (this.app.appService as AppService);
-            await appService.start();
+            await this.appService.start();
 
         }
 
 
         if (!process.env.NODE_TEST)
             try {
-                await (this.app.appService as AppService).esService.auditCreateIndexIfNotExits({} as any);
+                await this.appService.esService.auditCreateIndexIfNotExits({} as any);
             } catch (err) { logger.error(err); }
 
         if (!process.env.NODE_TEST)
-            await (this.app.appSystemService as AppSystemService).start();
+            await this.appSystemService.start();
 
         await this.startHttp();
 
@@ -470,17 +479,22 @@ export class ExpressApp {
             this.httpServer.close();
         this.httpServer = null;
     }
+    httpsHash = '';
     async startHttps() {
-        if (this.httpsServer)
-            this.httpsServer.close();
-        this.httpsServer = null;
+
         const ssl = await this.appService.configService.getWebSSLCertificateSensitive();
         if (ssl.publicCrt && ssl.privateKey) {
-            this.httpsServer = https.createServer({ cert: ssl.publicCrt, key: ssl.privateKey }, this.app);
-
-            this.httpsServer.listen(ports, () => {
-                logger.info('service ssl started on ', ports);
-            })
+            let hash = Util.sha256(ssl.publicCrt + ssl.privateKey);
+            if (hash != this.httpsHash) {//if changed
+                if (this.httpsServer)
+                    this.httpsServer.close();
+                this.httpsServer = null;
+                this.httpsServer = https.createServer({ cert: ssl.publicCrt, key: ssl.privateKey }, this.app);
+                this.httpsServer.listen(ports, () => {
+                    logger.info('service ssl started on ', ports);
+                })
+                this.httpsHash = hash;
+            }
         }
 
     }
@@ -495,13 +509,7 @@ export class ExpressApp {
     }
 }
 
-//bridge between appService and this parent class
-export const currentExpressAppImp = {
-    startHttps: async () => {
 
-    }
-
-}
 
 if (!process.env.NODE_TEST) {
     const app = new ExpressApp();

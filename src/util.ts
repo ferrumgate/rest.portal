@@ -8,7 +8,7 @@ import { isIPv4 } from 'net';
 import { ZipAFolder } from 'zip-a-folder';
 import { logger } from './common';
 import { ErrorCodes, RestfullException } from './restfullException';
-import crypto from 'crypto';
+import crypto, { createHash } from 'crypto';
 import bcrypt from 'bcrypt';
 import randtoken from 'rand-token';
 import ip6addr from 'ip6addr';
@@ -612,6 +612,9 @@ export const Util = {
         return Math.floor(
             Math.random() * (max - min) + min
         )
+    },
+    sha256(content: string) {
+        return createHash('sha256').update(content).digest('base64')
     }
 
 

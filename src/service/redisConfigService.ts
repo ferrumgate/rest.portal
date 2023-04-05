@@ -411,6 +411,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('jwtSSLCertificate', undefined, this.config.jwtSSLCertificate, pipeline);
         await this.rSave('webSSLCertificate', undefined, this.config.webSSLCertificate, pipeline);
         await this.rSave('caSSLCertificate', undefined, this.config.caSSLCertificate, pipeline);
+        await this.rSaveArray('inSSLCertificates', this.config.inSSLCertificates, pipeline);
         await this.rSave('domain', undefined, this.config.domain, pipeline);
         await this.rSave('url', undefined, this.config.url, pipeline);
         await this.rSave('email', undefined, this.config.email, pipeline);
@@ -439,6 +440,7 @@ export class RedisConfigService extends ConfigService {
                 ...this.config.jwtSSLCertificate,
                 privateKey: privateKey,
                 publicCrt: publicCrt,
+                isSystem: true
             }, pipeline);
         }
         let caPublicCrt, caPrivateKey;
@@ -448,54 +450,65 @@ export class RedisConfigService extends ConfigService {
                 ...this.config.caSSLCertificate,
                 privateKey: privateKey,
                 publicCrt: publicCrt,
+                isSystem: true
             }, pipeline);
             caPublicCrt = publicCrt;
             caPrivateKey = privateKey;
 
         }
+
+        let inTlsInspection: SSLCertificateEx;
+        {
+            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
+            inTlsInspection = {
+                ...this.defaultCertificate('Intermediate TLS Inspection', 'tls'),
+                id: Util.randomNumberString(16),
+                parentId: this.config.caSSLCertificate.idEx,
+                publicCrt: publicCrt,
+                privateKey: privateKey,
+                isSystem: true
+
+            }
+            await this.rSave('inSSLCertificates', undefined, inTlsInspection, pipeline);
+        }
+
+        //create a default authentication intermediate certs
+        let inAuthentication: SSLCertificateEx;
+        {
+            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate Authentication', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
+            inAuthentication = {
+                ...this.defaultCertificate('Intermediate Authentication', 'auth'),
+                id: Util.randomNumberString(16),
+                parentId: this.config.caSSLCertificate.idEx,
+                publicCrt: publicCrt,
+                privateKey: privateKey,
+
+            }
+            await this.rSave('inSSLCertificates', undefined, inAuthentication, pipeline);
+        }
+
+        // web page intermediate cert
         let inWebCrt: string, inWebKey: string;
         let inWeb: SSLCertificateEx;
         {
-            const result = await UtilPKI.createCertificate(
-                {
-                    CN: 'Intermediate Web', O: 'ferrumgate', hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
-                    isCA: false, notAfter: new Date().addDays(10950),
-                    notBefore: new Date().addDays(-1), sans: [],
-                    serial: Util.randomBetween(1000000000, 10000000000),
-                    ca: {
-                        hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
-                        privateKey: caPrivateKey || '', publicCrt: caPublicCrt || ''
-                    }
-                })
-            inWebKey = await UtilPKI.toPEM(result.privateKeyBuffer, 'PRIVATE KEY');
-            inWebCrt = await UtilPKI.toPEM(result.certificateBuffer, 'CERTIFICATE');
+            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate Web', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
             inWeb = {
                 ...this.defaultCertificate('Intermediate Web', 'web'),
-                id: Util.randomNumberString(),
+                id: Util.randomNumberString(16),
                 parentId: this.config.caSSLCertificate.idEx,
-                publicCrt: inWebCrt,
-                privateKey: inWebKey,
+                publicCrt: publicCrt,
+                privateKey: privateKey,
+                isSystem: true
 
             }
             await this.rSave('inSSLCertificates', undefined, inWeb, pipeline);
+            inWebCrt = publicCrt;
+            inWebKey = privateKey;
         }
         //save web certtificate
         {
             //sign with intermediate web
-            const result = await UtilPKI.createCertificate(
-                {
-                    CN: 'Web', O: 'ferrumgate', hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
-                    isCA: false, notAfter: new Date().addDays(3650),
-                    notBefore: new Date().addDays(-1), sans: [{ type: "domain", value: this.config.domain }],
-                    serial: Util.randomBetween(1000000000, 10000000000),
-                    ca: {
-                        hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
-                        privateKey: inWebKey,
-                        publicCrt: inWebCrt
-                    }
-                })
-            const privateKey = await UtilPKI.toPEM(result.privateKeyBuffer, 'PRIVATE KEY');
-            const publicCrt = await UtilPKI.toPEM(result.certificateBuffer, 'CERTIFICATE');
+            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], inWebCrt, inWebKey);
             let cert: SSLCertificate = {
                 ...this.config.webSSLCertificate,
                 parentId: inWeb.id,
@@ -1829,6 +1842,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('jwtSSLCertificate', undefined, cfg.jwtSSLCertificate, pipeline);
         await this.rSave('webSSLCertificate', undefined, cfg.webSSLCertificate, pipeline);
         await this.rSave('caSSLCertificate', undefined, cfg.caSSLCertificate, pipeline);
+        await this.rSaveArray('inSSLCertificates', cfg.inSSLCertificates, pipeline);
         await this.rSave('domain', undefined, cfg.domain, pipeline);
         await this.rSave('url', undefined, cfg.url, pipeline);
         await this.rSave('email', undefined, cfg.email, pipeline);
@@ -1849,10 +1863,6 @@ export class RedisConfigService extends ConfigService {
             await this.rListAdd('authorizationPolicy/rulesOrder', order, true, pipeline);
         }
         await this.rSave('lastUpdateTime', undefined, cfg.lastUpdateTime, pipeline);
-        await this.rSave('jwtSSLCertificate', undefined, cfg.jwtSSLCertificate, pipeline);
-        await this.rSave('caSSLCertificate', undefined, cfg.caSSLCertificate, pipeline);
-
-        await this.rSave('webSSLCertificate', undefined, cfg.webSSLCertificate, pipeline);
         await this.rSave('es', undefined, cfg.es, pipeline);
 
 

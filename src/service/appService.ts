@@ -28,8 +28,7 @@ import { RedisConfigWatchCachedService } from "./redisConfigWatchCachedService";
 import { ConfigWatch } from "../model/config";
 import { IpIntelligenceService } from "./ipIntelligenceService";
 import { ScheduledTasksService } from "./system/sheduledTasksService";
-
-import { currentExpressAppImp } from "../";
+import { ExpressApp } from "../index";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -118,8 +117,11 @@ export class AppService {
         return new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
     }
     interval: any = null;
+    isReconfigureESIsWorking = false;
     public async startReconfigureES() {
         try {
+            if (this.isReconfigureESIsWorking) return;
+            this.isReconfigureESIsWorking = true;
             const es = await this.configService.getES();
             if (es.host)
                 await this.esService.reConfigure(es.host, es.user, es.pass);
@@ -137,13 +139,19 @@ export class AppService {
                 }, 5000);
 
             }
+        } finally {
+            this.isReconfigureESIsWorking = false;
         }
     }
 
     intervalHttps: any = null;
+    isReconfigureHttpsIsWorking = false;
     public async startReconfigureHttps() {
         try {
-            await currentExpressAppImp.startHttps();
+            if (this.isReconfigureHttpsIsWorking)
+                return;
+            this.isReconfigureHttpsIsWorking = true;
+            await ExpressApp.https.start();
             if (this.intervalHttps)
                 clearIntervalAsync(this.intervalHttps);
             this.intervalHttps = null;
@@ -156,6 +164,8 @@ export class AppService {
                 }, 5000);
 
             }
+        } finally {
+            this.isReconfigureHttpsIsWorking = false;
         }
     }
 
