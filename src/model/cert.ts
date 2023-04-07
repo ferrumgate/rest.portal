@@ -23,8 +23,26 @@ export interface SSLCertificate {
 }
 export interface SSLCertificateEx extends SSLCertificate {
     id: string;
-    isIntermediate?: boolean;
 
+}
+/**
+ *  don't copy certificate public or private keys
+ */
+export function cloneSSlCertificate(obj: SSLCertificate): SSLCertificate {
+    return {
+
+        insertDate: obj.insertDate,
+        updateDate: obj.updateDate, name: obj.name,
+        category: obj.category, isEnabled: obj.isEnabled,
+        labels: obj.labels ? Array.from(obj.labels) : [],
+    }
+}
+//*  don't copy certificate public or private keys
+export function cloneSSlCertificateEx(obj: SSLCertificateEx): SSLCertificateEx {
+    return {
+        ...cloneSSlCertificate(obj),
+        id: obj.id
+    }
 }
 
 

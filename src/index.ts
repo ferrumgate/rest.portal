@@ -31,6 +31,7 @@ import { routerSummaryAuthenticated } from "./api/summaryApi";
 import { saveActivityError } from "./api/auth/commonAuth";
 import { routerIpIntelligenceAuthenticated } from "./api/ipIntelligenceApi";
 import { routerDataAuthenticated } from "./api/dataApi";
+import { routerPKIAuthenticated } from "./api/pkiApi";
 
 
 const bodyParser = require('body-parser');
@@ -432,6 +433,16 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkCaptcha, 'ipIntelligenceCaptcha', 50),
             asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerIpIntelligenceAuthenticated);
+
+        this.app.use('(\/api)?/pki',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'pki', 1000),
+            asyncHandlerWithArgs(rateLimit, 'pkiHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'pkiDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'pkiCaptcha', 50),
+            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
+            routerPKIAuthenticated);
 
 
 

@@ -435,7 +435,7 @@ export class RedisConfigService extends ConfigService {
         //create certs
 
         {
-            const { publicCrt, privateKey } = await this.createCert('JWT CA', 'ferrumgate', 10950, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('JWT CA', 'ferrumgate', 10950, []);
             await this.rSave('jwtSSLCertificate', undefined, {
                 ...this.config.jwtSSLCertificate,
                 privateKey: privateKey,
@@ -445,7 +445,7 @@ export class RedisConfigService extends ConfigService {
         }
         let caPublicCrt, caPrivateKey;
         {
-            const { publicCrt, privateKey } = await this.createCert('ROOT CA', 'ferrumgate', 10950, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('ROOT CA', 'ferrumgate', 10950, []);
             await this.rSave('caSSLCertificate', undefined, {
                 ...this.config.caSSLCertificate,
                 privateKey: privateKey,
@@ -459,7 +459,7 @@ export class RedisConfigService extends ConfigService {
 
         let inTlsInspection: SSLCertificateEx;
         {
-            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
             inTlsInspection = {
                 ...this.defaultCertificate('Intermediate TLS Inspection', 'tls'),
                 id: Util.randomNumberString(16),
@@ -475,7 +475,7 @@ export class RedisConfigService extends ConfigService {
         //create a default authentication intermediate certs
         let inAuthentication: SSLCertificateEx;
         {
-            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate Authentication', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Authentication', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
             inAuthentication = {
                 ...this.defaultCertificate('Intermediate Authentication', 'auth'),
                 id: Util.randomNumberString(16),
@@ -491,7 +491,7 @@ export class RedisConfigService extends ConfigService {
         let inWebCrt: string, inWebKey: string;
         let inWeb: SSLCertificateEx;
         {
-            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate Web', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Web', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
             inWeb = {
                 ...this.defaultCertificate('Intermediate Web', 'web'),
                 id: Util.randomNumberString(16),
@@ -508,7 +508,7 @@ export class RedisConfigService extends ConfigService {
         //save web certtificate
         {
             //sign with intermediate web
-            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], inWebCrt, inWebKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], inWebCrt, inWebKey);
             let cert: SSLCertificate = {
                 ...this.config.webSSLCertificate,
                 parentId: inWeb.id,
@@ -1791,7 +1791,7 @@ export class RedisConfigService extends ConfigService {
             name: 'SSL',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: [], isEnabled: true, category: 'jwt'
+            labels: [], isEnabled: true, category: 'web'
         };
         cfg.caSSLCertificate = await this.rGet('caSSLCertificate') || {
             idEx: Util.randomNumberString(16),
@@ -1800,6 +1800,7 @@ export class RedisConfigService extends ConfigService {
             updateDate: new Date().toISOString(),
             labels: [], isEnabled: true, category: 'ca'
         };
+        cfg.inSSLCertificates = await this.rGetAll('inSSLCertificates');
         cfg.users = await this.rGetAll('users');
         cfg.groups = await this.rGetAll('groups');
         cfg.services = await this.rGetAll('services');

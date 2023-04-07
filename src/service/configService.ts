@@ -190,36 +190,7 @@ export class ConfigService {
     }
 
 
-    protected async createCert(cn: string, o: string, days: number, sans: { type: any, value: any }[]) {
 
-        const result = await UtilPKI.createCertificate(
-            {
-                CN: cn, O: o, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
-                isCA: false, notAfter: new Date().addDays(days),
-                notBefore: new Date().addDays(-1), sans: sans,
-                serial: Util.randomBetween(1000000000, 10000000000)
-            })
-        const privateKey = await UtilPKI.toPEM(result.privateKeyBuffer, 'PRIVATE KEY');
-        const publicCrt = await UtilPKI.toPEM(result.certificateBuffer, 'CERTIFICATE');
-        return { publicCrt, privateKey };
-    }
-    protected async createCertSigned(cn: string, o: string, days: number, sans: { type: any, value: any }[], caPublicCrt: string | undefined, caPrivateKey: string | undefined) {
-
-        const result = await UtilPKI.createCertificate(
-            {
-                CN: cn, O: o, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
-                isCA: false, notAfter: new Date().addDays(days),
-                notBefore: new Date().addDays(-1), sans: [],
-                serial: Util.randomBetween(1000000000, 10000000000),
-                ca: {
-                    hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
-                    privateKey: caPrivateKey || '', publicCrt: caPublicCrt || ''
-                }
-            })
-        const privateKey = await UtilPKI.toPEM(result.privateKeyBuffer, 'PRIVATE KEY');
-        const publicCrt = await UtilPKI.toPEM(result.certificateBuffer, 'CERTIFICATE');
-        return { publicCrt, privateKey };
-    }
 
 
     protected async createCerts() {
@@ -231,7 +202,7 @@ export class ConfigService {
         const jwt = await this.getJWTSSLCertificateSensitive();
         if (!jwt.privateKey) {
 
-            const { publicCrt, privateKey } = await this.createCert('JWT CA', 'ferrumgate', 10950, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('JWT CA', 'ferrumgate', 10950, []);
             let cert: SSLCertificate = {
                 ...jwt,
                 publicCrt: publicCrt,
@@ -247,7 +218,7 @@ export class ConfigService {
         const ca = await this.getCASSLCertificateSensitive();
         if (!ca.privateKey) {
 
-            const { publicCrt, privateKey } = await this.createCert('ROOT CA', 'ferrumgate', 10950, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('ROOT CA', 'ferrumgate', 10950, []);
             let cert: SSLCertificate = {
                 ...jwt,
                 publicCrt: publicCrt,
@@ -260,11 +231,11 @@ export class ConfigService {
         //create intermediate web certificates if not exists
         const inCerts = await this.getInSSLCertificateAllSensitive();
         //for tls inspections
-        const intermediateTLS = inCerts.find(x => x.category == 'tls' && x.isEnabled) || this.defaultCertificateEx('TLS Inspection', 'tls');
+        const intermediateTLS = inCerts.find(x => x.category == 'tls') || this.defaultCertificateEx('TLS Inspection', 'tls');
 
         if (!intermediateTLS.privateKey) {
 
-            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], ca.publicCrt, ca.privateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], ca.publicCrt, ca.privateKey);
             let cert: SSLCertificateEx = {
                 ...intermediateTLS,
                 parentId: ca.idEx,
@@ -278,12 +249,12 @@ export class ConfigService {
 
         }
         //for authentication inspections
-        //for tls inspections
-        const intermediateAuthentication = inCerts.find(x => x.category == 'auth' && x.isEnabled) || this.defaultCertificateEx('Authentication', 'auth');
+
+        const intermediateAuthentication = inCerts.find(x => x.category == 'auth') || this.defaultCertificateEx('Authentication', 'auth');
 
         if (!intermediateAuthentication.privateKey) {
 
-            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate Authentication', 'ferrumgate', 10950, [], ca.publicCrt, ca.privateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Authentication', 'ferrumgate', 10950, [], ca.publicCrt, ca.privateKey);
             let cert: SSLCertificateEx = {
                 ...intermediateAuthentication,
                 parentId: ca.idEx,
@@ -298,11 +269,11 @@ export class ConfigService {
         }
 
 
-        const intermediateWeb = inCerts.find(x => x.category == 'web' && x.isEnabled) || this.defaultCertificateEx('Web', 'web');
+        const intermediateWeb = inCerts.find(x => x.category == 'web') || this.defaultCertificateEx('Web', 'web');
 
         if (!intermediateWeb.privateKey) {
 
-            const { publicCrt, privateKey } = await this.createCertSigned('Intermediate Web', 'ferrumgate', 10950, [], ca.publicCrt, ca.privateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Web', 'ferrumgate', 10950, [], ca.publicCrt, ca.privateKey);
             let cert: SSLCertificateEx = {
                 ...intermediateWeb,
                 parentId: ca.idEx,
@@ -319,7 +290,7 @@ export class ConfigService {
         //create ssl certificates if not exists
         let webCert = await this.getWebSSLCertificateSensitive();
         if (!webCert?.privateKey) {
-            const { publicCrt, privateKey } = await this.createCertSigned('Web', 'ferrumgate', 10950, [], intermediateWeb.publicCrt, intermediateWeb.privateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Web', 'ferrumgate', 10950, [], intermediateWeb.publicCrt, intermediateWeb.privateKey);
             let cert: SSLCertificate = {
                 ...webCert,
                 parentId: intermediateWeb.id,
@@ -779,9 +750,9 @@ export class ConfigService {
         await this.saveConfigToFile();
         return this.createTrackEvent(prev, this.config.webSSLCertificate);
     }
-    protected deleteCertSensitive(cert: SSLCertificate | SSLCertificateEx | undefined) {
+    protected deleteCertSensitive(cert?: SSLCertificate | SSLCertificateEx) {
         if (!cert) return cert;
-        delete cert?.privateKey;
+        delete cert.privateKey;
         return cert;
     }
 
@@ -819,8 +790,11 @@ export class ConfigService {
 
     }
 
-    async getInSSLCertificateAll() {
-        return (await this.getInSSLCertificateAllSensitive()).map(x => this.deleteCertSensitive(x));
+    async getInSSLCertificateAll(): Promise<SSLCertificateEx[]> {
+
+        return (await this.getInSSLCertificateAllSensitive()).map(x => this.deleteCertSensitive(x)).filter(y => y).map(y => y as SSLCertificateEx);
+
+
     }
     async getInSSLCertificateAllSensitive() {
         this.isReady(); this.isReadable();
@@ -841,7 +815,9 @@ export class ConfigService {
 
 
     }
-
+    /**
+     * @summary save intermediate certificate
+     */
     async saveInSSLCertificate(cert: SSLCertificateEx) {
         this.isReady(); this.isWritable();
         let findedIndex = this.config.inSSLCertificates.findIndex(x => x.id == cert.id);

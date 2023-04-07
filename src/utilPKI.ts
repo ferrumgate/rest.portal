@@ -6,6 +6,7 @@ import peculiarCrypto from "@peculiar/webcrypto"
 
 import * as ipaddr from 'ip-address';
 import { isIPv4 } from "net";
+import { Util } from "./util";
 
 ///
 ///openssl  x509 -in downloaded.cert -inform PEM -text
@@ -411,5 +412,36 @@ export class UtilPKI {
         // Verify CERT
         return certChainVerificationEngine.verify();
         //#endregion
+    }
+
+    static async createCert(cn: string, o: string, days: number, sans: { type: any, value: any }[]) {
+
+        const result = await UtilPKI.createCertificate(
+            {
+                CN: cn, O: o, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
+                isCA: false, notAfter: new Date().addDays(days),
+                notBefore: new Date().addDays(-1), sans: sans,
+                serial: Util.randomBetween(1000000000, 10000000000)
+            })
+        const privateKey = await UtilPKI.toPEM(result.privateKeyBuffer, 'PRIVATE KEY');
+        const publicCrt = await UtilPKI.toPEM(result.certificateBuffer, 'CERTIFICATE');
+        return { publicCrt, privateKey };
+    }
+    static async createCertSigned(cn: string, o: string, days: number, sans: { type: any, value: any }[], caPublicCrt: string | undefined, caPrivateKey: string | undefined) {
+
+        const result = await UtilPKI.createCertificate(
+            {
+                CN: cn, O: o, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
+                isCA: false, notAfter: new Date().addDays(days),
+                notBefore: new Date().addDays(-1), sans: sans,
+                serial: Util.randomBetween(1000000000, 10000000000),
+                ca: {
+                    hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
+                    privateKey: caPrivateKey || '', publicCrt: caPublicCrt || ''
+                }
+            })
+        const privateKey = await UtilPKI.toPEM(result.privateKeyBuffer, 'PRIVATE KEY');
+        const publicCrt = await UtilPKI.toPEM(result.certificateBuffer, 'CERTIFICATE');
+        return { publicCrt, privateKey };
     }
 }

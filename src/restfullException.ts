@@ -79,7 +79,7 @@ export class ErrorCodes {
     static ErrEmailConfigNeed: string = 'ErrEmailConfigNeed';
     static ErrFqdnIsNotValid: string = 'ErrFqdnIsNotValid';
     static ErrIpNotValid: string = 'ErrIpNotValid'
-
+    static ErrSystemParameter: string = "ErrSystemParameter";
 
 }
 
@@ -127,6 +127,7 @@ export class ErrorCodesInternal extends ErrorCodes {
     static ErrOnlyAuthLocalIsValid: string = "ErrOnlyAuthLocalIsValid";
     static ErrIpIntelligenceSourceNotFound: string = "ErrIpIntelligenceSourceNotFound";
     static ErrIpIntelligenceBWItemNotFound: string = "ErrIpIntelligenceBWItemNotFound";
+
 
 
 }

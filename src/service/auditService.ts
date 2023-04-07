@@ -18,6 +18,7 @@ import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Group } from "../model/group";
 import { ESSetting } from "../model/esSetting";
 import { IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
+import { SSLCertificate } from "../model/cert";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -360,6 +361,26 @@ export class AuditService {
         await this.executeSave(currentSession, currentUser, before, before,
             `ip intelligence list reseted}`,
             `${before?.name}`,)
+
+    }
+    async logDeleteCert(currentSession: AuthSession, currentUser: User, before?: SSLCertificate, after?: SSLCertificate) {
+        if (before)
+            delete before?.privateKey;
+        if (after)
+            delete after?.privateKey;
+        await this.executeSave(currentSession, currentUser, before, after,
+            `certificate deleted}`,
+            `${before?.name}`,)
+
+    }
+    async logSaveCert(currentSession: AuthSession, currentUser: User, before?: SSLCertificate, after?: SSLCertificate) {
+        if (before)
+            delete before?.privateKey;
+        if (after)
+            delete after?.privateKey;
+        await this.executeSave(currentSession, currentUser, before, after,
+            `certificate ${before ? 'updated' : 'created'}`,
+            `${before?.name || after?.name}`,)
 
     }
 
