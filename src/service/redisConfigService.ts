@@ -354,6 +354,7 @@ export class RedisConfigService extends ConfigService {
                 logger.info("create default values");
                 await this.saveV1();
 
+
             }
 
             clearIntervalAsync(this.timerInterval);
@@ -457,19 +458,20 @@ export class RedisConfigService extends ConfigService {
 
         }
 
-        let inTlsInspection: SSLCertificateEx;
+        let inTls: SSLCertificateEx;
         {
             const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
-            inTlsInspection = {
-                ...this.defaultCertificate('Intermediate TLS Inspection', 'tls'),
+            inTls = {
+                ...this.defaultCertificate('Intermediate TLS', 'tls'),
                 id: Util.randomNumberString(16),
                 parentId: this.config.caSSLCertificate.idEx,
                 publicCrt: publicCrt,
                 privateKey: privateKey,
-                isSystem: true
+                isSystem: false,
+                labels: ['for web', 'for tls inspection', 'for tls service']
 
             }
-            await this.rSave('inSSLCertificates', undefined, inTlsInspection, pipeline);
+            await this.rSave('inSSLCertificates', undefined, inTls, pipeline);
         }
 
         //create a default authentication intermediate certs
@@ -487,31 +489,20 @@ export class RedisConfigService extends ConfigService {
             await this.rSave('inSSLCertificates', undefined, inAuthentication, pipeline);
         }
 
-        // web page intermediate cert
-        let inWebCrt: string, inWebKey: string;
-        let inWeb: SSLCertificateEx;
-        {
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Web', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
-            inWeb = {
-                ...this.defaultCertificate('Intermediate Web', 'web'),
-                id: Util.randomNumberString(16),
-                parentId: this.config.caSSLCertificate.idEx,
-                publicCrt: publicCrt,
-                privateKey: privateKey,
-                isSystem: true
 
-            }
-            await this.rSave('inSSLCertificates', undefined, inWeb, pipeline);
-            inWebCrt = publicCrt;
-            inWebKey = privateKey;
-        }
         //save web certtificate
         {
             //sign with intermediate web
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], inWebCrt, inWebKey);
+            const url = await this.config.url;
+            const domain1 = new URL(url).hostname;
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Web', 'ferrumgate', 10950,
+                [
+                    { type: 'domain', value: domain1 },
+
+                ], inTls.publicCrt, inTls.privateKey);
             let cert: SSLCertificate = {
                 ...this.config.webSSLCertificate,
-                parentId: inWeb.id,
+                parentId: inTls.id,
                 publicCrt: publicCrt,
                 privateKey: privateKey,
 

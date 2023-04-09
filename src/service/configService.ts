@@ -220,7 +220,7 @@ export class ConfigService {
 
             const { publicCrt, privateKey } = await UtilPKI.createCert('ROOT CA', 'ferrumgate', 10950, []);
             let cert: SSLCertificate = {
-                ...jwt,
+                ...ca,
                 publicCrt: publicCrt,
                 privateKey: privateKey,
                 isSystem: true
@@ -230,8 +230,8 @@ export class ConfigService {
         }
         //create intermediate web certificates if not exists
         const inCerts = await this.getInSSLCertificateAllSensitive();
-        //for tls inspections
-        const intermediateTLS = inCerts.find(x => x.category == 'tls') || this.defaultCertificateEx('TLS Inspection', 'tls');
+        //for tls 
+        const intermediateTLS = inCerts.find(x => x.category == 'tls') || this.defaultCertificateEx('TLS ', 'tls');
 
         if (!intermediateTLS.privateKey) {
 
@@ -241,7 +241,8 @@ export class ConfigService {
                 parentId: ca.idEx,
                 publicCrt: publicCrt,
                 privateKey: privateKey,
-                isSystem: true
+                isSystem: false,
+                labels: ['for web', 'for tls inspection', 'for tls service']
 
             }
             await this.saveInSSLCertificate(cert);
@@ -269,31 +270,20 @@ export class ConfigService {
         }
 
 
-        const intermediateWeb = inCerts.find(x => x.category == 'web') || this.defaultCertificateEx('Web', 'web');
-
-        if (!intermediateWeb.privateKey) {
-
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Web', 'ferrumgate', 10950, [], ca.publicCrt, ca.privateKey);
-            let cert: SSLCertificateEx = {
-                ...intermediateWeb,
-                parentId: ca.idEx,
-                publicCrt: publicCrt,
-                privateKey: privateKey,
-                isSystem: true
-
-            }
-            await this.saveInSSLCertificate(cert);
-            intermediateWeb.privateKey = privateKey, intermediateWeb.publicCrt = publicCrt;
-
-        }
-
         //create ssl certificates if not exists
+        const url = await this.getUrl();
+        const domain1 = new URL(url).hostname;
+
         let webCert = await this.getWebSSLCertificateSensitive();
         if (!webCert?.privateKey) {
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Web', 'ferrumgate', 10950, [], intermediateWeb.publicCrt, intermediateWeb.privateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Web', 'ferrumgate', 10950,
+                [
+                    { type: 'domain', value: domain1 },
+
+                ], intermediateTLS.publicCrt, intermediateTLS.privateKey);
             let cert: SSLCertificate = {
                 ...webCert,
-                parentId: intermediateWeb.id,
+                parentId: intermediateTLS.id,
                 publicCrt: publicCrt,
                 privateKey: privateKey,
 

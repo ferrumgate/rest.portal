@@ -37,8 +37,36 @@ routerPKIAuthenticated.get('/intermediate',
         logger.info(`query pki intermediate`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
-        const certs = await configService.getInSSLCertificateAll();
+        const certs = await configService.getInSSLCertificateAllSensitive();
         return res.status(200).json({ items: certs });
+
+    }))
+
+
+routerPKIAuthenticated.post('/intermediate/:id/export',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
+        const password = req.body.password;
+        logger.info(`p12 download intermediate`);
+
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        await inputService.checkNotEmpty(password);
+        const cert = await configService.getInSSLCertificateSensitive(id);
+        if (!cert) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNotFound, 'no pki cert');
+        if (cert.isSystem) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrSystemParameter, 'system parameter');
+        const ca = await configService.getCASSLCertificate();
+        const buffer = await UtilPKI.createP12_2(cert.privateKey || '', cert.publicCrt || '', ca.publicCrt || '', password);
+        const folder = `/tmp/pki/${Util.randomNumberString()}`;
+        await fsp.mkdir(folder, { recursive: true });
+        const filepath = `${folder}/${Util.randomNumberString()}.p12`;
+        await fsp.writeFile(filepath, buffer);
+        return res.download(filepath, `${cert.name}.p12`)
 
     }))
 
@@ -184,13 +212,21 @@ routerPKIAuthenticated.delete('/cert/web',
         safe.isSystem = false;
         safe.category = 'web';
         //delete  makes reset certificate and generates a new one
-        const webIntermediate = (await configService.getInSSLCertificateAllSensitive()).find(x => x.category == 'web');
+        const webIntermediate = (await configService.getInSSLCertificateAllSensitive()).filter(x => x.category == 'tls').find(x => x.labels.includes("for web"));
         if (!webIntermediate) {
             throw new RestfullException(417, ErrorCodes.ErrSystemIsNotReady, ErrorCodesInternal.ErrSystemIsNotReady, 'no web intermediate cert');
         }
         safe.parentId = webIntermediate.id;
-        const domain = await configService.getDomain();
-        const { publicCrt, privateKey } = await UtilPKI.createCertSigned("Web", 'ferrumgate', 10950, [{ type: 'domain', value: domain }], webIntermediate.publicCrt || '', webIntermediate.privateKey);
+        const url = await configService.getUrl();
+        const domain1 = new URL(url).hostname;
+
+
+        const { publicCrt, privateKey } = await UtilPKI.createCertSigned("Web", 'ferrumgate', 10950,
+            [
+                { type: 'domain', value: domain1 },
+
+            ],
+            webIntermediate.publicCrt || '', webIntermediate.privateKey);
         safe.publicCrt = publicCrt;
         safe.privateKey = privateKey;
         safe.updateDate = new Date().toISOString();

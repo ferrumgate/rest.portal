@@ -485,7 +485,9 @@ routerConfigAuthenticated.get('/export/:key',
 
         const encrypted = Util.encrypt(encKey, str);
         const randomFilename = Util.randomNumberString(8);
-        const filepath = `/tmp/${randomFilename}`;
+        const folder = `/tmp/uploads/${Util.randomNumberString()}`;
+        await fsp.mkdir(folder, { recursive: true });
+        const filepath = `${folder}/${randomFilename}`;
         await fsp.writeFile(filepath, encrypted);
         await redisService.delete(`/export/file/${encKey}`);
         await auditService.logConfigExport(currentSession, currentUser);

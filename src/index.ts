@@ -32,6 +32,7 @@ import { saveActivityError } from "./api/auth/commonAuth";
 import { routerIpIntelligenceAuthenticated } from "./api/ipIntelligenceApi";
 import { routerDataAuthenticated } from "./api/dataApi";
 import { routerPKIAuthenticated } from "./api/pkiApi";
+import path from "path";
 
 
 const bodyParser = require('body-parser');
@@ -39,7 +40,7 @@ const express = require('express');
 
 
 const port = Number(process.env.PORT) | 8181;
-const ports = Number(process.env.PORTS) | 8383;
+const ports = Number(process.env.PORTS) | 8443;
 
 export class ExpressApp {
     app: any;
@@ -68,7 +69,8 @@ export class ExpressApp {
 
         //express app
 
-        this.app.use(express.static('dassets'));
+        //this.app.use(express.static('dassets'));
+        this.app.use(express.static(process.env.STATIC_FOLDER || path.join(__dirname, 'web')))
 
 
         //disable powerer by

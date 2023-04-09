@@ -268,6 +268,28 @@ describe('UtilPKI ', async () => {
 
     }).timeout(5000);
 
+    it('createP12_2', async () => {
+
+        const tmpDir = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmpDir);
+        console.log(tmpDir);
+        const { ca, crt, key } = await createCA();
+        const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
+        const fileBuffer = await UtilPKI.createP12_2(inKey, inCrt, crt, '123456');
+        //fs.writeFileSync('/tmp/abo.p12', fileBuffer);
+    })
+
+    it('createP12', async () => {
+
+        const tmpDir = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmpDir);
+        console.log(tmpDir);
+        const { ca, crt, key } = await createCA();
+        const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
+        const fileBuffer = await UtilPKI.createP12(inKey, inCrt, '123456',);
+        //fs.writeFileSync('/tmp/abo1.p12', fileBuffer);
+    })
+
 
 
 

@@ -664,6 +664,14 @@ describe('util ', () => {
 
     });
 
+    it('date addDays', async () => {
+        const date = new Date();
+        const date1 = date.addDays(1);
+        const diff = date1.getTime() - date.getTime();
+        expect(diff).to.equal(24 * 60 * 60 * 1000);
+
+    });
+
 
 
 

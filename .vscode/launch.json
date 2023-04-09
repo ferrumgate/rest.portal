@@ -28,7 +28,8 @@
                 "LIMITED_MODE": "true22",
                 "LOAD_TEST_DATA": "true",
                 "JENCODE": "json",
-                "ENCRYPT_KEY": "bwe7ecxv6pgsc1vbzwh507ey6bftxc41"
+                "ENCRYPT_KEY": "bwe7ecxv6pgsc1vbzwh507ey6bftxc41",
+                "STATIC_FOLDER": "/work/projects/ferrum/ui.portal/dist/portal"
             },
             "outputCapture": "console",
             "console": "integratedTerminal",

@@ -12,6 +12,7 @@ import { IpIntelligence, IpIntelligenceList, IpIntelligenceListStatus, IpIntelli
 import { ESService } from '../src/service/esService';
 import { ExpressApp } from '../src';
 import { SSLCertificate, SSLCertificateEx } from '../src/model/cert';
+import exp from 'constants';
 
 
 
@@ -60,10 +61,8 @@ describe('pkiApi', async () => {
     before(async () => {
         await expressApp.start();
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
-        await appService.configService.init();
+        //await appService.configService.init();
         await appService.configService.setIsConfigured(1);
-
-
     })
 
 
@@ -74,7 +73,7 @@ describe('pkiApi', async () => {
         appService.configService.config.ipIntelligence.sources = [];
         appService.configService.config.ipIntelligence.lists = [];
         appService.configService.config.inSSLCertificates = [];
-        appService.configService.init();
+
         await redisService.flushAll();
 
     })
@@ -85,6 +84,7 @@ describe('pkiApi', async () => {
 
     it('check authoration as admin role', async () => {
         //prepare data
+        await appService.configService.init();
         const clonedUser = Util.clone(user);
         clonedUser.roleIds = ['User'];
         await appService.configService.saveUser(clonedUser);
@@ -121,7 +121,7 @@ describe('pkiApi', async () => {
 
     it('GET /pki/intermediate', async () => {
 
-
+        await appService.configService.init();
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
@@ -132,6 +132,7 @@ describe('pkiApi', async () => {
             insertDate: new Date().toISOString(),
             isEnabled: true, labels: [],
         }
+
         await configService.saveInSSLCertificate(item);
 
 
@@ -155,10 +156,48 @@ describe('pkiApi', async () => {
     }).timeout(50000);
 
 
+    it('POST /pki/intermediate/id/export', async () => {
+
+        await appService.configService.init();
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+        const item = (await configService.getInSSLCertificateAll()).filter(x => x.category == 'web').at(0);
+        expect(item).exist;
+
+
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/pki/intermediate/${item?.id}/export`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ password: '123' })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        const buffer = response.body;
+        expect(buffer.length).exist;
+        const randomFilename = Util.randomNumberString();
+        const tmp = `/tmp/${randomFilename}`;
+        fs.writeFileSync(tmp, buffer);
+
+
+
+    }).timeout(50000);
+
+
 
     it('DELETE /pki/intermediate', async () => {
 
-
+        await appService.configService.init();
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
@@ -197,7 +236,7 @@ describe('pkiApi', async () => {
 
     it('PUT /pki/intermediate', async () => {
 
-
+        await appService.configService.init();
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
@@ -272,7 +311,7 @@ describe('pkiApi', async () => {
 
     it('POST /pki/intermediate', async () => {
 
-
+        await appService.configService.init();
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
@@ -316,7 +355,7 @@ describe('pkiApi', async () => {
 
     it('GET /pki/cert/web', async () => {
 
-
+        await appService.configService.init();
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
@@ -353,7 +392,7 @@ describe('pkiApi', async () => {
 
     it('DELETE /pki/cert/web', async () => {
 
-
+        await appService.configService.init();
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
@@ -391,7 +430,7 @@ describe('pkiApi', async () => {
 
     it('PUT /pki/cert/web', async () => {
 
-
+        await appService.configService.init();
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')

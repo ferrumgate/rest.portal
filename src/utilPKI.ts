@@ -3,10 +3,12 @@ import * as pvtsutils from "pvtsutils";
 import * as pkijs from 'pkijs';
 import * as asn1js from "asn1js";
 import peculiarCrypto from "@peculiar/webcrypto"
+import * as pvutils from "pvutils";
 
 import * as ipaddr from 'ip-address';
 import { isIPv4 } from "net";
 import { Util } from "./util";
+import fsp from 'fs/promises';
 
 ///
 ///openssl  x509 -in downloaded.cert -inform PEM -text
@@ -64,6 +66,11 @@ export class UtilPKI {
             .replace(/-{5}(BEGIN|END) .*-{5}/gm, "")
             .replace(/\s/gm, "");
         return pvtsutils.Convert.FromBase64(base64);
+    }
+    static removeBeginEnd(pem: string) {
+        return pem
+            .replace(/-{5}(BEGIN|END) .*-{5}/gm, "")
+            .replace(/\s/gm, "");
     }
 
     /**
@@ -443,5 +450,89 @@ export class UtilPKI {
         const privateKey = await UtilPKI.toPEM(result.privateKeyBuffer, 'PRIVATE KEY');
         const publicCrt = await UtilPKI.toPEM(result.certificateBuffer, 'CERTIFICATE');
         return { publicCrt, privateKey };
+    }
+
+    static async createP12(privateKey: string, publicCrt: string, password: string, hash = "SHA-256"): Promise<Uint8Array> {
+        //#region Create simplified structires for certificate and private key
+        const certRaw = pvutils.stringToArrayBuffer(pvutils.fromBase64(UtilPKI.removeBeginEnd(publicCrt)));
+        const certSimpl = pkijs.Certificate.fromBER(certRaw);
+
+
+
+        const pkcs8Raw = pvutils.stringToArrayBuffer(pvutils.fromBase64(UtilPKI.removeBeginEnd(privateKey)));
+        const pkcs8Simpl = pkijs.PrivateKeyInfo.fromBER(pkcs8Raw);
+
+        //#endregion
+        //#region Put initial values for PKCS#12 structures
+        const pkcs12 = new pkijs.PFX({
+            parsedValue: {
+                integrityMode: 0,
+                authenticatedSafe: new pkijs.AuthenticatedSafe({
+                    parsedValue: {
+                        safeContents: [
+                            {
+                                privacyMode: 0,
+                                value: new pkijs.SafeContents({
+                                    safeBags: [
+                                        new pkijs.SafeBag({
+                                            bagId: "1.2.840.113549.1.12.10.1.1",
+                                            bagValue: pkcs8Simpl
+                                        }),
+                                        new pkijs.SafeBag({
+                                            bagId: "1.2.840.113549.1.12.10.1.3",
+                                            bagValue: new pkijs.CertBag({
+                                                parsedValue: certSimpl
+                                            })
+                                        })
+
+                                    ]
+                                })
+                            }
+                        ]
+                    }
+                })
+            }
+        });
+        //#endregion
+        //#region Encode internal values for all "SafeContents" firts (create all "Privacy Protection" envelopes)
+        if (!(pkcs12.parsedValue && pkcs12.parsedValue.authenticatedSafe)) {
+            throw new Error("pkcs12.parsedValue.authenticatedSafe is empty");
+        }
+        await pkcs12.parsedValue.authenticatedSafe.makeInternalValues({
+            safeContents: [
+                {
+                    // Empty parameters since we have "No Privacy" protection level for SafeContents
+                }
+            ]
+        });
+        //#endregion
+        //#region Encode internal values for "Integrity Protection" envelope
+        await pkcs12.makeInternalValues({
+            password: pvutils.stringToArrayBuffer(password),
+            iterations: 10000,
+            pbkdf2HashAlgorithm: hash,
+            hmacHashAlgorithm: hash
+        });
+        //#endregion
+        //#region Encode output buffer
+        let arr = pkcs12.toSchema().toBER();
+        return pvtsutils.BufferSourceConverter.toUint8Array(arr)
+        //#endregion
+    }
+
+    static async createP12_2(privateKey: string, publicCrt: string, caPublicCrt: string, password: string,): Promise<Uint8Array> {
+        const folder = `/tmp/pki/${Util.randomNumberString()}`;
+        await fsp.mkdir(folder, { recursive: true });
+        const privateFile = `${folder}/${Util.randomNumberString()}`;
+        await fsp.writeFile(privateFile, privateKey);
+        const publicFile = `${folder}/${Util.randomNumberString()}`;
+        await fsp.writeFile(publicFile, publicCrt);
+        const caPublicFile = `${folder}/${Util.randomNumberString()}`;
+        await fsp.writeFile(caPublicFile, caPublicCrt);
+        const output = `${folder}/${Util.randomNumberString()}`;
+        const cmd = `openssl pkcs12 -export -inkey ${privateFile} -in ${publicFile} -certfile ${caPublicFile} -passout pass:${password}  -out ${output}`;
+        await Util.exec(cmd);
+        await fsp.unlink(privateFile);
+        return await fsp.readFile(output);
     }
 }
