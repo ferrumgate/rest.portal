@@ -436,7 +436,7 @@ export class RedisConfigService extends ConfigService {
         //create certs
 
         {
-            const { publicCrt, privateKey } = await UtilPKI.createCert('JWT CA', 'ferrumgate', 10950, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('JWT CA', 'ferrumgate', 9125, []);
             await this.rSave('jwtSSLCertificate', undefined, {
                 ...this.config.jwtSSLCertificate,
                 privateKey: privateKey,
@@ -446,7 +446,7 @@ export class RedisConfigService extends ConfigService {
         }
         let caPublicCrt, caPrivateKey;
         {
-            const { publicCrt, privateKey } = await UtilPKI.createCert('ROOT CA', 'ferrumgate', 10950, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('ROOT CA', 'ferrumgate', 9125, []);
             await this.rSave('caSSLCertificate', undefined, {
                 ...this.config.caSSLCertificate,
                 privateKey: privateKey,
@@ -460,7 +460,7 @@ export class RedisConfigService extends ConfigService {
 
         let inTls: SSLCertificateEx;
         {
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 9125, true, [], caPublicCrt, caPrivateKey);
             inTls = {
                 ...this.defaultCertificate('Intermediate TLS', 'tls'),
                 id: Util.randomNumberString(16),
@@ -468,7 +468,7 @@ export class RedisConfigService extends ConfigService {
                 publicCrt: publicCrt,
                 privateKey: privateKey,
                 isSystem: false,
-                labels: ['for web', 'for tls inspection', 'for tls service']
+                usages: ['for web', 'for tls inspection', 'for service']
 
             }
             await this.rSave('inSSLCertificates', undefined, inTls, pipeline);
@@ -477,7 +477,7 @@ export class RedisConfigService extends ConfigService {
         //create a default authentication intermediate certs
         let inAuthentication: SSLCertificateEx;
         {
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Authentication', 'ferrumgate', 10950, [], caPublicCrt, caPrivateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Authentication', 'ferrumgate', 9125, true, [], caPublicCrt, caPrivateKey);
             inAuthentication = {
                 ...this.defaultCertificate('Intermediate Authentication', 'auth'),
                 id: Util.randomNumberString(16),
@@ -495,7 +495,7 @@ export class RedisConfigService extends ConfigService {
             //sign with intermediate web
             const url = await this.config.url;
             const domain1 = new URL(url).hostname;
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Web', 'ferrumgate', 10950,
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 9125, false,
                 [
                     { type: 'domain', value: domain1 },
 
@@ -1775,21 +1775,24 @@ export class RedisConfigService extends ConfigService {
             name: 'JWT',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: [], isEnabled: true, category: 'jwt'
+            labels: [], isEnabled: true, category: 'jwt',
+            usages: []
         };
         cfg.webSSLCertificate = await this.rGet('webSSLCertificate') || {
             idEx: Util.randomNumberString(16),
             name: 'SSL',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: [], isEnabled: true, category: 'web'
+            labels: [], isEnabled: true, category: 'web',
+            usages: []
         };
         cfg.caSSLCertificate = await this.rGet('caSSLCertificate') || {
             idEx: Util.randomNumberString(16),
             name: 'CA',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: [], isEnabled: true, category: 'ca'
+            labels: [], isEnabled: true, category: 'ca',
+            usages: []
         };
         cfg.inSSLCertificates = await this.rGetAll('inSSLCertificates');
         cfg.users = await this.rGetAll('users');

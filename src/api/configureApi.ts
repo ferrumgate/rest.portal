@@ -11,6 +11,7 @@ import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
 import { saveSystemDnsService } from "./serviceApi";
 import { AuthSession } from "../model/authSession";
+import { resetWebCertificate } from "./pkiApi";
 
 
 interface Configure {
@@ -105,6 +106,8 @@ routerConfigureAuthenticated.post('/',
 
         //save default dns
         await saveSystemDnsService(defaultNetwork, configService, auditService, currentSession, user);
+        //reset default web cert
+        await resetWebCertificate(configService, auditService, currentSession, user);
 
         return res.status(200).json({});
 

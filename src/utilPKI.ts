@@ -190,12 +190,12 @@ export class UtilPKI {
             ]
         });
 
-        certificate.extensions.push(new pkijs.Extension({
+        /* certificate.extensions.push(new pkijs.Extension({
             extnID: "2.5.29.37",
             critical: false,
             extnValue: extKeyUsage.toSchema().toBER(false),
             parsedValue: extKeyUsage // Parsed value for well-known extensions
-        }));
+        })); */
 
         //#region Microsoft-specific extensions
         const certType = new asn1js.Utf8String({ value: "certType" });
@@ -422,7 +422,7 @@ export class UtilPKI {
     }
 
     static async createCert(cn: string, o: string, days: number, sans: { type: any, value: any }[]) {
-
+        UtilPKI.init();
         const result = await UtilPKI.createCertificate(
             {
                 CN: cn, O: o, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
@@ -434,12 +434,12 @@ export class UtilPKI {
         const publicCrt = await UtilPKI.toPEM(result.certificateBuffer, 'CERTIFICATE');
         return { publicCrt, privateKey };
     }
-    static async createCertSigned(cn: string, o: string, days: number, sans: { type: any, value: any }[], caPublicCrt: string | undefined, caPrivateKey: string | undefined) {
-
+    static async createCertSigned(cn: string, o: string, days: number, isCa: boolean, sans: { type: any, value: any }[], caPublicCrt: string | undefined, caPrivateKey: string | undefined) {
+        UtilPKI.init();
         const result = await UtilPKI.createCertificate(
             {
                 CN: cn, O: o, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
-                isCA: false, notAfter: new Date().addDays(days),
+                isCA: isCa, notAfter: new Date().addDays(days),
                 notBefore: new Date().addDays(-1), sans: sans,
                 serial: Util.randomBetween(1000000000, 10000000000),
                 ca: {
@@ -453,6 +453,7 @@ export class UtilPKI {
     }
 
     static async createP12(privateKey: string, publicCrt: string, password: string, hash = "SHA-256"): Promise<Uint8Array> {
+        UtilPKI.init();
         //#region Create simplified structires for certificate and private key
         const certRaw = pvutils.stringToArrayBuffer(pvutils.fromBase64(UtilPKI.removeBeginEnd(publicCrt)));
         const certSimpl = pkijs.Certificate.fromBER(certRaw);

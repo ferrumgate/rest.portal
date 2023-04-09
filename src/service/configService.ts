@@ -175,7 +175,7 @@ export class ConfigService {
             idEx: Util.randomNumberString(16),
             name: name, insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(), labels: [],
-            isEnabled: true, category: category
+            isEnabled: true, category: category, usages: []
         };
         return ssl;
     }
@@ -184,7 +184,7 @@ export class ConfigService {
             id: Util.randomNumberString(16),
             name: name, insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(), labels: [],
-            isEnabled: true, category: category
+            isEnabled: true, category: category, usages: []
         };
         return ssl;
     }
@@ -202,7 +202,7 @@ export class ConfigService {
         const jwt = await this.getJWTSSLCertificateSensitive();
         if (!jwt.privateKey) {
 
-            const { publicCrt, privateKey } = await UtilPKI.createCert('JWT CA', 'ferrumgate', 10950, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('JWT CA', 'ferrumgate', 9125, []);
             let cert: SSLCertificate = {
                 ...jwt,
                 publicCrt: publicCrt,
@@ -218,7 +218,7 @@ export class ConfigService {
         const ca = await this.getCASSLCertificateSensitive();
         if (!ca.privateKey) {
 
-            const { publicCrt, privateKey } = await UtilPKI.createCert('ROOT CA', 'ferrumgate', 10950, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('ROOT CA', 'ferrumgate', 9125, []);
             let cert: SSLCertificate = {
                 ...ca,
                 publicCrt: publicCrt,
@@ -235,14 +235,14 @@ export class ConfigService {
 
         if (!intermediateTLS.privateKey) {
 
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 10950, [], ca.publicCrt, ca.privateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 9125, true, [], ca.publicCrt, ca.privateKey);
             let cert: SSLCertificateEx = {
                 ...intermediateTLS,
                 parentId: ca.idEx,
                 publicCrt: publicCrt,
                 privateKey: privateKey,
                 isSystem: false,
-                labels: ['for web', 'for tls inspection', 'for tls service']
+                usages: ['for web', 'for tls inspection', 'for service']
 
             }
             await this.saveInSSLCertificate(cert);
@@ -255,7 +255,7 @@ export class ConfigService {
 
         if (!intermediateAuthentication.privateKey) {
 
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Authentication', 'ferrumgate', 10950, [], ca.publicCrt, ca.privateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Authentication', 'ferrumgate', 9125, true, [], ca.publicCrt, ca.privateKey);
             let cert: SSLCertificateEx = {
                 ...intermediateAuthentication,
                 parentId: ca.idEx,
@@ -276,7 +276,7 @@ export class ConfigService {
 
         let webCert = await this.getWebSSLCertificateSensitive();
         if (!webCert?.privateKey) {
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Web', 'ferrumgate', 10950,
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 9125, false,
                 [
                     { type: 'domain', value: domain1 },
 

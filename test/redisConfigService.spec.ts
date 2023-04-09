@@ -577,7 +577,7 @@ describe('redisConfigService', async () => {
             name: 'JWT',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: [], isEnabled: true
+            labels: [], isEnabled: true, usages: []
         };
         await configService.init();
 
@@ -600,7 +600,7 @@ describe('redisConfigService', async () => {
             name: 'Web',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: [], isEnabled: true
+            labels: [], isEnabled: true, usages: []
         };
         await configService.init();
 
@@ -623,7 +623,7 @@ describe('redisConfigService', async () => {
             name: 'CA',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            labels: [], isEnabled: true
+            labels: [], isEnabled: true, usages: []
         };
         await configService.init();
 
@@ -2468,7 +2468,7 @@ describe('redisConfigService', async () => {
             labels: [],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            isEnabled: true,
+            isEnabled: true, usages: []
 
 
 
@@ -2506,7 +2506,7 @@ describe('redisConfigService', async () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             privateKey: 'adsfa', publicCrt: 'adfafda',
-            isEnabled: true
+            isEnabled: true, usages: []
 
         }
         //add
@@ -2520,7 +2520,7 @@ describe('redisConfigService', async () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             privateKey: 'adfafa', publicCrt: 'adsfasfa',
-            isEnabled: true
+            isEnabled: true, usages: []
 
         }
         //add
@@ -2547,7 +2547,8 @@ describe('redisConfigService', async () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             privateKey: 'asdfa', publicCrt: 'asdfasfa',
-            isEnabled: true
+            isEnabled: true,
+            usages: []
 
         }
         //add
@@ -2580,7 +2581,7 @@ describe('redisConfigService', async () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             privateKey: 'adfa', publicCrt: 'asdfasdfsa',
-            isEnabled: true
+            isEnabled: true, usages: []
 
 
         }

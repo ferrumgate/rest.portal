@@ -20,6 +20,8 @@ import { once } from "events";
 import { SSLCertificate, cloneSSlCertificate, cloneSSlCertificateEx } from "../model/cert";
 import { SSLCertificateEx } from "../model/cert";
 import { UtilPKI } from "../utilPKI";
+import { AuditService } from "../service/auditService";
+
 
 
 /////////////////////////////////  pki //////////////////////////////////
@@ -51,6 +53,7 @@ routerPKIAuthenticated.post('/intermediate/:id/export',
         const { id } = req.params;
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
         const password = req.body.password;
+        const addChain = req.body.addChain;
         logger.info(`p12 download intermediate`);
 
         const appService = req.appService as AppService;
@@ -61,7 +64,12 @@ routerPKIAuthenticated.post('/intermediate/:id/export',
         if (!cert) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNotFound, 'no pki cert');
         if (cert.isSystem) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrSystemParameter, 'system parameter');
         const ca = await configService.getCASSLCertificate();
-        const buffer = await UtilPKI.createP12_2(cert.privateKey || '', cert.publicCrt || '', ca.publicCrt || '', password);
+        let buffer: Uint8Array;
+        if (addChain) {
+            buffer = await UtilPKI.createP12_2(cert.privateKey || '', cert.publicCrt || '', ca.publicCrt || '', password);
+        } else {
+            buffer = await UtilPKI.createP12(cert.privateKey || '', cert.publicCrt || '', password,);
+        }
         const folder = `/tmp/pki/${Util.randomNumberString()}`;
         await fsp.mkdir(folder, { recursive: true });
         const filepath = `${folder}/${Util.randomNumberString()}.p12`;
@@ -118,10 +126,12 @@ routerPKIAuthenticated.put('/intermediate',
         if (cert.isSystem)
             throw new RestfullException(400, ErrorCodes.ErrSystemParameter, ErrorCodesInternal.ErrSystemParameter, 'you cannot update system cert');
 
-        cert.name = input.name;
-        cert.updateDate = new Date().toISOString();
+        const safe = cloneSSlCertificateEx(input);
+        safe.updateDate = new Date().toISOString();
+        safe.isSystem = false;
         cert.isEnabled = input.isEnabled ? true : false;
-        const { before, after } = await configService.saveInSSLCertificate(cert);
+
+        const { before, after } = await configService.saveInSSLCertificate(safe);
         await auditService.logSaveCert(currentSession, currentUser, before, after);
 
         //always get again, thismakes system more secure, this is a safe function
@@ -159,7 +169,7 @@ routerPKIAuthenticated.post('/intermediate',
             throw new RestfullException(417, ErrorCodes.ErrSystemIsNotReady, ErrorCodesInternal.ErrSystemIsNotReady, 'no ca');
         }
         safe.parentId = ca.idEx;
-        const { publicCrt, privateKey } = await UtilPKI.createCertSigned(input.name, 'ferrumgate', 10950, [], ca.publicCrt || '', ca.privateKey);
+        const { publicCrt, privateKey } = await UtilPKI.createCertSigned(input.name, 'ferrumgate', 9125, true, [], ca.publicCrt || '', ca.privateKey);
         safe.publicCrt = publicCrt;
         safe.privateKey = privateKey;
 
@@ -187,6 +197,38 @@ routerPKIAuthenticated.get('/cert/web',
 
     }))
 
+export async function resetWebCertificate(configService: ConfigService, auditService: AuditService, currentSession: AuthSession, currentUser: User) {
+    const cert = await configService.getWebSSLCertificateSensitive();
+    if (!cert) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no pki cert');
+    const safe = cloneSSlCertificate(cert);
+    safe.idEx = cert.idEx;
+    safe.name = 'Web';
+    safe.labels = [];
+    safe.isEnabled = true;
+    safe.isSystem = false;
+    safe.category = 'web';
+    //delete  makes reset certificate and generates a new one
+    const webIntermediate = (await configService.getInSSLCertificateAllSensitive()).filter(x => x.category == 'tls').find(x => x.usages.includes("for web"));
+    if (!webIntermediate) {
+        throw new RestfullException(417, ErrorCodes.ErrSystemIsNotReady, ErrorCodesInternal.ErrSystemIsNotReady, 'no web intermediate cert');
+    }
+    safe.parentId = webIntermediate.id;
+    const url = await configService.getUrl();
+    const domain1 = new URL(url).hostname;
+
+
+    const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 9125, false,
+        [
+            { type: 'domain', value: domain1 },
+
+        ],
+        webIntermediate.publicCrt || '', webIntermediate.privateKey);
+    safe.publicCrt = publicCrt;
+    safe.privateKey = privateKey;
+    safe.updateDate = new Date().toISOString();
+    const { before, after } = await configService.setWebSSLCertificate(safe);
+    await auditService.logSaveCert(currentSession, currentUser, before, after);
+}
 
 routerPKIAuthenticated.delete('/cert/web',
     asyncHandler(passportInit),
@@ -202,36 +244,7 @@ routerPKIAuthenticated.delete('/cert/web',
         const configService = appService.configService;
         const auditService = appService.auditService;
 
-        const cert = await configService.getWebSSLCertificateSensitive();
-        if (!cert) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no pki cert');
-        const safe = cloneSSlCertificate(cert);
-        safe.idEx = cert.idEx;
-        safe.name = 'Web';
-        safe.labels = [];
-        safe.isEnabled = true;
-        safe.isSystem = false;
-        safe.category = 'web';
-        //delete  makes reset certificate and generates a new one
-        const webIntermediate = (await configService.getInSSLCertificateAllSensitive()).filter(x => x.category == 'tls').find(x => x.labels.includes("for web"));
-        if (!webIntermediate) {
-            throw new RestfullException(417, ErrorCodes.ErrSystemIsNotReady, ErrorCodesInternal.ErrSystemIsNotReady, 'no web intermediate cert');
-        }
-        safe.parentId = webIntermediate.id;
-        const url = await configService.getUrl();
-        const domain1 = new URL(url).hostname;
-
-
-        const { publicCrt, privateKey } = await UtilPKI.createCertSigned("Web", 'ferrumgate', 10950,
-            [
-                { type: 'domain', value: domain1 },
-
-            ],
-            webIntermediate.publicCrt || '', webIntermediate.privateKey);
-        safe.publicCrt = publicCrt;
-        safe.privateKey = privateKey;
-        safe.updateDate = new Date().toISOString();
-        const { before, after } = await configService.setWebSSLCertificate(safe);
-        await auditService.logSaveCert(currentSession, currentUser, before, after);
+        await resetWebCertificate(configService, auditService, currentSession, currentUser);
         let ret = await configService.getWebSSLCertificate();
         return res.status(200).json(ret);
 

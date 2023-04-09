@@ -494,15 +494,19 @@ export class ExpressApp {
     }
     httpsHash = '';
     async startHttps() {
-
-        const ssl = await this.appService.configService.getWebSSLCertificateSensitive();
-        if (ssl.publicCrt && ssl.privateKey) {
-            let hash = Util.sha256(ssl.publicCrt + ssl.privateKey);
+        const ca = await this.appService.configService.getCASSLCertificate();
+        const int = (await this.appService.configService.getInSSLCertificateAll()).find(x => x.category == 'tls');
+        const web = await this.appService.configService.getWebSSLCertificateSensitive();
+        if (web.publicCrt && web.privateKey) {
+            let hash = Util.sha256(web.publicCrt + web.privateKey);
             if (hash != this.httpsHash) {//if changed
                 if (this.httpsServer)
                     this.httpsServer.close();
                 this.httpsServer = null;
-                this.httpsServer = https.createServer({ cert: ssl.publicCrt, key: ssl.privateKey }, this.app);
+                fs.writeFileSync('/tmp/test.cert', web.publicCrt || '');
+                fs.writeFileSync('/tmp/test.in.cert', int?.publicCrt || '');
+                fs.writeFileSync('/tmp/test.ca.cert', ca.publicCrt || '');
+                this.httpsServer = https.createServer({ cert: web.publicCrt, key: web.privateKey }, this.app);
                 this.httpsServer.listen(ports, () => {
                     logger.info('service ssl started on ', ports);
                 })

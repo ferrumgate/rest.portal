@@ -96,7 +96,7 @@ describe('pkiApi', async () => {
             id: Util.randomNumberString(),
             name: 'abc', category: 'web', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
-            isEnabled: true, labels: [],
+            isEnabled: true, labels: [], usages: []
         }
 
 
@@ -130,7 +130,7 @@ describe('pkiApi', async () => {
             id: Util.randomNumberString(),
             name: 'abc', category: 'web', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
-            isEnabled: true, labels: [],
+            isEnabled: true, labels: [], usages: []
         }
 
         await configService.saveInSSLCertificate(item);
@@ -206,7 +206,7 @@ describe('pkiApi', async () => {
             id: Util.randomNumberString(),
             name: 'abc', category: 'web', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
-            isEnabled: true, labels: [],
+            isEnabled: true, labels: [], usages: []
         }
 
         await configService.saveInSSLCertificate(item);
@@ -246,7 +246,7 @@ describe('pkiApi', async () => {
             name: 'abc', category: 'web', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
             isEnabled: true, labels: [],
-            publicCrt: 'akey'
+            publicCrt: 'akey', usages: []
         }
 
         await configService.saveInSSLCertificate(item);
@@ -282,7 +282,7 @@ describe('pkiApi', async () => {
             name: 'abc3dasdfa', category: 'web', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
             isEnabled: true, labels: [],
-            publicCrt: 'akey', isSystem: true
+            publicCrt: 'akey', isSystem: true, usages: []
         }
 
         await configService.saveInSSLCertificate(item2);
@@ -321,7 +321,7 @@ describe('pkiApi', async () => {
             name: 'abc', category: 'web', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
             isEnabled: true, labels: [],
-            publicCrt: 'akey'
+            publicCrt: 'akey', usages: []
         }
 
 
@@ -402,6 +402,7 @@ describe('pkiApi', async () => {
             name: 'abc', category: 'web', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
             isEnabled: true, labels: [], privateKey: 'adfaf', publicCrt: 'adfaf'
+            , usages: []
         }
         await configService.setWebSSLCertificate(item);
 
