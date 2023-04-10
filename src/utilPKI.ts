@@ -167,12 +167,12 @@ export class UtilPKI {
 
         const keyUsage = new asn1js.BitString({ valueHex: bitArray });
 
-        certificate.extensions.push(new pkijs.Extension({
-            extnID: "2.5.29.15",
-            critical: false,
-            extnValue: keyUsage.toBER(false),
-            parsedValue: keyUsage // Parsed value for well-known extensions
-        }));
+        /*  certificate.extensions.push(new pkijs.Extension({
+             extnID: "2.5.29.15",
+             critical: false,
+             extnValue: keyUsage.toBER(false),
+             parsedValue: keyUsage // Parsed value for well-known extensions
+         })); */
         //#endregion
 
         //#region "ExtendedKeyUsage" extension
@@ -200,21 +200,21 @@ export class UtilPKI {
         //#region Microsoft-specific extensions
         const certType = new asn1js.Utf8String({ value: "certType" });
 
-        certificate.extensions.push(new pkijs.Extension({
+        /* certificate.extensions.push(new pkijs.Extension({
             extnID: "1.3.6.1.4.1.311.20.2",
             critical: false,
             extnValue: certType.toBER(false),
             parsedValue: certType // Parsed value for well-known extensions
-        }));
+        })); */
 
         const prevHash = new asn1js.OctetString({ valueHex: (new Uint8Array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])).buffer });
 
-        certificate.extensions.push(new pkijs.Extension({
-            extnID: "1.3.6.1.4.1.311.21.2",
-            critical: false,
-            extnValue: prevHash.toBER(false),
-            parsedValue: prevHash // Parsed value for well-known extensions
-        }));
+        /*  certificate.extensions.push(new pkijs.Extension({
+             extnID: "1.3.6.1.4.1.311.21.2",
+             critical: false,
+             extnValue: prevHash.toBER(false),
+             parsedValue: prevHash // Parsed value for well-known extensions
+         })); */
 
         const certificateTemplate = new pkijs.CertificateTemplate({
             templateID: "1.1.1.1.1.1",
@@ -222,27 +222,27 @@ export class UtilPKI {
             templateMinorVersion: 20
         });
 
-        certificate.extensions.push(new pkijs.Extension({
-            extnID: "1.3.6.1.4.1.311.21.7",
-            critical: false,
-            extnValue: certificateTemplate.toSchema().toBER(false),
-            parsedValue: certificateTemplate // Parsed value for well-known extensions
-        }));
+        /*  certificate.extensions.push(new pkijs.Extension({
+             extnID: "1.3.6.1.4.1.311.21.7",
+             critical: false,
+             extnValue: certificateTemplate.toSchema().toBER(false),
+             parsedValue: certificateTemplate // Parsed value for well-known extensions
+         })); */
 
         const caVersion = new pkijs.CAVersion({
             certificateIndex: 10,
             keyIndex: 20
         });
 
-        certificate.extensions.push(new pkijs.Extension({
-            extnID: "1.3.6.1.4.1.311.21.1",
-            critical: false,
-            extnValue: caVersion.toSchema().toBER(false),
-            parsedValue: caVersion // Parsed value for well-known extensions
-        }));
+        /*   certificate.extensions.push(new pkijs.Extension({
+              extnID: "1.3.6.1.4.1.311.21.1",
+              critical: false,
+              extnValue: caVersion.toSchema().toBER(false),
+              parsedValue: caVersion // Parsed value for well-known extensions
+          })); */
 
         ///domain names
-        if (req.sans) {
+        if (req.sans.length) {
             const altNames = new pkijs.GeneralNames({
                 names: [
 

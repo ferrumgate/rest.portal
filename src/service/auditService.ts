@@ -383,6 +383,13 @@ export class AuditService {
             `${before?.name || after?.name}`,)
 
     }
+    async logExportCert(currentSession: AuthSession, currentUser: User, cert: SSLCertificate) {
+
+        await this.executeSave(currentSession, currentUser, {}, {},
+            `certificate exported`,
+            `${before?.name || after?.name}`,)
+
+    }
 
 
 

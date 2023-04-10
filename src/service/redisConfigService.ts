@@ -436,7 +436,7 @@ export class RedisConfigService extends ConfigService {
         //create certs
 
         {
-            const { publicCrt, privateKey } = await UtilPKI.createCert('JWT CA', 'ferrumgate', 9125, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate JWT CA', 'ferrumgate', 9125, []);
             await this.rSave('jwtSSLCertificate', undefined, {
                 ...this.config.jwtSSLCertificate,
                 privateKey: privateKey,
@@ -446,7 +446,7 @@ export class RedisConfigService extends ConfigService {
         }
         let caPublicCrt, caPrivateKey;
         {
-            const { publicCrt, privateKey } = await UtilPKI.createCert('ROOT CA', 'ferrumgate', 9125, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate ROOT CA', 'ferrumgate', 9125, []);
             await this.rSave('caSSLCertificate', undefined, {
                 ...this.config.caSSLCertificate,
                 privateKey: privateKey,
@@ -460,9 +460,9 @@ export class RedisConfigService extends ConfigService {
 
         let inTls: SSLCertificateEx;
         {
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 9125, true, [], caPublicCrt, caPrivateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('FerrumGate Intermediate TLS', 'ferrumgate', 9125, true, [], caPublicCrt, caPrivateKey);
             inTls = {
-                ...this.defaultCertificate('Intermediate TLS', 'tls'),
+                ...this.defaultCertificate('FerrumGate Intermediate TLS', 'tls'),
                 id: Util.randomNumberString(16),
                 parentId: this.config.caSSLCertificate.idEx,
                 publicCrt: publicCrt,
@@ -477,9 +477,9 @@ export class RedisConfigService extends ConfigService {
         //create a default authentication intermediate certs
         let inAuthentication: SSLCertificateEx;
         {
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Authentication', 'ferrumgate', 9125, true, [], caPublicCrt, caPrivateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('FerrumGate Intermediate Authentication', 'ferrumgate', 9125, true, [], caPublicCrt, caPrivateKey);
             inAuthentication = {
-                ...this.defaultCertificate('Intermediate Authentication', 'auth'),
+                ...this.defaultCertificate('FerrumGate Intermediate Authentication', 'auth'),
                 id: Util.randomNumberString(16),
                 parentId: this.config.caSSLCertificate.idEx,
                 publicCrt: publicCrt,

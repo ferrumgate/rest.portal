@@ -43,6 +43,19 @@ routerPKIAuthenticated.get('/intermediate',
         return res.status(200).json({ items: certs });
 
     }))
+routerPKIAuthenticated.get('/ca',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`query pki ca `);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const certs = await configService.getCASSLCertificate();
+        return res.status(200).json({ items: certs });
+
+    }))
 
 
 routerPKIAuthenticated.post('/intermediate/:id/export',
@@ -52,6 +65,8 @@ routerPKIAuthenticated.post('/intermediate/:id/export',
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
         const password = req.body.password;
         const addChain = req.body.addChain;
         logger.info(`p12 download intermediate`);
@@ -59,6 +74,7 @@ routerPKIAuthenticated.post('/intermediate/:id/export',
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
+        const auditService = appService.auditService;
         await inputService.checkNotEmpty(password);
         const cert = await configService.getInSSLCertificateSensitive(id);
         if (!cert) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNotFound, 'no pki cert');
@@ -74,6 +90,7 @@ routerPKIAuthenticated.post('/intermediate/:id/export',
         await fsp.mkdir(folder, { recursive: true });
         const filepath = `${folder}/${Util.randomNumberString()}.p12`;
         await fsp.writeFile(filepath, buffer);
+        await auditService.logExportCert(currentSession, currentUser, cert);
         return res.download(filepath, `${cert.name}.p12`)
 
     }))

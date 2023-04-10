@@ -202,7 +202,7 @@ export class ConfigService {
         const jwt = await this.getJWTSSLCertificateSensitive();
         if (!jwt.privateKey) {
 
-            const { publicCrt, privateKey } = await UtilPKI.createCert('JWT CA', 'ferrumgate', 9125, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate JWT CA', 'ferrumgate', 9125, []);
             let cert: SSLCertificate = {
                 ...jwt,
                 publicCrt: publicCrt,
@@ -218,7 +218,7 @@ export class ConfigService {
         const ca = await this.getCASSLCertificateSensitive();
         if (!ca.privateKey) {
 
-            const { publicCrt, privateKey } = await UtilPKI.createCert('ROOT CA', 'ferrumgate', 9125, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate ROOT CA', 'ferrumgate', 9125, []);
             let cert: SSLCertificate = {
                 ...ca,
                 publicCrt: publicCrt,
@@ -235,7 +235,7 @@ export class ConfigService {
 
         if (!intermediateTLS.privateKey) {
 
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate TLS', 'ferrumgate', 9125, true, [], ca.publicCrt, ca.privateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('FerrumGate Intermediate TLS', 'ferrumgate', 9125, true, [], ca.publicCrt, ca.privateKey);
             let cert: SSLCertificateEx = {
                 ...intermediateTLS,
                 parentId: ca.idEx,
@@ -255,7 +255,7 @@ export class ConfigService {
 
         if (!intermediateAuthentication.privateKey) {
 
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('Intermediate Authentication', 'ferrumgate', 9125, true, [], ca.publicCrt, ca.privateKey);
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('FerrumGate Intermediate Authentication', 'ferrumgate', 9125, true, [], ca.publicCrt, ca.privateKey);
             let cert: SSLCertificateEx = {
                 ...intermediateAuthentication,
                 parentId: ca.idEx,
