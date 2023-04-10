@@ -202,7 +202,7 @@ export class ConfigService {
         const jwt = await this.getJWTSSLCertificateSensitive();
         if (!jwt.privateKey) {
 
-            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate JWT CA', 'ferrumgate', 9125, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate JWT CA', 'ferrumgate', 9125, true, []);
             let cert: SSLCertificate = {
                 ...jwt,
                 publicCrt: publicCrt,
@@ -218,7 +218,7 @@ export class ConfigService {
         const ca = await this.getCASSLCertificateSensitive();
         if (!ca.privateKey) {
 
-            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate ROOT CA', 'ferrumgate', 9125, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate ROOT CA', 'ferrumgate', 9125, true, []);
             let cert: SSLCertificate = {
                 ...ca,
                 publicCrt: publicCrt,
@@ -276,7 +276,7 @@ export class ConfigService {
 
         let webCert = await this.getWebSSLCertificateSensitive();
         if (!webCert?.privateKey) {
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 9125, false,
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 730, false,
                 [
                     { type: 'domain', value: domain1 },
 

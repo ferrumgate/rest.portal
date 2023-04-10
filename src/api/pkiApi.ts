@@ -53,7 +53,7 @@ routerPKIAuthenticated.get('/ca',
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const certs = await configService.getCASSLCertificate();
-        return res.status(200).json({ items: certs });
+        return res.status(200).json({ items: [certs] });
 
     }))
 
@@ -234,7 +234,7 @@ export async function resetWebCertificate(configService: ConfigService, auditSer
     const domain1 = new URL(url).hostname;
 
 
-    const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 9125, false,
+    const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 730, false,
         [
             { type: 'domain', value: domain1 },
 

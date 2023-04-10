@@ -436,7 +436,7 @@ export class RedisConfigService extends ConfigService {
         //create certs
 
         {
-            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate JWT CA', 'ferrumgate', 9125, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate JWT CA', 'ferrumgate', 9125, true, []);
             await this.rSave('jwtSSLCertificate', undefined, {
                 ...this.config.jwtSSLCertificate,
                 privateKey: privateKey,
@@ -446,7 +446,7 @@ export class RedisConfigService extends ConfigService {
         }
         let caPublicCrt, caPrivateKey;
         {
-            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate ROOT CA', 'ferrumgate', 9125, []);
+            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate ROOT CA', 'ferrumgate', 9125, true, []);
             await this.rSave('caSSLCertificate', undefined, {
                 ...this.config.caSSLCertificate,
                 privateKey: privateKey,
@@ -495,7 +495,7 @@ export class RedisConfigService extends ConfigService {
             //sign with intermediate web
             const url = await this.config.url;
             const domain1 = new URL(url).hostname;
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 9125, false,
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 3650, false,
                 [
                     { type: 'domain', value: domain1 },
 

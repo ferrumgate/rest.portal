@@ -286,6 +286,7 @@ export class UtilPKI {
         const algorithm = pkijs.getAlgorithmParameters(req.signAlg, "generateKey") as any;
         if ("hash" in algorithm.algorithm)
             algorithm.algorithm.hash.name = req.hashAlg;
+        //algorithm.algorithm.modulus.length = 4096;
         //#endregion
 
         const { privateKey, publicKey } = await crypto.generateKey(algorithm.algorithm, true, algorithm.usages) as Required<CryptoKeyPair>;
@@ -421,12 +422,12 @@ export class UtilPKI {
         //#endregion
     }
 
-    static async createCert(cn: string, o: string, days: number, sans: { type: any, value: any }[]) {
+    static async createCert(cn: string, o: string, days: number, isCA: boolean, sans: { type: any, value: any }[]) {
         UtilPKI.init();
         const result = await UtilPKI.createCertificate(
             {
                 CN: cn, O: o, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5',
-                isCA: false, notAfter: new Date().addDays(days),
+                isCA: isCA, notAfter: new Date().addDays(days),
                 notBefore: new Date().addDays(-1), sans: sans,
                 serial: Util.randomBetween(1000000000, 10000000000)
             })

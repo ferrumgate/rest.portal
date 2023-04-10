@@ -38,7 +38,7 @@ describe('UtilPKI ', async () => {
         return fs.readFileSync(path).toString();
     }
 
-    it.skip('create CA', async () => {
+    it('create CA', async () => {
 
         const result = await UtilPKI.createCertificate({
             CN: 'ferrumgate', O: 'TR', isCA: true,
