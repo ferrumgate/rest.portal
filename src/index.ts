@@ -503,9 +503,9 @@ export class ExpressApp {
                 if (this.httpsServer)
                     this.httpsServer.close();
                 this.httpsServer = null;
-                fs.writeFileSync('/tmp/test.cert', web.publicCrt || '');
-                fs.writeFileSync('/tmp/test.in.cert', int?.publicCrt || '');
-                fs.writeFileSync('/tmp/test.ca.cert', ca.publicCrt || '');
+                fs.writeFileSync('/tmp/web.cert', web.publicCrt || '');
+                fs.writeFileSync('/tmp/in.cert', int?.publicCrt || '');
+                fs.writeFileSync('/tmp/ca.cert', ca.publicCrt || '');
                 this.httpsServer = https.createServer({ cert: web.publicCrt, key: web.privateKey }, this.app);
                 this.httpsServer.listen(ports, () => {
                     logger.info('service ssl started on ', ports);

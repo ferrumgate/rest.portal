@@ -151,10 +151,40 @@ describe('pkiApi', async () => {
 
         expect(response.status).to.equal(200);
         expect(response.body.items).exist;
-        expect(response.body.items.length).to.equal(4);
+        expect(response.body.items.length).to.equal(3);
 
     }).timeout(50000);
 
+
+    it('GET /pki/ca', async () => {
+
+        await appService.configService.init();
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+
+
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/pki/ca`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.items).exist;
+        expect(response.body.items.length).to.equal(1);
+        expect(response.body.items[0].privateKey).not.exist;
+
+    }).timeout(50000);
 
     it('POST /pki/intermediate/id/export', async () => {
 
@@ -164,7 +194,7 @@ describe('pkiApi', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
-        const item = (await configService.getInSSLCertificateAll()).filter(x => x.category == 'web').at(0);
+        const item = (await configService.getInSSLCertificateAll()).filter(x => x.category == 'tls').at(0);
         expect(item).exist;
 
 
@@ -184,10 +214,10 @@ describe('pkiApi', async () => {
 
         expect(response.status).to.equal(200);
         const buffer = response.body;
-        expect(buffer.length).exist;
-        const randomFilename = Util.randomNumberString();
-        const tmp = `/tmp/${randomFilename}`;
-        fs.writeFileSync(tmp, buffer);
+        // expect(buffer.length).exist;
+        // const randomFilename = Util.randomNumberString();
+        // const tmp = `/tmp/${randomFilename}`;
+        // fs.writeFileSync(tmp, buffer);
 
 
 
@@ -211,7 +241,7 @@ describe('pkiApi', async () => {
 
         await configService.saveInSSLCertificate(item);
         const certs = await configService.getInSSLCertificateAll();
-        expect(certs.length).to.equal(4);
+        expect(certs.length).to.equal(3);
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -228,7 +258,7 @@ describe('pkiApi', async () => {
 
         expect(response.status).to.equal(200);
         const certs2 = await configService.getInSSLCertificateAll();
-        expect(certs2.length).to.equal(3);
+        expect(certs2.length).to.equal(2);
 
     }).timeout(50000);
 

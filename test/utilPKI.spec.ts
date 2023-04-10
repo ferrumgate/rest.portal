@@ -171,126 +171,126 @@ describe('UtilPKI ', async () => {
 
 
 
-    /*  it('create CA and sign with old date and verity', async () => {
- 
-         const tmpDir = `/tmp/${Util.randomNumberString()}`;
-         fs.mkdirSync(tmpDir);
-         const { ca, crt, key } = await createCA();
- 
-         const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
- 
-         const userResult = await UtilPKI.createCertificate(
-             {
-                 CN: 'ferrumgate user', O: 'UK', sans: [],
-                 isCA: false, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5', serial: 100000,
-                 notAfter: new Date().addDays(-5), notBefore: new Date().addDays(-10),//invalid date test
-                 ca: {
-                     publicCrt: crt,
-                     privateKey: inKey,
-                     hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5'
-                 }
-             })
- 
-         const privateKey3 = `${tmpDir}/user.key`;
-         const publicCrt3 = `${tmpDir}/user.crt`;
-         fs.writeFileSync(privateKey3, UtilPKI.toPEM(userResult.privateKeyBuffer, 'PRIVATE KEY'));
-         fs.writeFileSync(publicCrt3, UtilPKI.toPEM(userResult.certificateBuffer, 'CERTIFICATE'));
-         const user = await UtilPKI.parseCertificate(readFileSync(publicCrt3));
- 
- 
-         const isVerified2 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), intermediate, ca, []);
- 
-         expect(isVerified2.result).to.be.false;
- 
- 
- 
-     }).timeout(5000);
- 
- 
- 
-     it('multiple CA  multiple intermediate check', async () => {
- 
-         const tmpDir = `/tmp/${Util.randomNumberString()}`;
-         fs.mkdirSync(tmpDir);
-         const { ca, crt, key } = await createCA();
-         const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
- 
-         const userResult = await UtilPKI.createCertificate(
-             {
-                 CN: 'ferrumgate user', O: 'UK', sans: [],
-                 isCA: false, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5', serial: 100000,
-                 notAfter: new Date().addDays(5), notBefore: new Date().addDays(-10),
-                 ca: {
-                     publicCrt: inCrt,
-                     privateKey: inKey,
-                     hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5'
-                 }
-             })
- 
-         const privateKey3 = `${tmpDir}/user.key`;
-         const publicCrt3 = `${tmpDir}/user.crt`;
-         fs.writeFileSync(privateKey3, UtilPKI.toPEM(userResult.privateKeyBuffer, 'PRIVATE KEY'));
-         fs.writeFileSync(publicCrt3, UtilPKI.toPEM(userResult.certificateBuffer, 'CERTIFICATE'));
-         const user = await UtilPKI.parseCertificate(readFileSync(publicCrt3));
- 
-         const { ca: ca2, crt: crt2, key: key2 } = await createCA();
-         const { intermediate: intermediate2, inCrt: inCrt2, inKey: inKey2 } = await createIntermediate(crt2, key2);
- 
-         //ca ,intermedidate, ca2,intermediate2
-         const isVerified2 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), intermediate.concat(intermediate2), ca.concat(ca2), []);
-         expect(isVerified2.result).to.be.true;
- 
-         // intermediate2 ,ca
-         const isVerified3 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), intermediate2, ca, []);
-         expect(isVerified3.result).to.be.false;
- 
- 
- 
-     }).timeout(5000);
- 
- 
- 
- 
-     it('create CA with openssl', async () => {
- 
-         const result = await Util.createSelfSignedCrt('ferrumgate.test', '10')
- 
- 
-         const prv = await UtilPKI.parsePrivateKey(result.privateKey, 'SHA-512', 'RSASSA-PKCS1-v1_5');
-         expect(prv).exist;
- 
-         const certs = await UtilPKI.parseCertificate(result.publicCrt);
-         expect(certs.length).to.equal(1);
- 
-         const subject = await UtilPKI.parseSubject(certs[0]);
-         expect(subject['CN']).to.equal('ferrumgate.test');
- 
- 
-     }).timeout(5000);
- 
-     it('createP12_2', async () => {
- 
-         const tmpDir = `/tmp/${Util.randomNumberString()}`;
-         fs.mkdirSync(tmpDir);
-         console.log(tmpDir);
-         const { ca, crt, key } = await createCA();
-         const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
-         const fileBuffer = await UtilPKI.createP12_2(inKey, inCrt, crt, '123456');
-         //fs.writeFileSync('/tmp/abo.p12', fileBuffer);
-     })
- 
-     it('createP12', async () => {
- 
-         const tmpDir = `/tmp/${Util.randomNumberString()}`;
-         fs.mkdirSync(tmpDir);
-         console.log(tmpDir);
-         const { ca, crt, key } = await createCA();
-         const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
-         const fileBuffer = await UtilPKI.createP12(inKey, inCrt, '123456',);
-         //fs.writeFileSync('/tmp/abo1.p12', fileBuffer);
-     })
- 
-  */
+    it('create CA and sign with old date and verity', async () => {
+
+        const tmpDir = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmpDir);
+        const { ca, crt, key } = await createCA();
+
+        const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
+
+        const userResult = await UtilPKI.createCertificate(
+            {
+                CN: 'ferrumgate user', O: 'UK', sans: [],
+                isCA: false, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5', serial: 100000,
+                notAfter: new Date().addDays(-5), notBefore: new Date().addDays(-10),//invalid date test
+                ca: {
+                    publicCrt: crt,
+                    privateKey: inKey,
+                    hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5'
+                }
+            })
+
+        const privateKey3 = `${tmpDir}/user.key`;
+        const publicCrt3 = `${tmpDir}/user.crt`;
+        fs.writeFileSync(privateKey3, UtilPKI.toPEM(userResult.privateKeyBuffer, 'PRIVATE KEY'));
+        fs.writeFileSync(publicCrt3, UtilPKI.toPEM(userResult.certificateBuffer, 'CERTIFICATE'));
+        const user = await UtilPKI.parseCertificate(readFileSync(publicCrt3));
+
+
+        const isVerified2 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), intermediate, ca, []);
+
+        expect(isVerified2.result).to.be.false;
+
+
+
+    }).timeout(5000);
+
+
+
+    it('multiple CA  multiple intermediate check', async () => {
+
+        const tmpDir = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmpDir);
+        const { ca, crt, key } = await createCA();
+        const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
+
+        const userResult = await UtilPKI.createCertificate(
+            {
+                CN: 'ferrumgate user', O: 'UK', sans: [],
+                isCA: false, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5', serial: 100000,
+                notAfter: new Date().addDays(5), notBefore: new Date().addDays(-10),
+                ca: {
+                    publicCrt: inCrt,
+                    privateKey: inKey,
+                    hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5'
+                }
+            })
+
+        const privateKey3 = `${tmpDir}/user.key`;
+        const publicCrt3 = `${tmpDir}/user.crt`;
+        fs.writeFileSync(privateKey3, UtilPKI.toPEM(userResult.privateKeyBuffer, 'PRIVATE KEY'));
+        fs.writeFileSync(publicCrt3, UtilPKI.toPEM(userResult.certificateBuffer, 'CERTIFICATE'));
+        const user = await UtilPKI.parseCertificate(readFileSync(publicCrt3));
+
+        const { ca: ca2, crt: crt2, key: key2 } = await createCA();
+        const { intermediate: intermediate2, inCrt: inCrt2, inKey: inKey2 } = await createIntermediate(crt2, key2);
+
+        //ca ,intermedidate, ca2,intermediate2
+        const isVerified2 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), intermediate.concat(intermediate2), ca.concat(ca2), []);
+        expect(isVerified2.result).to.be.true;
+
+        // intermediate2 ,ca
+        const isVerified3 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), intermediate2, ca, []);
+        expect(isVerified3.result).to.be.false;
+
+
+
+    }).timeout(5000);
+
+
+
+
+    it('create CA with openssl', async () => {
+
+        const result = await Util.createSelfSignedCrt('ferrumgate.test', '10')
+
+
+        const prv = await UtilPKI.parsePrivateKey(result.privateKey, 'SHA-512', 'RSASSA-PKCS1-v1_5');
+        expect(prv).exist;
+
+        const certs = await UtilPKI.parseCertificate(result.publicCrt);
+        expect(certs.length).to.equal(1);
+
+        const subject = await UtilPKI.parseSubject(certs[0]);
+        expect(subject['CN']).to.equal('ferrumgate.test');
+
+
+    }).timeout(5000);
+
+    it('createP12_2', async () => {
+
+        const tmpDir = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmpDir);
+        console.log(tmpDir);
+        const { ca, crt, key } = await createCA();
+        const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
+        const fileBuffer = await UtilPKI.createP12_2(inKey, inCrt, crt, '123456');
+        //fs.writeFileSync('/tmp/abo.p12', fileBuffer);
+    })
+
+    it('createP12', async () => {
+
+        const tmpDir = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmpDir);
+        console.log(tmpDir);
+        const { ca, crt, key } = await createCA();
+        const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
+        const fileBuffer = await UtilPKI.createP12(inKey, inCrt, '123456',);
+        //fs.writeFileSync('/tmp/abo1.p12', fileBuffer);
+    })
+
+
 
 
 

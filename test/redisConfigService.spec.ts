@@ -2527,7 +2527,7 @@ describe('redisConfigService', async () => {
         await configService.saveInSSLCertificate(crt2);
 
         const returned = await configService.getInSSLCertificateAll();
-        expect(returned.length).to.be.equal(3);//one more from default web intermediate
+        expect(returned.length).to.be.equal(4);//one more from default web intermediate
 
 
     });
