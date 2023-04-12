@@ -23,10 +23,11 @@ export class RBACDefault {
     /**
      * @summary system defined right ids
      */
-    static systemRightIds = ['Admin', 'Reporter', 'User'];
+    static systemRightIds = ['Admin', 'Reporter', 'User', 'DevOps'];
     static rightAdmin: Right = { id: 'Admin', name: 'Admin', };
     static rightReporter: Right = { id: 'Reporter', name: 'Reporter' };
     static rightUser: Right = { id: 'User', name: 'User' };
+    static rightDevOps: Right = { id: 'DevOps', name: 'DevOps', };
 
 
 
@@ -38,10 +39,11 @@ export class RBACDefault {
     /**
      * @summary system defined role ids
      */
-    static systemRoleIds = ['Admin', 'Reporter', 'User'];
+    static systemRoleIds = ['Admin', 'Reporter', 'User', 'DevOps'];
     static roleAdmin: Role = { id: 'Admin', name: 'Admin', rightIds: [this.rightAdmin.id] };
     static roleReporter: Role = { id: 'Reporter', name: 'Reporter', rightIds: [this.rightReporter.id] };
     static roleUser: Role = { id: 'User', name: 'User', rightIds: [this.rightUser.id] };
+    static roleDevOps: Role = { id: 'DevOps', name: 'DevOps', rightIds: [this.rightDevOps.id] };
 
 
     static convert2RightList(rbac: RBAC, roleIds?: string[]) {

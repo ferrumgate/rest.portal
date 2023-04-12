@@ -608,16 +608,16 @@ export class RedisConfigService extends ConfigService {
     }
 
     override async getUsersBy(page: number = 0, pageSize: number = 0, search?: string,
-        ids?: string[], groupIds?: string[], roleIds?: string[],
+        ids?: string[], groupIds?: string[], roleIds?: string[], loginMethods?: string[],
         is2FA?: boolean, isVerified?: boolean, isLocked?: boolean,
-        isEmailVerified?: boolean, isOnlyApiKey?: boolean) {
+        isEmailVerified?: boolean) {
         this.isReady();
         this.config.users = [];
         const users = await this.rGetAll<User>('users');
         this.config.users = users;
 
-        return await super.getUsersBy(page, pageSize, search, ids, groupIds, roleIds, is2FA,
-            isVerified, isLocked, isEmailVerified, isOnlyApiKey)
+        return await super.getUsersBy(page, pageSize, search, ids, groupIds, roleIds, loginMethods, is2FA,
+            isVerified, isLocked, isEmailVerified)
 
     }
 

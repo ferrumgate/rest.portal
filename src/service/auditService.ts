@@ -158,7 +158,8 @@ export class AuditService {
             `${before || after}`)
     }
     async logSaveUser(currentSession: AuthSession, currentUser: User, before?: User, after?: User) {
-
+        delete before?.cert?.privateKey;
+        delete after?.cert?.privateKey;
         await this.executeSave(currentSession, currentUser, before, after,
             `user ${before ? 'updated' : 'created'}`,
             `${before?.username || after?.username}`)
@@ -364,10 +365,9 @@ export class AuditService {
 
     }
     async logDeleteCert(currentSession: AuthSession, currentUser: User, before?: SSLCertificate, after?: SSLCertificate) {
-        if (before)
-            delete before?.privateKey;
-        if (after)
-            delete after?.privateKey;
+
+        delete before?.privateKey;
+        delete after?.privateKey;
         await this.executeSave(currentSession, currentUser, before, after,
             `certificate deleted}`,
             `${before?.name}`,)

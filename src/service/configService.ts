@@ -426,7 +426,8 @@ export class ConfigService {
         delete user?.apiKey;
         delete user?.twoFASecret;
         delete user?.password;
-        //delete user?.roleIds;// is this necessary
+        delete user?.cert?.privateKey;
+
     }
 
 
@@ -463,9 +464,9 @@ export class ConfigService {
     }
 
     async getUsersBy(page: number = 0, pageSize: number = 0, search?: string,
-        ids?: string[], groupIds?: string[], roleIds?: string[],
+        ids?: string[], groupIds?: string[], roleIds?: string[], loginMethods?: string[],
         is2FA?: boolean, isVerified?: boolean, isLocked?: boolean,
-        isEmailVerified?: boolean, isOnlyApiKey?: boolean) {
+        isEmailVerified?: boolean) {
         this.isReady(); this.isReadable();
         let users = [];
         let filteredUsers = !search ? this.config.users :
@@ -490,6 +491,10 @@ export class ConfigService {
             filteredUsers = filteredUsers.filter(x => Util.isArrayElementExist(x.groupIds, groupIds));
         if (roleIds && roleIds.length)
             filteredUsers = filteredUsers.filter(x => Util.isArrayElementExist(x.roleIds, roleIds));
+        if (loginMethods && loginMethods.length) {
+            filteredUsers = filteredUsers.filter(x => (loginMethods.includes('password') && x.password) || (loginMethods.includes('apiKey') && x.apiKey) || (loginMethods.includes('certificate') && x.cert))
+        }
+
         if (!Util.isUndefinedOrNull(is2FA))
             filteredUsers = filteredUsers.filter(x => Boolean(x.is2FA) == is2FA)
         if (!Util.isUndefinedOrNull(isVerified))
@@ -500,8 +505,7 @@ export class ConfigService {
         if (!Util.isUndefinedOrNull(isEmailVerified))
             filteredUsers = filteredUsers.filter(x => Boolean(x.isEmailVerified) == isEmailVerified)
 
-        if (!Util.isUndefinedOrNull(isOnlyApiKey))
-            filteredUsers = filteredUsers.filter(x => Boolean(x.isOnlyApiKey) == isOnlyApiKey)
+
 
         filteredUsers = Array.from(filteredUsers);
         filteredUsers.sort((a, b) => {
@@ -574,7 +578,7 @@ export class ConfigService {
     async getUserSensitiveData(id: string) {
         this.isReady(); this.isReadable();
         let user = this.clone(this.config.users.find(x => x.id == id)) as User;
-        return { twoFASecret: user?.twoFASecret };
+        return { twoFASecret: user?.twoFASecret, apiKey: user.apiKey };
     }
 
     protected async triggerUserDeleted(user: User) {

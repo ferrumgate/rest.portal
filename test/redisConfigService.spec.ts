@@ -355,19 +355,19 @@ describe('redisConfigService', async () => {
         expect(list8.items.length).to.be.equal(1);
 
         //search by is2fa
-        const list9 = await configService.getUsersBy(0, 0, '', [], [], [], true);
+        const list9 = await configService.getUsersBy(0, 0, '', [], [], [], [], true);
         expect(list9.items.length).to.be.equal(1);
 
         //search by isVerified
-        const list10 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, true);
+        const list10 = await configService.getUsersBy(0, 0, '', [], [], [], [], undefined, true);
         expect(list10.items.length).to.be.equal(1);
 
         //search by isLocked
-        const list11 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, undefined, true);
+        const list11 = await configService.getUsersBy(0, 0, '', [], [], [], [], undefined, undefined, true);
         expect(list11.items.length).to.be.equal(1);
 
         //search by isEmailVerified
-        const list12 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, undefined, undefined, true);
+        const list12 = await configService.getUsersBy(0, 0, '', [], [], [], [], undefined, undefined, undefined, true);
         expect(list12.items.length).to.be.equal(1);
 
 

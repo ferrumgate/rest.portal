@@ -86,6 +86,11 @@ export async function authorizeAsAdmin(req: any, res: any, next: any) {
     await authorize(req, res, next, [RBACDefault.rightAdmin.id]);
 }
 
+
 export async function authorizeAsAdminOrReporter(req: any, res: any, next: any) {
     await authorize(req, res, next, [RBACDefault.rightAdmin.id, RBACDefault.rightReporter.id]);
+}
+
+export async function authorizeAsAdminOrDevOps(req: any, res: any, next: any) {
+    await authorize(req, res, next, [RBACDefault.rightAdmin.id, RBACDefault.rightDevOps.id]);
 }

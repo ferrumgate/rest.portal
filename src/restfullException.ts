@@ -80,6 +80,7 @@ export class ErrorCodes {
     static ErrFqdnIsNotValid: string = 'ErrFqdnIsNotValid';
     static ErrIpNotValid: string = 'ErrIpNotValid'
     static ErrSystemParameter: string = "ErrSystemParameter";
+    static ErrCertificateIsNotValid: string = 'ErrCertificateIsNotValid';
 
 }
 

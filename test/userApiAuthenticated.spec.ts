@@ -314,7 +314,7 @@ describe('userApiAuthenticated', async () => {
         user1.is2FA = false;
         user1.isLocked = false;
         user1.isEmailVerified = false;
-        user1.isOnlyApiKey = false;
+
         user1.labels = [];
         user1.groupIds = [];
         user1.roleIds = [];
@@ -325,7 +325,7 @@ describe('userApiAuthenticated', async () => {
         user1.is2FA = true;
         user1.isLocked = true;
         user1.isEmailVerified = true;
-        user1.isOnlyApiKey = true;
+
         user1.labels = ['test'];
         user1.groupIds = ['grou1', 'group1'];
         user1.roleIds = ['role1', 'Admin'];
@@ -358,7 +358,7 @@ describe('userApiAuthenticated', async () => {
             //these values must change
             expect(userret.name).to.be.equal('test2');
             expect(userret.isLocked).to.be.true;
-            expect(userret.isOnlyApiKey).to.be.false;
+
             expect(userret.labels?.length).to.be.equal(1);
             expect(userret.roleIds?.length).to.be.equal(1);
             if (userret.roleIds)
@@ -511,11 +511,10 @@ describe('userApiAuthenticated', async () => {
     it('GET /user/current/2fa will return 200', async () => {
         //prepare data
         const { user1 } = createSampleData22();
+        user1.twoFASecret = 'somesecret';
         await appService.configService.saveUser(user1);
 
         const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
-
-
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -533,6 +532,7 @@ describe('userApiAuthenticated', async () => {
         expect(response.body.is2FA).to.be.false;
         expect(response.body.key).exist;
         expect(response.body.t2FAKey).exist;
+        expect(response.body.t2FAKey).to.equal('somesecret');
 
 
     }).timeout(50000);

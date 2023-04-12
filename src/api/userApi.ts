@@ -14,6 +14,7 @@ import { AuthSession } from "../model/authSession";
 import { UserNetworkListResponse } from "../service/policyService";
 import { HelperService } from "../service/helperService";
 import { attachActivity, attachActivitySession, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
+import { UtilPKI } from "../utilPKI";
 
 
 
@@ -331,7 +332,8 @@ routerUserAuthenticated.get('/current/2fa',
         HelperService.isValidUser(user);
         if (!user)
             throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrUserNotFound, 'not found');
-        let secret = user.twoFASecret || t2FAService.generateSecret();
+        const sensitiveData = await configService.getUserSensitiveData(user.id);
+        let secret = sensitiveData.twoFASecret || t2FAService.generateSecret();
 
         const rkey = Util.randomNumberString(16);
         await redisService.set(`/2fa/id/${rkey}`, secret, { ttl: 30 * 60 * 1000 });
@@ -516,6 +518,7 @@ interface UserSearch {
     is2FA?: boolean,
     groupIds: string[],
     roleIds: string[],
+    loginMethods: string[],
     ids: string[],
     page: number;
     pageSize: number;
@@ -547,6 +550,7 @@ routerUserAuthenticated.get('/',
             is2FA: convertToUserOptionToBoolean(req.query.is2FA),
             groupIds: Util.convertToArray(req.query.groupIds),
             roleIds: Util.convertToArray(req.query.roleIds),
+            loginMethods: Util.convertToArray(req.query.loginMethods),
             ids: Util.convertToArray(req.query.ids),
             page: Util.convertToNumber(req.query.page),
             pageSize: Util.convertToNumber(req.query.pageSize),
@@ -559,9 +563,9 @@ routerUserAuthenticated.get('/',
 
 
         const items = await configService.getUsersBy(search.page, search.pageSize, search.search,
-            search.ids, search.groupIds, search.roleIds,
+            search.ids, search.groupIds, search.roleIds, search.loginMethods,
             search.is2FA, search.isVerified, search.isLocked,
-            search.isEmailVerified, false);
+            search.isEmailVerified);
 
         if (search.format == 'simple')
             items.items = items.items.map(x => {
@@ -630,6 +634,7 @@ routerUserAuthenticated.put('/',
         const auditService = appService.auditService;
 
 
+
         await inputService.checkNotEmpty(input.id);
         const userDb = await configService.getUser(input.id);
         if (!userDb) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
@@ -642,7 +647,7 @@ routerUserAuthenticated.put('/',
         }
 
         //await inputService.checkNotEmpty(input.name);
-        //only set name. isLocked, is2FA, roleIds, groupIds
+        //only set name. isLocked, is2FA, roleIds, groupIds, apikey and certificate
         let isChanged = false;
         if (!Util.isUndefinedOrNull(input.name) && userDb.name != input.name) {
             isChanged = true;
@@ -680,6 +685,7 @@ routerUserAuthenticated.put('/',
                 isChanged = true;
             userDb.groupIds = filteredGroups;
         }
+
 
         //check if any other admin user exists
         const adminUsers = await configService.getUserByRoleIds([RBACDefault.roleAdmin.id]);
