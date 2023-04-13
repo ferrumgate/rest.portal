@@ -4,7 +4,9 @@ import chaiHttp from 'chai-http';
 import fs, { read } from 'fs';
 import { AppService } from '../src/service/appService';
 import { SystemLogService } from '../src/service/systemLogService';
-import { RedisService, Util } from '../src/lib';
+import { RedisService } from '../src/service/redisService';
+import { Util } from '../src/util';
+
 
 
 chai.use(chaiHttp);

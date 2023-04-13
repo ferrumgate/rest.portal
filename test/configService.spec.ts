@@ -237,7 +237,7 @@ describe('configService', async () => {
             password: Util.bcryptHash('passwordWithHash'), groupIds: ['g3'],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            cert: { insertDate: '', isEnabled: true, name: 'some sne', updateDate: '', labels: [], usages: [] }
+            cert: {}
         };
 
         configService.config.users.push(aUser3);

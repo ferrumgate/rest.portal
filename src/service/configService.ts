@@ -7,7 +7,7 @@ import { ApiKey, User } from "../model/user";
 import { EmailSetting } from "../model/emailSetting";
 import { LogoSetting } from "../model/logoSetting";
 import { Captcha } from "../model/captcha";
-import { SSLCertificate, SSLCertificateCategory, SSLCertificateEx } from "../model/cert";
+import { SSLCertificate, SSLCertificateBase, SSLCertificateCategory, SSLCertificateEx } from "../model/cert";
 import { ErrorCodes, RestfullException } from "../restfullException";
 import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthSaml, AuthSettings, BaseLdap, BaseOAuth, BaseSaml } from "../model/authSettings";
 import { RBAC, RBACDefault, Role } from "../model/rbac";
@@ -459,11 +459,7 @@ export class ConfigService {
         this.deleteUserSensitiveData(user);
         return user;
     }
-    async getUserByIdSensitive(id: string): Promise<User | undefined> {
-        this.isReady(); this.isReadable();
-        let user = this.clone(this.config.users.find(x => x.id == id));
-        return user;
-    }
+
 
 
     async getUsersBy(page: number = 0, pageSize: number = 0, search?: string,
@@ -578,7 +574,7 @@ export class ConfigService {
         return undefined;
 
     }
-    async getUserSensitiveData(id: string): Promise<{ twoFASecret?: string, apiKey?: ApiKey, cert?: SSLCertificate }> {
+    async getUserSensitiveData(id: string): Promise<{ twoFASecret?: string, apiKey?: ApiKey, cert?: SSLCertificateBase }> {
         this.isReady(); this.isReadable();
         let user = this.clone(this.config.users.find(x => x.id == id)) as User;
         let item = {
@@ -665,10 +661,22 @@ export class ConfigService {
         }
         else {
             cloned.id = finded.id;//security
+            const apiKey = (finded.apiKey || cloned.apiKey) ? {
+                ...finded.apiKey,
+                ...cloned.apiKey
+            } : undefined;
+            const cert: SSLCertificateBase | undefined = (finded.cert || cloned.cert) ? {
+                ...finded.cert,
+                ...cloned.cert
+            } : undefined
+
             this.config.users[findedIndex] = {
                 ...finded,
                 ...cloned,
-                updateDate: new Date().toISOString()
+                apiKey: apiKey,
+                cert: cert,
+                updateDate: new Date().toISOString(),
+
             }
             const trc = this.createTrackEvent(finded, this.config.users[findedIndex])
             this.emitEvent({ type: 'put', path: 'users', val: trc.after, before: trc.before })

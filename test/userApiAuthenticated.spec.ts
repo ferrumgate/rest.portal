@@ -761,6 +761,49 @@ describe('userApiAuthenticated', async () => {
 
     }).timeout(50000)
 
+
+
+    it('DELETE /user/:id/sensitiveData will return 200', async () => {
+        //prepare data
+        const user = getSampleUser();
+        user.apiKey = { key: 'akey' };
+        user.cert = {
+            publicCrt: 'adfaf',
+            privateKey: 'asdfafa'
+        } as SSLCertificate;
+        const inCerts = await appService.configService.getInSSLCertificateAll();
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .delete(`/user/${user.id}/sensitiveData?apiKey=true&cert=true`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey).exist;
+        expect(response.body.apiKey.key).to.equal('')
+        expect(response.body.cert).exist;
+        expect(response.body.cert.publicCrt).to.equal('');
+
+        //check cert
+        const data = await appService.configService.getUserSensitiveData(user.id)
+        expect(data.apiKey?.key).to.equal('');
+        expect(data.cert?.publicCrt).to.equal('');
+
+
+
+    }).timeout(150000)
+
 })
 
 

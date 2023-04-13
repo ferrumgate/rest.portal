@@ -17,7 +17,8 @@ import {
 import { IpIntelligenceListService, IpIntelligenceService } from '../src/service/ipIntelligenceService';
 import crypto from 'node:crypto';
 import { InputService } from '../src/service/inputService';
-import { ESService } from '../src/lib';
+import { ESService } from '../src/service/esService';
+
 
 
 chai.use(chaiHttp);

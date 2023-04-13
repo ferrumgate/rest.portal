@@ -4,9 +4,13 @@ import chaiHttp from 'chai-http';
 import fs, { read } from 'fs';
 import { AppService } from '../src/service/appService';
 import { IntelligenceLogService } from '../src/service/intelligenceLogService';
-import { RedisConfigService, RedisService, SystemLogService, Util } from '../src/lib';
 import { FqdnIntelligenceService } from '../src/service/fqdnIntelligenceService';
 import { DomainIntelligenceBWItem } from '../src/model/domainIntelligence';
+import { RedisService } from '../src/service/redisService';
+import { SystemLogService } from '../src/service/systemLogService';
+import { RedisConfigService } from '../src/service/redisConfigService';
+import { Util } from '../src/util';
+
 
 
 chai.use(chaiHttp);

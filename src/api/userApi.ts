@@ -16,7 +16,7 @@ import { HelperService } from "../service/helperService";
 import { attachActivity, attachActivitySession, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
 import { UtilPKI } from "../utilPKI";
 import { cursorTo } from "readline";
-import { SSLCertificate } from "../model/cert";
+import { SSLCertificate, SSLCertificateBase } from "../model/cert";
 
 
 
@@ -843,9 +843,6 @@ routerUserAuthenticated.put('/:id/sensitiveData',
         if (input.cert) {//change cert
             changeCert = true;
             //for audit log
-            let before = { username: currentUser.username } as any;
-            let after = { username: currentUser.username } as any;
-            //for audit log
             before.publicCrt = dataBefore.cert?.publicCrt ? 'certificate' : null;
             after.publicCrt = 'new certificate';
 
@@ -856,7 +853,7 @@ routerUserAuthenticated.put('/:id/sensitiveData',
                 updateDate: new Date().toISOString(), labels: [],
                 isEnabled: true, category: 'auth', usages: [],
             };
-            const certNew: SSLCertificate = dataBefore.cert ? {
+            const certNew: SSLCertificateBase = dataBefore.cert ? {
                 ...dataBefore.cert
             } : defaultSSLCert;
             const parentId = input.cert.parentId || dataBefore.cert?.parentId || '';
@@ -865,12 +862,95 @@ routerUserAuthenticated.put('/:id/sensitiveData',
                 throw new RestfullException(400, ErrorCodes.ErrCertificateIsNotValid, ErrorCodes.ErrCertificateIsNotValid, "cert not found or is not enabled");
             const { publicCrt, privateKey } = await UtilPKI.createCertSigned(user.id, 'ferrumgate', 3650, false, [], inCert.publicCrt, inCert.privateKey);
             certNew.parentId = parentId;
-            certNew.updateDate = new Date().toISOString();
             certNew.publicCrt = publicCrt;
             certNew.privateKey = privateKey;
-
             user.cert = certNew;
 
+        }
+
+        if (changeApiKey || changeCert) {
+            await configService.saveUser(user);
+            await auditService.logSensitiveData(currentSession, currentUser, before, after);
+        }
+
+        const data = await configService.getUserSensitiveData(id);
+        //dont send not needed data
+        const retData = {
+            apiKey: data.apiKey ? {
+                ...data.apiKey
+            } : undefined,
+            cert: data.cert ? {
+                ...data.cert
+            } : undefined
+        }
+
+        if (!changeApiKey)
+            delete retData.apiKey;
+        if (!changeCert)
+            delete retData.cert;
+        return res.status(200).json(retData);
+
+
+    }))
+
+
+
+routerUserAuthenticated.delete('/:id/sensitiveData',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
+
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const deleteApiKey = req.query.apiKey;
+        const deleteCert = req.query.cert;
+
+
+        logger.info(`updating user sensitive data`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const auditService = appService.auditService;
+        const user = await configService.getUserById(id);
+        if (!user)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNotFound, "not found");
+        let before = { username: currentUser.username } as any;
+        let after = { username: currentUser.username } as any;
+
+        const dataBefore = await configService.getUserSensitiveData(id);
+
+        let changeApiKey = false;
+        if (deleteApiKey) {//delete apikey
+
+
+            //for audit log
+
+            if (dataBefore.apiKey?.key) {
+                before.apiKey = 'apikey';
+                after.apiKey = null;
+
+                changeApiKey = true;
+                user.apiKey = { key: '' };
+            }
+
+
+        }
+
+        let changeCert = false;
+        if (deleteCert) {//change cert
+
+
+            //for audit log
+
+            if (dataBefore.cert?.publicCrt) {
+                before.publicCrt = 'certificate';
+                after.publicCrt = null;
+
+                changeCert = true;
+                user.cert = { category: 'auth', parentId: '', privateKey: '', publicCrt: '' }
+            }
         }
 
         if (changeApiKey || changeCert) {

@@ -1,4 +1,4 @@
-import { SSLCertificate, SSLCertificateEx } from "./cert";
+import { SSLCertificate, SSLCertificateBase, SSLCertificateEx } from "./cert";
 import { Role } from "./rbac";
 
 
@@ -17,7 +17,7 @@ export interface User {
     insertDate: string;
     updateDate: string;
     apiKey?: ApiKey;
-    cert?: SSLCertificate;
+    cert?: SSLCertificateBase;
     roleIds?: string[];
     email?: string;
     isEmailVerified?: boolean;

@@ -2,7 +2,9 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { IntelligenceLogService } from '../src/service/intelligenceLogService';
-import { RedisService, Util } from '../src/lib';
+import { RedisService } from '../src/service/redisService';
+import { Util } from '../src/util';
+
 
 
 chai.use(chaiHttp);

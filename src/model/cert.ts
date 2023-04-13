@@ -7,18 +7,22 @@ export interface SSHCertificate {
 
 export type SSLCertificateCategory = 'ca' | 'jwt' | 'web' | 'tls' | 'auth';
 
-export interface SSLCertificate {
+export interface SSLCertificateBase {
+    publicCrt?: string;
+    privateKey?: string;
+    parentId?: string;
+    category?: SSLCertificateCategory;
+}
+
+export interface SSLCertificate extends SSLCertificateBase {
     idEx?: string;
     name: string;
     labels: string[];
     usages: string[];
     insertDate: string;
     updateDate: string;
-    publicCrt?: string;
-    privateKey?: string;
     isEnabled: boolean;
-    parentId?: string;
-    category?: SSLCertificateCategory;
+
     isSystem?: boolean;
 
 }

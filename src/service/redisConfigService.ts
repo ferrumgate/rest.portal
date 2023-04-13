@@ -606,15 +606,7 @@ export class RedisConfigService extends ConfigService {
             this.config.users.push(user);
         return await super.getUserById(id);
     }
-    override async getUserByIdSensitive(id: string): Promise<User | undefined> {
-        this.isReady();
-        if (!id || !id.trim()) return undefined;
-        this.config.users = [];
-        const user = await this.rGetWith<User>(`users`, id);
-        if (user)
-            this.config.users.push(user);
-        return await super.getUserByIdSensitive(id);
-    }
+
 
     override async getUsersBy(page: number = 0, pageSize: number = 0, search?: string,
         ids?: string[], groupIds?: string[], roleIds?: string[], loginMethods?: string[],
