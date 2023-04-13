@@ -16,7 +16,7 @@ export interface User {
     twoFASecret?: string;
     insertDate: string;
     updateDate: string;
-    apiKey?: string;
+    apiKey?: ApiKey;
     cert?: SSLCertificate;
     roleIds?: string[];
     email?: string;
@@ -40,7 +40,7 @@ export interface UserOverrideNetworkSettings {
 }
 
 export interface ApiKey {
-    key: string;
+    key?: string;
 
 }
 

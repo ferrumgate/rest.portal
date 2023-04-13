@@ -282,7 +282,7 @@ describe('authApi', async () => {
             isVerified: true,
             isLocked: false,
             is2FA: true,
-            apiKey: 'test',
+            apiKey: { key: 'test' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: []
@@ -319,7 +319,7 @@ describe('authApi', async () => {
             isVerified: true,
             isLocked: false,
             is2FA: true,
-            apiKey: 'test',
+            apiKey: { key: 'test' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: []
@@ -356,7 +356,7 @@ describe('authApi', async () => {
             isVerified: true,
             isLocked: false,
             is2FA: false,
-            apiKey: 'test',
+            apiKey: { key: 'test' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: []
@@ -393,7 +393,7 @@ describe('authApi', async () => {
             isVerified: true,
             isLocked: false,
             is2FA: false,
-            apiKey: 'test',
+            apiKey: { key: 'test' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: ['Admin']
@@ -437,7 +437,7 @@ describe('authApi', async () => {
             isVerified: true,
             isLocked: false,
             is2FA: false,
-            apiKey: 'test',
+            apiKey: { key: 'test' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: ['User']

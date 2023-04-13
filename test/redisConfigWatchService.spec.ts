@@ -90,7 +90,7 @@ describe('redisConfigWatchService ', async () => {
         await saveTestData(redisConfig);
         await Util.sleep(3000);
         watch.isReady();;//throws errors if not ready
-        expect(await watch.getUser('1')).exist;
+        expect(await watch.getUserById('1')).exist;
 
         await watch.stop();
 

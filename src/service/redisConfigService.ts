@@ -386,8 +386,8 @@ export class RedisConfigService extends ConfigService {
             dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//Util.encrypt(this.getEncKey(), dataStr, 'base64url')
         }
         await trx.set(`/config/index/users/username/${dataStr}`, user.id);
-        if (user.apiKey) {
-            let dataStr = user.apiKey;
+        if (user.apiKey?.key) {
+            let dataStr = user.apiKey.key;
             if (this.getEncKey()) {
                 dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//  Util.encrypt(this.getEncKey(), dataStr, 'base64url')
             }
@@ -606,6 +606,15 @@ export class RedisConfigService extends ConfigService {
             this.config.users.push(user);
         return await super.getUserById(id);
     }
+    override async getUserByIdSensitive(id: string): Promise<User | undefined> {
+        this.isReady();
+        if (!id || !id.trim()) return undefined;
+        this.config.users = [];
+        const user = await this.rGetWith<User>(`users`, id);
+        if (user)
+            this.config.users.push(user);
+        return await super.getUserByIdSensitive(id);
+    }
 
     override async getUsersBy(page: number = 0, pageSize: number = 0, search?: string,
         ids?: string[], groupIds?: string[], roleIds?: string[], loginMethods?: string[],
@@ -672,8 +681,8 @@ export class RedisConfigService extends ConfigService {
             dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');// Util.encrypt(this.getEncKey(), dataStr, 'base64url')
         }
         await trx.remove(`/config/index/users/username/${dataStr}`);
-        if (user.apiKey) {
-            let dataStr = user.apiKey;
+        if (user.apiKey?.key) {
+            let dataStr = user.apiKey.key;
             if (this.getEncKey()) {
                 dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//Util.encrypt(this.getEncKey(), dataStr, 'base64url')
             }

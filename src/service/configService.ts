@@ -3,7 +3,7 @@ import { logger } from "../common";
 import { Config, ConfigWatch } from "../model/config";
 import yaml from 'yaml';
 import { Util } from "../util";
-import { User } from "../model/user";
+import { ApiKey, User } from "../model/user";
 import { EmailSetting } from "../model/emailSetting";
 import { LogoSetting } from "../model/logoSetting";
 import { Captcha } from "../model/captcha";
@@ -423,10 +423,11 @@ export class ConfigService {
     }
 
     protected deleteUserSensitiveData(user?: User) {
-        delete user?.apiKey;
+        delete user?.apiKey?.key;
         delete user?.twoFASecret;
         delete user?.password;
         delete user?.cert?.privateKey;
+        delete user?.cert?.publicCrt;
 
     }
 
@@ -448,7 +449,7 @@ export class ConfigService {
     async getUserByApiKey(key: string): Promise<User | undefined> {
         this.isReady(); this.isReadable();
         if (!key) return undefined;
-        let user = this.clone(this.config.users.find(x => x.apiKey == key));
+        let user = this.clone(this.config.users.find(x => x.apiKey?.key == key));
         this.deleteUserSensitiveData(user);
         return user;
     }
@@ -458,10 +459,12 @@ export class ConfigService {
         this.deleteUserSensitiveData(user);
         return user;
     }
-    async getUser(id: string) {
+    async getUserByIdSensitive(id: string): Promise<User | undefined> {
         this.isReady(); this.isReadable();
-        return await this.getUserById(id);
+        let user = this.clone(this.config.users.find(x => x.id == id));
+        return user;
     }
+
 
     async getUsersBy(page: number = 0, pageSize: number = 0, search?: string,
         ids?: string[], groupIds?: string[], roleIds?: string[], loginMethods?: string[],
@@ -575,11 +578,22 @@ export class ConfigService {
         return undefined;
 
     }
-    async getUserSensitiveData(id: string) {
+    async getUserSensitiveData(id: string): Promise<{ twoFASecret?: string, apiKey?: ApiKey, cert?: SSLCertificate }> {
         this.isReady(); this.isReadable();
         let user = this.clone(this.config.users.find(x => x.id == id)) as User;
-        return { twoFASecret: user?.twoFASecret, apiKey: user.apiKey };
+        let item = {
+            twoFASecret: user?.twoFASecret,
+            apiKey: user.apiKey ? {
+                ...user.apiKey
+            } : undefined,
+            cert: user.cert ? {
+                ...user.cert
+            } : undefined
+        }
+        delete item.cert?.privateKey;
+        return item;
     }
+
 
     protected async triggerUserDeleted(user: User) {
         //check policy authentication
@@ -651,7 +665,6 @@ export class ConfigService {
         }
         else {
             cloned.id = finded.id;//security
-
             this.config.users[findedIndex] = {
                 ...finded,
                 ...cloned,

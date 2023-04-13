@@ -10,6 +10,8 @@ import { Network } from '../src/model/network';
 import { Gateway } from '../src/model/network';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { ExpressApp } from '../src';
+import { SSLCertificate } from '../src/model/cert';
+
 
 
 chai.use(chaiHttp);
@@ -630,6 +632,134 @@ describe('userApiAuthenticated', async () => {
 
 
     }).timeout(50000);
+
+
+    it('GET /user/:id/sensitiveData will return 200', async () => {
+        //prepare data
+        const user = getSampleUser();
+        user.apiKey = { key: 'akey' };
+        user.cert = {
+            publicCrt: 'adfaf',
+            privateKey: 'asdfafa'
+        } as SSLCertificate;
+
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/user/${user.id}/sensitiveData?apiKey=true&cert=true`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey.key).to.equal('akey');
+        expect(response.body.cert).exist;
+        expect(response.body.cert.publicCrt).to.equal('adfaf');
+        expect(response.body.cert.privateKey).not.exist;
+
+        /// get only api key
+
+
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/user/${user.id}/sensitiveData?apiKey=true`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey.key).to.equal('akey');
+        expect(response.body.cert).not.exist;
+
+        /// get only cert
+
+
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/user/${user.id}/sensitiveData?cert=true`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey).not.exist;
+        expect(response.body.cert).exist;
+
+    }).timeout(50000);
+
+
+    it('PUT /user/:id/sensitiveData will return 200', async () => {
+        //prepare data
+        const user = getSampleUser();
+        user.apiKey = { key: 'akey' };
+        user.cert = {
+            publicCrt: 'adfaf',
+            privateKey: 'asdfafa'
+        } as SSLCertificate;
+        const inCerts = await appService.configService.getInSSLCertificateAll();
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put(`/user/${user.id}/sensitiveData`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ apiKey: { key: 'newkey' } })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey.key).not.equal('newkey');
+        expect(response.body.apiKey.key.startsWith(user.id)).to.be.true;
+        expect(response.body.cert).not.exist;
+
+        //check cert
+
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put(`/user/${user.id}/sensitiveData`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ cert: { publicCrt: 'newkey', parentId: inCerts.find(x => x.category == 'auth')?.id } })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey).not.exist;
+        expect(response.body.cert.publicCrt).exist;
+
+
+    }).timeout(50000)
 
 })
 

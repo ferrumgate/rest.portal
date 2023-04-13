@@ -225,7 +225,7 @@ describe('configService', async () => {
             password: Util.bcryptHash('passwordWithHash'), groupIds: ['g2'],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            apiKey: 'someapiaky'
+            apiKey: { key: 'someapiaky' }
         };
         configService.config.users.push(aUser2);
 
@@ -398,7 +398,7 @@ describe('configService', async () => {
         fakeUser.id = 'test';
         await configService.saveUser(fakeUser);
         await configService.deleteUser(fakeUser.id);
-        const userDb = await configService.getUser(fakeUser.id)
+        const userDb = await configService.getUserById(fakeUser.id)
         expect(userDb).not.exist;
 
     });
@@ -413,7 +413,7 @@ describe('configService', async () => {
             username: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
             password: 'passwordWithHash', groupIds: [],
-            apiKey: '1fviqq286bmcm',
+            apiKey: { key: '1fviqq286bmcm' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
         };

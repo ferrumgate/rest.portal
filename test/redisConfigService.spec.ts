@@ -224,7 +224,7 @@ describe('redisConfigService', async () => {
             username: 'hamza.kilic@ferrumgate.com',
             name: 'test', source: 'local',
             password: 'passwordWithHash', groupIds: [],
-            apiKey: '1fviqq286bmcm',
+            apiKey: { key: '1fviqq286bmcm' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
         };
@@ -518,11 +518,11 @@ describe('redisConfigService', async () => {
         fakeUser.id = 'test';
         await configService.saveUser(fakeUser);
         await configService.deleteUser(fakeUser.id);
-        const userDb = await configService.getUser(fakeUser.id)
+        const userDb = await configService.getUserById(fakeUser.id)
         expect(userDb).not.exist;
 
         await configService.deleteUser(aUser.id);
-        const userDb2 = await configService.getUser(aUser.id)
+        const userDb2 = await configService.getUserById(aUser.id)
         expect(userDb2).not.exist;
 
     });

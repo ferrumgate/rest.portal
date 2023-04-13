@@ -160,8 +160,18 @@ export class AuditService {
     async logSaveUser(currentSession: AuthSession, currentUser: User, before?: User, after?: User) {
         delete before?.cert?.privateKey;
         delete after?.cert?.privateKey;
+        delete before?.apiKey?.key;
+        delete after?.apiKey?.key;
         await this.executeSave(currentSession, currentUser, before, after,
             `user ${before ? 'updated' : 'created'}`,
+            `${before?.username || after?.username}`)
+
+    }
+    // take care about writing senstivie data log
+    async logSensitiveData(currentSession: AuthSession, currentUser: User, before?: { username: string, [key: string]: any }, after?: { username: string, [key: string]: any }) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `user sensitive data ${before ? 'updated' : 'created'}`,
             `${before?.username || after?.username}`)
 
     }

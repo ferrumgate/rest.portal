@@ -15,6 +15,8 @@ import { UserNetworkListResponse } from "../service/policyService";
 import { HelperService } from "../service/helperService";
 import { attachActivity, attachActivitySession, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
 import { UtilPKI } from "../utilPKI";
+import { cursorTo } from "readline";
+import { SSLCertificate } from "../model/cert";
 
 
 
@@ -537,6 +539,7 @@ function convertToUserOptionToBoolean(val?: string): boolean | undefined {
 
 
 
+
 routerUserAuthenticated.get('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -619,6 +622,7 @@ routerUserAuthenticated.delete('/:id',
 
 
 
+
 routerUserAuthenticated.put('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -636,7 +640,7 @@ routerUserAuthenticated.put('/',
 
 
         await inputService.checkNotEmpty(input.id);
-        const userDb = await configService.getUser(input.id);
+        const userDb = await configService.getUserById(input.id);
         if (!userDb) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
 
         if (process.env.LIMITED_MODE == 'true') {//limited mode only current user update itself
@@ -685,7 +689,6 @@ routerUserAuthenticated.put('/',
                 isChanged = true;
             userDb.groupIds = filteredGroups;
         }
-
 
         //check if any other admin user exists
         const adminUsers = await configService.getUserByRoleIds([RBACDefault.roleAdmin.id]);
@@ -762,6 +765,138 @@ routerUserAuthenticated.post('/invite',
 
     }))
 
+
+routerUserAuthenticated.get('/:id/sensitiveData',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
+        const changeApiKey = req.query.apiKey;
+        const changeCert = req.query.cert;
+
+        logger.info(`getting user sensitive data`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const data = await configService.getUserSensitiveData(id);
+        //dont send not needed data, becarefull returning data
+        const retData = {
+            apiKey: data.apiKey ? {
+                ...data.apiKey
+            } : undefined,
+            cert: data.cert ? {
+                ...data.cert
+            } : undefined
+        }
+
+        if (!changeApiKey)
+            delete retData.apiKey;
+        if (!changeCert)
+            delete retData.cert;
+        return res.status(200).json(retData);
+
+    }))
+routerUserAuthenticated.put('/:id/sensitiveData',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const { id } = req.params;
+        if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
+
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const input = req.body as { apiKey?: { key: string }, cert?: SSLCertificate }
+
+        logger.info(`updating user sensitive data`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const auditService = appService.auditService;
+        const user = await configService.getUserById(id);
+        if (!user)
+            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNotFound, "not found");
+        let before = { username: currentUser.username } as any;
+        let after = { username: currentUser.username } as any;
+
+        const dataBefore = await configService.getUserSensitiveData(id);
+
+        let changeApiKey = false;
+        if (input.apiKey) {//change apikey
+            changeApiKey = true;
+            //for audit log
+
+            //for audit log
+            before.apiKey = dataBefore.apiKey?.key ? 'apikey' : null;
+            after.apiKey = 'new apikey';
+
+            const apiKeyNew = dataBefore.apiKey ? {
+                ...dataBefore.apiKey
+            } : {};
+            apiKeyNew.key = `${id}` + Util.randomNumberString(64);
+            user.apiKey = apiKeyNew;
+
+
+        }
+
+        let changeCert = false;
+        if (input.cert) {//change cert
+            changeCert = true;
+            //for audit log
+            let before = { username: currentUser.username } as any;
+            let after = { username: currentUser.username } as any;
+            //for audit log
+            before.publicCrt = dataBefore.cert?.publicCrt ? 'certificate' : null;
+            after.publicCrt = 'new certificate';
+
+            const defaultSSLCert: SSLCertificate =
+            {
+                idEx: Util.randomNumberString(16),
+                name: `${user.id} Authentication Cert`, insertDate: new Date().toISOString(),
+                updateDate: new Date().toISOString(), labels: [],
+                isEnabled: true, category: 'auth', usages: [],
+            };
+            const certNew: SSLCertificate = dataBefore.cert ? {
+                ...dataBefore.cert
+            } : defaultSSLCert;
+            const parentId = input.cert.parentId || dataBefore.cert?.parentId || '';
+            const inCert = await configService.getInSSLCertificateSensitive(parentId);
+            if (!inCert || !inCert.isEnabled)
+                throw new RestfullException(400, ErrorCodes.ErrCertificateIsNotValid, ErrorCodes.ErrCertificateIsNotValid, "cert not found or is not enabled");
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned(user.id, 'ferrumgate', 3650, false, [], inCert.publicCrt, inCert.privateKey);
+            certNew.parentId = parentId;
+            certNew.updateDate = new Date().toISOString();
+            certNew.publicCrt = publicCrt;
+            certNew.privateKey = privateKey;
+
+            user.cert = certNew;
+
+        }
+
+        if (changeApiKey || changeCert) {
+            await configService.saveUser(user);
+            await auditService.logSensitiveData(currentSession, currentUser, before, after);
+        }
+
+        const data = await configService.getUserSensitiveData(id);
+        //dont send not needed data
+        const retData = {
+            apiKey: data.apiKey ? {
+                ...data.apiKey
+            } : undefined,
+            cert: data.cert ? {
+                ...data.cert
+            } : undefined
+        }
+
+        if (!changeApiKey)
+            delete retData.apiKey;
+        if (!changeCert)
+            delete retData.cert;
+        return res.status(200).json(retData);
+
+
+    }))
 
 
 
