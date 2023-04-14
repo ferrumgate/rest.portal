@@ -9,7 +9,7 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { RBACDefault } from "../model/rbac";
 import { config } from "process";
-import { authorizeAsAdmin } from "./commonApi";
+import { authorizeAsAdmin, authorizeAsAdminOrDevOps } from "./commonApi";
 import { AuthSession } from "../model/authSession";
 import { UserNetworkListResponse } from "../service/policyService";
 import { HelperService } from "../service/helperService";
@@ -17,6 +17,8 @@ import { attachActivity, attachActivitySession, attachActivitySource, attachActi
 import { UtilPKI } from "../utilPKI";
 import { cursorTo } from "readline";
 import { SSLCertificate, SSLCertificateBase } from "../model/cert";
+import { ConfigService } from "../service/configService";
+
 
 
 
@@ -703,6 +705,68 @@ routerUserAuthenticated.put('/',
         return res.status(200).json(userDb);
 
     }))
+// becarefull, this method creates a user,
+// username and password will automatic created
+// just name, groupid, are input
+routerUserAuthenticated.post('/',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdminOrDevOps),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const input = req.body as User;
+        const createApiKey = req.query.apiKey == 'true';
+        const createCert = req.query.cert == 'true';
+        logger.info(`saving new apikey or cert based user`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+        const emailService = appService.emailService;
+        const redisService = appService.redisService;
+        const templateService = appService.templateService;
+
+        await inputService.checkNotEmpty(input.name);
+
+        const groupsIds = (await configService.getGroupsAll()).map(y => y.id);
+        const userNew: User = HelperService.createUser('local-local', Util.randomNumberString(64), input.name);
+        userNew.groupIds = input.groupIds.filter(x => groupsIds.includes(x));
+        userNew.roleIds = [RBACDefault.roleUser.id];//no one can create admin just user
+
+
+        if (createApiKey) {
+            userNew.apiKey = { key: `${userNew.id}${Util.randomNumberString(64)}` };
+        }
+
+        if (createCert) {
+            let parentCertId = input.cert?.parentId || '';
+            if (!parentCertId) {
+                const findedCert = (await configService.getInSSLCertificateAll()).find(x => x.category == 'auth' && x.isEnabled)
+                if (findedCert)
+                    parentCertId = findedCert.id;
+            }
+            const inCert = await configService.getInSSLCertificateSensitive(parentCertId);
+            if (!inCert || !inCert.isEnabled)
+                throw new RestfullException(400, ErrorCodes.ErrCertificateIsNotValid, ErrorCodes.ErrCertificateIsNotValid, "cert not found or is not enabled");
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned(userNew.id, 'ferrumgate', 3650, false, [], inCert.publicCrt, inCert.privateKey);
+            userNew.cert = {
+                parentId: parentCertId,
+                publicCrt: publicCrt,
+                privateKey: privateKey
+            }
+
+        }
+
+        const { before, after } = await configService.saveUser(userNew);
+        await auditService.logSaveUser(currentSession, currentUser, before, after);
+        const userDb = await configService.getUserById(userNew.id);
+        const retData = await getSensitiveData(configService, userDb?.id || '', createApiKey, createCert);
+
+        return res.status(200).json({ user: userDb, sensitiveData: retData });
+
+    }))
+
 
 
 routerUserAuthenticated.post('/invite',
@@ -765,6 +829,27 @@ routerUserAuthenticated.post('/invite',
 
     }))
 
+/////////////////////////////sensitive data //////////////////
+
+
+async function getSensitiveData(configService: ConfigService, userId: string, isApiKey: boolean, isCert: boolean) {
+    const data = await configService.getUserSensitiveData(userId);
+    //dont send not needed data, becarefull returning data
+    const retData = {
+        apiKey: data.apiKey ? {
+            ...data.apiKey
+        } : undefined,
+        cert: data.cert ? {
+            ...data.cert
+        } : undefined
+    }
+    //only needed data
+    if (!isApiKey)
+        delete retData.apiKey;
+    if (!isCert)
+        delete retData.cert;
+    return retData;
+}
 
 routerUserAuthenticated.get('/:id/sensitiveData',
     asyncHandler(passportInit),
@@ -773,27 +858,13 @@ routerUserAuthenticated.get('/:id/sensitiveData',
     asyncHandler(async (req: any, res: any, next: any) => {
         const { id } = req.params;
         if (!id) throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "id is absent");
-        const changeApiKey = req.query.apiKey;
-        const changeCert = req.query.cert;
+        const queryApiKey = req.query.apiKey == 'true';
+        const queryCert = req.query.cert == 'true';
 
         logger.info(`getting user sensitive data`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
-        const data = await configService.getUserSensitiveData(id);
-        //dont send not needed data, becarefull returning data
-        const retData = {
-            apiKey: data.apiKey ? {
-                ...data.apiKey
-            } : undefined,
-            cert: data.cert ? {
-                ...data.cert
-            } : undefined
-        }
-
-        if (!changeApiKey)
-            delete retData.apiKey;
-        if (!changeCert)
-            delete retData.cert;
+        const retData = await getSensitiveData(configService, id, queryApiKey, queryCert);
         return res.status(200).json(retData);
 
     }))
@@ -846,16 +917,9 @@ routerUserAuthenticated.put('/:id/sensitiveData',
             before.publicCrt = dataBefore.cert?.publicCrt ? 'certificate' : null;
             after.publicCrt = 'new certificate';
 
-            const defaultSSLCert: SSLCertificate =
-            {
-                idEx: Util.randomNumberString(16),
-                name: `${user.id} Authentication Cert`, insertDate: new Date().toISOString(),
-                updateDate: new Date().toISOString(), labels: [],
-                isEnabled: true, category: 'auth', usages: [],
-            };
             const certNew: SSLCertificateBase = dataBefore.cert ? {
                 ...dataBefore.cert
-            } : defaultSSLCert;
+            } : { category: 'auth' };
             const parentId = input.cert.parentId || dataBefore.cert?.parentId || '';
             const inCert = await configService.getInSSLCertificateSensitive(parentId);
             if (!inCert || !inCert.isEnabled)
@@ -873,21 +937,8 @@ routerUserAuthenticated.put('/:id/sensitiveData',
             await auditService.logSensitiveData(currentSession, currentUser, before, after);
         }
 
-        const data = await configService.getUserSensitiveData(id);
-        //dont send not needed data
-        const retData = {
-            apiKey: data.apiKey ? {
-                ...data.apiKey
-            } : undefined,
-            cert: data.cert ? {
-                ...data.cert
-            } : undefined
-        }
 
-        if (!changeApiKey)
-            delete retData.apiKey;
-        if (!changeCert)
-            delete retData.cert;
+        const retData = await getSensitiveData(configService, id, changeApiKey, changeCert);
         return res.status(200).json(retData);
 
 
@@ -905,8 +956,8 @@ routerUserAuthenticated.delete('/:id/sensitiveData',
 
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
-        const deleteApiKey = req.query.apiKey;
-        const deleteCert = req.query.cert;
+        const deleteApiKey = req.query.apiKey == 'true';
+        const deleteCert = req.query.cert == 'true';
 
 
         logger.info(`updating user sensitive data`);
@@ -932,6 +983,7 @@ routerUserAuthenticated.delete('/:id/sensitiveData',
                 after.apiKey = null;
 
                 changeApiKey = true;
+                //reset apikey data
                 user.apiKey = { key: '' };
             }
 
@@ -949,6 +1001,7 @@ routerUserAuthenticated.delete('/:id/sensitiveData',
                 after.publicCrt = null;
 
                 changeCert = true;
+                //reset cert data
                 user.cert = { category: 'auth', parentId: '', privateKey: '', publicCrt: '' }
             }
         }
@@ -958,21 +1011,7 @@ routerUserAuthenticated.delete('/:id/sensitiveData',
             await auditService.logSensitiveData(currentSession, currentUser, before, after);
         }
 
-        const data = await configService.getUserSensitiveData(id);
-        //dont send not needed data
-        const retData = {
-            apiKey: data.apiKey ? {
-                ...data.apiKey
-            } : undefined,
-            cert: data.cert ? {
-                ...data.cert
-            } : undefined
-        }
-
-        if (!changeApiKey)
-            delete retData.apiKey;
-        if (!changeCert)
-            delete retData.cert;
+        const retData = await getSensitiveData(configService, id, changeApiKey, changeCert);
         return res.status(200).json(retData);
 
 

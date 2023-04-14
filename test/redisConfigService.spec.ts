@@ -214,28 +214,28 @@ describe('redisConfigService', async () => {
 
     });
 
-    it('getUserByApiKey', async () => {
-
-        //first create a config and save to a redis
-        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-        configService.config.users = [];
-        let aUser: User = {
-            id: '6hiryy8ujv3n',
-            username: 'hamza.kilic@ferrumgate.com',
-            name: 'test', source: 'local',
-            password: 'passwordWithHash', groupIds: [],
-            apiKey: { key: '1fviqq286bmcm' },
-            insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
-        };
-
-        configService.config.users.push(aUser);
-        await configService.init();
-        const userDb = await configService.getUserByApiKey('1fviqq286bmcm');
-        expect(userDb?.id).to.equal('6hiryy8ujv3n');
-
-    });
-
+    /*  it('getUserByApiKey', async () => {
+ 
+         //first create a config and save to a redis
+         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+         configService.config.users = [];
+         let aUser: User = {
+             id: '6hiryy8ujv3n',
+             username: 'hamza.kilic@ferrumgate.com',
+             name: 'test', source: 'local',
+             password: 'passwordWithHash', groupIds: [],
+             apiKey: { key: '1fviqq286bmcm' },
+             insertDate: new Date().toISOString(),
+             updateDate: new Date().toISOString()
+         };
+ 
+         configService.config.users.push(aUser);
+         await configService.init();
+         const userDb = await configService.getUserByApiKey('1fviqq286bmcm');
+         expect(userDb?.id).to.equal('6hiryy8ujv3n');
+ 
+     });
+  */
     it('getUserById', async () => {
 
         //first create a config and save to redis

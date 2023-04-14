@@ -158,10 +158,6 @@ export class AuditService {
             `${before || after}`)
     }
     async logSaveUser(currentSession: AuthSession, currentUser: User, before?: User, after?: User) {
-        delete before?.cert?.privateKey;
-        delete after?.cert?.privateKey;
-        delete before?.apiKey?.key;
-        delete after?.apiKey?.key;
         await this.executeSave(currentSession, currentUser, before, after,
             `user ${before ? 'updated' : 'created'}`,
             `${before?.username || after?.username}`)

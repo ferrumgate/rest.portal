@@ -11,6 +11,7 @@ import { Gateway } from '../src/model/network';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { ExpressApp } from '../src';
 import { SSLCertificate } from '../src/model/cert';
+import { RBACDefault } from '../src/model/rbac';
 
 
 
@@ -799,6 +800,66 @@ describe('userApiAuthenticated', async () => {
         const data = await appService.configService.getUserSensitiveData(user.id)
         expect(data.apiKey?.key).to.equal('');
         expect(data.cert?.publicCrt).to.equal('');
+
+
+
+    }).timeout(150000)
+
+
+
+    it('POST /user will return 200', async () => {
+        //prepare data
+        //await appService.configService.init();
+        const user = getSampleUser();
+        const group: Group = {
+            id: 'asdfa', name: 'group1', insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(), isEnabled: true, labels: []
+        }
+        await appService.configService.saveGroup(group);
+        const inCerts = await appService.configService.getInSSLCertificateAll();
+        const groups = await appService.configService.getGroupsAll();
+
+        user.groupIds = [groups[0].id, '1514'];
+        user.roleIds = [RBACDefault.roleAdmin.id]
+
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/user?cert=true`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(user)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.user.apiKey).not.exist;
+        expect(response.body.user.cert).exist;
+        expect(response.body.user.cert.publicCrt).not.exist;
+        expect(response.body.sensitiveData).exist;
+        expect(response.body.sensitiveData.cert.publicCrt).exist;
+        const userId = response.body.user.id;
+
+        const userDb = await appService.configService.getUserById(userId);
+        expect(userDb?.name).to.equal(user.name);
+        expect(userDb?.groupIds.length).to.equal(1);
+        expect(userDb?.groupIds[0]).to.equal(groups[0].id);
+        expect(userDb?.roleIds).exist;
+        if (userDb?.roleIds)
+            expect(userDb?.roleIds[0]).to.equal(RBACDefault.roleUser.id);
+
+        const data = await appService.configService.getUserSensitiveData(userDb?.id || '0');
+        console.log(data);
+        expect(data.cert?.publicCrt?.includes('BEGIN CERTIFICATE')).to.be.true;
+
 
 
 

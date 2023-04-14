@@ -386,13 +386,13 @@ export class RedisConfigService extends ConfigService {
             dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//Util.encrypt(this.getEncKey(), dataStr, 'base64url')
         }
         await trx.set(`/config/index/users/username/${dataStr}`, user.id);
-        if (user.apiKey?.key) {
-            let dataStr = user.apiKey.key;
-            if (this.getEncKey()) {
-                dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//  Util.encrypt(this.getEncKey(), dataStr, 'base64url')
-            }
-            await trx.set(`/config/index/users/apiKey/${dataStr}`, user.id);
-        }
+        /*  if (user.apiKey?.key) {
+             let dataStr = user.apiKey.key;
+             if (this.getEncKey()) {
+                 dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//  Util.encrypt(this.getEncKey(), dataStr, 'base64url')
+             }
+             await trx.set(`/config/index/users/apiKey/${dataStr}`, user.id);
+         } */
         if (!pipeline)
             await trx.exec();
     }
@@ -583,7 +583,7 @@ export class RedisConfigService extends ConfigService {
         return await super.getUserByUsernameAndSource(username, source);
     }
 
-    override async getUserByApiKey(key: string): Promise<User | undefined> {
+    /* override async getUserByApiKey(key: string): Promise<User | undefined> {
         this.isReady();
         if (!key && !key.trim()) return undefined;
 
@@ -595,7 +595,7 @@ export class RedisConfigService extends ConfigService {
             this.config.users.push(user);
         return await super.getUserByApiKey(key);
 
-    }
+    } */
 
     override async getUserById(id: string): Promise<User | undefined> {
         this.isReady();
@@ -673,13 +673,13 @@ export class RedisConfigService extends ConfigService {
             dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');// Util.encrypt(this.getEncKey(), dataStr, 'base64url')
         }
         await trx.remove(`/config/index/users/username/${dataStr}`);
-        if (user.apiKey?.key) {
+        /* if (user.apiKey?.key) {
             let dataStr = user.apiKey.key;
             if (this.getEncKey()) {
                 dataStr = Util.jencrypt(this.getEncKey(), dataStr).toString('base64url');//Util.encrypt(this.getEncKey(), dataStr, 'base64url')
             }
             await trx.remove(`/config/index/users/apiKey/${dataStr}`);
-        }
+        } */
         if (!pipeline)
             await trx.exec();
     }

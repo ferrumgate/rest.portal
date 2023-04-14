@@ -237,7 +237,7 @@ describe('configService', async () => {
             password: Util.bcryptHash('passwordWithHash'), groupIds: ['g3'],
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
-            cert: {}
+            cert: { publicCrt: 'addf', category: 'auth' }
         };
 
         configService.config.users.push(aUser3);
@@ -298,7 +298,7 @@ describe('configService', async () => {
 
         //search by loginmethod id
         const list81 = await configService.getUsersBy(0, 0, '', [], [], [], ['password']);
-        expect(list81.items.length).to.be.equal(3);
+        expect(list81.items.length).to.be.equal(4);
 
         const list82 = await configService.getUsersBy(0, 0, '', [], [], [], ['apiKey']);
         expect(list82.items.length).to.be.equal(1);
@@ -403,26 +403,26 @@ describe('configService', async () => {
 
     });
 
-    it('getUserByApiKey', async () => {
-
-        //first create a config and save to a file
-        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-        configService.config.users = [];
-        let aUser: User = {
-            id: '6hiryy8ujv3n',
-            username: 'hamza.kilic@ferrumgate.com',
-            name: 'test', source: 'local',
-            password: 'passwordWithHash', groupIds: [],
-            apiKey: { key: '1fviqq286bmcm' },
-            insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
-        };
-
-        configService.config.users.push(aUser);
-        const userDb = await configService.getUserByApiKey('1fviqq286bmcm');
-        expect(userDb?.id).to.equal('6hiryy8ujv3n');
-
-    });
+    /*  it('getUserByApiKey', async () => {
+ 
+         //first create a config and save to a file
+         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+         configService.config.users = [];
+         let aUser: User = {
+             id: '6hiryy8ujv3n',
+             username: 'hamza.kilic@ferrumgate.com',
+             name: 'test', source: 'local',
+             password: 'passwordWithHash', groupIds: [],
+             apiKey: { key: '1fviqq286bmcm' },
+             insertDate: new Date().toISOString(),
+             updateDate: new Date().toISOString()
+         };
+ 
+         configService.config.users.push(aUser);
+         const userDb = await configService.getUserByApiKey('1fviqq286bmcm');
+         expect(userDb?.id).to.equal('6hiryy8ujv3n');
+ 
+     }); */
 
 
     it('saveNetwork getNetwork getNetworkByName', async () => {

@@ -3,7 +3,7 @@ import passport from 'passport';
 import * as passportapikey from 'passport-headerapikey';
 import { logger } from '../../common';
 import { AppService } from '../../service/appService';
-import { ErrorCodes, RestfullException } from '../../restfullException';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
 import { HelperService } from '../../service/helperService';
 import { Util } from '../../util';
 import { attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
@@ -28,11 +28,19 @@ export function apiKeyInit() {
 
                 if (!apikey)
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "bad argument");
-                const user = await configService.getUserByApiKey(apikey);
+                const userId = apikey.slice(0, 16);
+
+                //const user = await configService.getUserByApiKey(apikey);
+                const user = await configService.getUserById(userId);
+
 
                 attachActivityUser(req, user);
                 attachActivityUsername(req, user?.username);
                 HelperService.isValidUser(user);
+                const sensitiveData = await configService.getUserSensitiveData(userId);
+                if (sensitiveData?.apiKey?.key != apikey) {
+                    throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrUserNotFound, 'not found');
+                }
                 //set user to request object
                 req.currentUser = user;
 

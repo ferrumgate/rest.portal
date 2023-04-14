@@ -195,6 +195,9 @@ export class AppService {
         if (this.interval)
             clearIntervalAsync(this.interval);
         this.interval = null;
+        if (this.intervalHttps)
+            clearIntervalAsync(this.intervalHttps);
+        this.intervalHttps = null;
         await this.configService.stop();
         await this.systemLogService.stop(true);
         await this.activityService.stop();

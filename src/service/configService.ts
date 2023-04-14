@@ -446,13 +446,13 @@ export class ConfigService {
         this.deleteUserSensitiveData(user);
         return user;
     }
-    async getUserByApiKey(key: string): Promise<User | undefined> {
-        this.isReady(); this.isReadable();
-        if (!key) return undefined;
-        let user = this.clone(this.config.users.find(x => x.apiKey?.key == key));
-        this.deleteUserSensitiveData(user);
-        return user;
-    }
+    /*   async getUserByApiKey(key: string): Promise<User | undefined> {
+          this.isReady(); this.isReadable();
+          if (!key) return undefined;
+          let user = this.clone(this.config.users.find(x => x.apiKey?.key == key));
+          this.deleteUserSensitiveData(user);
+          return user;
+      } */
     async getUserById(id: string): Promise<User | undefined> {
         this.isReady(); this.isReadable();
         let user = this.clone(this.config.users.find(x => x.id == id));

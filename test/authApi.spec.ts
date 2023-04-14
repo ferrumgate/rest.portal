@@ -275,14 +275,14 @@ describe('authApi', async () => {
         const user5: User = {
             username: 'hamza4@ferrumgate.com',
             groupIds: [],
-            id: 'someid2312313213',
+            id: 'ipdfr6gyi3uzu8fk',
             name: 'hamza',
             password: Util.bcryptHash('somepass'),
             source: 'local',
             isVerified: true,
             isLocked: false,
             is2FA: true,
-            apiKey: { key: 'test' },
+            apiKey: { key: 'ipdfr6gyi3uzu8fktest' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: []
@@ -293,7 +293,7 @@ describe('authApi', async () => {
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth')
-                .set('ApiKey', 'test')
+                .set('ApiKey', 'ipdfr6gyi3uzu8fktest')
                 .end((err, res) => {
                     if (err)
                         reject(err);
