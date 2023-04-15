@@ -207,6 +207,50 @@ describe('UtilPKI ', async () => {
     }).timeout(5000);
 
 
+    it('create CA and verify empty version', async () => {
+
+        const tmpDir = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmpDir);
+        const { ca, crt, key } = await createCA();
+
+        const { intermediate, inCrt, inKey } = await createIntermediate(crt, key);
+
+        const userResult = await UtilPKI.createCertificate(
+            {
+                CN: 'ferrumgate user', O: 'UK', sans: [],
+                isCA: false, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5', serial: 100000,
+                notAfter: new Date().addDays(5), notBefore: new Date().addDays(-10),//invalid date test
+                ca: {
+                    publicCrt: crt,
+                    privateKey: inKey,
+                    hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5'
+                }
+            })
+
+        const privateKey3 = `${tmpDir}/user.key`;
+        const publicCrt3 = `${tmpDir}/user.crt`;
+        fs.writeFileSync(privateKey3, UtilPKI.toPEM(userResult.privateKeyBuffer, 'PRIVATE KEY'));
+        fs.writeFileSync(publicCrt3, UtilPKI.toPEM(userResult.certificateBuffer, 'CERTIFICATE'));
+        const user = await UtilPKI.parseCertificate(readFileSync(publicCrt3));
+
+
+        const isVerified2 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), [], ca, []);
+
+        expect(isVerified2.result).to.be.false;
+
+        const isVerified3 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), intermediate, [], []);
+
+        expect(isVerified3.result).to.be.false;
+
+        const isVerified4 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), [], [], []);
+
+        expect(isVerified4.result).to.be.false;
+
+
+
+    }).timeout(5000);
+
+
 
     it('multiple CA  multiple intermediate check', async () => {
 

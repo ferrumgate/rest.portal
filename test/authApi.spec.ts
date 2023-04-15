@@ -11,6 +11,7 @@ import * as twofactor from 'node-2fa';
 import { Gateway } from '../src/model/network';
 import { Network } from '../src/model/network';
 import { ExpressApp } from '../src';
+import { UtilPKI } from '../src/utilPKI';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -19,6 +20,7 @@ const expect = chai.expect;
 
 
 describe('authApi', async () => {
+
     const expressApp = new ExpressApp();
     const app = expressApp.app;
     const appService = (expressApp.appService) as AppService;
@@ -83,8 +85,8 @@ describe('authApi', async () => {
         await expressApp.stop();
     })
 
-    beforeEach(async () => {
-
+    beforeEach(async function () {
+        this.timeout(120000);
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         await configService.setConfigPath(filename);
         const auth: AuthSettings = {
@@ -294,6 +296,72 @@ describe('authApi', async () => {
             chai.request(app)
                 .post('/auth')
                 .set('ApiKey', 'ipdfr6gyi3uzu8fktest')
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+
+
+    }).timeout(50000);
+
+
+    it('POST /auth with result 200 and certificate', async () => {
+
+        const user5: User = {
+            username: 'hamza4@ferrumgate.com',
+            groupIds: [],
+            id: 'ipdfr6gyi3uzu8fk',
+            name: 'hamza',
+            password: Util.bcryptHash('somepass'),
+            source: 'local',
+            isVerified: true,
+            isLocked: false,
+            is2FA: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            roleIds: []
+
+        }
+        const ca = await configService.getCASSLCertificateSensitive();
+        const inCerts = await configService.getInSSLCertificateAllSensitive();
+        const cert = inCerts.find(x => x.category == 'auth');
+        const userResult = await UtilPKI.createCertificate(
+            {
+                CN: user.id, O: 'UK', sans: [],
+                isCA: false, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5', serial: 100000,
+                notAfter: new Date().addDays(5), notBefore: new Date().addDays(-10),//invalid date test
+                ca: {
+                    publicCrt: cert?.publicCrt || '',
+                    privateKey: cert?.privateKey || '',
+                    hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5'
+                }
+            })
+        const tmpDir = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmpDir);
+        const privateKey3 = `${tmpDir}/user.key`;
+        const publicCrt3 = `${tmpDir}/user.crt`;
+        fs.writeFileSync(privateKey3, UtilPKI.toPEM(userResult.privateKeyBuffer, 'PRIVATE KEY'));
+        fs.writeFileSync(publicCrt3, UtilPKI.toPEM(userResult.certificateBuffer, 'CERTIFICATE'));
+
+        user5.cert = {
+            category: 'auth',
+            publicCrt: fs.readFileSync(publicCrt3).toString(),
+            privateKey: fs.readFileSync(privateKey3).toString()
+        }
+
+
+
+        await configService.saveUser(user5);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth')
+                .set('Cert', fs.readFileSync(publicCrt3).toString('base64'))
                 .end((err, res) => {
                     if (err)
                         reject(err);

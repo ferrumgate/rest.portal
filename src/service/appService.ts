@@ -29,6 +29,8 @@ import { ConfigWatch } from "../model/config";
 import { IpIntelligenceService } from "./ipIntelligenceService";
 import { ScheduledTasksService } from "./system/sheduledTasksService";
 import { ExpressApp } from "../index";
+import { exec } from "child_process";
+import { PKIService } from "./pkiService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -57,6 +59,7 @@ export class AppService {
     public systemLogService: SystemLogService;
     public dhcpService: DhcpService;
     public ipIntelligenceService: IpIntelligenceService;
+    public pkiService: PKIService;
 
     /**
      *
@@ -76,7 +79,8 @@ export class AppService {
         summary?: SummaryService,
         dhcp?: DhcpService,
         systemLog?: SystemLogService,
-        ipIntelligenceService?: IpIntelligenceService
+        ipIntelligenceService?: IpIntelligenceService,
+        pkiService?: PKIService
     ) {
         //create self signed certificates for JWT
         this.systemLogService = systemLog || new SystemLogService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`)
@@ -105,68 +109,42 @@ export class AppService {
         this.policyService = policy || new PolicyService(this.configService, this.ipIntelligenceService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
+        this.pkiService = pkiService || new PKIService(this.configService);
 
-
-
-
-
+        this.configureES = new EventBufferedExecutor(async () => {
+            await this.reconfigureES();
+        })
+        this.configureHttps = new EventBufferedExecutor(async () => {
+            await this.reconfigureHttps();
+        })
+        this.configurePKI = new EventBufferedExecutor(async () => {
+            await this.reconfigurePKI();
+        })
 
     }
 
     static createRedisService() {
         return new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
     }
-    interval: any = null;
-    isReconfigureESIsWorking = false;
-    public async startReconfigureES() {
-        try {
-            if (this.isReconfigureESIsWorking) return;
-            this.isReconfigureESIsWorking = true;
-            const es = await this.configService.getES();
-            if (es.host)
-                await this.esService.reConfigure(es.host, es.user, es.pass);
-            else
-                await this.esService.reConfigure(process.env.ES_HOST || 'https://localhost:9200', process.env.ES_USER, process.env.ES_PASS);
-            if (this.interval)
-                clearIntervalAsync(this.interval);
-            this.interval = null;
+    configureES: EventBufferedExecutor;
+    public async reconfigureES() {
 
-        } catch (err) {
-            logger.error(err);
-            if (!this.interval) {
-                this.interval = setIntervalAsync(async () => {
-                    await this.startReconfigureES();
-                }, 5000);
-
-            }
-        } finally {
-            this.isReconfigureESIsWorking = false;
-        }
+        const es = await this.configService.getES();
+        if (es.host)
+            await this.esService.reConfigure(es.host, es.user, es.pass);
+        else
+            await this.esService.reConfigure(process.env.ES_HOST || 'https://localhost:9200', process.env.ES_USER, process.env.ES_PASS);
     }
 
-    intervalHttps: any = null;
-    isReconfigureHttpsIsWorking = false;
-    public async startReconfigureHttps() {
-        try {
-            if (this.isReconfigureHttpsIsWorking)
-                return;
-            this.isReconfigureHttpsIsWorking = true;
-            await ExpressApp.https.start();
-            if (this.intervalHttps)
-                clearIntervalAsync(this.intervalHttps);
-            this.intervalHttps = null;
+    configureHttps: EventBufferedExecutor;
+    public async reconfigureHttps() {
+        await ExpressApp.https.start();
 
-        } catch (err) {
-            logger.error(err);
-            if (!this.intervalHttps) {
-                this.intervalHttps = setIntervalAsync(async () => {
-                    await this.startReconfigureHttps();
-                }, 5000);
+    }
+    configurePKI: EventBufferedExecutor;
+    public async reconfigurePKI() {
+        //TODO
 
-            }
-        } finally {
-            this.isReconfigureHttpsIsWorking = false;
-        }
     }
 
     async start() {
@@ -176,28 +154,31 @@ export class AppService {
         await this.systemLogService.start(true);
         //prepare es
         this.configService.events.on('ready', async () => {
-            await this.startReconfigureES();
-            await this.startReconfigureHttps();
+            await this.configureES.push('ready');
+            await this.configureHttps.push('ready');
+            await this.configurePKI.push('ready');
 
         })
         this.configService.events.on('configChanged', async (data: ConfigWatch<any>) => {
             if (data.path == '/config/es')
-                await this.startReconfigureES();
+                await this.configureES.push(data.path);
             if (data.path == '/config/ipIntelligence/sources')
                 await this.ipIntelligenceService.reConfigure();//no need to start configure
             if (data.path == '/config/webSSLCertificate')
-                await this.startReconfigureHttps();
+                await this.configureHttps.push(data.path);
+            if (data.path == '/config/caSSLCertificate')
+                await this.configurePKI.push(data.path);
+            if (data.path == '/config/inSSLCertificates')
+                await this.configurePKI.push(data.path);
+
         });
-        await this.startReconfigureES();
+        await this.configureES.push('');
 
     }
     async stop() {
-        if (this.interval)
-            clearIntervalAsync(this.interval);
-        this.interval = null;
-        if (this.intervalHttps)
-            clearIntervalAsync(this.intervalHttps);
-        this.intervalHttps = null;
+        await this.configureES.stop();
+        await this.configureHttps.stop();
+        await this.configurePKI.stop();
         await this.configService.stop();
         await this.systemLogService.stop(true);
         await this.activityService.stop();
@@ -250,4 +231,45 @@ export class AppSystemService {
         //await this.auditLogToES.stop();
         //await this.activityLogToES.stop();
     }
+}
+
+export class EventBufferedExecutor {
+
+    eventList: string[] = [];
+    execute: any;
+    errorOccured = false;
+    interval: any = null;
+    work = true;
+    constructor(executor: () => Promise<void>) {
+        this.execute = async () => {
+            await executor();
+        }
+    }
+    public async push(path: string) {
+        this.eventList.push(path);
+        if (this.interval)
+            return;
+        this.interval = setIntervalAsync(async () => {
+            while (this.eventList.length && this.work) {
+                try {
+                    let lenght = this.eventList.length;
+                    await this.execute();
+                    this.eventList.splice(0, lenght);
+                    this.errorOccured = false;
+                } catch (err) {
+                    logger.error(err);
+                    this.errorOccured = true;
+                }
+                await Util.sleep(this.errorOccured ? 5000 : 1000);
+
+            }
+            clearIntervalAsync(this.interval);
+
+        }, this.errorOccured ? 5000 : 1000);
+    }
+    public stop() {
+        this.work = false;
+    }
+
+
 }

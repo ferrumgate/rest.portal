@@ -159,7 +159,7 @@ describe('activityApi ', async () => {
             test -= 5000;
             await Util.sleep(5000);
         }
-        await appService.startReconfigureES();
+        await appService.reconfigureES();
 
 
         const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');

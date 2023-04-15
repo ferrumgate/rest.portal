@@ -12,6 +12,7 @@ import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../../restful
 import { logger } from "../../common";
 import { samlAuth0Init, samlAuth0Unuse } from "./auth0Saml";
 import { exchangeKeyInit, exchangeKeyUnuse } from "./exchangeKey";
+import { certInit, certUnuse } from "./certificate";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -46,6 +47,11 @@ export async function passportInit(req: any, res: any, next: any) {
         tunnelKeyUnuse();
         const tunnelKey = tunnelKeyInit();
         activeStrategies.push(tunnelKey);
+
+        //init certificate verification
+        certUnuse();
+        const cert = certInit();
+        activeStrategies.push(cert);
 
         // init exchangeKey
         exchangeKeyUnuse();

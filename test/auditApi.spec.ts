@@ -154,7 +154,7 @@ describe('auditApi ', async () => {
             await Util.sleep(5000);
         }
 
-        await appService.startReconfigureES();
+        await appService.reconfigureES();
         const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum');
 

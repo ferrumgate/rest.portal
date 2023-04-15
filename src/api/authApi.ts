@@ -57,7 +57,7 @@ async function execute2FA(req: any) {
 
 routerAuth.post('/',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['local', 'headerapikey', 'activedirectory']),
+    asyncHandlerWithArgs(passportAuthenticate, ['local', 'headerapikey', 'activedirectory', 'headercert']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
@@ -415,7 +415,7 @@ routerAuth.post('/exchangetoken',
 
 routerAuth.post('/token/test',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['headerapikey', 'jwt']),
+    asyncHandlerWithArgs(passportAuthenticate, ['headerapikey', 'jwt', 'headercert']),
     asyncHandler(async (req: any, res: any, next: any) => {
         return res.status(200).json({ works: true });
     })
