@@ -48,7 +48,7 @@ export class ErrorCodes {
     static ErrEmailIsInvalid: string = 'ErrEmailIsInvalid';
     static ErrCaptchaRequired: string = 'ErrCaptchaRequired';
     static ErrJWTVerifyFailed: string = 'ErrJWTVerifyFailed';
-    static ErrCertVerifyFailed: string = 'ErrCertVerifyFailed';
+    static ErrCertificateVerifyFailed: string = 'ErrCertificateVerifyFailed';
     static ErrUserLockedOrNotVerified: string = 'ErrUserLockedOrNotVerified';
     static ErrUserSourceNotVerified: string = 'ErrUserSourceNotVerified';
     static ErrUserSourceConflict: string = 'ErrUserSourceConflict';

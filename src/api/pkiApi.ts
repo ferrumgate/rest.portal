@@ -244,6 +244,9 @@ export async function resetWebCertificate(configService: ConfigService, auditSer
     safe.privateKey = privateKey;
     safe.updateDate = new Date().toISOString();
     const { before, after } = await configService.setWebSSLCertificate(safe);
+    //for audit log
+    (before as any).publicCert = cert.publicCrt ? 'a certificate' : null;
+    (after as any).publicCert = "new certificate"
     await auditService.logSaveCert(currentSession, currentUser, before, after);
 }
 
@@ -284,24 +287,28 @@ routerPKIAuthenticated.put('/cert/web',
 
 
         await inputService.checkNotEmpty(input.name);
-
         const cert = await configService.getWebSSLCertificate();
-        if (!cert) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intelligence source');
+        if (!cert) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no web cert found');
+
 
         const safe = cloneSSlCertificate(input);
         safe.idEx = cert.idEx;
         safe.name = input.name;
         safe.updateDate = new Date().toISOString();
         safe.isEnabled = input.isEnabled ? true : false;
-        if (input.privateKey)
+        if (input.privateKey) {
             safe.privateKey = input.privateKey;
-        if (safe.publicCrt != input.publicCrt)
             safe.parentId = '';
-        if (input.publicCrt)
             safe.publicCrt = input.publicCrt;
+        }
         safe.updateDate = new Date().toISOString();
 
         const { before, after } = await configService.setWebSSLCertificate(safe);
+        if (input.privateKey) {
+            //log audit log
+            (before as any).publicCert = 'a certificate';
+            (after as any).publicCert = "new certificate"
+        }
         await auditService.logSaveCert(currentSession, currentUser, before, after);
 
         //always get again, thismakes system more secure, this is a safe function

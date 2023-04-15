@@ -1,7 +1,10 @@
 #!/bin/bash
 
 set -e
+# copy web application output
+cp -R ../ui.portal/dist/portal build/web
 npm run build
+
 version=$(cat package.json | grep version | cut -d: -f2 | tr -d , | tr -d \" | tr -d " ")
 docker build -t rest.portal .
 docker tag rest.portal rest.portal:$version

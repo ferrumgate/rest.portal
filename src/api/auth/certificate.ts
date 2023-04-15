@@ -32,7 +32,7 @@ export function certInit() {
 
                 const isValidCert = await pkiService.authVerify(cert);
                 if (!isValidCert) {
-                    throw new RestfullException(401, ErrorCodes.ErrCertVerifyFailed, ErrorCodesInternal.ErrCertVerifyFailed, 'cert is not valid');
+                    throw new RestfullException(401, ErrorCodes.ErrCertificateVerifyFailed, ErrorCodesInternal.ErrCertificateVerifyFailed, 'cert is not valid');
                 }
                 const crt = (await UtilPKI.parseCertificate(cert))[0];
                 const subject = await UtilPKI.parseSubject(crt);

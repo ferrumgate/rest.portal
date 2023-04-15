@@ -897,9 +897,7 @@ routerUserAuthenticated.put('/:id/sensitiveData',
             changeApiKey = true;
             //for audit log
 
-            //for audit log
-            before.apiKey = dataBefore.apiKey?.key ? 'apikey' : null;
-            after.apiKey = 'new apikey';
+
 
             const apiKeyNew = dataBefore.apiKey ? {
                 ...dataBefore.apiKey
@@ -907,15 +905,17 @@ routerUserAuthenticated.put('/:id/sensitiveData',
             apiKeyNew.key = `${id}` + Util.randomNumberString(64);
             user.apiKey = apiKeyNew;
 
+            //for audit log
+            before.apikey = dataBefore.apiKey?.key ? "a key" : null;
+            after.apikey = "new key";
+
 
         }
 
         let changeCert = false;
         if (input.cert) {//change cert
             changeCert = true;
-            //for audit log
-            before.publicCrt = dataBefore.cert?.publicCrt ? 'certificate' : null;
-            after.publicCrt = 'new certificate';
+
 
             const certNew: SSLCertificateBase = dataBefore.cert ? {
                 ...dataBefore.cert
@@ -929,6 +929,10 @@ routerUserAuthenticated.put('/:id/sensitiveData',
             certNew.publicCrt = publicCrt;
             certNew.privateKey = privateKey;
             user.cert = certNew;
+
+            //for audit log, dont write publicCrt, it is autmatically deleting
+            before.publicCert = dataBefore.cert?.publicCrt ? "a certificate" : null;
+            after.publicCert = "new certificate";
 
         }
 
@@ -979,8 +983,9 @@ routerUserAuthenticated.delete('/:id/sensitiveData',
             //for audit log
 
             if (dataBefore.apiKey?.key) {
-                before.apiKey = 'apikey';
-                after.apiKey = null;
+                //this log will not written, apiKey is automatically removed
+                before.apikey = "a key"
+                after.apikey = undefined;
 
                 changeApiKey = true;
                 //reset apikey data
@@ -997,8 +1002,8 @@ routerUserAuthenticated.delete('/:id/sensitiveData',
             //for audit log
 
             if (dataBefore.cert?.publicCrt) {
-                before.publicCrt = 'certificate';
-                after.publicCrt = null;
+                before.publicCert = "a certificate"
+                after.publicCert = undefined;
 
                 changeCert = true;
                 //reset cert data
