@@ -2,6 +2,7 @@
 
 set -e
 # copy web application output
+rm -rf build/web
 cp -R ../ui.portal/dist/portal build/web
 npm run build
 

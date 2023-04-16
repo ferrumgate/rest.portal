@@ -70,14 +70,14 @@ export class ExpressApp {
         //express app
 
         //this.app.use(express.static('dassets'));
-        this.app.use(express.static(process.env.STATIC_FOLDER || path.join(__dirname, 'web')))
+
 
 
         //disable powerer by
         //app.disable('x-powered-by');
 
         this.app.use(helmet.default());
-
+        //this.app.use(express.static(process.env.STATIC_FOLDER || path.join(__dirname, '../', 'web')))
 
 
 
@@ -448,6 +448,7 @@ export class ExpressApp {
 
 
 
+        this.app.use(express.static(process.env.STATIC_FOLDER || path.join(__dirname, '../', 'web')))
 
 
         /**

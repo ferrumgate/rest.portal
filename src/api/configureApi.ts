@@ -14,6 +14,7 @@ import { AuthSession } from "../model/authSession";
 import { resetWebCertificate } from "./pkiApi";
 
 
+
 interface Configure {
     email: string;
     password: string;
@@ -99,10 +100,20 @@ routerConfigureAuthenticated.post('/',
             throw new RestfullException(412, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrNetworkNotFound, "no default network");
         }
 
+
+
         defaultNetwork.clientNetwork = data.clientNetwork;
         defaultNetwork.serviceNetwork = data.serviceNetwork;
         defaultNetwork.sshHost = data.sshHost;
         await configService.saveNetwork(defaultNetwork);
+
+        const gateways = await configService.getGatewaysAll();
+        const notJoined = gateways.find(x => !x.networkId)
+        if (notJoined) {
+            notJoined.networkId = defaultNetwork.id;
+            await configService.saveGateway(notJoined);
+        }
+
 
         //save default dns
         await saveSystemDnsService(defaultNetwork, configService, auditService, currentSession, user);
