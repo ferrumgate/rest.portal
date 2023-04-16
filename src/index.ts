@@ -33,6 +33,7 @@ import { routerIpIntelligenceAuthenticated } from "./api/ipIntelligenceApi";
 import { routerDataAuthenticated } from "./api/dataApi";
 import { routerPKIAuthenticated } from "./api/pkiApi";
 import path from "path";
+import proxy from 'express-http-proxy';
 
 
 const bodyParser = require('body-parser');
@@ -69,17 +70,11 @@ export class ExpressApp {
 
         //express app
 
-        //this.app.use(express.static('dassets'));
 
 
-
-        //disable powerer by
-        //app.disable('x-powered-by');
-
-        this.app.use(helmet.default());
-        //this.app.use(express.static(process.env.STATIC_FOLDER || path.join(__dirname, '../', 'web')))
-
-
+        this.app.use(helmet.default({
+            contentSecurityPolicy: false,
+        }));
 
         const setAppService = async (req: any, res: any, next: any) => {
             req.appService = this.appService;//important
@@ -161,7 +156,7 @@ export class ExpressApp {
 
 
 
-        this.app.use("(\/api)?/test/activedirectory",
+        this.app.use("/api/test/activedirectory",
             asyncHandler(cors(corsOptionsDelegate)),
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
@@ -182,7 +177,7 @@ export class ExpressApp {
                 assert(req.appService);
                 res.status(200).json({ result: "ok", clientIp: req.clientIp });
             }));
-        this.app.use("(\/api)?/test",
+        this.app.use("/api/test",
             asyncHandler(cors(corsOptionsDelegate)),
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
@@ -193,8 +188,19 @@ export class ExpressApp {
                 res.status(200).json({ result: "ok", clientIp: req.clientIp });
             }));
 
+        this.app.use("/api/error",
+            asyncHandler(cors(corsOptionsDelegate)),
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'test', 2),
+            asyncHandlerWithArgs(checkLimitedMode, 'DELETE', 'PUT'),
+            asyncHandler(async (req: any, res: any, next: any) => {
+                assert(req.appService);
+                throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "test bad argument");
+            }));
 
-        this.app.use('(\/api)?/register',
+
+        this.app.use('/api/register',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'register', 100),
@@ -206,7 +212,7 @@ export class ExpressApp {
             routerRegister);
 
 
-        this.app.use('(\/api)?/user/confirmemail',
+        this.app.use('/api/user/confirmemail',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'userConfirm', 100),
@@ -218,7 +224,7 @@ export class ExpressApp {
             routerUserEmailConfirm);
 
 
-        this.app.use('(\/api)?/user/forgotpass',
+        this.app.use('/api/user/forgotpass',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'userForgotPass', 100),
@@ -229,7 +235,7 @@ export class ExpressApp {
             asyncHandler(noAuthentication),
             routerUserForgotPassword);
 
-        this.app.use('(\/api)?/user/resetpass',
+        this.app.use('/api/user/resetpass',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'userResetPass', 100),
@@ -241,7 +247,7 @@ export class ExpressApp {
             routerUserResetPassword);
 
 
-        this.app.use('(\/api)?/user',
+        this.app.use('/api/user',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'user', 1000),
@@ -252,7 +258,7 @@ export class ExpressApp {
             routerUserAuthenticated);
 
 
-        this.app.use('(\/api)?/auth',
+        this.app.use('/api/auth',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'auth', 250),
@@ -263,7 +269,7 @@ export class ExpressApp {
             routerAuth);
 
 
-        this.app.use('(\/api)?/config/public',
+        this.app.use('/api/config/public',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'configPublic', 100),
@@ -273,7 +279,7 @@ export class ExpressApp {
             asyncHandler(noAuthentication),
             routerConfig);
 
-        this.app.use('(\/api)?/config/auth',
+        this.app.use('/api/config/auth',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'config', 100),
@@ -285,7 +291,7 @@ export class ExpressApp {
             routerConfigAuthAuthenticated);
 
 
-        this.app.use('(\/api)?/config',
+        this.app.use('/api/config',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'config', 100),
@@ -301,7 +307,7 @@ export class ExpressApp {
 
 
 
-        this.app.use('(\/api)?/client/tunnel',
+        this.app.use('/api/client/tunnel',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'clientTunnel', 100),
@@ -311,7 +317,7 @@ export class ExpressApp {
             routerClientTunnelAuthenticated);
 
 
-        this.app.use('(\/api)?/configure',
+        this.app.use('/api/configure',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'configure', 100),
@@ -321,7 +327,7 @@ export class ExpressApp {
             routerConfigureAuthenticated);
 
 
-        this.app.use('(\/api)?/network',
+        this.app.use('/api/network',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'network', 1000),
@@ -332,7 +338,7 @@ export class ExpressApp {
             routerNetworkAuthenticated);
 
 
-        this.app.use('(\/api)?/gateway',
+        this.app.use('/api/gateway',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'gateway', 1000),
@@ -342,7 +348,7 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerGatewayAuthenticated);
 
-        this.app.use('(\/api)?/group',
+        this.app.use('/api/group',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'group', 1000),
@@ -353,7 +359,7 @@ export class ExpressApp {
             routerGroupAuthenticated);
 
 
-        this.app.use('(\/api)?/service',
+        this.app.use('/api/service',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'service', 1000),
@@ -364,7 +370,7 @@ export class ExpressApp {
             routerServiceAuthenticated);
 
 
-        this.app.use('(\/api)?/policy/authn',
+        this.app.use('/api/policy/authn',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'policyAuthn', 1000),
@@ -375,7 +381,7 @@ export class ExpressApp {
             routerAuthenticationPolicyAuthenticated);
 
 
-        this.app.use('(\/api)?/policy/authz',
+        this.app.use('/api/policy/authz',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'policyAuthz', 1000),
@@ -385,7 +391,7 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerAuthorizationPolicyAuthenticated);
 
-        this.app.use('(\/api)?/log/audit',
+        this.app.use('/api/log/audit',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'logsAudit', 1000),
@@ -395,7 +401,7 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkLimitedMode),
             routerAuditAuthenticated);
 
-        this.app.use('(\/api)?/insight/activity',
+        this.app.use('/api/insight/activity',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'insightActivity', 1000),
@@ -406,7 +412,7 @@ export class ExpressApp {
             routerActivityAuthenticated);
 
 
-        this.app.use('(\/api)?/summary',
+        this.app.use('/api/summary',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'summary', 1000),
@@ -417,7 +423,7 @@ export class ExpressApp {
             routerSummaryAuthenticated);
 
 
-        this.app.use('(\/api)?/data',
+        this.app.use('/api/data',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'data', 1000),
@@ -426,7 +432,7 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkCaptcha, 'dataCaptcha', 50),
             routerDataAuthenticated);
 
-        this.app.use('(\/api)?/ip/intelligence',
+        this.app.use('/api/ip/intelligence',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'ipIntelligence', 1000),
@@ -436,7 +442,7 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerIpIntelligenceAuthenticated);
 
-        this.app.use('(\/api)?/pki',
+        this.app.use('/api/pki',
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'pki', 1000),
@@ -447,8 +453,26 @@ export class ExpressApp {
             routerPKIAuthenticated);
 
 
-
+        this.app.use('/api/*', function (req: any, res: any) {
+            res.status(404).send('not found')
+        });
+        /*
         this.app.use(express.static(process.env.STATIC_FOLDER || path.join(__dirname, '../', 'web')))
+        this.app.use('*', function (req: any, res: any) {
+            res.sendFile(path.resolve(process.env.STATIC_FOLDER || path.join(__dirname, '../', 'web'), 'index.html'));
+        }); */
+
+        this.app.use('/', proxy(process.env.UI_HOST || 'localhost:4200', {
+            limit: '10mb',
+            https: false, memoizeHost: true,
+            preserveHostHdr: true,
+            timeout: 10000,
+            proxyErrorHandler: function (err, res, next) {
+                next(err);
+            }
+
+        }));
+
 
 
         /**

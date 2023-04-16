@@ -5,9 +5,10 @@ RUN apt update &&\
 #Create app directory
 WORKDIR /usr/src/app
 ## copy web application dist
-ADD build/web /usr/src/app/web
+##ADD build/web /usr/src/app/web
+#RUN ls /usr/src/app/web
 RUN sed -i 's/providers = provider_sect/#providers = provider_sect/g' /etc/ssl/openssl.cnf
-RUN ls /usr/src/app/web
+
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 # where available (npm@5+)

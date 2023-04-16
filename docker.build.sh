@@ -2,8 +2,8 @@
 
 set -e
 # copy web application output
-rm -rf build/web
-cp -R ../ui.portal/dist/portal build/web
+#rm -rf build/web
+#cp -R ../ui.portal/dist/portal build/web
 npm run build
 
 version=$(cat package.json | grep version | cut -d: -f2 | tr -d , | tr -d \" | tr -d " ")
