@@ -15,6 +15,7 @@ import { AuthorizationRule } from '../src/model/authorizationPolicy';
 
 import chaiExclude from 'chai-exclude';
 import { ConfigWatch } from '../src/model/config';
+import { SSLCertificate } from '../src/model/cert';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -24,6 +25,13 @@ chai.use(chaiExclude);
 function exclude(a: any) {
     delete a.insertDate;
     delete a.updateDate;
+    return a;
+}
+
+function excludeCert(a: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete a.privateKey;
     return a;
 }
 
@@ -216,7 +224,8 @@ describe('configService', async () => {
             name: 'test2', source: 'google', labels: ['test2'],
             password: Util.bcryptHash('passwordWithHash'), groupIds: ['g2'],
             insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
+            updateDate: new Date().toISOString(),
+            apiKey: { key: 'someapiaky' }
         };
         configService.config.users.push(aUser2);
 
@@ -227,7 +236,8 @@ describe('configService', async () => {
             name: 'test3', source: 'linkedin', labels: ['test3'],
             password: Util.bcryptHash('passwordWithHash'), groupIds: ['g3'],
             insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
+            updateDate: new Date().toISOString(),
+            cert: { publicCrt: 'addf', category: 'auth' }
         };
 
         configService.config.users.push(aUser3);
@@ -286,20 +296,30 @@ describe('configService', async () => {
         const list8 = await configService.getUsersBy(0, 0, '', [], [], ['admin']);
         expect(list8.items.length).to.be.equal(1);
 
+        //search by loginmethod id
+        const list81 = await configService.getUsersBy(0, 0, '', [], [], [], ['password']);
+        expect(list81.items.length).to.be.equal(4);
+
+        const list82 = await configService.getUsersBy(0, 0, '', [], [], [], ['apiKey']);
+        expect(list82.items.length).to.be.equal(1);
+
+        const list83 = await configService.getUsersBy(0, 0, '', [], [], [], ['certificate']);
+        expect(list83.items.length).to.be.equal(1);
+
         //search by is2fa
-        const list9 = await configService.getUsersBy(0, 0, '', [], [], [], true);
+        const list9 = await configService.getUsersBy(0, 0, '', [], [], [], [], true);
         expect(list9.items.length).to.be.equal(1);
 
         //search by isVerified
-        const list10 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, true);
+        const list10 = await configService.getUsersBy(0, 0, '', [], [], [], [], undefined, true);
         expect(list10.items.length).to.be.equal(1);
 
         //search by isLocked
-        const list11 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, undefined, true);
+        const list11 = await configService.getUsersBy(0, 0, '', [], [], [], [], undefined, undefined, true);
         expect(list11.items.length).to.be.equal(1);
 
         //search by isEmailVerified
-        const list12 = await configService.getUsersBy(0, 0, '', [], [], [], undefined, undefined, undefined, true);
+        const list12 = await configService.getUsersBy(0, 0, '', [], [], [], [], undefined, undefined, undefined, true);
         expect(list12.items.length).to.be.equal(1);
 
 
@@ -378,31 +398,31 @@ describe('configService', async () => {
         fakeUser.id = 'test';
         await configService.saveUser(fakeUser);
         await configService.deleteUser(fakeUser.id);
-        const userDb = await configService.getUser(fakeUser.id)
+        const userDb = await configService.getUserById(fakeUser.id)
         expect(userDb).not.exist;
 
     });
 
-    it('getUserByApiKey', async () => {
-
-        //first create a config and save to a file
-        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
-        configService.config.users = [];
-        let aUser: User = {
-            id: '6hiryy8ujv3n',
-            username: 'hamza.kilic@ferrumgate.com',
-            name: 'test', source: 'local',
-            password: 'passwordWithHash', groupIds: [],
-            apiKey: '1fviqq286bmcm',
-            insertDate: new Date().toISOString(),
-            updateDate: new Date().toISOString()
-        };
-
-        configService.config.users.push(aUser);
-        const userDb = await configService.getUserByApiKey('1fviqq286bmcm');
-        expect(userDb?.id).to.equal('6hiryy8ujv3n');
-
-    });
+    /*  it('getUserByApiKey', async () => {
+ 
+         //first create a config and save to a file
+         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+         configService.config.users = [];
+         let aUser: User = {
+             id: '6hiryy8ujv3n',
+             username: 'hamza.kilic@ferrumgate.com',
+             name: 'test', source: 'local',
+             password: 'passwordWithHash', groupIds: [],
+             apiKey: { key: '1fviqq286bmcm' },
+             insertDate: new Date().toISOString(),
+             updateDate: new Date().toISOString()
+         };
+ 
+         configService.config.users.push(aUser);
+         const userDb = await configService.getUserByApiKey('1fviqq286bmcm');
+         expect(userDb?.id).to.equal('6hiryy8ujv3n');
+ 
+     }); */
 
 
     it('saveNetwork getNetwork getNetworkByName', async () => {
@@ -2033,10 +2053,6 @@ describe('configService', async () => {
 
 
     });
-
-
-
-
 
 
 

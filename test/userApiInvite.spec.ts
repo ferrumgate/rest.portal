@@ -2,7 +2,7 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
 import { Email, EmailService } from '../src/service/emailService';
 import fs from 'fs';
@@ -16,7 +16,10 @@ const expect = chai.expect;
 
 
 describe('userApiInvite', async () => {
-    const appService = app.appService as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
+
     const redisService = appService.redisService;
     const emailService = appService.emailService;
     const configService = appService.configService;
@@ -35,8 +38,13 @@ describe('userApiInvite', async () => {
 
     }
     before(async () => {
+        await expressApp.start();
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
-        await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await appService.configService.init();
+    })
+
+    after(async () => {
+        await expressApp.stop();
     })
 
     beforeEach(async () => {

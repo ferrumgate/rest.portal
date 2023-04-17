@@ -9,7 +9,7 @@ import { RedLockService } from "./redLockService";
 import { AuthenticationRule } from "../model/authenticationPolicy";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Captcha } from "../model/captcha";
-import { SSLCertificate } from "../model/sslCertificate";
+import { SSLCertificate } from "../model/cert";
 import { EmailSetting } from "../model/emailSetting";
 import { LogoSetting } from "../model/logoSetting";
 import { AuthSettings, BaseOAuth, BaseSaml } from "../model/authSettings";
@@ -214,13 +214,16 @@ export class RedisConfigWatchService extends ConfigService {
                             await this.processArray(this.config.auth.saml.providers, path, item, val.id);
                             break;
                         case 'jwtSSLCertificate':
-                            this.config.jwtSSLCertificate = await this.redisConfig.rGet(path) || {};
+                            this.config.jwtSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificate('JWT', 'jwt');
                             break;
-                        case 'sslCertificate':
-                            this.config.sslCertificate = await this.redisConfig.rGet(path) || {};
+                        case 'webSSLCertificate':
+                            this.config.webSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificate('Web', 'web');
                             break;
                         case 'caSSLCertificate':
-                            this.config.caSSLCertificate = await this.redisConfig.rGet(path) || {};
+                            this.config.caSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificate('ROOT CA', 'ca');
+                            break;
+                        case 'inSSLCertificates':
+                            await this.processArray(this.config.inSSLCertificates, path, item, val.id);
                             break;
                         case 'users':
                             await this.processArray(this.config.users, path, item, val.id);
@@ -267,10 +270,8 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'ipIntelligence/lists':
                             await this.processArray(this.config.ipIntelligence.lists, path, item, val.id);
                             break;
-
-
-
                         default:
+                            logger.warn(`not implemented path ${item.path}`);
                             throw new Error(`not implemented path ${item.path}`)
                     }
                     logger.info(`config changed ${watch.val.path} -> ${watch.val.type} id:${watch.val.val?.id || 'unknown'}`)

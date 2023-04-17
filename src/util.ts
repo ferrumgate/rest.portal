@@ -8,7 +8,7 @@ import { isIPv4 } from 'net';
 import { ZipAFolder } from 'zip-a-folder';
 import { logger } from './common';
 import { ErrorCodes, RestfullException } from './restfullException';
-import crypto from 'crypto';
+import crypto, { createHash } from 'crypto';
 import bcrypt from 'bcrypt';
 import randtoken from 'rand-token';
 import ip6addr from 'ip6addr';
@@ -26,6 +26,24 @@ import decompress from 'decompress';
 const decompressTargz = require('decompress-targz');
 import dir from 'recursive-readdir';
 const mergeFiles = require('merge-files');
+import * as pvtsutils from "pvtsutils";
+import * as pkijs from 'pkijs';
+import * as asn1js from "asn1js";
+import peculiarCrypto from "@peculiar/webcrypto"
+import * as ipaddr from 'ip-address';
+
+
+
+declare global {
+    interface Date {
+        addDays(days: number): Date;
+    }
+}
+Date.prototype.addDays = function (days: number) {
+    var date = new Date(this.valueOf());
+    date.setDate(date.getDate() + days);
+    return date;
+}
 
 
 export interface IpRange {
@@ -308,27 +326,27 @@ export const Util = {
     },
 
 
-    async createSelfSignedCrt(domain: string, folder?: string) {
+    async createSelfSignedCrt(domain: string, days = '3650', folder?: string) {
         //openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${domain}.key -out ${domain}.crt -subj "/CN=${domain}/O=${domain}"
         const tmpFolder = folder || `/tmp/${Util.randomNumberString(16)}`;
         if (!fs.existsSync(tmpFolder))
             await fsp.mkdir(tmpFolder, { recursive: true });
-        await this.exec(`openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ${tmpFolder}/${domain}.key -out ${tmpFolder}/${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false);
-        let val = { privateKey: await fsp.readFile(`${tmpFolder}/${domain}.key`, 'utf-8'), publicKey: await fsp.readFile(`${tmpFolder}/${domain}.crt`, 'utf-8') }
+        await this.exec(`openssl req -x509 -nodes -days ${days} -newkey rsa:2048 -keyout ${tmpFolder}/${domain}.key -out ${tmpFolder}/${domain}.crt -subj "/CN=${domain}/O=${domain}"`, false);
+        let val = { privateKey: await fsp.readFile(`${tmpFolder}/${domain}.key`, 'utf-8'), publicCrt: await fsp.readFile(`${tmpFolder}/${domain}.crt`, 'utf-8') }
         if (!folder) {
             await fsp.rm(tmpFolder, { force: true, recursive: true });
         }
         return val;
     },
-    async createCASignedCrt(domain: string, cerficate: { privateKey: string, publicKey: string }, folder?: string) {
+    async createCASignedCrt(domain: string, org: string, cerficate: { privateKey: string, publicCrt: string }, days = '3650', folder?: string) {
         const tmpFolder = folder || `/tmp/${Util.randomNumberString(16)}`;
         if (!fs.existsSync(tmpFolder))
             await fsp.mkdir(tmpFolder, { recursive: true });
         await fsp.writeFile(`${tmpFolder}/ca.key`, cerficate.privateKey, 'utf-8');
-        await fsp.writeFile(`${tmpFolder}/ca.crt`, cerficate.publicKey, 'utf-8');
-        await this.exec(`openssl req -nodes -days 3650 -newkey rsa:2048 -keyout ${tmpFolder}/${domain}.key -out ${tmpFolder}/${domain}.csr -subj "/CN=${domain}/O=${domain}"`, false);
-        await this.exec(`openssl x509 -req -CA ${tmpFolder}/ca.crt -CAkey ${tmpFolder}/ca.key -CAcreateserial -days 3650 -in ${tmpFolder}/${domain}.csr -out ${tmpFolder}/${domain}.crt`, false);
-        let ret = { privateKey: await fsp.readFile(`${tmpFolder}/${domain}.key`, 'utf-8'), publicKey: await fsp.readFile(`${tmpFolder}/${domain}.crt`, 'utf-8') }
+        await fsp.writeFile(`${tmpFolder}/ca.crt`, cerficate.publicCrt, 'utf-8');
+        await this.exec(`openssl req -nodes -days ${days} -newkey rsa:2048 -keyout ${tmpFolder}/${domain}.key -out ${tmpFolder}/${domain}.csr -subj "/CN=${domain}/O=${org}"`, false);
+        await this.exec(`openssl x509 -req -CA ${tmpFolder}/ca.crt -CAkey ${tmpFolder}/ca.key -CAcreateserial -days ${days} -in ${tmpFolder}/${domain}.csr -out ${tmpFolder}/${domain}.crt`, false);
+        let ret = { privateKey: await fsp.readFile(`${tmpFolder}/${domain}.key`, 'utf-8'), publicCrt: await fsp.readFile(`${tmpFolder}/${domain}.crt`, 'utf-8') }
         if (!folder) {
             await fsp.rm(tmpFolder, { force: true, recursive: true });
         }
@@ -345,13 +363,11 @@ export const Util = {
 
         };
 
-
-
         const x509 = new X509Certificate(Buffer.from(crt));
         const cax509 = new X509Certificate(Buffer.from(ca));
         const isValid = x509.verify(cax509.publicKey);
 
-        return { isValid, remainingMS: getDaysRemaining(x509.validTo), issuer: x509.issuer, subject: x509.subject, validFrom: x509.validFrom, validTo: x509.validTo }
+        return { isValid: isValid, remainingMS: getDaysRemaining(x509.validTo), issuer: x509.issuer, subject: x509.subject, validFrom: x509.validFrom, validTo: x509.validTo }
 
     },
 
@@ -591,8 +607,20 @@ export const Util = {
     },
     mergeAllFiles: async (files: string[], dest: string) => {
         return await mergeFiles(files, dest);
+    },
+    randomBetween(min: number, max: number) {
+        return Math.floor(
+            Math.random() * (max - min) + min
+        )
+    },
+    sha256(content: string) {
+        return createHash('sha256').update(content).digest('base64')
     }
 
 
 
+
+
 }
+
+

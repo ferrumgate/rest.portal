@@ -3,7 +3,7 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth, BaseSaml } from '../src/model/authSettings';
@@ -113,9 +113,11 @@ function createSampleLocal(): AuthLocal {
 }
 
 describe('configAuthApi ', async () => {
-    //const simpleRedis = new RedisService('localhost:6379,localhost:6390');
 
-    const appService = (app.appService) as AppService;
+
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
 
     const redisService = appService.redisService;
     const configService = appService.configService;
@@ -136,6 +138,7 @@ describe('configAuthApi ', async () => {
     }
 
     before(async () => {
+        await expressApp.start();
         if (fs.existsSync('/tmp/config.yaml'))
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
@@ -164,7 +167,10 @@ describe('configAuthApi ', async () => {
                 server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
             }
         )
-        await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await configService.init();
+    })
+    after(async () => {
+        await expressApp.stop();
     })
 
     beforeEach(async () => {

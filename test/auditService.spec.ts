@@ -46,6 +46,23 @@ describe('auditService ', async () => {
 
     }).timeout(5000);
 
+    it('object differ calculate', async () => {
+        const removeProperties = ['id', 'password', 'secretKey', 'key'];
+        let obj = { name: 'aborted' };
+        let obj2 = { name: null };
+
+        let y = odiff.detailedDiff(obj, obj2) as any;
+        let x = odiff.diff(obj, obj2);
+        const msg = ObjectDiffer.calculate(obj, obj2, removeProperties);
+        const msgList: string[] = [];
+        msg.forEach((value, key) => msgList.push(key + ': ' + value));
+        const msgStr = msgList.join(',');
+        expect(msgStr).to.equal('.updated.name: aborted >>> null');
+
+
+
+    }).timeout(5000);
+
     it('object differ calculate2', async () => {
         const removeProperties = ['id', 'password', 'secretKey', 'key'];
         let obj = { id: 1, name: 'aborted', gsm: 34, role: { name: 'acb' }, test: [1, 3, 4], ops: [{ id: 2, name: 'deneme' }, { id: 3, name: 'dea' }] };

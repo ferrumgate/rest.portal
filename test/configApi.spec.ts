@@ -3,13 +3,13 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { AuthSettings } from '../src/model/authSettings';
 import { EmailSetting } from '../src/model/emailSetting';
 import yaml from 'yaml';
 import { Email, EmailService } from '../src/service/emailService';
+import { ExpressApp } from '../src';
 
 
 chai.use(chaiHttp);
@@ -19,10 +19,11 @@ const expect = chai.expect;
 
 
 describe('configApi ', async () => {
-    //const simpleRedis = new RedisService('localhost:6379,localhost:6390');
 
-    const appService = (app.appService) as AppService;
-    //appService.redisService = simpleRedis;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
+
     const redisService = appService.redisService;
     const configService = appService.configService;
     const sessionService = appService.sessionService;
@@ -43,6 +44,7 @@ describe('configApi ', async () => {
     }
 
     before(async () => {
+        await expressApp.start();
         if (fs.existsSync('/tmp/config.yaml'))
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
@@ -116,7 +118,8 @@ describe('configApi ', async () => {
                 server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
             }
         )
-        await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await configService.init();
+
     })
 
     beforeEach(async () => {
@@ -129,6 +132,9 @@ describe('configApi ', async () => {
 
     afterEach(async () => {
         appService.emailService = emailService;
+    })
+    after(async () => {
+        await expressApp.stop();
     })
     it('GET /config/public will return public configs', async () => {
 

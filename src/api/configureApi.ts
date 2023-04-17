@@ -11,6 +11,9 @@ import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
 import { saveSystemDnsService } from "./serviceApi";
 import { AuthSession } from "../model/authSession";
+import { resetWebCertificate } from "./pkiApi";
+import { getNotJoinedGateways } from "./gatewayApi";
+
 
 
 interface Configure {
@@ -36,6 +39,7 @@ routerConfigureAuthenticated.post('/',
         const configService = appService.configService;
         const inputService = appService.inputService;
         const auditService = appService.auditService;
+        const gatewayService = appService.gatewayService;
         //check user must admin, and system must not be configured before
         const user = req.currentUser as User;
         if (user.username !== 'admin') {
@@ -98,13 +102,26 @@ routerConfigureAuthenticated.post('/',
             throw new RestfullException(412, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrNetworkNotFound, "no default network");
         }
 
+
+
         defaultNetwork.clientNetwork = data.clientNetwork;
         defaultNetwork.serviceNetwork = data.serviceNetwork;
         defaultNetwork.sshHost = data.sshHost;
         await configService.saveNetwork(defaultNetwork);
 
+
+        const notJoineds = await getNotJoinedGateways(configService, gatewayService);
+        const notJoined = notJoineds.find(x => x);
+        if (notJoined) {
+            notJoined.networkId = defaultNetwork.id;
+            await configService.saveGateway(notJoined);
+        }
+
+
         //save default dns
         await saveSystemDnsService(defaultNetwork, configService, auditService, currentSession, user);
+        //reset default web cert
+        await resetWebCertificate(configService, auditService, currentSession, user);
 
         return res.status(200).json({});
 

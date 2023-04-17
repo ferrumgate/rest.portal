@@ -18,6 +18,7 @@ import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Group } from "../model/group";
 import { ESSetting } from "../model/esSetting";
 import { IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
+import { SSLCertificate } from "../model/cert";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -30,7 +31,7 @@ export class AuditService {
      */
     public encKey;
     trimInterval: any;
-    removePropertyList = ['id', 'password', 'twoFASecret', 'apiKey'];
+    removePropertyList = ['id', 'password', 'twoFASecret', 'apiKey', 'privateKey', 'publicCrt'];
     constructor(private configService: ConfigService, private redisService: RedisService, private esService: ESService) {
         this.encKey = this.configService.getEncKey();
         this.trimInterval = setIntervalAsync(async () => {
@@ -157,9 +158,16 @@ export class AuditService {
             `${before || after}`)
     }
     async logSaveUser(currentSession: AuthSession, currentUser: User, before?: User, after?: User) {
-
         await this.executeSave(currentSession, currentUser, before, after,
             `user ${before ? 'updated' : 'created'}`,
+            `${before?.username || after?.username}`)
+
+    }
+    // take care about writing senstivie data log
+    async logSensitiveData(currentSession: AuthSession, currentUser: User, before?: { username: string, [key: string]: any }, after?: { username: string, [key: string]: any }) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `user sensitive data ${before ? 'updated' : 'created'}`,
             `${before?.username || after?.username}`)
 
     }
@@ -351,15 +359,36 @@ export class AuditService {
     async logDeleteIpIntelligenceList(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceList, after?: IpIntelligenceList) {
 
         await this.executeSave(currentSession, currentUser, before, after,
-            `ip intelligence list deleted}`,
+            `ip intelligence list deleted`,
             `${before?.name}`,)
 
     }
     async logResetIpIntelligenceList(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceList, after?: IpIntelligenceList) {
 
         await this.executeSave(currentSession, currentUser, before, before,
-            `ip intelligence list reseted}`,
+            `ip intelligence list reseted`,
             `${before?.name}`,)
+
+    }
+    async logDeleteCert(currentSession: AuthSession, currentUser: User, before?: SSLCertificate, after?: SSLCertificate) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `certificate deleted`,
+            `${before?.name}`,)
+
+    }
+    async logSaveCert(currentSession: AuthSession, currentUser: User, before?: SSLCertificate, after?: SSLCertificate) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `certificate ${before ? 'updated' : 'created'}`,
+            `${before?.name || after?.name}`,)
+
+    }
+    async logExportCert(currentSession: AuthSession, currentUser: User, cert: SSLCertificate) {
+
+        await this.executeSave(currentSession, currentUser, {}, {},
+            `certificate exported`,
+            `${cert?.name}`,)
 
     }
 
@@ -437,7 +466,17 @@ export class ObjectDiffer {
                     }
                 } else
                     if (typeof (obj) == "object") {
-                        if (obj == null) return 'null';
+                        if (obj == null) {
+                            if (!map.has(mappedField)) {
+                                const currentValue = getObjValue(before, baseField);
+                                map.set(mappedField, currentValue + ' >>> ' + 'null');
+                            }
+                            else {
+                                const currentValue = getObjValue(before, baseField);
+                                map.set(mappedField, mappedField + ',' + currentValue + ' >>> ' + 'null');
+                            }
+                            return;
+                        }
 
                         if (Array.isArray(obj)) {
                             for (let i = 0; i < obj.length; ++i) {

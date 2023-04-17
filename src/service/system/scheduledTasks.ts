@@ -17,7 +17,7 @@ export class ClearTmpFolderTask implements ScheduledTask {
     /**
      *
      */
-    constructor(protected tmpFolder: string, protected interval: number = 60 * 60 * 1000) {
+    constructor(protected tmpFolder: string, protected interval: number = 60 * 60 * 1000, protected oldTime = 24 * 60 * 60 * 1000) {
 
 
     }

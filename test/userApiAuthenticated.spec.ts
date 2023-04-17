@@ -3,13 +3,16 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Group } from '../src/model/group';
 import { Network } from '../src/model/network';
 import { Gateway } from '../src/model/network';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
+import { ExpressApp } from '../src';
+import { SSLCertificate } from '../src/model/cert';
+import { RBACDefault } from '../src/model/rbac';
+
 
 
 chai.use(chaiHttp);
@@ -21,7 +24,9 @@ const expect = chai.expect;
  * authenticated user api tests
  */
 describe('userApiAuthenticated', async () => {
-    const appService = app.appService as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
     const redisService = appService.redisService;
     const sessionService = appService.sessionService;
     function getSampleUser() {
@@ -44,9 +49,13 @@ describe('userApiAuthenticated', async () => {
         return user;
     }
     before(async () => {
+        await expressApp.start();
         const random = Util.randomNumberString();
         await appService.configService.setConfigPath(`/tmp/rest.portal.config${random}.yaml`);
-        await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await appService.configService.init();
+    })
+    after(async () => {
+        await expressApp.stop();
     })
 
     beforeEach(async () => {
@@ -308,7 +317,7 @@ describe('userApiAuthenticated', async () => {
         user1.is2FA = false;
         user1.isLocked = false;
         user1.isEmailVerified = false;
-        user1.isOnlyApiKey = false;
+
         user1.labels = [];
         user1.groupIds = [];
         user1.roleIds = [];
@@ -319,7 +328,7 @@ describe('userApiAuthenticated', async () => {
         user1.is2FA = true;
         user1.isLocked = true;
         user1.isEmailVerified = true;
-        user1.isOnlyApiKey = true;
+
         user1.labels = ['test'];
         user1.groupIds = ['grou1', 'group1'];
         user1.roleIds = ['role1', 'Admin'];
@@ -352,7 +361,7 @@ describe('userApiAuthenticated', async () => {
             //these values must change
             expect(userret.name).to.be.equal('test2');
             expect(userret.isLocked).to.be.true;
-            expect(userret.isOnlyApiKey).to.be.false;
+
             expect(userret.labels?.length).to.be.equal(1);
             expect(userret.roleIds?.length).to.be.equal(1);
             if (userret.roleIds)
@@ -505,11 +514,10 @@ describe('userApiAuthenticated', async () => {
     it('GET /user/current/2fa will return 200', async () => {
         //prepare data
         const { user1 } = createSampleData22();
+        user1.twoFASecret = 'somesecret';
         await appService.configService.saveUser(user1);
 
         const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
-
-
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -527,6 +535,7 @@ describe('userApiAuthenticated', async () => {
         expect(response.body.is2FA).to.be.false;
         expect(response.body.key).exist;
         expect(response.body.t2FAKey).exist;
+        expect(response.body.t2FAKey).to.equal('somesecret');
 
 
     }).timeout(50000);
@@ -624,6 +633,237 @@ describe('userApiAuthenticated', async () => {
 
 
     }).timeout(50000);
+
+
+    it('GET /user/:id/sensitiveData will return 200', async () => {
+        //prepare data
+        const user = getSampleUser();
+        user.apiKey = { key: 'akey' };
+        user.cert = {
+            publicCrt: 'adfaf',
+            privateKey: 'asdfafa'
+        } as SSLCertificate;
+
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/user/${user.id}/sensitiveData?apiKey=true&cert=true`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey.key).to.equal('akey');
+        expect(response.body.cert).exist;
+        expect(response.body.cert.publicCrt).to.equal('adfaf');
+        expect(response.body.cert.privateKey).not.exist;
+
+        /// get only api key
+
+
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/user/${user.id}/sensitiveData?apiKey=true`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey.key).to.equal('akey');
+        expect(response.body.cert).not.exist;
+
+        /// get only cert
+
+
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/user/${user.id}/sensitiveData?cert=true`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey).not.exist;
+        expect(response.body.cert).exist;
+
+    }).timeout(50000);
+
+
+    it('PUT /user/:id/sensitiveData will return 200', async () => {
+        //prepare data
+        const user = getSampleUser();
+        user.apiKey = { key: 'akey' };
+        user.cert = {
+            publicCrt: 'adfaf',
+            privateKey: 'asdfafa'
+        } as SSLCertificate;
+        const inCerts = await appService.configService.getInSSLCertificateAll();
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put(`/user/${user.id}/sensitiveData`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ apiKey: { key: 'newkey' } })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey.key).not.equal('newkey');
+        expect(response.body.apiKey.key.startsWith(user.id)).to.be.true;
+        expect(response.body.cert).not.exist;
+
+        //check cert
+
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put(`/user/${user.id}/sensitiveData`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send({ cert: { publicCrt: 'newkey', parentId: inCerts.find(x => x.category == 'auth')?.id } })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey).not.exist;
+        expect(response.body.cert.publicCrt).exist;
+
+
+    }).timeout(50000)
+
+
+
+    it('DELETE /user/:id/sensitiveData will return 200', async () => {
+        //prepare data
+        const user = getSampleUser();
+        user.apiKey = { key: 'akey' };
+        user.cert = {
+            publicCrt: 'adfaf',
+            privateKey: 'asdfafa'
+        } as SSLCertificate;
+        const inCerts = await appService.configService.getInSSLCertificateAll();
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .delete(`/user/${user.id}/sensitiveData?apiKey=true&cert=true`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey).exist;
+        expect(response.body.apiKey.key).to.equal('')
+        expect(response.body.cert).exist;
+        expect(response.body.cert.publicCrt).to.equal('');
+
+        //check cert
+        const data = await appService.configService.getUserSensitiveData(user.id)
+        expect(data.apiKey?.key).to.equal('');
+        expect(data.cert?.publicCrt).to.equal('');
+
+
+
+    }).timeout(150000)
+
+
+
+    it('POST /user will return 200', async () => {
+        //prepare data
+        //await appService.configService.init();
+        const user = getSampleUser();
+        const group: Group = {
+            id: 'asdfa', name: 'group1', insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(), isEnabled: true, labels: []
+        }
+        await appService.configService.saveGroup(group);
+        const inCerts = await appService.configService.getInSSLCertificateAll();
+        const groups = await appService.configService.getGroupsAll();
+
+        user.groupIds = [groups[0].id, '1514'];
+        user.roleIds = [RBACDefault.roleAdmin.id]
+
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/user?cert=true`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(user)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.user.apiKey).not.exist;
+        expect(response.body.user.cert).exist;
+        expect(response.body.user.cert.publicCrt).not.exist;
+        expect(response.body.sensitiveData).exist;
+        expect(response.body.sensitiveData.cert.publicCrt).exist;
+        const userId = response.body.user.id;
+
+        const userDb = await appService.configService.getUserById(userId);
+        expect(userDb?.name).to.equal(user.name);
+        expect(userDb?.groupIds.length).to.equal(1);
+        expect(userDb?.groupIds[0]).to.equal(groups[0].id);
+        expect(userDb?.roleIds).exist;
+        if (userDb?.roleIds)
+            expect(userDb?.roleIds[0]).to.equal(RBACDefault.roleUser.id);
+
+        const data = await appService.configService.getUserSensitiveData(userDb?.id || '0');
+        console.log(data);
+        expect(data.cert?.publicCrt?.includes('BEGIN CERTIFICATE')).to.be.true;
+
+
+
+
+    }).timeout(150000)
 
 })
 

@@ -39,7 +39,7 @@ export class WebSocketClientCommand extends WebSocketClient {
         try {
             const input = JSON.parse(data) as { publicKey: string };
             logger.info(`client id:${this.id} is authenticating`);
-            const caPub = await this.configService.getCASSLCertificatePublic();
+            const { publicCrt: caPub } = await this.configService.getCASSLCertificate();
             if (!caPub)
                 throw new Error("ca certificate public key is null");
             const result = await Util.getCertificateInfo(input.publicKey, caPub);

@@ -3,13 +3,15 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { AuthSettings } from '../src/model/authSettings';
 import * as twofactor from 'node-2fa';
 import { Gateway } from '../src/model/network';
 import { Network } from '../src/model/network';
+import { ExpressApp } from '../src';
+import { UtilPKI } from '../src/utilPKI';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -18,7 +20,10 @@ const expect = chai.expect;
 
 
 describe('authApi', async () => {
-    const appService = (app.appService) as AppService;
+
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
     const redisService = appService.redisService;
     const configService = appService.configService;
     const user: User = {
@@ -73,9 +78,15 @@ describe('authApi', async () => {
         updateDate: new Date().toISOString(),
 
     }
+    before(async () => {
+        await expressApp.start();
+    })
+    after(async () => {
+        await expressApp.stop();
+    })
 
-    beforeEach(async () => {
-
+    beforeEach(async function () {
+        this.timeout(120000);
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         await configService.setConfigPath(filename);
         const auth: AuthSettings = {
@@ -168,7 +179,7 @@ describe('authApi', async () => {
 
 
         await configService.setUrl('http://local.ferrumgate.com:8080')
-        await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await configService.init();
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
         await redisService.flushAll();
@@ -266,14 +277,14 @@ describe('authApi', async () => {
         const user5: User = {
             username: 'hamza4@ferrumgate.com',
             groupIds: [],
-            id: 'someid2312313213',
+            id: 'ipdfr6gyi3uzu8fk',
             name: 'hamza',
             password: Util.bcryptHash('somepass'),
             source: 'local',
             isVerified: true,
             isLocked: false,
             is2FA: true,
-            apiKey: 'test',
+            apiKey: { key: 'ipdfr6gyi3uzu8fktest' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: []
@@ -284,7 +295,73 @@ describe('authApi', async () => {
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/auth')
-                .set('ApiKey', 'test')
+                .set('ApiKey', 'ipdfr6gyi3uzu8fktest')
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+
+
+    }).timeout(50000);
+
+
+    it('POST /auth with result 200 and certificate', async () => {
+
+        const user5: User = {
+            username: 'hamza4@ferrumgate.com',
+            groupIds: [],
+            id: 'ipdfr6gyi3uzu8fk',
+            name: 'hamza',
+            password: Util.bcryptHash('somepass'),
+            source: 'local',
+            isVerified: true,
+            isLocked: false,
+            is2FA: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            roleIds: []
+
+        }
+        const ca = await configService.getCASSLCertificateSensitive();
+        const inCerts = await configService.getInSSLCertificateAllSensitive();
+        const cert = inCerts.find(x => x.category == 'auth');
+        const userResult = await UtilPKI.createCertificate(
+            {
+                CN: user.id, O: 'UK', sans: [],
+                isCA: false, hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5', serial: 100000,
+                notAfter: new Date().addDays(5), notBefore: new Date().addDays(-10),//invalid date test
+                ca: {
+                    publicCrt: cert?.publicCrt || '',
+                    privateKey: cert?.privateKey || '',
+                    hashAlg: 'SHA-512', signAlg: 'RSASSA-PKCS1-v1_5'
+                }
+            })
+        const tmpDir = `/tmp/${Util.randomNumberString()}`;
+        fs.mkdirSync(tmpDir);
+        const privateKey3 = `${tmpDir}/user.key`;
+        const publicCrt3 = `${tmpDir}/user.crt`;
+        fs.writeFileSync(privateKey3, UtilPKI.toPEM(userResult.privateKeyBuffer, 'PRIVATE KEY'));
+        fs.writeFileSync(publicCrt3, UtilPKI.toPEM(userResult.certificateBuffer, 'CERTIFICATE'));
+
+        user5.cert = {
+            category: 'auth',
+            publicCrt: fs.readFileSync(publicCrt3).toString(),
+            privateKey: fs.readFileSync(privateKey3).toString()
+        }
+
+
+
+        await configService.saveUser(user5);
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/auth')
+                .set('Cert', fs.readFileSync(publicCrt3).toString('base64'))
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -310,7 +387,7 @@ describe('authApi', async () => {
             isVerified: true,
             isLocked: false,
             is2FA: true,
-            apiKey: 'test',
+            apiKey: { key: 'test' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: []
@@ -347,7 +424,7 @@ describe('authApi', async () => {
             isVerified: true,
             isLocked: false,
             is2FA: false,
-            apiKey: 'test',
+            apiKey: { key: 'test' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: []
@@ -384,7 +461,7 @@ describe('authApi', async () => {
             isVerified: true,
             isLocked: false,
             is2FA: false,
-            apiKey: 'test',
+            apiKey: { key: 'test' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: ['Admin']
@@ -428,7 +505,7 @@ describe('authApi', async () => {
             isVerified: true,
             isLocked: false,
             is2FA: false,
-            apiKey: 'test',
+            apiKey: { key: 'test' },
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             roleIds: ['User']

@@ -3,12 +3,11 @@ import { logger } from "../common";
 import { Config, ConfigWatch } from "../model/config";
 import yaml from 'yaml';
 import { Util } from "../util";
-import { User } from "../model/user";
+import { ApiKey, User } from "../model/user";
 import { EmailSetting } from "../model/emailSetting";
 import { LogoSetting } from "../model/logoSetting";
 import { Captcha } from "../model/captcha";
-import { SSLCertificate } from "../model/sslCertificate";
-import { SSHCertificate } from "../model/sshCertificate";
+import { SSLCertificate, SSLCertificateBase, SSLCertificateCategory, SSLCertificateEx } from "../model/cert";
 import { ErrorCodes, RestfullException } from "../restfullException";
 import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthSaml, AuthSettings, BaseLdap, BaseOAuth, BaseSaml } from "../model/authSettings";
 import { RBAC, RBACDefault, Role } from "../model/rbac";
@@ -24,6 +23,8 @@ import { stringify } from "querystring";
 import { IpIntelligenceCountryList, IpIntelligenceFilterCategory, IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
 import IPCIDR from "ip-cidr";
 import { DomainIntelligenceBWItem, DomainIntelligenceSource } from "../model/domainIntelligence";
+import { UtilPKI } from "../utilPKI";
+
 
 
 
@@ -91,6 +92,7 @@ export class ConfigService {
 
 
     }
+
     createConfig(): Config {
         //default user
         const adminUser = this.createAdminUser();
@@ -117,9 +119,10 @@ export class ConfigService {
             groups: [],
             services: [],
             captcha: {},
-            jwtSSLCertificate: {},
-            sslCertificate: {},
-            caSSLCertificate: {},
+            jwtSSLCertificate: this.defaultCertificate('JWT', 'jwt'),
+            webSSLCertificate: this.defaultCertificate('Web', 'web'),
+            caSSLCertificate: this.defaultCertificate('CA', 'ca'),
+            inSSLCertificates: [],
             domain: 'ferrumgate.zero',
             url: 'https://secure.yourdomain.com',
             email: this.createDefaultEmail(),
@@ -167,30 +170,126 @@ export class ConfigService {
         await this.init();
     }
 
+    protected defaultCertificate(name: string, category: SSLCertificateCategory) {
+        let ssl: SSLCertificate = {
+            idEx: Util.randomNumberString(16),
+            name: name, insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(), labels: [],
+            isEnabled: true, category: category, usages: []
+        };
+        return ssl;
+    }
+    protected defaultCertificateEx(name: string, category: SSLCertificateCategory) {
+        let ssl: SSLCertificateEx = {
+            id: Util.randomNumberString(16),
+            name: name, insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(), labels: [],
+            isEnabled: true, category: category, usages: []
+        };
+        return ssl;
+    }
+
+
+
+
+
     protected async createCerts() {
 
-        if (!(await this.getJWTSSLCertificate()).privateKey) {
-            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.com");
-            await this.setJWTSSLCertificate({
+
+        //get all certs
+
+        // jwt certificate 
+        const jwt = await this.getJWTSSLCertificateSensitive();
+        if (!jwt.privateKey) {
+
+            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate JWT CA', 'ferrumgate', 9125, true, []);
+            let cert: SSLCertificate = {
+                ...jwt,
+                publicCrt: publicCrt,
                 privateKey: privateKey,
-                publicKey: publicKey,
-            });
+                isSystem: true
+
+            }
+            await this.setJWTSSLCertificate(cert);
         }
+
+
         //create ca ssl certificate if not exists;
-        if (!(await this.getCASSLCertificate()).privateKey) {
-            const { privateKey, publicKey } = await Util.createSelfSignedCrt("ferrumgate.zero");
-            await this.setSSLCertificate({
+        const ca = await this.getCASSLCertificateSensitive();
+        if (!ca.privateKey) {
+
+            const { publicCrt, privateKey } = await UtilPKI.createCert('FerrumGate ROOT CA', 'ferrumgate', 9125, true, []);
+            let cert: SSLCertificate = {
+                ...ca,
+                publicCrt: publicCrt,
                 privateKey: privateKey,
-                publicKey: publicKey,
-            });
+                isSystem: true
+            }
+            await this.setCASSLCertificate(cert);
+            ca.privateKey = privateKey, ca.publicCrt = publicCrt;
         }
-        //create ssl certificates if not exists
-        if (!(await this.getSSLCertificate()).privateKey) {
-            const { privateKey, publicKey } = await Util.createSelfSignedCrt("secure.ferrumgate.zero");
-            await this.setSSLCertificate({
+        //create intermediate web certificates if not exists
+        const inCerts = await this.getInSSLCertificateAllSensitive();
+        //for tls 
+        const intermediateTLS = inCerts.find(x => x.category == 'tls') || this.defaultCertificateEx('TLS ', 'tls');
+
+        if (!intermediateTLS.privateKey) {
+
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('FerrumGate Intermediate TLS', 'ferrumgate', 9125, true, [], ca.publicCrt, ca.privateKey);
+            let cert: SSLCertificateEx = {
+                ...intermediateTLS,
+                parentId: ca.idEx,
+                publicCrt: publicCrt,
                 privateKey: privateKey,
-                publicKey: publicKey,
-            });
+                isSystem: false,
+                usages: ['for web', 'for tls inspection', 'for service']
+
+            }
+            await this.saveInSSLCertificate(cert);
+            intermediateTLS.privateKey = privateKey, intermediateTLS.publicCrt = publicCrt;
+
+        }
+        //for authentication inspections
+
+        const intermediateAuthentication = inCerts.find(x => x.category == 'auth') || this.defaultCertificateEx('Authentication', 'auth');
+
+        if (!intermediateAuthentication.privateKey) {
+
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned('FerrumGate Intermediate Authentication', 'ferrumgate', 9125, true, [], ca.publicCrt, ca.privateKey);
+            let cert: SSLCertificateEx = {
+                ...intermediateAuthentication,
+                parentId: ca.idEx,
+                publicCrt: publicCrt,
+                privateKey: privateKey,
+                isSystem: false
+
+            }
+            await this.saveInSSLCertificate(cert);
+            intermediateAuthentication.privateKey = privateKey, intermediateAuthentication.publicCrt = publicCrt;
+
+        }
+
+
+        //create ssl certificates if not exists
+        const url = await this.getUrl();
+        const domain1 = new URL(url).hostname;
+
+        let webCert = await this.getWebSSLCertificateSensitive();
+        if (!webCert?.privateKey) {
+            const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 730, false,
+                [
+                    { type: 'domain', value: domain1 },
+
+                ], intermediateTLS.publicCrt, intermediateTLS.privateKey);
+            let cert: SSLCertificate = {
+                ...webCert,
+                parentId: intermediateTLS.id,
+                publicCrt: publicCrt,
+                privateKey: privateKey,
+
+            }
+            await this.setWebSSLCertificate(cert);
+            webCert.privateKey = privateKey, webCert.publicCrt = publicCrt;
         }
     }
     async stop() {
@@ -324,10 +423,12 @@ export class ConfigService {
     }
 
     protected deleteUserSensitiveData(user?: User) {
-        delete user?.apiKey;
+        delete user?.apiKey?.key;
         delete user?.twoFASecret;
         delete user?.password;
-        //delete user?.roleIds;// is this necessary
+        delete user?.cert?.privateKey;
+        delete user?.cert?.publicCrt;
+
     }
 
 
@@ -345,28 +446,26 @@ export class ConfigService {
         this.deleteUserSensitiveData(user);
         return user;
     }
-    async getUserByApiKey(key: string): Promise<User | undefined> {
-        this.isReady(); this.isReadable();
-        if (!key) return undefined;
-        let user = this.clone(this.config.users.find(x => x.apiKey == key));
-        this.deleteUserSensitiveData(user);
-        return user;
-    }
+    /*   async getUserByApiKey(key: string): Promise<User | undefined> {
+          this.isReady(); this.isReadable();
+          if (!key) return undefined;
+          let user = this.clone(this.config.users.find(x => x.apiKey?.key == key));
+          this.deleteUserSensitiveData(user);
+          return user;
+      } */
     async getUserById(id: string): Promise<User | undefined> {
         this.isReady(); this.isReadable();
         let user = this.clone(this.config.users.find(x => x.id == id));
         this.deleteUserSensitiveData(user);
         return user;
     }
-    async getUser(id: string) {
-        this.isReady(); this.isReadable();
-        return await this.getUserById(id);
-    }
+
+
 
     async getUsersBy(page: number = 0, pageSize: number = 0, search?: string,
-        ids?: string[], groupIds?: string[], roleIds?: string[],
+        ids?: string[], groupIds?: string[], roleIds?: string[], loginMethods?: string[],
         is2FA?: boolean, isVerified?: boolean, isLocked?: boolean,
-        isEmailVerified?: boolean, isOnlyApiKey?: boolean) {
+        isEmailVerified?: boolean) {
         this.isReady(); this.isReadable();
         let users = [];
         let filteredUsers = !search ? this.config.users :
@@ -391,6 +490,10 @@ export class ConfigService {
             filteredUsers = filteredUsers.filter(x => Util.isArrayElementExist(x.groupIds, groupIds));
         if (roleIds && roleIds.length)
             filteredUsers = filteredUsers.filter(x => Util.isArrayElementExist(x.roleIds, roleIds));
+        if (loginMethods && loginMethods.length) {
+            filteredUsers = filteredUsers.filter(x => (loginMethods.includes('password') && x.password) || (loginMethods.includes('apiKey') && x.apiKey) || (loginMethods.includes('certificate') && x.cert))
+        }
+
         if (!Util.isUndefinedOrNull(is2FA))
             filteredUsers = filteredUsers.filter(x => Boolean(x.is2FA) == is2FA)
         if (!Util.isUndefinedOrNull(isVerified))
@@ -401,8 +504,7 @@ export class ConfigService {
         if (!Util.isUndefinedOrNull(isEmailVerified))
             filteredUsers = filteredUsers.filter(x => Boolean(x.isEmailVerified) == isEmailVerified)
 
-        if (!Util.isUndefinedOrNull(isOnlyApiKey))
-            filteredUsers = filteredUsers.filter(x => Boolean(x.isOnlyApiKey) == isOnlyApiKey)
+
 
         filteredUsers = Array.from(filteredUsers);
         filteredUsers.sort((a, b) => {
@@ -472,11 +574,22 @@ export class ConfigService {
         return undefined;
 
     }
-    async getUserSensitiveData(id: string) {
+    async getUserSensitiveData(id: string): Promise<{ twoFASecret?: string, apiKey?: ApiKey, cert?: SSLCertificateBase }> {
         this.isReady(); this.isReadable();
         let user = this.clone(this.config.users.find(x => x.id == id)) as User;
-        return { twoFASecret: user?.twoFASecret };
+        let item = {
+            twoFASecret: user?.twoFASecret,
+            apiKey: user.apiKey ? {
+                ...user.apiKey
+            } : undefined,
+            cert: user.cert ? {
+                ...user.cert
+            } : undefined
+        }
+        delete item.cert?.privateKey;
+        return item;
     }
+
 
     protected async triggerUserDeleted(user: User) {
         //check policy authentication
@@ -548,11 +661,22 @@ export class ConfigService {
         }
         else {
             cloned.id = finded.id;//security
+            const apiKey = (finded.apiKey || cloned.apiKey) ? {
+                ...finded.apiKey,
+                ...cloned.apiKey
+            } : undefined;
+            const cert: SSLCertificateBase | undefined = (finded.cert || cloned.cert) ? {
+                ...finded.cert,
+                ...cloned.cert
+            } : undefined
 
             this.config.users[findedIndex] = {
                 ...finded,
                 ...cloned,
-                updateDate: new Date().toISOString()
+                apiKey: apiKey,
+                cert: cert,
+                updateDate: new Date().toISOString(),
+
             }
             const trc = this.createTrackEvent(finded, this.config.users[findedIndex])
             this.emitEvent({ type: 'put', path: 'users', val: trc.after, before: trc.before })
@@ -597,9 +721,12 @@ export class ConfigService {
         return this.createTrackEvent(prev, this.config.captcha);
     }
 
-    async getJWTSSLCertificate(): Promise<SSLCertificate> {
+    async getJWTSSLCertificateSensitive(): Promise<SSLCertificate> {
         this.isReady(); this.isReadable();
         return this.clone(this.config.jwtSSLCertificate);
+    }
+    async getJWTSSLCertificate(): Promise<SSLCertificate> {
+        return this.deleteCertSensitive(await this.getJWTSSLCertificateSensitive()) as SSLCertificate;
     }
 
     async setJWTSSLCertificate(cert: SSLCertificate | {}) {
@@ -616,32 +743,41 @@ export class ConfigService {
         return this.createTrackEvent(prev, this.config.jwtSSLCertificate);
     }
 
-    async getSSLCertificate(): Promise<SSLCertificate> {
+    async getWebSSLCertificateSensitive(): Promise<SSLCertificate> {
         this.isReady(); this.isReadable();
-        return this.clone(this.config.sslCertificate);
+        return this.clone(this.config.webSSLCertificate);
+    }
+    async getWebSSLCertificate(): Promise<SSLCertificate> {
+        return this.deleteCertSensitive(await this.getWebSSLCertificateSensitive()) as SSLCertificate;
     }
 
-    async setSSLCertificate(cert: SSLCertificate | {}) {
+
+    async setWebSSLCertificate(cert: SSLCertificate | {}) {
         this.isReady(); this.isWritable();
         let cloned = this.clone(cert);
-        const prev = this.config.sslCertificate;
-        this.config.sslCertificate = {
-            ...this.config.sslCertificate,
+        const prev = this.config.webSSLCertificate;
+        this.config.webSSLCertificate = {
+            ...this.config.webSSLCertificate,
             ...cloned
         }
-        const trc = this.createTrackEvent(prev, this.config.sslCertificate);
-        this.emitEvent({ type: 'put', path: 'sslCertificate', val: trc.after, before: trc.before })
+        const trc = this.createTrackEvent(prev, this.config.webSSLCertificate);
+        this.emitEvent({ type: 'put', path: 'webSSLCertificate', val: trc.after, before: trc.before })
         await this.saveConfigToFile();
-        return this.createTrackEvent(prev, this.config.sslCertificate);
+        return this.createTrackEvent(prev, this.config.webSSLCertificate);
+    }
+    protected deleteCertSensitive(cert?: SSLCertificate | SSLCertificateEx) {
+        if (!cert) return cert;
+        delete cert.privateKey;
+        return cert;
     }
 
-    async getCASSLCertificate(): Promise<SSLCertificate> {
+
+    async getCASSLCertificateSensitive(): Promise<SSLCertificate> {
         this.isReady(); this.isReadable();
         return this.clone(this.config.caSSLCertificate);
     }
-    async getCASSLCertificatePublic(): Promise<string | null | undefined> {
-        this.isReady(); this.isReadable();
-        return this.config.caSSLCertificate.publicKey;
+    async getCASSLCertificate(): Promise<SSLCertificate> {
+        return this.deleteCertSensitive(await this.getCASSLCertificateSensitive()) as SSLCertificate;
     }
 
     async setCASSLCertificate(cert: SSLCertificate | {}) {
@@ -652,11 +788,77 @@ export class ConfigService {
             ...this.config.caSSLCertificate,
             ...cloned
         }
-        const trc = this.createTrackEvent(prev, this.config.sslCertificate)
+        const trc = this.createTrackEvent(prev, this.config.caSSLCertificate)
         this.emitEvent({ type: 'put', path: 'caSSLCertificate', val: trc.after, before: trc.after })
         await this.saveConfigToFile();
         return this.createTrackEvent(prev, this.config.caSSLCertificate);
     }
+
+    //// intermediate certificates 
+    async getInSSLCertificateSensitive(id: string): Promise<SSLCertificateEx | undefined> {
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.inSSLCertificates.find(x => x.id == id));
+
+    }
+    async getInSSLCertificate(id: string): Promise<SSLCertificateEx | undefined> {
+        return this.deleteCertSensitive(await this.getInSSLCertificateSensitive(id)) as SSLCertificateEx;
+
+    }
+
+    async getInSSLCertificateAll(): Promise<SSLCertificateEx[]> {
+
+        return (await this.getInSSLCertificateAllSensitive()).map(x => this.deleteCertSensitive(x)).filter(y => y).map(y => y as SSLCertificateEx);
+
+
+    }
+    async getInSSLCertificateAllSensitive() {
+        this.isReady(); this.isReadable();
+        return this.config.inSSLCertificates.map(x => this.clone(x));
+    }
+
+
+
+    async deleteInSSLCertificate(id: string) {
+        this.isReady(); this.isWritable();
+        const indexId = this.config.inSSLCertificates.findIndex(x => x.id == id);
+        const cert = this.config.inSSLCertificates.find(x => x.id == id);
+        if (indexId >= 0 && cert) {
+            this.config.inSSLCertificates.splice(indexId, 1);
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(cert);
+
+
+    }
+    /**
+     * @summary save intermediate certificate
+     */
+    async saveInSSLCertificate(cert: SSLCertificateEx) {
+        this.isReady(); this.isWritable();
+        let findedIndex = this.config.inSSLCertificates.findIndex(x => x.id == cert.id);
+        let finded = findedIndex >= 0 ? this.config.inSSLCertificates[findedIndex] : null;
+        const cloned = this.clone(cert);
+        if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            this.config.inSSLCertificates.push(cloned);
+            findedIndex = this.config.inSSLCertificates.length - 1;
+
+            const trc = this.createTrackEvent(finded, this.config.inSSLCertificates[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'inSSLCertificates', val: trc.after, before: trc.before })
+        } else {
+            this.config.inSSLCertificates[findedIndex] = {
+                ...finded,
+                ...cloned,
+            }
+            const trc = this.createTrackEvent(finded, this.config.inSSLCertificates[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'inSSLCertificates', val: trc.after, before: trc.before })
+        }
+        await this.saveConfigToFile();
+        return this.createTrackEvent(finded, this.config.inSSLCertificates[findedIndex]);
+    }
+
+
+
 
 
     async getEmailSetting(): Promise<EmailSetting> {

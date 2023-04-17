@@ -3,7 +3,6 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Network } from '../src/model/network';
@@ -11,6 +10,7 @@ import { Network } from '../src/model/network';
 import chaiExclude from 'chai-exclude';
 import { IpIntelligence, IpIntelligenceList, IpIntelligenceListStatus, IpIntelligenceSource } from '../src/model/IpIntelligence';
 import { ESService } from '../src/service/esService';
+import { ExpressApp } from '../src';
 
 
 chai.use(chaiHttp);
@@ -36,7 +36,9 @@ const espass = '123456';
  * authenticated user api tests
  */
 describe('ipIntelligenceApi', async () => {
-    const appService = app.appService as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
     const redisService = appService.redisService;
     const sessionService = appService.sessionService;
 
@@ -54,8 +56,9 @@ describe('ipIntelligenceApi', async () => {
 
     }
     before(async () => {
+        await expressApp.start();
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
-        await appService.configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await appService.configService.init();
         await appService.configService.setIsConfigured(1);
         await appService.esService.reConfigure(eshost, esuser, espass, '1s');
 
@@ -70,6 +73,9 @@ describe('ipIntelligenceApi', async () => {
         appService.configService.config.ipIntelligence.lists = [];
         await redisService.flushAll();
         await appService.esService.reset();
+    })
+    after(async () => {
+        await expressApp.stop();
     })
 
 

@@ -7,28 +7,36 @@ import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restful
 import { HelperService } from '../../service/helperService';
 import { Util } from '../../util';
 import { attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
+import { UtilPKI } from '../../utilPKI';
+import passportCustom from 'passport-custom';
 
-const name = 'headerapikey';
-export function apiKeyInit() {
-    passport.use(new passportapikey.HeaderAPIKeyStrategy(
-        {
-            header: 'ApiKey', prefix: '',
+const name = 'headercert';
+export function certInit() {
+    passport.use(name, new passportCustom.Strategy(
+        async (req: any, done: any) => {
 
-        }, true,
-        async (apikey: string, done: any, req: any) => {
             try {
 
                 attachActivitySource(req, name);
-
-                logger.info(`passport local with apikey: ${apikey.substring(0, 10)}`);
+                let certb64 = req.get('Cert') as string;
+                logger.info(`passport local with cert: ${certb64.substring(0, 10)}`);
                 const appService = req.appService as AppService;
                 const configService = appService.configService;
                 const redisService = appService.redisService;
                 const sessionService = appService.sessionService;
+                const pkiService = appService.pkiService;
 
-                if (!apikey)
+                if (!certb64)
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "bad argument");
-                const userId = apikey.slice(0, 16);
+                const cert = Buffer.from(certb64, 'base64').toString();
+
+                const isValidCert = await pkiService.authVerify(cert);
+                if (!isValidCert) {
+                    throw new RestfullException(401, ErrorCodes.ErrCertificateVerifyFailed, ErrorCodesInternal.ErrCertificateVerifyFailed, 'cert is not valid');
+                }
+                const crt = (await UtilPKI.parseCertificate(cert))[0];
+                const subject = await UtilPKI.parseSubject(crt);
+                const userId = subject['CN'];
 
                 //const user = await configService.getUserByApiKey(apikey);
                 const user = await configService.getUserById(userId);
@@ -37,10 +45,7 @@ export function apiKeyInit() {
                 attachActivityUser(req, user);
                 attachActivityUsername(req, user?.username);
                 HelperService.isValidUser(user);
-                const sensitiveData = await configService.getUserSensitiveData(userId);
-                if (sensitiveData?.apiKey?.key != apikey) {
-                    throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrUserNotFound, 'not found');
-                }
+
                 //set user to request object
                 req.currentUser = user;
 
@@ -61,6 +66,6 @@ export function apiKeyInit() {
     return name;
 }
 
-export function apiKeyUnuse() {
+export function certUnuse() {
     return passport.unuse(name);
 }

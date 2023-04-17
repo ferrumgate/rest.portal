@@ -398,9 +398,9 @@ describe('util ', () => {
     it('createSelfSignedCrt ', async () => {
         const random = Util.randomNumberString();
         const domain = `${Util.randomNumberString(8)}.com`;
-        const output = await Util.createSelfSignedCrt(domain, `/tmp/${random}`);
+        const output = await Util.createSelfSignedCrt(domain, '3650', `/tmp/${random}`);
         expect(output.privateKey).exist;
-        expect(output.publicKey).exist;
+        expect(output.publicCrt).exist;
         expect(fs.existsSync(`/tmp/${random}/${domain}.crt`)).to.be.true
         expect(fs.existsSync(`/tmp/${random}/${domain}.key`)).to.be.true
 
@@ -409,13 +409,13 @@ describe('util ', () => {
     it('createCASignedCrt ', async () => {
         const random = Util.randomNumberString();
         const cahostname = `${Util.randomNumberString(8)}.com`;
-        const ca = await Util.createSelfSignedCrt(cahostname, `/tmp/${random}`);
+        const ca = await Util.createSelfSignedCrt(cahostname, '3650', `/tmp/${random}`);
 
 
         const domain = `${Util.randomNumberString(8)}.com`;
-        const output = await Util.createCASignedCrt(domain, ca, `/tmp/${random}`);
+        const output = await Util.createCASignedCrt(domain, domain, ca, '3650', `/tmp/${random}`);
         expect(output.privateKey).exist;
-        expect(output.publicKey).exist;
+        expect(output.publicCrt).exist;
         expect(fs.existsSync(`/tmp/${random}/${domain}.crt`)).to.be.true
         expect(fs.existsSync(`/tmp/${random}/${domain}.key`)).to.be.true
 
@@ -426,15 +426,15 @@ describe('util ', () => {
 
 
         const domain = `test.com`;
-        const output = await Util.createCASignedCrt(domain, ca);
-        const x = await Util.getCertificateInfo(output.publicKey, ca.publicKey);
+        const output = await Util.createCASignedCrt(domain, domain, ca);
+        const x = await Util.getCertificateInfo(output.publicCrt, ca.publicCrt);
         expect(x.isValid).to.be.true;
         expect(x.remainingMS > 0);
 
 
         const cahostname2 = `cahost2`;
         const ca2 = await Util.createSelfSignedCrt(cahostname2);
-        const x2 = await Util.getCertificateInfo(output.publicKey, ca2.publicKey);
+        const x2 = await Util.getCertificateInfo(output.publicCrt, ca2.publicCrt);
         expect(x2.isValid).to.be.false;
         expect(x2.remainingMS > 0);
 
@@ -449,15 +449,15 @@ describe('util ', () => {
 
 
         const domain = `test.com`;
-        const output = await Util.createCASignedCrt(domain, ca);
-        const x = await Util.getCertificateInfo(output.publicKey, ca.publicKey);
+        const output = await Util.createCASignedCrt(domain, domain, ca);
+        const x = await Util.getCertificateInfo(output.publicCrt, ca.publicCrt);
         expect(x.isValid).to.be.true;
         expect(x.remainingMS > 0);
 
 
         const cahostname2 = `cahost2`;
         const ca2 = await Util.createSelfSignedCrt(cahostname2);
-        const x2 = await Util.getCertificateInfo(output.publicKey, ca2.publicKey);
+        const x2 = await Util.getCertificateInfo(output.publicCrt, ca2.publicCrt);
         expect(x2.isValid).to.be.false;
         expect(x2.remainingMS > 0);
 
@@ -661,6 +661,14 @@ describe('util ', () => {
         const dest = `${tmp}/d.txt`;
         await Util.mergeAllFiles(ops, dest);
         expect(fs.existsSync(dest)).to.be.true;
+
+    });
+
+    it('date addDays', async () => {
+        const date = new Date();
+        const date1 = date.addDays(1);
+        const diff = date1.getTime() - date.getTime();
+        expect(diff).to.equal(24 * 60 * 60 * 1000);
 
     });
 

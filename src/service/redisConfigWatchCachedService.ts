@@ -8,7 +8,7 @@ import { Network } from "../model/network";
 import { Service } from "../model/service";
 import { User } from "../model/user";
 import { ItemWithId, RedisConfigWatchService } from "./redisConfigWatchService";
-import { SSLCertificate } from "../model/sslCertificate";
+import { SSLCertificate } from "../model/cert";
 import { IpIntelligenceSource } from "../model/IpIntelligence";
 
 class NodeCacheForThis extends NodeCache {

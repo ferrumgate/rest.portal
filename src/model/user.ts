@@ -1,3 +1,4 @@
+import { SSLCertificate, SSLCertificateBase, SSLCertificateEx } from "./cert";
 import { Role } from "./rbac";
 
 
@@ -15,8 +16,8 @@ export interface User {
     twoFASecret?: string;
     insertDate: string;
     updateDate: string;
-    isOnlyApiKey?: boolean;
-    apiKey?: string;
+    apiKey?: ApiKey;
+    cert?: SSLCertificateBase;
     roleIds?: string[];
     email?: string;
     isEmailVerified?: boolean;
@@ -38,4 +39,8 @@ export interface UserOverrideNetworkSettings {
     serviceNetwork?: string;
 }
 
+export interface ApiKey {
+    key?: string;
+
+}
 

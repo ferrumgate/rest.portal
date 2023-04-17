@@ -21,3 +21,9 @@ install `ldapsearch` using
 > -b "ou=hamza"
 
 ldapsearch -H ldap://192.168.88.254:389 -x -D "hamza" -w Qa1234567 -b "dc=testad,dc=local" "(sAMAccountName=hamza)"
+
+### openssl pki tests
+
+openssl s_client -connect localhost:8443 -showcerts
+
+openssl x509 -text -in test.ca.cert |grep -E '(Subject|Issuer)'

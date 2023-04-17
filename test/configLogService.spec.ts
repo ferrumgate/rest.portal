@@ -3,9 +3,11 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs, { read } from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
+
 import { ConfigLogService } from '../src/service/configLogService';
-import { RedisService, Util } from '../src/lib';
+import { RedisService } from '../src/service/redisService';
+import { Util } from '../src/util';
+
 
 
 chai.use(chaiHttp);

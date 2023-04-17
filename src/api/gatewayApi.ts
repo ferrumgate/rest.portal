@@ -12,6 +12,7 @@ import { RBACDefault } from "../model/rbac";
 import { authorizeAsAdmin } from "./commonApi";
 import { cloneGateway, Gateway, GatewayDetail, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
+import { GatewayService } from "../service/gatewayService";
 
 
 /////////////////////////////////  gateway //////////////////////////////////
@@ -51,6 +52,22 @@ function gatewayDetailToGateway(x: GatewayDetail) {
     return gateway;
 }
 
+export async function getNotJoinedGateways(configService: ConfigService, gatewayService: GatewayService) {
+    const aliveGateways = await gatewayService.getAllAlive();
+    let items: Gateway[] = [];
+    const gateways = await configService.getGatewaysByNetworkId('');
+    items = items.concat(gateways);
+    //create a map for fast search
+    let fastMap = new Map();
+    items.forEach(x => fastMap.set(x.id, x.id));
+    // alive items newly seen
+    const notInList = aliveGateways.filter(x => !fastMap.get(x.id));
+    notInList.forEach(x => {
+        items.push(gatewayDetailToGateway(x));
+    })
+    return items;
+}
+
 routerGatewayAuthenticated.get('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -65,8 +82,7 @@ routerGatewayAuthenticated.get('/',
         const gatewayService = appService.gatewayService;
         let items: Gateway[] = [];
 
-        //find alive items and add them as real         
-        const aliveGateways = await gatewayService.getAllAlive();
+
 
 
 
@@ -85,19 +101,13 @@ routerGatewayAuthenticated.get('/',
 
             } else
                 if (notJoined) {
-                    const gateways = await configService.getGatewaysByNetworkId('');
-                    items = items.concat(gateways);
-                    //create a map for fast search
-                    let fastMap = new Map();
-                    items.forEach(x => fastMap.set(x.id, x.id));
-                    // alive items newly seen
-                    const notInList = aliveGateways.filter(x => !fastMap.get(x.id));
-                    notInList.forEach(x => {
-                        items.push(gatewayDetailToGateway(x));
-                    })
+                    //find alive items and add them as real         
+                    items = await getNotJoinedGateways(configService, gatewayService);
 
 
                 } else {
+                    //find alive items and add them as real         
+                    const aliveGateways = await gatewayService.getAllAlive();
                     items = await configService.getGatewaysAll();
                     //create a map for fast search
                     let fastMap = new Map();

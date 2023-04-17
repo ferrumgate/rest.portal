@@ -18,8 +18,8 @@ describe('rbac ', async () => {
     })
     it('default system settings must exit', async () => {
 
-        expect(RBACDefault.systemRightIds).to.have.members(['Admin', 'Reporter', 'User']);
-        expect(RBACDefault.systemRoleIds).to.have.members(['Admin', 'Reporter', 'User']);
+        expect(RBACDefault.systemRightIds).to.have.members(['Admin', 'DevOps', 'Reporter', 'User']);
+        expect(RBACDefault.systemRoleIds).to.have.members(['Admin', 'DevOps', 'Reporter', 'User']);
 
         expect(RBACDefault.roleAdmin).exist;
         expect(RBACDefault.roleReporter).exist;

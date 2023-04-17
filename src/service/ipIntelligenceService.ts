@@ -293,7 +293,7 @@ export class IpIntelligenceListService {
         await fsp.writeFile(filename, file);
     }
     async prepareFile(originalFilename: string, filename: string, baseDirectory: string) {
-        const nextDir = `${baseDirectory}/${Util.randomNumberString()}`
+        const nextDir = `${baseDirectory}/${Util.randomNumberString(16)}`
         await fsp.mkdir(nextDir);
         if (originalFilename.endsWith('.zip')) {
             logger.info(`extracting zip file`);
@@ -579,12 +579,12 @@ export class IpIntelligenceListService {
 
 
         let status: IpIntelligenceListStatus | null = null;
-        const tmpDirectory = `/tmp/${Util.randomNumberString()}`;
+        const tmpDirectory = `/tmp/${Util.randomNumberString(16)}`;
 
         try {
             status = await this.getListStatus(item);
             await fsp.mkdir(tmpDirectory, { recursive: true });
-            const tmpFilename = `${tmpDirectory}/${Util.randomNumberString()}`
+            const tmpFilename = `${tmpDirectory}/${Util.randomNumberString(16)}`
             let hash = '';
             if (item.http) {
                 logger.info(`ip intelligence downloading ${item.name} data from ${item.http.url}`);

@@ -3,7 +3,6 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { app } from '../src/index';
 import { Util } from '../src/util';
 import { Network } from '../src/model/network';
 import { Gateway } from '../src/model/network';
@@ -12,6 +11,7 @@ import { ESService } from '../src/service/esService';
 import { ActivityLog } from '../src/model/activityLog';
 import { ConfigService } from '../src/service/configService';
 import { config } from 'process';
+import { ExpressApp } from '../src';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -20,7 +20,10 @@ const expect = chai.expect;
 
 
 describe('activityApi ', async () => {
-    const appService = (app.appService) as AppService;
+    const expressApp = new ExpressApp();
+    const app = expressApp.app;
+    const appService = (expressApp.appService) as AppService;
+
     const redisService = appService.redisService;
     const configService = appService.configService;
     const sessionService = appService.sessionService;
@@ -33,10 +36,11 @@ describe('activityApi ', async () => {
 
     before(async () => {
 
+        await expressApp.start();
         if (fs.existsSync('/tmp/config.yaml'))
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
-        await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await configService.init();
         await configService.setES({ host: host, user: user, pass: pass })
 
     })
@@ -82,6 +86,9 @@ describe('activityApi ', async () => {
             }
         ];
 
+    })
+    after(async () => {
+        await expressApp.stop();
     })
     it('only admin or reporter user can callit', async () => {
         const session = await sessionService.createSession({ id: 'admin2' } as any, false, '1.1.1.1', 'local');
@@ -152,7 +159,7 @@ describe('activityApi ', async () => {
             test -= 5000;
             await Util.sleep(5000);
         }
-        await appService.startReconfigureES();
+        await appService.reconfigureES();
 
 
         const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');

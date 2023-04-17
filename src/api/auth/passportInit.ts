@@ -12,6 +12,7 @@ import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../../restful
 import { logger } from "../../common";
 import { samlAuth0Init, samlAuth0Unuse } from "./auth0Saml";
 import { exchangeKeyInit, exchangeKeyUnuse } from "./exchangeKey";
+import { certInit, certUnuse } from "./certificate";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -27,7 +28,16 @@ export async function passportInit(req: any, res: any, next: any) {
         const ldap = await configService.getAuthSettingLdap();
         const saml = await configService.getAuthSettingSaml();
         const domain = await configService.getDomain();
-        const url = await configService.getUrl();
+        let url = await configService.getUrl();
+        const configUrl = new URL(url);
+
+        const protocol = req.protocol + ':';
+        if ([protocol != configUrl.protocol]) {
+            url = url.replace(configUrl.protocol, protocol);
+        }
+        logger.info(`passport init url: ` + url);
+
+
 
         let activeStrategies = [];
         //init local 
@@ -46,6 +56,11 @@ export async function passportInit(req: any, res: any, next: any) {
         tunnelKeyUnuse();
         const tunnelKey = tunnelKeyInit();
         activeStrategies.push(tunnelKey);
+
+        //init certificate verification
+        certUnuse();
+        const cert = certInit();
+        activeStrategies.push(cert);
 
         // init exchangeKey
         exchangeKeyUnuse();

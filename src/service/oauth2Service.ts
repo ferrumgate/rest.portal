@@ -56,7 +56,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
     private async generateToken(type: "access" | "refresh", user: OAuth2Server.User, client: OAuth2Server.Client): Promise<string> {
         let payload = this.generatePayload(type, user, client);
 
-        let secret = (await this.config.getJWTSSLCertificate()).privateKey || '';
+        let secret = (await this.config.getJWTSSLCertificateSensitive()).privateKey || '';
         let token = JWT.sign(payload, secret, config.JWT_SING_OPTIONS);
         return token;
     }
@@ -94,7 +94,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
         logger.info(`getAccessToken ${accessToken.substring(0, 6)}`)
         let decoded = undefined;
-        const publicssl = (await this.config.getJWTSSLCertificate()).publicKey || '';
+        const publicssl = (await this.config.getJWTSSLCertificate()).publicCrt || '';
         //fs.writeFileSync('/tmp/access' + this.counter, accessToken);
         //fs.writeFileSync('/tmp/pub' + this.counter, publicssl);
         //this.counter++;
@@ -166,7 +166,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
         logger.info(`getRefreshToken ${refreshToken.substring(0, 6)}`);
         let decoded = undefined;
 
-        const publicssl = (await this.config.getJWTSSLCertificate()).publicKey || '';
+        const publicssl = (await this.config.getJWTSSLCertificate()).publicCrt || '';
         try {
             decoded = JWT.verify(refreshToken, publicssl, config.JWT_VERIFY_OPTIONS) as any;
         } catch (err) {

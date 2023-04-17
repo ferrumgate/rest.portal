@@ -34,7 +34,7 @@ describe('oauth2Service ', async () => {
     };
     before(async () => {
         await configService.setConfigPath('/tmp/rest.portal.config.yaml');
-        await configService.setJWTSSLCertificate({ privateKey: fs.readFileSync('./ferrumgate.com.key').toString(), publicKey: fs.readFileSync('./ferrumgate.com.crt').toString() });
+        await configService.init();
 
 
     })

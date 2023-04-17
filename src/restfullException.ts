@@ -48,6 +48,7 @@ export class ErrorCodes {
     static ErrEmailIsInvalid: string = 'ErrEmailIsInvalid';
     static ErrCaptchaRequired: string = 'ErrCaptchaRequired';
     static ErrJWTVerifyFailed: string = 'ErrJWTVerifyFailed';
+    static ErrCertificateVerifyFailed: string = 'ErrCertificateVerifyFailed';
     static ErrUserLockedOrNotVerified: string = 'ErrUserLockedOrNotVerified';
     static ErrUserSourceNotVerified: string = 'ErrUserSourceNotVerified';
     static ErrUserSourceConflict: string = 'ErrUserSourceConflict';
@@ -79,7 +80,8 @@ export class ErrorCodes {
     static ErrEmailConfigNeed: string = 'ErrEmailConfigNeed';
     static ErrFqdnIsNotValid: string = 'ErrFqdnIsNotValid';
     static ErrIpNotValid: string = 'ErrIpNotValid'
-
+    static ErrSystemParameter: string = "ErrSystemParameter";
+    static ErrCertificateIsNotValid: string = 'ErrCertificateIsNotValid';
 
 }
 
@@ -127,6 +129,7 @@ export class ErrorCodesInternal extends ErrorCodes {
     static ErrOnlyAuthLocalIsValid: string = "ErrOnlyAuthLocalIsValid";
     static ErrIpIntelligenceSourceNotFound: string = "ErrIpIntelligenceSourceNotFound";
     static ErrIpIntelligenceBWItemNotFound: string = "ErrIpIntelligenceBWItemNotFound";
+
 
 
 }
