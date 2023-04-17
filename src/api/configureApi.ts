@@ -12,6 +12,7 @@ import { RBACDefault } from "../model/rbac";
 import { saveSystemDnsService } from "./serviceApi";
 import { AuthSession } from "../model/authSession";
 import { resetWebCertificate } from "./pkiApi";
+import { getNotJoinedGateways } from "./gatewayApi";
 
 
 
@@ -38,6 +39,7 @@ routerConfigureAuthenticated.post('/',
         const configService = appService.configService;
         const inputService = appService.inputService;
         const auditService = appService.auditService;
+        const gatewayService = appService.gatewayService;
         //check user must admin, and system must not be configured before
         const user = req.currentUser as User;
         if (user.username !== 'admin') {
@@ -107,8 +109,9 @@ routerConfigureAuthenticated.post('/',
         defaultNetwork.sshHost = data.sshHost;
         await configService.saveNetwork(defaultNetwork);
 
-        const gateways = await configService.getGatewaysAll();
-        const notJoined = gateways.find(x => !x.networkId)
+
+        const notJoineds = await getNotJoinedGateways(configService, gatewayService);
+        const notJoined = notJoineds.find(x => x);
         if (notJoined) {
             notJoined.networkId = defaultNetwork.id;
             await configService.saveGateway(notJoined);
