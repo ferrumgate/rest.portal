@@ -74,6 +74,7 @@ export class ExpressApp {
 
         this.app.use(helmet.default({
             contentSecurityPolicy: false,
+            hsts: false
         }));
 
         const setAppService = async (req: any, res: any, next: any) => {
