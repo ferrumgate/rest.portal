@@ -10,6 +10,7 @@ import { ESService, SearchAuditLogsRequest } from '../src/service/esService';
 import { ActivityLog } from '../src/model/activityLog';
 import { ConfigService } from '../src/service/configService';
 import { IpIntelligenceList, IpIntelligenceListItem } from '../src/model/IpIntelligence';
+import { DeviceLog } from '../src/model/device';
 
 
 
@@ -607,7 +608,7 @@ describe('esService ', async () => {
             expect(isError).to.be.false;
     
         }).timeout(130000);
-     */
+     
 
 
     // ip intelligence list 
@@ -764,6 +765,105 @@ describe('esService ', async () => {
 
 
     }).timeout(120000);
+
+    */
+
+
+    function createSampleData30() {
+        let device1: DeviceLog = {
+            insertDate: new Date(2020, 1, 1).toISOString(),
+            clientSha256: '',
+            clientVersion: '1.2.3',
+            hasAntivirus: true,
+            hasEncryptedDisc: false,
+            hasFirewall: false,
+            hostname: 'ferrum macos',
+            id: '12344',
+            isHealthy: true,
+            macs: '0:1:,12',
+            osName: 'Windows 10 pro',
+            osVersion: '1.9.2',
+            platform: 'linux',
+            serial: '1.1.21',
+
+
+        }
+        let device2: DeviceLog = {
+            insertDate: new Date(2020, 1, 2).toISOString(),
+            clientSha256: '',
+            clientVersion: '1.2.4',
+            hasAntivirus: false,
+            hasEncryptedDisc: true,
+            hasFirewall: false,
+            hostname: 'ferru window',
+            id: '1255',
+            isHealthy: false,
+            macs: '02322:1:,12',
+            osName: 'macos pro',
+            osVersion: '1.9.2',
+            platform: 'darwin',
+            serial: '1.1444.21',
+
+
+        }
+        return { device1, device2 };
+    }
+
+    it('deviceCreateIndexIfNotExits', async () => {
+        const es = new ESService(config, host, user, pass, '1s');
+        const { device1, device2 } = createSampleData30();
+        await es.deviceCreateIndexIfNotExits(device1);
+        const indexes = await es.getAllIndexes();
+        const fmt = es.dateFormat(device1.insertDate)
+        expect(indexes.includes(`ferrumgate-device-${fmt}`));
+
+    }).timeout(15000);
+
+
+    it('deviceSave', async () => {
+        const es = new ESService(config, host, user, pass, '1s');
+        const { device1, device2 } = createSampleData30();
+        const data = await es.deviceCreateIndexIfNotExits(device1);
+        await es.deviceSave([data]);
+
+    }).timeout(15000);
+
+
+    it('deviceSearch', async () => {
+
+        const es = new ESService(config, host, user, pass, '1s');
+        const { device1, device2 } = createSampleData30();
+        const data = await es.deviceCreateIndexIfNotExits(device1);
+        await es.deviceSave([data]);
+        const data2 = await es.deviceCreateIndexIfNotExits(device2);
+        await es.deviceSave([data2]);
+        let test = 60000;//wait for es to flush
+        while (test) {
+            //check 
+            const items = await es.searchDeviceLogs({});
+            if (items.total)
+                break;
+            test -= 5000;
+            await Util.sleep(5000);
+        }
+
+        let items = await es.searchDeviceLogs({ startDate: new Date(2020, 1, 1).toISOString() });
+        expect(items.total).to.equal(2);
+
+        items = await es.searchDeviceLogs({ startDate: new Date(2020, 1, 1).toISOString(), id: device1.id });
+        expect(items.total).to.equal(1);
+
+        items = await es.searchDeviceLogs({ startDate: new Date(2020, 1, 1).toISOString(), isHealthy: device1.isHealthy });
+        expect(items.total).to.equal(1);
+
+        items = await es.searchDeviceLogs({ startDate: new Date(2020, 1, 1).toISOString(), search: device1.id });
+        expect(items.total).to.equal(1);
+
+
+
+
+    }).timeout(120000);
+
 
 
 

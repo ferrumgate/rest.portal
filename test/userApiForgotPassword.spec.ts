@@ -69,7 +69,7 @@ describe('userApiForgotPassword', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/forgotpass')
+                .post('/api/user/forgotpass')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -93,7 +93,7 @@ describe('userApiForgotPassword', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/forgotpass')
+                .post('/api/user/forgotpass')
                 .send({ username: 'deneme@ferrumgate.com' })
                 .end((err, res) => {
                     if (err)
@@ -120,7 +120,7 @@ describe('userApiForgotPassword', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/forgotpass')
+                .post('/api/user/forgotpass')
                 .send({ username: user.username })
                 .end((err, res) => {
                     if (err)
@@ -147,7 +147,7 @@ describe('userApiForgotPassword', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/forgotpass')
+                .post('/api/user/forgotpass')
                 .send({ username: user.username })
                 .end((err, res) => {
                     if (err)
@@ -173,7 +173,7 @@ describe('userApiForgotPassword', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/forgotpass')
+                .post('/api/user/forgotpass')
                 .send({ username: user.username })
                 .end((err, res) => {
                     if (err)

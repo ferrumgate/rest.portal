@@ -230,7 +230,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/auth/common')
+                .get('/api/config/auth/common')
                 .set(`Authorization`, `Bearer ${token}`)
 
                 .end((err, res) => {
@@ -263,7 +263,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/common')
+                .put('/api/config/auth/common')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(common)
                 .end((err, res) => {
@@ -293,7 +293,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/auth/local')
+                .get('/api/config/auth/local')
                 .set(`Authorization`, `Bearer ${token}`)
 
                 .end((err, res) => {
@@ -322,7 +322,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/local')
+                .put('/api/config/auth/local')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(local)
                 .end((err, res) => {
@@ -357,7 +357,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/auth/oauth/providers')
+                .get('/api/config/auth/oauth/providers')
                 .set(`Authorization`, `Bearer ${token}`)
 
                 .end((err, res) => {
@@ -387,7 +387,7 @@ describe('configAuthApi ', async () => {
         delete (oauth2 as any).id;
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/config/auth/oauth/providers')
+                .post('/api/config/auth/oauth/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(oauth2)
                 .end((err, res) => {
@@ -421,7 +421,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/config/auth/oauth/providers')
+                .post('/api/config/auth/oauth/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(oauth2)
                 .end((err, res) => {
@@ -454,7 +454,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/oauth/providers')
+                .put('/api/config/auth/oauth/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(oauth)
                 .end((err, res) => {
@@ -492,7 +492,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/oauth/providers')
+                .put('/api/config/auth/oauth/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(oauth)
                 .end((err, res) => {
@@ -508,7 +508,7 @@ describe('configAuthApi ', async () => {
         delete oauthAny.id;
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/oauth/providers')
+                .put('/api/config/auth/oauth/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(oauthAny)
                 .end((err, res) => {
@@ -538,7 +538,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete('/config/auth/oauth/providers/' + oauth.id)
+                .delete('/api/config/auth/oauth/providers/' + oauth.id)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -570,7 +570,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/auth/ldap/providers')
+                .get('/api/config/auth/ldap/providers')
                 .set(`Authorization`, `Bearer ${token}`)
 
                 .end((err, res) => {
@@ -600,7 +600,7 @@ describe('configAuthApi ', async () => {
         delete (ldap as any).id;
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/config/auth/ldap/providers')
+                .post('/api/config/auth/ldap/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(ldap)
                 .end((err, res) => {
@@ -631,7 +631,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/config/auth/ldap/providers')
+                .post('/api/config/auth/ldap/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(ldap1)
                 .end((err, res) => {
@@ -664,7 +664,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/ldap/providers')
+                .put('/api/config/auth/ldap/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(ldap)
                 .end((err, res) => {
@@ -700,7 +700,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/ldap/providers')
+                .put('/api/config/auth/ldap/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(ldap)
                 .end((err, res) => {
@@ -716,7 +716,7 @@ describe('configAuthApi ', async () => {
         delete ldapAny.id;
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/oauth/providers')
+                .put('/api/config/auth/oauth/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(ldapAny)
                 .end((err, res) => {
@@ -746,7 +746,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete('/config/auth/ldap/providers/' + ldap.id)
+                .delete('/api/config/auth/ldap/providers/' + ldap.id)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -785,7 +785,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/auth/saml/providers')
+                .get('/api/config/auth/saml/providers')
                 .set(`Authorization`, `Bearer ${token}`)
 
                 .end((err, res) => {
@@ -815,7 +815,7 @@ describe('configAuthApi ', async () => {
         delete (saml as any).id;
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/config/auth/saml/providers')
+                .post('/api/config/auth/saml/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(saml)
                 .end((err, res) => {
@@ -849,7 +849,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/config/auth/saml/providers')
+                .post('/api/config/auth/saml/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(saml1)
                 .end((err, res) => {
@@ -882,7 +882,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/saml/providers')
+                .put('/api/config/auth/saml/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(saml)
                 .end((err, res) => {
@@ -921,7 +921,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/saml/providers')
+                .put('/api/config/auth/saml/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(saml)
                 .end((err, res) => {
@@ -937,7 +937,7 @@ describe('configAuthApi ', async () => {
         delete samlAny.id;
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/auth/oauth/providers')
+                .put('/api/config/auth/oauth/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(samlAny)
                 .end((err, res) => {
@@ -967,7 +967,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete('/config/auth/saml/providers/' + saml.id)
+                .delete('/api/config/auth/saml/providers/' + saml.id)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)

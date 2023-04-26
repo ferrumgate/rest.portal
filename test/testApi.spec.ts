@@ -30,7 +30,7 @@ describe('testApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/test')
+                .get('/api/test')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -49,7 +49,7 @@ describe('testApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/test')
+                .get('/api/test')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -69,7 +69,7 @@ describe('testApi ', async () => {
         for (let i = 0; i < 21; ++i) {
             let response: any = await new Promise((resolve: any, reject: any) => {
                 chai.request(app)
-                    .get('/test')
+                    .get('/api/test')
                     .end((err, res) => {
                         if (err)
                             reject(err);

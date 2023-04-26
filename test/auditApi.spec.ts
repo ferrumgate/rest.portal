@@ -76,7 +76,7 @@ describe('auditApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin2', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/log/audit')
+                .get('/api/log/audit')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -160,7 +160,7 @@ describe('auditApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/log/audit')
+                .get('/api/log/audit')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)

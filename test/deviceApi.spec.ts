@@ -6,11 +6,11 @@ import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
-import { Service } from '../src/model/service';
-import { Network } from '../src/model/network';
-import { getEmptyServiceIp } from '../src/api/serviceApi';
+import { Group } from '../src/model/group';
 
 import chaiExclude from 'chai-exclude';
+import { DevicePosture } from '../src/model/authenticationProfile';
+import { AuthenticationRule } from '../src/model/authenticationPolicy';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -25,47 +25,49 @@ function expectToDeepEqual(a: any, b: any) {
 }
 
 function createSampleData() {
-    let network: Network = {
-        id: 'network1',
-        clientNetwork: '10.0.0.1/24',
-        serviceNetwork: '10.0.0.0/24',
+    const posture1: DevicePosture = {
+        id: 'group1',
+        name: "group1",
+        isEnabled: true,
         labels: [],
-        name: 'network',
+        os: 'win32',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString()
 
     }
-    let service1: Service = {
-        id: Util.randomNumberString(),
-        name: 'mysql-dev',
+    const posture2: DevicePosture = {
+        id: 'group2',
+        name: "group2",
         isEnabled: true,
         labels: [],
-        host: '1.2.3.4',
-        networkId: 'network1',
-        tcp: 3306,
-        protocol: 'raw',
-        assignedIp: '10.0.0.1',
+        os: 'android',
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString(),
-        count: 1
-
+        updateDate: new Date().toISOString()
 
     }
-    let service2: Service = {
-        id: Util.randomNumberString(),
-        name: 'remote-desktop-dev',
+    const posture3: DevicePosture = {
+        id: 'group3',
+        name: "group3",
         isEnabled: true,
-        labels: ['test'],
-        host: '192.168.10.10',
-        networkId: 'network1',
-        tcp: 3306,
-        protocol: 'raw',
-        assignedIp: '10.0.0.1',
+        labels: [],
+        os: 'darwin',
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString(),
-        count: 1
+        updateDate: new Date().toISOString()
 
     }
+    let aRule: AuthenticationRule = {
+        id: 'someid',
+        name: 'test',
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString(),
+        isEnabled: true,
+        networkId: 'abc',
+        profile: {
+            device: { postures: [posture1.id] }
+        },
+        userOrgroupIds: []
+
+    };
     const user1: User = {
         username: 'hamza@ferrumgate.com',
         id: 'someid',
@@ -79,18 +81,18 @@ function createSampleData() {
         groupIds: []
 
     }
-
-    return { service1, service2, user1, network };
+    return { posture1, posture2, posture3, aRule, user1 };
 }
 /**
- * authenticated service api
+ * authenticated user group api
  */
-describe('serviceApi', async () => {
+describe('deviceApi', async () => {
     const expressApp = new ExpressApp();
     const app = expressApp.app;
     const appService = (expressApp.appService) as AppService;
     const redisService = appService.redisService;
     const sessionService = appService.sessionService;
+
     before(async () => {
         await expressApp.start();
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
@@ -103,27 +105,29 @@ describe('serviceApi', async () => {
     beforeEach(async () => {
         appService.configService.config.users = [];
         appService.configService.config.groups = [];
-        appService.configService.config.services = [];
         appService.configService.config.networks = [];
         appService.configService.config.gateways = [];
+        appService.configService.config.devicePostures = [];
+        appService.configService.config.authenticationPolicy.rules = [];
+
         await redisService.flushAll();
     })
 
 
     it('check authorazion as admin role', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
-        await appService.configService.saveNetwork(network);
+        const { posture1, posture2, posture3, aRule, user1 } = createSampleData();
         const clonedUser = Util.clone(user1);
         clonedUser.roleIds = ['User'];
         await appService.configService.saveUser(clonedUser);
+
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/service/${service1.id}`)
+                .get(`/api/device/posture/${posture1.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -137,22 +141,23 @@ describe('serviceApi', async () => {
     }).timeout(50000);
 
 
-    it('GET /service/:id returns 200', async () => {
+    it('GET /device/posture/:id returns 200', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
-        await appService.configService.saveNetwork(network);
+        const { posture1, posture2, posture3, aRule, user1 } = createSampleData();
         await appService.configService.saveUser(user1);
+
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
 
-        await appService.configService.saveService(service1);
-        await appService.configService.saveService(service2);
-
+        await appService.configService.saveDevicePosture(posture1);
+        await appService.configService.saveDevicePosture(posture2);
+        await appService.configService.saveDevicePosture(posture3);
+        await appService.configService.saveAuthenticationPolicyRule(aRule);
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/service/${service2.id}`)
+                .get(`/api/device/posture/${posture2.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -162,26 +167,27 @@ describe('serviceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-
-        expectToDeepEqual(response.body, service2);
+        expectToDeepEqual(response.body, posture2);
 
     }).timeout(50000);
 
-    it('GET /service/:id returns 401', async () => {
+    it('GET /device/posture/:id returns 401', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
-        await appService.configService.saveNetwork(network);
+        const { posture1, posture2, posture3, aRule, user1 } = createSampleData();
+
         await appService.configService.saveUser(user1);
+
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-        await appService.configService.saveService(service1);
-        await appService.configService.saveService(service2);
-
+        await appService.configService.saveDevicePosture(posture1);
+        await appService.configService.saveDevicePosture(posture2);
+        await appService.configService.saveDevicePosture(posture3);
+        await appService.configService.saveAuthenticationPolicyRule(aRule);
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/service/absentGroupId`)
+                .get(`/api/device/posture/absentGroupId`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -197,23 +203,25 @@ describe('serviceApi', async () => {
     }).timeout(50000);
 
 
-    it('GET /service?search=bla returns 200', async () => {
+    it('GET /device/posture?search=bla returns 200', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
-        await appService.configService.saveNetwork(network);
+        const { posture1, posture2, posture3, aRule, user1 } = createSampleData();
         await appService.configService.saveUser(user1);
+
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-        service1.labels = ['bla'];
-        await appService.configService.saveService(service1);
-        await appService.configService.saveService(service2);
+        posture1.labels = ['bla'];
+        await appService.configService.saveDevicePosture(posture1);
+        await appService.configService.saveDevicePosture(posture2);
+        await appService.configService.saveDevicePosture(posture3);
+        await appService.configService.saveAuthenticationPolicyRule(aRule);
 
 
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/service?search=bla`)
+                .get(`/api/device/posture?search=bla`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -223,25 +231,27 @@ describe('serviceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        expectToDeepEqual(response.body.items[0], service1);
+        expectToDeepEqual(response.body.items[0], posture1);
 
     }).timeout(50000);
 
-    it('DELETE /service/:id returns 200', async () => {
+    it('DELETE /device/posture/:id returns 200', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
-        await appService.configService.saveNetwork(network);
+        const { posture1, posture2, posture3, aRule, user1 } = createSampleData();
+
         await appService.configService.saveUser(user1);
+
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-        await appService.configService.saveService(service1);
-        await appService.configService.saveService(service2);
 
-
+        await appService.configService.saveDevicePosture(posture1);
+        await appService.configService.saveDevicePosture(posture2);
+        await appService.configService.saveDevicePosture(posture3);
+        await appService.configService.saveAuthenticationPolicyRule(aRule);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/api/service/${service2.id}`)
+                .delete(`/api/device/posture/${posture3.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -251,29 +261,31 @@ describe('serviceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        const itemDb = await appService.configService.getService(service2.id);
+        const itemDb = await appService.configService.getDevicePosture(posture3.id);
         expect(itemDb).not.exist;
 
     }).timeout(50000);
 
 
-    it('PUT /service returns 200', async () => {
+    it('PUT /device/posture returns 200', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
-        await appService.configService.saveNetwork(network);
+        const { posture1, posture2, posture3, aRule, user1 } = createSampleData();
         await appService.configService.saveUser(user1);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-        await appService.configService.saveService(service1);
-        await appService.configService.saveService(service2);
 
-        service2.name = 'blabla'
+        await appService.configService.saveDevicePosture(posture1);
+        await appService.configService.saveDevicePosture(posture2);
+        await appService.configService.saveDevicePosture(posture3);
+
+        await appService.configService.saveAuthenticationPolicyRule(aRule);
+        posture3.name = 'blabla'
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/api/service`)
+                .put(`/api/device/posture`)
                 .set(`Authorization`, `Bearer ${token}`)
-                .send(service2)
+                .send(posture3)
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -282,35 +294,32 @@ describe('serviceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        const itemDb = await appService.configService.getService(service2.id);
-        if (itemDb) {
-            itemDb.insertDate = service2.insertDate;
-            itemDb.updateDate = service2.updateDate;
-        }
-        expectToDeepEqual(itemDb, service2);
+        const itemDb = await appService.configService.getDevicePosture(posture3.id);
+
+
+        expectToDeepEqual(itemDb, posture3);
 
     }).timeout(50000);
 
 
 
-    it('POST /service returns 200', async () => {
+    it('POST /device/posture returns 200', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
-        await appService.configService.saveNetwork(network);
+        const { posture1, posture2, posture3, aRule, user1 } = createSampleData();
         await appService.configService.saveUser(user1);
 
+        await appService.configService.saveUser(user1);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-        await appService.configService.saveService(service1);
+        posture1.id = '';
 
-        service2.id = '';
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/api/service`)
+                .post(`/api/device/posture`)
                 .set(`Authorization`, `Bearer ${token}`)
-                .send(service2)
+                .send(posture1)
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -320,48 +329,12 @@ describe('serviceApi', async () => {
         })
         expect(response.status).to.equal(200);
 
-        service2.id = response.body.id;
-        service2.assignedIp = response.body.assignedIp;
-        service2.insertDate = response.body.insertDate;
-        service2.updateDate = response.body.updateDate;
+        posture1.id = response.body.id;
 
-        expectToDeepEqual(response.body, service2);
+
+        expectToDeepEqual(response.body, posture1);
 
     }).timeout(50000);
-
-
-    it('getEmptyServiceIp', async () => {
-
-        let network = {
-            serviceNetwork: '10.0.0.0/24'
-        } as Network;
-
-        const ip = getEmptyServiceIp(network, []);
-        expect(ip).to.be.equal('10.0.0.1');
-        let ips = ['10.0.0.1'];
-        for (let i = 2; i < 10; ++i) {
-
-            const ip2 = getEmptyServiceIp(network, ips);
-            expect(ip2).to.be.equal(`10.0.0.${i}`);
-            ips.push(ip2);
-        }
-        // test error
-        let errorOccured = false
-        try {
-            let ips = ['10.0.0.1'];
-            for (let i = 2; i < 500; ++i) {
-
-                const ip2 = getEmptyServiceIp(network, ips);
-                ips.push(ip2);
-            }
-        } catch (err) {
-            errorOccured = true;
-        }
-        expect(errorOccured).to.be.true;
-
-
-    }).timeout(50000);
-
 
 
 

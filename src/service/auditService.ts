@@ -19,6 +19,7 @@ import { Group } from "../model/group";
 import { ESSetting } from "../model/esSetting";
 import { IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
 import { SSLCertificate } from "../model/cert";
+import { DevicePosture } from "../model/authenticationProfile";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -390,6 +391,17 @@ export class AuditService {
             `certificate exported`,
             `${cert?.name}`,)
 
+    }
+
+    async logDeleteDevicePosture(currentSession: AuthSession, currentUser: User, before?: DevicePosture) {
+        await this.executeDelete(currentSession, currentUser, before,
+            `device posture deleted`,
+            `${before?.name || after?.name}`)
+    }
+    async logSaveDevicePosture(currentSession: AuthSession, currentUser: User, before?: DevicePosture, after?: DevicePosture) {
+        await this.executeSave(currentSession, currentUser, before, after,
+            `device posture ${before ? 'updated' : 'created'}`,
+            `${before?.name || after?.name}`)
     }
 
 

@@ -99,7 +99,7 @@ describe('ipIntelligenceApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/ip/intelligence/source`)
+                .get(`/api/ip/intelligence/source`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -137,7 +137,7 @@ describe('ipIntelligenceApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/ip/intelligence/source`)
+                .get(`/api/ip/intelligence/source`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -175,7 +175,7 @@ describe('ipIntelligenceApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/ip/intelligence/source/` + item.id)
+                .delete(`/api/ip/intelligence/source/` + item.id)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -211,7 +211,7 @@ describe('ipIntelligenceApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/ip/intelligence/source`)
+                .post(`/api/ip/intelligence/source`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item)
                 .end((err, res) => {
@@ -249,7 +249,7 @@ describe('ipIntelligenceApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/ip/intelligence/source`)
+                .put(`/api/ip/intelligence/source`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item)
                 .end((err, res) => {
@@ -292,7 +292,7 @@ describe('ipIntelligenceApi', async () => {
         // test all 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/ip/intelligence/list`)
+                .get(`/api/ip/intelligence/list`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -312,7 +312,7 @@ describe('ipIntelligenceApi', async () => {
         // test search 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/ip/intelligence/list?search=te`)
+                .get(`/api/ip/intelligence/list?search=te`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -343,7 +343,7 @@ describe('ipIntelligenceApi', async () => {
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/ip/intelligence/list?search=192.168.0.4`)
+                .get(`/api/ip/intelligence/list?search=192.168.0.4`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -403,7 +403,7 @@ describe('ipIntelligenceApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/ip/intelligence/list?search=192.168.0.4`)
+                .get(`/api/ip/intelligence/list?search=192.168.0.4`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -424,7 +424,7 @@ describe('ipIntelligenceApi', async () => {
         item.id = id;//set it back
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/ip/intelligence/list/${item.id}/reset`)
+                .put(`/api/ip/intelligence/list/${item.id}/reset`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -483,7 +483,7 @@ describe('ipIntelligenceApi', async () => {
         // test all 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/ip/intelligence/list/${item.id}`)
+                .delete(`/api/ip/intelligence/list/${item.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -530,7 +530,7 @@ describe('ipIntelligenceApi', async () => {
         // test all 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/ip/intelligence/list`)
+                .post(`/api/ip/intelligence/list`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item)
                 .end((err, res) => {
@@ -587,7 +587,7 @@ describe('ipIntelligenceApi', async () => {
         // test all 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/ip/intelligence/list`)
+                .put(`/api/ip/intelligence/list`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item)
                 .end((err, res) => {
@@ -626,7 +626,7 @@ describe('ipIntelligenceApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/ip/intelligence/list/file`)
+                .post(`/api/ip/intelligence/list/file`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .set('content-type', 'multipart/form-data')
                 .attach('file', tmpFolderFile, 'file.txt')
@@ -682,7 +682,7 @@ describe('ipIntelligenceApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/ip/intelligence/list/${item.id}/file`)
+                .get(`/api/ip/intelligence/list/${item.id}/file`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)

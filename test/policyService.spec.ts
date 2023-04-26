@@ -1074,4 +1074,117 @@ describe('policyService ', async () => {
 
 
 
+
+    it('userDevicePostureParameters', async () => {
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+        await esService.reset();
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            isEnabled: true
+        }
+        const gateway: Gateway = {
+            id: '123kasdfa',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id,
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        const net2: Network = {
+            id: '12323ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            isEnabled: true
+        }
+
+        configService.config.networks = [net, net2];
+        configService.config.gateways = [gateway];
+        configService.config.devicePostures = [
+            {
+                id: '11231313', insertDate: new Date().toISOString(),
+                updateDate: new Date().toISOString(),
+                isEnabled: true, labels: [], name: 'windows 10', os: 'win32',
+                filePathList: [{ path: 'c:\\test' }],
+                registryList: [{ path: 'test2', key: 'test' }],
+                processList: [{ path: 'aboo' }]
+
+            },
+            {
+                id: '11231344', insertDate: new Date().toISOString(),
+                updateDate: new Date().toISOString(),
+                isEnabled: true, labels: [], name: 'windows 10', os: 'win32',
+                filePathList: [{ path: 'c:\\test2' }],
+                registryList: [{ path: 'test2', key: 'test2' }],
+                processList: [{ path: 'aboo' }]
+
+            }
+        ]
+
+        //rule drop
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: net.id,
+            userOrgroupIds: ['somegroupid'],
+            profile: {
+                is2FA: true,
+                whiteListIps: [],
+                device: { postures: ['11231313', '11231344'] }
+            },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(),
+
+
+
+        }
+        configService.config.authenticationPolicy.rules = [rule];
+
+        const session: AuthSession = { is2FA: true, ip: '1.1.1.1' } as AuthSession;
+        const tunnel: Tunnel = { clientIp: '1.1.1.1' };
+
+        const policyService = new PolicyService(configService, ipintel);
+        //prepare for test
+        net.isEnabled = false;
+        net2.isEnabled = false;
+        let result = await policyService.userDevicePostureParameters({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
+        expect(result.length).to.be.equal(0);
+
+        //prepare for test
+        net.isEnabled = true;
+        net2.isEnabled = true;
+        result = await policyService.userDevicePostureParameters({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
+        expect(result.length).to.be.equal(5);
+
+
+
+
+
+
+
+    })
+
+
+
+
 })

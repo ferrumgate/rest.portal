@@ -63,7 +63,7 @@ describe('userApiConfirm', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/confirmemail?key=deneme')
+                .post('/api/user/confirmemail?key=deneme')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -91,7 +91,7 @@ describe('userApiConfirm', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/confirmemail?key=deneme')
+                .post('/api/user/confirmemail?key=deneme')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -119,7 +119,7 @@ describe('userApiConfirm', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/confirmemail?key=deneme')
+                .post('/api/user/confirmemail?key=deneme')
                 .end((err, res) => {
                     if (err)
                         reject(err);

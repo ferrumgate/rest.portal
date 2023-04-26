@@ -10,6 +10,7 @@ import { User } from "../model/user";
 import { ItemWithId, RedisConfigWatchService } from "./redisConfigWatchService";
 import { SSLCertificate } from "../model/cert";
 import { IpIntelligenceSource } from "../model/IpIntelligence";
+import { DevicePosture } from "../model/authenticationProfile";
 
 class NodeCacheForThis extends NodeCache {
     override get<T>(key: string): T | undefined {
@@ -44,6 +45,7 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
         this.config.authenticationPolicy.rules.forEach(x => this.nodeCache.set(x.id, x));
         this.config.ipIntelligence.lists.forEach(x => this.nodeCache.set(x.id, x));
         this.config.ipIntelligence.sources.forEach(x => this.nodeCache.set(x.id, x));
+        this.config.devicePostures.forEach(x => this.nodeCache.set(x.id, x));
         this.isFilled = true;
         this.events.emit('ready');
 
@@ -85,6 +87,9 @@ export class RedisConfigWatchCachedService extends RedisConfigWatchService {
         return await this.nodeCache.get(id);
     }
     override async getIpIntelligenceSource(id: string): Promise<IpIntelligenceSource | undefined> {
+        return await this.nodeCache.get(id);
+    }
+    override async getDevicePosture(id: string): Promise<DevicePosture | undefined> {
         return await this.nodeCache.get(id);
     }
 

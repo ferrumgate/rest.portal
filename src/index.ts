@@ -34,6 +34,7 @@ import { routerDataAuthenticated } from "./api/dataApi";
 import { routerPKIAuthenticated } from "./api/pkiApi";
 import path from "path";
 import proxy from 'express-http-proxy';
+import { routerDeviceAuthenticated } from "./api/deviceApi";
 
 
 const bodyParser = require('body-parser');
@@ -73,8 +74,23 @@ export class ExpressApp {
 
 
         this.app.use(helmet.default({
-            contentSecurityPolicy: false,
-            hsts: false
+            contentSecurityPolicy: {
+                directives: {
+                    "default-src": ["'self'"],
+                    "base-uri": ["'self'"],
+                    "font-src": ["'self'", "https:", "data:"],
+                    "form-action": ["'self'"],
+                    "frame-ancestors": ["'self'"],
+                    "img-src": ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
+                    "object-src": ["'none'"],
+                    "script-src": ["'self'", "'unsafe-inline'", "https://*.googletagmanager.com"],
+                    "script-src-attr": ["'self'", "'unsafe-inline'"],
+                    "style-src": ["'self'", "https:", "'unsafe-inline'"],
+                    "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com"],
+                    'upgrade-insecure-requests': null
+                }
+            },
+            hsts: false,
         }));
 
         const setAppService = async (req: any, res: any, next: any) => {
@@ -453,6 +469,16 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerPKIAuthenticated);
 
+        this.app.use('/api/device',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'device', 1000),
+            asyncHandlerWithArgs(rateLimit, 'deviceHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'deviceDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'deviceCaptcha', 50),
+            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
+            routerDeviceAuthenticated);
+
 
         this.app.use('/api/*', function (req: any, res: any) {
             res.status(404).send('not found')
@@ -561,10 +587,5 @@ if (!process.env.NODE_TEST) {
         process.exit(1);
     })
 }
-
-
-
-
-
 
 

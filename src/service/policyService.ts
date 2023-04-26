@@ -16,6 +16,7 @@ import { AuthSession } from "../model/authSession";
 import { Util } from "../util";
 import { IpIntelligence } from "../model/IpIntelligence";
 import { IpIntelligenceService } from "./ipIntelligenceService";
+import { OSType } from "../model/authenticationProfile";
 
 
 export interface UserNetworkListResponse {
@@ -26,6 +27,13 @@ export interface UserNetworkListResponse {
     needsGateway?: boolean;
     needsTime?: boolean;
 
+}
+
+export interface UserDevicePostureParameter {
+    os: OSType;
+    file?: { path: string };
+    registry?: { path: string; key?: string };
+    process?: { path: string };
 }
 
 
@@ -390,6 +398,84 @@ export class PolicyService {
         return result;
 
 
+    }
+
+    /**
+     * @summary find user dynamic device postures for calculation
+     * @param user 
+     * @param session 
+     * @param clientIp 
+     */
+    async userDevicePostureParameters(user: User, session: AuthSession, clientIp: string) {
+        this.errorNumber = 0;
+        let result: UserDevicePostureParameter[] = [];
+
+        const networks = await this.configService.getNetworksAll();
+        const policy = await this.configService.getAuthenticationPolicy();
+        const devicePostures = await this.configService.getDevicePosturesAll();
+        const distinctDevicePostureIds = new Set();
+        for (const network of networks) {
+
+
+            if (!network) {
+                this.errorNumber = 1;
+                continue;
+            }
+
+            if (!network.isEnabled) {
+                this.errorNumber = 5;
+                continue;
+            }
+
+
+            const rules = await policy.rules.filter(x => x.networkId == network.id);
+            for (const rule of rules) {
+                if (!rule.isEnabled)
+                    continue;
+                let f1 = await this.isUserIdOrGroupIdAllowed(rule, user);
+
+                if (f1) {
+                    if (rule.profile.device?.postures.length) {
+                        rule.profile.device.postures.forEach(x => distinctDevicePostureIds.add(x));
+                    }
+
+                }
+            }
+        }
+        const filtered = devicePostures.filter(x => distinctDevicePostureIds.has(x.id));
+        const distinctListTmp = new Set();
+        for (const item of filtered) {
+            if (item.filePathList) {
+                item.filePathList.forEach(x => {
+                    const key = `/${item.os}/file/${x.path}`;
+                    if (!distinctListTmp.has(key)) {
+                        result.push({ os: item.os, file: { path: x.path } })
+                        distinctListTmp.add(key);
+                    }
+                })
+            }
+            if (item.registryList) {
+                item.registryList.forEach(x => {
+                    const key = `/${item.os}/registry/${x.path}/${x.key}`;
+                    if (!distinctListTmp.has(key)) {
+                        result.push({ os: item.os, registry: { path: x.path, key: x.key } })
+                        distinctListTmp.add(key);
+                    }
+                })
+            }
+
+            if (item.processList) {
+                item.processList.forEach(x => {
+                    const key = `/${item.os}/process/${x.path}`;
+                    if (!distinctListTmp.has(key)) {
+                        result.push({ os: item.os, process: { path: x.path } })
+                        distinctListTmp.add(key);
+                    }
+                })
+            }
+        }
+
+        return result;
     }
 
 

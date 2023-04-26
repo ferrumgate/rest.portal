@@ -104,7 +104,7 @@ describe('pkiApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/pki/intermediate`)
+                .get(`/api/pki/intermediate`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -139,7 +139,7 @@ describe('pkiApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/pki/intermediate`)
+                .get(`/api/pki/intermediate`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -169,7 +169,7 @@ describe('pkiApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/pki/ca`)
+                .get(`/api/pki/ca`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -201,7 +201,7 @@ describe('pkiApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/pki/intermediate/${item?.id}/export`)
+                .post(`/api/pki/intermediate/${item?.id}/export`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ password: '123' })
                 .end((err, res) => {
@@ -246,7 +246,7 @@ describe('pkiApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/pki/intermediate/${certs.find(x => x.name == 'abc')?.id}`)
+                .delete(`/api/pki/intermediate/${certs.find(x => x.name == 'abc')?.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -286,7 +286,7 @@ describe('pkiApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/pki/intermediate`)
+                .put(`/api/pki/intermediate`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item)
                 .end((err, res) => {
@@ -320,7 +320,7 @@ describe('pkiApi', async () => {
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/pki/intermediate`)
+                .put(`/api/pki/intermediate`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item2)
                 .end((err, res) => {
@@ -357,7 +357,7 @@ describe('pkiApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/pki/intermediate`)
+                .post(`/api/pki/intermediate`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item)
                 .end((err, res) => {
@@ -402,7 +402,7 @@ describe('pkiApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/pki/cert/web`)
+                .get(`/api/pki/cert/web`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -440,7 +440,7 @@ describe('pkiApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/pki/cert/web`)
+                .delete(`/api/pki/cert/web`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -473,7 +473,7 @@ describe('pkiApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/pki/cert/web`)
+                .put(`/api/pki/cert/web`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ idEx: 'ab', name: 'test', publicCrt: 'akey', privateKey: 'de' })
                 .end((err, res) => {
@@ -500,7 +500,7 @@ describe('pkiApi', async () => {
         //certs not changed
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/pki/cert/web`)
+                .put(`/api/pki/cert/web`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ idEx: 'ab', name: 'test2', })
                 .end((err, res) => {

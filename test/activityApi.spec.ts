@@ -95,7 +95,7 @@ describe('activityApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin2', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/insight/activity')
+                .get('/api/insight/activity')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -167,7 +167,7 @@ describe('activityApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/insight/activity')
+                .get('/api/insight/activity')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -186,7 +186,7 @@ describe('activityApi ', async () => {
 
         let response2: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/insight/activity')
+                .get('/api/insight/activity')
                 .set(`Authorization`, `Bearer ${token2}`)
                 .end((err, res) => {
                     if (err)

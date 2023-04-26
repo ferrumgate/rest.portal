@@ -14,6 +14,7 @@ import { RedisConfigService } from './redisConfigService';
 import { ConfigWatch } from '../model/config';
 import { IpIntelligenceList, IpIntelligenceListItem } from '../model/IpIntelligence';
 import { BroadcastService } from './broadcastService';
+import { DeviceLog } from '../model/device';
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -24,6 +25,10 @@ export interface ESAuditLog extends AuditLog {
 }
 
 export interface ESActivityLog extends ActivityLog {
+
+}
+
+export interface ESDeviceLog extends DeviceLog {
 
 }
 export interface SearchAuditLogsRequest {
@@ -80,6 +85,7 @@ export interface SearchActivityLogsRequest {
     deviceName?: string;
     osName?: string;
     osVersion?: string;
+    osPlatform?: string;
     browser?: string;
     browserVersion?: string;
     requestPath?: string;
@@ -89,6 +95,17 @@ export interface SearchActivityLogsRequest {
     destinationIp?: string;
     destinationPort?: number;
     networkProtocol?: string;
+}
+
+export interface SearchDeviceLogsRequest {
+    startDate?: string;
+    endDate?: string;
+    search?: string;
+    page?: number;
+    id?: string;
+    isHealthy?: boolean;
+    hostname?: string;
+    pageSize?: number;
 }
 
 export interface SearchSummaryRequest {
@@ -142,6 +159,7 @@ export class ESService {
 
     private auditIndexes: Map<string, string> = new Map<string, string>();
     private activityIndexes: Map<string, string> = new Map<string, string>();
+    private deviceIndexes: Map<string, string> = new Map<string, string>();
     private ipIntelligenceListIndexes: Map<string, string> = new Map<string, string>();
     private client!: ES.Client;
     host?: string;
@@ -1348,6 +1366,187 @@ export class ESService {
         return retVal;
     }
 
+
+
+
+
+    ////device 
+    async deviceCreateIndexIfNotExits(item: DeviceLog): Promise<[ESDeviceLog, string]> {
+        await this.createClient();
+        let index = `ferrumgate-device-${this.dateFormat(item.insertDate)}`;
+        let esitem: ESDeviceLog =
+        {
+            ...item
+
+        };
+        if (this.deviceIndexes.has(index)) return [esitem, index];
+
+        let exists = (await this.client.indices.exists({ index: index }));
+        if (!exists) {
+
+
+            await this.client.indices.create({
+                index: index,
+                body: {
+                    settings: {
+                        index: {
+                            number_of_replicas: Number(process.env.ES_REPLICAS) || 2,
+                            number_of_shards: Number(process.env.ES_SHARDS) || 1,
+                            "refresh_interval": this.refreshInterval,
+                            translog: {
+                                "durability": "async",
+                                "sync_interval": "10s",
+                                "flush_threshold_size": "1gb"
+                            }
+
+
+                        }
+                    },
+                    mappings: {
+
+
+                        properties: {
+                            insertDate: {
+                                type: 'date', // type is a required attribute if index is specified
+
+                            },
+                            id: {
+                                type: "keyword"
+                            },
+                            hostname: {
+                                type: "keyword"
+
+                            },
+                            osName: {
+                                type: "keyword"
+
+                            },
+                            osVersion: {
+                                type: "keyword"
+
+                            },
+                            macs: {
+                                type: "keyword"
+
+                            },
+                            serial: {
+                                type: "keyword"
+
+                            },
+                            clientVersion: {
+                                type: "keyword"
+
+                            },
+                            clientSha256: {
+                                type: "keyword"
+
+                            },
+                            platform: {
+                                type: "keyword"
+
+                            },
+
+                            hasEncryptedDisc: {
+                                type: "boolean"
+
+                            },
+                            hasFirewall: {
+                                type: "boolean"
+
+                            },
+                            hasAntivirus: {
+                                type: "boolean"
+
+                            },
+                            isHealthy: {
+                                type: "boolean"
+
+                            },
+                            whyNotHealthy: {
+                                type: "keyword",
+
+                            }
+
+                        }
+
+                    }
+                }
+            })
+
+
+        }
+        this.deviceIndexes.set(index, index);
+        return [esitem, index];
+    }
+
+    async deviceSave(items: [ESDeviceLog, string][]): Promise<void> {
+        await this.createClient();
+        let result: any[] = [];
+        let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
+        mapped.forEach(x => {
+            result = result.concat(x);
+        });
+        await this.client.bulk({
+            body: result
+        })
+    }
+
+
+    async searchDeviceLogs(req: SearchDeviceLogsRequest) {
+        await this.createClient();
+        let sDate = req.startDate ? new Date(req.startDate) : this.dayBefore(this.OneDayMS);
+        let eDate = req.endDate ? new Date(req.endDate) : new Date();
+        const dates = this.indexCalculator(sDate, eDate);
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-device-'));
+        let cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-device-${x}`);
+        if (!cindexes.length)
+            cindexes = dates.map(x => `ferrumgate-device-${x}`);
+        let request = {
+            ignore_unavailable: true,
+            index: cindexes,
+            body: {
+                from: (req.page || 0) * (req.pageSize || 10),
+                size: (req.pageSize || 10),
+                sort: { "insertDate": "desc" },
+                query: {
+                    bool: {
+                        must: [
+
+                        ]
+                    }
+                }
+            }
+        };
+        request.body.query.bool.must.push({
+            "range": {
+                "insertDate": {
+                    "gte": req.startDate ? req.startDate : ('now-1d'),
+                    "lt": req.endDate ? req.endDate : ('now')
+                }
+            }
+        } as never);
+        this.addToQuery(req.id, 'id', request.body.query.bool.must);
+        this.addToQueryBoolean(req.isHealthy, 'isHealthy', request.body.query.bool.must);
+
+        if (req.search) {
+
+            let item = {
+                query_string: {
+                    query: `${req.search}`,
+                    fields: ['id', "hostname", "osName", "osVersion", "macs", "serial", "platform", "clientVersion"]
+                }
+            }
+            request.body.query.bool.must.push(item as never);
+
+        }
+
+        console.log(JSON.stringify(request));
+        const result = await this.client.search(request) as any;
+        let returnResult = { total: result?.hits?.total?.value as number || 0, items: result?.hits.hits.map((x: any) => x._source) as ESActivityLog[] }
+        return returnResult;
+
+    }
+
 }
 
 
@@ -1377,8 +1576,6 @@ export class ESServiceLimited extends ESService {
         await fsp.appendFile(`/var/log/ferrumgate/activity-${this.dateFormat(new Date())}`, JSON.stringify(items.map(x => x[0])) + '\n');
     }
 }
-
-
 
 
 /**

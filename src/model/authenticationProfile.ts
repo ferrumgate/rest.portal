@@ -1,3 +1,4 @@
+import { Util } from "../util";
 
 export interface IpProfile {
     ip: string;
@@ -52,127 +53,67 @@ export function cloneLocationProfile(p: LocationProfile): LocationProfile {
 }
 
 
-export interface BrowserProfile {
-    items: {
-        name: string,
-        version?: string
-    }[];
-    includeAll: boolean;
-    includeAtLeast: boolean;
 
-}
-export function cloneBrowserProfile(val: BrowserProfile): BrowserProfile {
-    return {
-        items: val?.items ? Array.from(val.items.map(x => { return { name: x.name, version: x.version } })) : [],
-        includeAll: val.includeAll, includeAtLeast: val.includeAtLeast
 
-    }
-}
 
-export interface ApplicationProfile {
-    items: {
-        name: string;
-        version?: string
-    }[];
-    includeAll: boolean;
-    includeAtLeast: boolean;
-
-}
-
-export function cloneApplicationProfile(val: ApplicationProfile): ApplicationProfile {
-    return {
-        items: val?.items ? Array.from(val.items.map(x => { return { name: x.name, version: x.version } })) : [],
-        includeAll: val.includeAll, includeAtLeast: val.includeAtLeast
-    }
-}
-
-export interface RegistryProfile {
-    items: {
-        key: string; value: string;
-    }[];
-    includeAll: boolean;
-    includeAtLeast: boolean;
-}
-export function cloneRegistryProfile(val: RegistryProfile): RegistryProfile {
-    return {
-        items: val?.items ? Array.from(val.items.map(x => { return { key: x.key, value: x.value } })) : [],
-        includeAll: val.includeAll, includeAtLeast: val.includeAtLeast
-    }
-}
-
-export interface FileProfile {
-    items: {
-        path: string;
-    }[];
-    includeAll: boolean;
-    includeAtLeast: boolean;
-}
-export function cloneFileProfile(val: FileProfile): FileProfile {
-    return {
-        items: val?.items ? Array.from(val.items.map(x => { return { path: x.path, } })) : [],
-        includeAll: val.includeAll, includeAtLeast: val.includeAtLeast
-    }
-}
-export interface FirewallProfile {
-    items: {
-        name: string;
-    }[];
-    includeAll: boolean;
-    includeAtLeast: boolean;
-    any: boolean;
-
-}
-export function cloneFirewallProfile(val: FirewallProfile): FirewallProfile {
-    return {
-        items: val?.items ? Array.from(val.items.map(x => { return { name: x.name } })) : [],
-        includeAll: val.includeAll, includeAtLeast: val.includeAtLeast, any: val.any
-
-    }
-}
-export interface AntivirusProfile {
-    items: {
-        name: string;
-    }[];
-    includeAll: boolean;
-    includeAtLeast: boolean;
-    any: boolean;
-}
-export function cloneAntivirusProfile(val: AntivirusProfile): AntivirusProfile {
-    return {
-        items: val?.items ? Array.from(val.items.map(x => { return { name: x.name } })) : [],
-        includeAll: val.includeAll, includeAtLeast: val.includeAtLeast, any: val.any
-    }
-}
-
-export interface DeviceProfile {
-    os: string;
-    detail?: string;
-    version?: string;
-    isFingerPrintEnabled?: boolean;
-    fileProfile?: FileProfile;
-    registryProfile?: RegistryProfile;
-    browserProfile?: BrowserProfile;
-    applicationProfile?: ApplicationProfile;
-    firewallProfile?: FirewallProfile;
-
-}
-export function cloneDeviceProfile(val: DeviceProfile): DeviceProfile {
-    return {
-        os: val.os,
-        detail: val.detail,
-        version: val.version,
-        isFingerPrintEnabled: val.isFingerPrintEnabled,
-        fileProfile: val.fileProfile ? cloneFileProfile(val.fileProfile) : undefined,
-        registryProfile: val.registryProfile ? cloneRegistryProfile(val.registryProfile) : undefined,
-        browserProfile: val.browserProfile ? cloneBrowserProfile(val.browserProfile) : undefined,
-        applicationProfile: val.applicationProfile ? cloneApplicationProfile(val.applicationProfile) : undefined,
-        firewallProfile: val.firewallProfile ? cloneFirewallProfile(val.firewallProfile) : undefined
-
-    }
-}
 export interface AppVersion {
     version?: string;
+    sha256?: string;
+    fingerprint?: string;
 }
+
+export type OSType = 'win32' | 'darwin' | 'linux' | 'android' | 'ios';
+
+export interface DevicePosture {
+    id: string;
+    name: string;
+    labels: string[];
+    isEnabled: boolean;
+    insertDate: string;
+    updateDate: string;
+    os: OSType;
+    osVersions?: { name: string, release?: string }[];
+    filePathList?: { path: string; sha256?: string; fingerprint?: string }[];
+    processList?: { path: string; sha256?: string; fingerprint?: string }[];
+    registryList?: { path: string; key?: string, value?: string; }[];
+    hddEncryption?: boolean;
+    firewallList?: { name: string }[];
+    antivirusList?: { name: string }[];
+    macList?: { value: string }[];
+}
+export function cloneDevicePosture(val: DevicePosture): DevicePosture {
+    return {
+        id: val.id,
+        name: val.name,
+        labels: Array.from(val.labels),
+        isEnabled: val.isEnabled,
+        insertDate: val.insertDate,
+        updateDate: val.updateDate,
+        os: val.os,
+        osVersions: val.osVersions ? Array.from(val.osVersions.map(x => { return { name: x.name, release: x.release } })) : undefined,
+        filePathList: val.filePathList ? Array.from(val.filePathList.map(x => { return { path: x.path, sha256: x.sha256, fingerprint: x.fingerprint } })) : undefined,
+        processList: val.processList ? Array.from(val.processList.map(x => { return { path: x.path, sha256: x.sha256, fingerprint: x.fingerprint } })) : undefined,
+        registryList: val.registryList ? Array.from(val.registryList.map(x => { return { path: x.path, key: x.key, value: x.value } })) : undefined,
+        hddEncryption: Util.isUndefinedOrNull(val.hddEncryption) ? undefined : val.hddEncryption,
+        firewallList: val.firewallList ? Array.from(val.firewallList.map(x => { return { name: x.name } })) : undefined,
+        antivirusList: val.antivirusList ? Array.from(val.antivirusList.map(x => { return { name: x.name } })) : undefined,
+        macList: val.macList ? Array.from(val.macList.map(x => { return { value: x.value } })) : undefined,
+    };
+}
+
+
+export interface DeviceProfile {
+    //devicepostureprofile ids
+    postures: string[];
+}
+export function cloneDeviceProfile(p: DeviceProfile): DeviceProfile {
+    return {
+        postures: Array.from(p.postures)
+    }
+}
+
+
+
 
 
 
@@ -188,7 +129,7 @@ export interface AuthenticationProfile {
     ipIntelligence?: IpIntelligenceProfile;
     times?: TimeProfile[];
     locations?: LocationProfile[];
-    devices?: DeviceProfile[];
+    device?: DeviceProfile;
 
 }
 
@@ -202,6 +143,6 @@ export function cloneAuthenticatonProfile(pr: AuthenticationProfile): Authentica
         ipIntelligence: pr.ipIntelligence ? cloneIpIntelligenceProfile(pr.ipIntelligence) : undefined,
         times: pr.times ? Array.from(pr.times.map(x => cloneTimeProfile(x))) : undefined,
         locations: pr.locations ? Array.from(pr.locations.map(x => cloneLocationProfile(x))) : undefined,
-        devices: pr.devices ? Array.from(pr.devices.map(x => cloneDeviceProfile(x))) : undefined
+        device: pr.device ? cloneDeviceProfile(pr.device) : undefined,
     }
 }

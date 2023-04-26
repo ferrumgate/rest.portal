@@ -18,6 +18,7 @@ import { UtilPKI } from "../utilPKI";
 import { cursorTo } from "readline";
 import { SSLCertificate, SSLCertificateBase } from "../model/cert";
 import { ConfigService } from "../service/configService";
+import { ClientDevicePosture } from "../model/device";
 
 
 
@@ -252,6 +253,65 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
 /////////////////////////////// current user ////////////////////////////
 
 export const routerUserAuthenticated = express.Router();
+
+//// get current user dynamic device posture
+
+routerUserAuthenticated.get('/current/deviceposture/parameters',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+
+        logger.info(`getting current user networks`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+
+        const results = await policyService.userDevicePostureParameters(currentUser, currentSession, currentSession?.ip);
+
+        return res.status(200).json({ items: results });
+
+    }))
+
+//// save current user connected device posture
+
+routerUserAuthenticated.post('/current/deviceposture',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+
+        logger.info(`save current user device posture`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const inputService = appService.inputService;
+        const deviceService = appService.deviceService;
+
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const clientDevicePosture = req.body as ClientDevicePosture;
+
+        await inputService.checkNotEmpty(clientDevicePosture.clientId)
+        await inputService.checkStringLength(clientDevicePosture.clientId, 16);
+        await deviceService.saveDevicePosture(clientDevicePosture);
+        await sessionService.setSession(currentSession.id, {
+            deviceId: clientDevicePosture.clientId,
+            deviceName: clientDevicePosture.hostname,
+            osName: clientDevicePosture.os.name,
+            osVersion: clientDevicePosture.os.version,
+            osPlatform: clientDevicePosture.platform
+        })
+        return res.status(200).json({});
+
+    }))
 
 
 //// get current user networks

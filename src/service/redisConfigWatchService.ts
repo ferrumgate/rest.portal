@@ -270,6 +270,9 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'ipIntelligence/lists':
                             await this.processArray(this.config.ipIntelligence.lists, path, item, val.id);
                             break;
+                        case 'devicePostures':
+                            await this.processArray(this.config.devicePostures, path, item, val.id);
+                            break;
                         default:
                             logger.warn(`not implemented path ${item.path}`);
                             throw new Error(`not implemented path ${item.path}`)

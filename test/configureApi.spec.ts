@@ -96,7 +96,7 @@ describe('configureApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin2', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/configure')
+                .post('/api/configure')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({})
                 .end((err, res) => {
@@ -118,7 +118,7 @@ describe('configureApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/configure')
+                .post('/api/configure')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({})
                 .end((err, res) => {
@@ -140,7 +140,7 @@ describe('configureApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/configure')
+                .post('/api/configure')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ email: 'test@test.com' })
                 .end((err, res) => {
@@ -162,7 +162,7 @@ describe('configureApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/configure')
+                .post('/api/configure')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({
                     email: 'test.com', password: 'somepassword',
@@ -187,7 +187,7 @@ describe('configureApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/configure')
+                .post('/api/configure')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({
                     email: 'test5@test.com', password: 'somePassword123',

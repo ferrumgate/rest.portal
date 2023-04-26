@@ -54,7 +54,7 @@ describe('registerApi', async () => {
         //we must send right paramters
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register')
+                .post('/api/register')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -75,7 +75,7 @@ describe('registerApi', async () => {
         //we must send right paramters
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register')
+                .post('/api/register')
                 .send({ name: "test", username: "hamza@hamzakilic.com", password: "passDeneme122" })
                 .end((err, res) => {
                     if (err)
@@ -99,7 +99,7 @@ describe('registerApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register')
+                .post('/api/register')
                 .send({ name: "test", username: "hamza@hamzakilic", password: "passDene12321" })
                 .end((err, res) => {
                     if (err)
@@ -123,7 +123,7 @@ describe('registerApi', async () => {
         await appService.configService.setAuthSettingLocal({ isRegister: 0 } as any)
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register')
+                .post('/api/register')
                 .send({ name: "test", username: "hamza@hamzakilic", password: "passDene12321" })
                 .end((err, res) => {
                     if (err)
@@ -145,7 +145,7 @@ describe('registerApi', async () => {
         //we must send right paramters
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register')
+                .post('/api/register')
                 .send({ name: "test", username: "hamza@hamzakilic", password: "passDene12321" })
                 .end((err, res) => {
                     if (err)
@@ -168,7 +168,7 @@ describe('registerApi', async () => {
         //we must send right paramters
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register')
+                .post('/api/register')
                 .send({ name: "test", username: "hamza@hamzakilic.com", password: "pass12321" })
                 .end((err, res) => {
                     if (err)
@@ -193,7 +193,7 @@ describe('registerApi', async () => {
         appService.configService.config.users.push({ username: 'hamza@hamzakilic.com' } as User);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register')
+                .post('/api/register')
                 .send({ name: "test", username: "hamza@hamzakilic.com", password: "passDe121ad!!" })
                 .end((err, res) => {
                     if (err)
@@ -219,7 +219,7 @@ describe('registerApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register/invite')
+                .post('/api/register/invite')
                 .send({ name: "test", password: "passDe121ad!!" })
                 .end((err, res) => {
                     if (err)
@@ -243,7 +243,7 @@ describe('registerApi', async () => {
         await appService.configService.setIsConfigured(0);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register/invite')
+                .post('/api/register/invite')
                 .send({ name: "test", key: 'adsdf', password: "passDe121ad!!" })
                 .end((err, res) => {
                     if (err)
@@ -267,7 +267,7 @@ describe('registerApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register/invite')
+                .post('/api/register/invite')
                 .send({ name: "test", key: 'adsdf', password: "passDe121ad!!" })
                 .end((err, res) => {
                     if (err)
@@ -292,7 +292,7 @@ describe('registerApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register/invite')
+                .post('/api/register/invite')
                 .send({ name: "test", key: 'adsdf', password: "passDe" })
                 .end((err, res) => {
                     if (err)
@@ -317,7 +317,7 @@ describe('registerApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/register/invite')
+                .post('/api/register/invite')
                 .send({ name: "test", key: 'adsdf', password: "passD7e@@ad!!dA" })
                 .end((err, res) => {
                     if (err)

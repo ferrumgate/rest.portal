@@ -16,6 +16,7 @@ import { AuthorizationRule } from '../src/model/authorizationPolicy';
 import chaiExclude from 'chai-exclude';
 import { ConfigWatch } from '../src/model/config';
 import { SSLCertificate } from '../src/model/cert';
+import { DevicePosture } from '../src/model/authenticationProfile';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -2053,6 +2054,185 @@ describe('configService', async () => {
 
 
     });
+
+    //// device posture
+
+    it('getDevicePosture', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.groups = [];
+        let posture: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'norhtinged',
+            isEnabled: true,
+            labels: [],
+            os: 'win32',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture);
+
+        const returned = await configService.getDevicePosture(posture.id);
+        expect(exclude(returned)).to.deep.equal(exclude(posture));
+
+
+    });
+
+    it('getDevicePosturesBySearch', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.groups = [];
+        let posture: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            os: 'android',
+            labels: ['test2'],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture);
+
+        let posture2: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'south',
+            isEnabled: true,
+            labels: ['test'],
+            os: 'linux',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture2);
+
+        const returned = await configService.getDevicePosturesBySearch('test');
+        expect(returned.length).to.equal(2);
+
+        const returned2 = await configService.getDevicePosturesBySearch('abo');
+        expect(returned2.length).to.be.equal(0);
+
+
+    });
+
+
+    it('getDevicePosturesAll', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.devicePostures = [];
+        let posture: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            os: 'win32',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture);
+
+        let posture2: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'south',
+            isEnabled: true,
+            labels: ['test'],
+            os: 'darwin',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture2);
+
+        const returned = await configService.getDevicePosturesAll();
+        expect(returned.length).to.be.equal(2);
+        expect(exclude(returned[0])).to.deep.equal(exclude(posture));
+
+    });
+
+    it('saveDevicePosture', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.groups = [];
+        let posture: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            os: 'darwin',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture);
+
+        posture.name = 'north2';
+        //add
+        await configService.saveDevicePosture(posture);
+
+        const returned = await configService.getDevicePosture(posture.id)
+
+        expect(exclude(returned)).to.deep.equal(exclude(posture));
+
+    });
+
+    it('deleteDevicePosture', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        configService.config.groups = [];
+        let posture: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            os: 'darwin',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture);
+
+        //save a authentication rule
+        let aRule: AuthenticationRule = {
+            id: 'someid',
+            name: 'test',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            isEnabled: true,
+            networkId: 'abc',
+            profile: {
+                device: { postures: [posture.id] }
+            },
+            userOrgroupIds: []
+
+        };
+
+        configService.config.authenticationPolicy.rules.push(aRule);
+
+        await configService.deleteDevicePosture(posture.id);
+
+        const returned = await configService.getDevicePosture(posture.id)
+
+        expect(returned).not.exist;
+        const rule = await configService.getAuthenticationPolicyRule(aRule.id)
+        expect(rule?.profile.device?.postures?.length).to.equal(0);
+
+    });
+
 
 
 
