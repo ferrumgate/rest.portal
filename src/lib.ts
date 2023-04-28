@@ -31,3 +31,5 @@ export { InputService } from './service/inputService';
 export { SessionService } from './service/sessionService';
 export { IpIntelligence, IpIntelligenceList } from './model/IpIntelligence'
 export { IpIntelligenceService, IpIntelligenceListService } from './service/ipIntelligenceService';
+export { DeviceLog, ClientDevicePosture } from './model/device';
+export { DeviceService } from './service/deviceService';

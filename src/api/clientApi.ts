@@ -17,6 +17,8 @@ import { AuthSession } from "../model/authSession";
 import { attachActivity, attachActivitySession, attachActivityTunnel, attachActivityUser, saveActivity, saveActivityError } from "./auth/commonAuth";
 import { Gateway } from "../model/network";
 import { Network } from "../model/network";
+import { ClientDevicePosture, DeviceLog } from "../model/device";
+
 
 
 
@@ -82,13 +84,17 @@ routerClientTunnelAuthenticated.post('/',
         let tunnel: Tunnel | undefined;
         let gateway: Gateway | undefined;
         let network: Network | undefined;
+        let devicePosture: ClientDevicePosture | undefined;
+        let appService: AppService | undefined;
+        let deviceLog: DeviceLog | undefined;
         try {
-            const appService = req.appService as AppService;
+            appService = req.appService as AppService;
             const configService = appService.configService;
             const policyService = appService.policyService;
             const inputService = appService.inputService;
             const tunnelService = appService.tunnelService;
             const systemlogService = appService.systemLogService;
+            const deviceService = appService.deviceService;
 
             const user = req.currentUser as User;
             attachActivityUser(req, user);
@@ -98,6 +104,10 @@ routerClientTunnelAuthenticated.post('/',
             const tunnelKey = req.body.tunnelKey || req.query.tunnelKey;
             logger.info(`creating tunnel for ${tunnelKey}`);
             attachActivityTunnel(req, { id: tunnelKey } as Tunnel);
+
+            devicePosture = await deviceService.getDevicePosture(session.deviceId || '');
+            if (devicePosture)
+                deviceLog = await deviceService.convertDevicePostureToDeviceLog(devicePosture, user.id || '', user.username || '');
 
             await inputService.checkIfExists(tunnelKey);
             await inputService.checkStringLength(tunnelKey, 63);
@@ -117,8 +127,11 @@ routerClientTunnelAuthenticated.post('/',
 
 
 
-            const rule = await policyService.authenticate(user, session, tunnel);
+            const rule = await policyService.authenticate(user, session, tunnel, devicePosture);
             tunnel = await tunnelService.createTunnel(user, tunnelKey, session);
+
+            if (deviceLog)
+                await deviceService.save(deviceLog);
             await systemlogService.write({ path: '/system/tunnels/create', type: 'put', val: tunnel });
             attachActivityTunnel(req, tunnel);
 
@@ -134,12 +147,27 @@ routerClientTunnelAuthenticated.post('/',
 
             return res.status(200).json({});
 
-        } catch (err) {
+        } catch (err: any) {
+
+
+            //try to save device posture
+            if (deviceLog && appService)
+                try {
+                    deviceLog.isHealthy = false;
+                    deviceLog.whyNotHealthy = err.codeInternal || 'ErrDevicePostureNotChecked';
+                    await appService.deviceService.save(deviceLog);
+                } catch (ignore) {
+                    console.log(ignore);
+                }
+
             await saveActivityError(req, 'create tunnel', err, (log) => {
                 log.gatewayId = gateway?.id;
                 log.gatewayName = gateway?.name;
                 log.networkId = network?.id;
                 log.networkName = network?.name;
+                log.deviceId = devicePosture?.clientId;
+                log.deviceName = devicePosture?.hostname;
+
             });
             throw err;
         }

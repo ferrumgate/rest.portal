@@ -5,7 +5,7 @@ import fs from 'fs';
 import { ConfigService } from '../src/service/configService';
 import { Util } from '../src/util';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
-import { PolicyService } from '../src/service/policyService';
+import { PolicyAuthnErrors, PolicyService } from '../src/service/policyService';
 import { TunnelService } from '../src/service/tunnelService';
 import { RedisService } from '../src/service/redisService';
 import { Network } from '../src/model/network';
@@ -21,6 +21,8 @@ import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
 import { InputService } from '../src/service/inputService';
 import { config } from 'process';
 import { IpIntelligenceList } from '../src/model/IpIntelligence';
+import { ErrorCodesInternal } from '../src/restfullException';
+import { DevicePosture } from '../src/model/authenticationProfile';
 
 
 
@@ -460,6 +462,7 @@ describe('policyService ', async () => {
 
 
 
+
     }).timeout(5000);
 
 
@@ -560,13 +563,15 @@ describe('policyService ', async () => {
         rule.profile.whiteListIps = [{ ip: '1.1.1.1/32' }];
         rule.profile.blackListIps = [];
         let result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.1.1.1');
-        expect(result).to.be.true;
+        expect(result.result).to.be.true;
 
 
         rule.profile.blackListIps = [{ ip: '1.1.1.1/32' }];
         rule.profile.whiteListIps = [];
         result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.1.1.1');
-        expect(result).to.be.false;
+        expect(result.result).to.be.false;
+        expect(result.error).to.equal(ErrorCodesInternal.ErrIpIntelligenceCustomBlackListContains);
+        expect(result.errorNumber).to.equal(PolicyAuthnErrors.IpIntelligenceCustomBlackListContains);
 
 
         rule.profile.whiteListIps = [];
@@ -574,7 +579,7 @@ describe('policyService ', async () => {
         const list1 = await saveIpList(configService, ipintel, '1.2.3.4/32');
         rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [list1.id] };
         result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.2.3.4');
-        expect(result).to.be.true;
+        expect(result.result).to.be.true;
         await esService.reset();
 
 
@@ -583,7 +588,9 @@ describe('policyService ', async () => {
         const list2 = await saveIpList(configService, ipintel, '1.2.3.4/32');
         rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [list2.id], whiteLists: [] };
         result = await policyService.isIpIntelligenceAllowed(rule, {} as any, '1.2.3.4');
-        expect(result).to.be.false;
+        expect(result.result).to.be.false;
+        expect(result.error).to.equal(ErrorCodesInternal.ErrIpIntelligenceBlackListContains);
+        expect(result.errorNumber).to.equal(PolicyAuthnErrors.IpIntelligenceBlackListContains);
         await esService.reset();
 
 
@@ -591,7 +598,9 @@ describe('policyService ', async () => {
         rule.profile.blackListIps = [];
         rule.profile.ipIntelligence = { isCrawler: true, isHosting: true, isProxy: true, blackLists: [], whiteLists: [] };
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true } as any, '1.2.3.4');
-        expect(result).to.be.false;
+        expect(result.result).to.be.false;
+        expect(result.error).to.equal(ErrorCodesInternal.ErrIpIntelligenceBlackIp);
+        expect(result.errorNumber).to.equal(PolicyAuthnErrors.IpIntelligenceBlackIp);
 
 
         rule.profile.whiteListIps = [];
@@ -599,7 +608,7 @@ describe('policyService ', async () => {
         rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [] };
         rule.profile.locations = [{ countryCode: 'TR' }]
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true, countryCode: 'TR' } as any, '1.2.3.4');
-        expect(result).to.be.true;
+        expect(result.result).to.be.true;
 
 
 
@@ -608,7 +617,8 @@ describe('policyService ', async () => {
         rule.profile.ipIntelligence = { isCrawler: false, isHosting: false, isProxy: false, blackLists: [], whiteLists: [] };
         rule.profile.locations = [{ countryCode: 'UK' }]
         result = await policyService.isIpIntelligenceAllowed(rule, { isProxyIp: true, countryCode: 'TR' } as any, '1.2.3.4');
-        expect(result).to.be.false;
+        expect(result.result).to.be.false;
+
 
 
 
@@ -658,7 +668,7 @@ describe('policyService ', async () => {
         try {
             const session: AuthSession = { id: '1', is2FA: true, userId: '1' } as AuthSession;
             let result = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any,
-                session, undefined)
+                session, undefined, undefined)
 
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(1);
@@ -670,7 +680,7 @@ describe('policyService ', async () => {
             const session: AuthSession = { id: '1', is2FA: true } as AuthSession;
             const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: 'non absent gateway' };
             let result = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any,
-                session, tun)
+                session, tun, undefined)
 
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(8);
@@ -683,7 +693,7 @@ describe('policyService ', async () => {
             await redisService.hset(`/tunnel/id/testsession`, tun);
             const session: AuthSession = { id: '1', is2FA: true, userId: '1' } as AuthSession;
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any,
-                session, tun)
+                session, tun, undefined)
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(3);
 
@@ -698,7 +708,7 @@ describe('policyService ', async () => {
             const session: AuthSession = { id: '1', is2FA: true, userId: '1' } as AuthSession;
             await redisService.hset(`/tunnel/id/testsession`, tun);
             let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any,
-                session, tun)
+                session, tun, undefined)
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(5);
 
@@ -729,7 +739,7 @@ describe('policyService ', async () => {
             const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
             await redisService.hset(`/tunnel/id/testsession`, tun);
             const session: AuthSession = { id: '1', is2FA: true, userId: '1', ip: '10.0.0.2' } as AuthSession;
-            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, session, tun)
+            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, session, tun, undefined)
         } catch (err) { }
         expect(policyService.errorNumber).to.equal(0);
 
@@ -744,9 +754,12 @@ describe('policyService ', async () => {
             const tun = { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id };
             await redisService.hset(`/tunnel/id/testsession`, tun);
             const session: AuthSession = { id: '1', is2FA: true, userId: '1', ip: '10.0.0.2' } as AuthSession;
-            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, session, tun)
-        } catch (err) { }
-        expect(policyService.errorNumber).to.equal(100);
+            let result2 = await policyService.authenticate({ id: 'someid', groupIds: ['somegroupid'] } as any, session, tun, undefined)
+
+        } catch (err) {
+        }
+        expect(policyService.errorNumber).to.equal(11);
+
 
 
 
@@ -1183,6 +1196,495 @@ describe('policyService ', async () => {
 
 
     })
+
+
+    it('isDevicePostureClientVersionAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(await policy.isDevicePostureClientVersionAllowed({} as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureClientVersionAllowed({ clientVersion: '1.2.0' } as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureClientVersionAllowed({ clientVersion: '1.2.0' } as any, { clientVersions: [] } as any)).to.be.true
+        expect(await policy.isDevicePostureClientVersionAllowed({ clientVersion: '' } as any, { clientVersions: [{ version: '12.2' }] } as any)).to.be.false
+
+        expect(await policy.isDevicePostureClientVersionAllowed({ clientVersion: '1.2.0' } as any, { clientVersions: [{ version: '1.2.0' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureClientVersionAllowed({ clientVersion: '1.2.0' } as any, { clientVersions: [{ version: '1.2.1' }] } as any)).to.be.false
+        expect(await policy.isDevicePostureClientVersionAllowed({ clientVersion: '1.2.15' } as any, { clientVersions: [{ version: '1.2.2' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureClientVersionAllowed({ clientVersion: '1.2.5' } as any, { clientVersions: [{ version: '1.2.2' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureClientVersionAllowed({ clientVersion: '1.2.05' } as any, { clientVersions: [{ version: '1.2.2' }] } as any)).to.be.false
+
+
+
+
+    })
+
+    it('isDevicePostureFirewallAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(await policy.isDevicePostureFirewallAllowed({} as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureFirewallAllowed({} as any, { firewallList: [{}] } as any)).to.be.false
+        expect(await policy.isDevicePostureFirewallAllowed({ platform: 'linux' } as any, { firewallList: [{}] } as any)).to.be.true;
+        expect(await policy.isDevicePostureFirewallAllowed({ platform: 'win32', firewalls: [{}] } as any, { firewallList: [{}] } as any)).to.be.false;
+        expect(await policy.isDevicePostureFirewallAllowed({ platform: 'win32', firewalls: [{ isEnabled: true }] } as any, { firewallList: [{}] } as any)).to.be.true;
+
+    })
+
+
+
+    it('isDevicePostureAntivirusAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(await policy.isDevicePostureAntivirusAllowed({} as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureAntivirusAllowed({} as any, { antivirusList: [{}] } as any)).to.be.false
+        expect(await policy.isDevicePostureAntivirusAllowed({ platform: 'linux' } as any, { antivirusList: [{}] } as any)).to.be.true;
+        expect(await policy.isDevicePostureAntivirusAllowed({ platform: 'win32', antiviruses: [{}] } as any, { antivirusList: [{}] } as any)).to.be.false;
+        expect(await policy.isDevicePostureAntivirusAllowed({ platform: 'win32', antiviruses: [{ isEnabled: true }] } as any, { antivirusList: [{}] } as any)).to.be.true;
+
+    })
+
+
+    it('isDevicePostureDiscEncrytpedAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(await policy.isDevicePostureDiscEncryptedAllowed({} as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureDiscEncryptedAllowed({} as any, { discEncryption: true } as any)).to.be.false
+
+        expect(await policy.isDevicePostureDiscEncryptedAllowed({ platform: 'win32', encryptedDiscs: [{}] } as any, { discEncryption: true } as any)).to.be.false;
+        expect(await policy.isDevicePostureDiscEncryptedAllowed({ platform: 'win32', encryptedDiscs: [{ isEncrypted: true }] } as any, { discEncryption: true } as any)).to.be.true;
+
+    })
+
+    it('isDevicePostureMacAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(await policy.isDevicePostureMacAllowed({} as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureMacAllowed({} as any, { macList: [{}] } as any)).to.be.false
+
+        expect(await policy.isDevicePostureMacAllowed({ platform: 'win32', macs: ['123'] } as any, { macList: [{ value: '123' }, { value: '1234' }] } as any)).to.be.true;
+        expect(await policy.isDevicePostureMacAllowed({ platform: 'win32', macs: ['12345', '1234'] } as any, { macList: [{ value: '123' }, { value: '1234' }] } as any)).to.be.true;
+        expect(await policy.isDevicePostureMacAllowed({ platform: 'win32', macs: ['12345'] } as any, { macList: [{ value: '123' }, { value: '1234' }] } as any)).to.be.false;
+
+    })
+
+    it('isDevicePostureSerialAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(await policy.isDevicePostureSerialAllowed({} as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureSerialAllowed({} as any, { serialList: [{}] } as any)).to.be.false
+
+        expect(await policy.isDevicePostureSerialAllowed({ platform: 'win32', serial: { value: '123' } } as any, { serialList: [{ value: '123' }, { value: '1234' }] } as any)).to.be.true;
+
+        expect(await policy.isDevicePostureSerialAllowed({ platform: 'win32', serial: { value: '12345' } } as any, { serialList: [{ value: '123' }, { value: '1234' }] } as any)).to.be.false;
+
+    })
+
+    it('isDevicePostureSerialAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(await policy.isDevicePostureFileAllowed({} as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureFileAllowed({} as any, { filePathList: [{}] } as any)).to.be.false
+
+        expect(await policy.isDevicePostureFileAllowed({ files: [{ path: 'test' }] } as any, { filePathList: [{ path: 'test' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureFileAllowed({ files: [{ path: 'test' }] } as any, { filePathList: [{ path: 'test', sha256: 'a' }] } as any)).to.be.false
+        expect(await policy.isDevicePostureFileAllowed({ files: [{ path: 'test', sha256: 'a' }] } as any, { filePathList: [{ path: 'test', sha256: 'a' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureFileAllowed({ files: [{ path: 'test', sha256: 'a' }] } as any, { filePathList: [{ path: 'test', sha256: 'a' }, { path: 'b' }] } as any)).to.be.false
+
+    })
+
+    it('isDevicePostureProcessAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(await policy.isDevicePostureProcessAllowed({} as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureProcessAllowed({} as any, { processList: [{}] } as any)).to.be.false
+
+        expect(await policy.isDevicePostureProcessAllowed({ processes: [{ path: 'test' }] } as any, { processList: [{ path: 'test' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureProcessAllowed({ processes: [{ path: 'test' }] } as any, { processList: [{ path: 'test', sha256: 'a' }] } as any)).to.be.false
+        expect(await policy.isDevicePostureProcessAllowed({ processes: [{ path: 'test', sha256: 'a' }] } as any, { processList: [{ path: 'test', sha256: 'a' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureProcessAllowed({ processes: [{ path: 'test', sha256: 'a' }] } as any, { processList: [{ path: 'test', sha256: 'a' }, { path: 'b' }] } as any)).to.be.false
+
+    })
+
+    it('isDevicePostureRegistryAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(await policy.isDevicePostureRegistryAllowed({} as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureRegistryAllowed({ platform: 'linux' } as any, { registryList: [{}] } as any)).to.be.true;
+
+
+        expect(await policy.isDevicePostureRegistryAllowed({ platform: 'win32', registries: [{ path: 'test' }] } as any, { registryList: [{ path: 'test' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureRegistryAllowed({ platform: 'win32', registries: [{ path: 'test' }] } as any, { registryList: [{ path: 'test', key: 'a' }] } as any)).to.be.false
+        expect(await policy.isDevicePostureRegistryAllowed({ platform: 'win32', registries: [{ path: 'test', key: 'a' }] } as any, { registryList: [{ path: 'test', key: 'a' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureRegistryAllowed({ platform: 'win32', registries: [{ path: 'test', key: 'a' }] } as any, { registryList: [{ path: 'test', key: 'a' }, { path: 'b' }] } as any)).to.be.false
+
+    })
+
+    it('isDevicePostureAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(
+            (await policy.isDevicePostureAllowed({
+                profile: { device: { postures: ['123', '1234'] } }
+            } as any, {} as any, [], undefined)).result
+        ).to.be.true;
+        const posture1: DevicePosture = {
+            id: '123',
+            name: "windows10",
+            isEnabled: true,
+            labels: [],
+            os: 'win32',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+
+        }
+        //platform does not match
+        let result =
+
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'linux'
+                } as any
+            );
+
+        expect(result.result).to.be.false;
+        expect(result.error).to.equal(ErrorCodesInternal.ErrDevicePostureOsTypeNotAllowed);
+
+        //platform matches
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32'
+                } as any
+            )
+        expect(result.result).to.be.true;
+
+        ////antivirus check
+        posture1.antivirusList = [{ name: 'general' }];
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32',
+                    antiviruses: [{ isEnabled: false }]
+                } as any
+            )
+        expect(result.result).to.be.false;
+
+        ////firewall check
+        posture1.firewallList = [{ name: 'general' }];
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32',
+                    antiviruses: [{ isEnabled: true }],
+                    firewalls: [{ isEnabled: false }]
+                } as any
+            )
+        expect(result.result).to.be.false;
+
+        ////disc encrytped check
+        posture1.discEncryption = true;
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32',
+                    antiviruses: [{ isEnabled: true }],
+                    firewalls: [{ isEnabled: true }],
+                    encryptedDiscs: [{ isEncrypted: false }]
+                } as any
+            )
+        expect(result.result).to.be.false;
+
+        ////mac list check
+        posture1.macList = [{ value: 'abc' }]
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32',
+                    antiviruses: [{ isEnabled: true }],
+                    firewalls: [{ isEnabled: true }],
+                    encryptedDiscs: [{ isEncrypted: true }],
+                    macs: ['abcd']
+                } as any
+            )
+        expect(result.result).to.be.false;
+
+        ////serail list check
+        posture1.serialList = [{ value: 'abc' }]
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32',
+                    antiviruses: [{ isEnabled: true }],
+                    firewalls: [{ isEnabled: true }],
+                    encryptedDiscs: [{ isEncrypted: true }],
+                    macs: ['abc'],
+                    serial: { value: 'abcd' }
+                } as any
+            )
+        expect(result.result).to.be.false;
+
+
+        ////file list check
+        posture1.filePathList = [{ path: 'abc' }]
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32',
+                    antiviruses: [{ isEnabled: true }],
+                    firewalls: [{ isEnabled: true }],
+                    encryptedDiscs: [{ isEncrypted: true }],
+                    macs: ['abc'],
+                    serial: { value: 'abc' },
+                    files: [{ path: 'dbcd' }]
+                } as any
+            )
+        expect(result.result).to.be.false;
+
+
+        ////process list check
+        posture1.processList = [{ path: 'abc' }]
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32',
+                    antiviruses: [{ isEnabled: true }],
+                    firewalls: [{ isEnabled: true }],
+                    encryptedDiscs: [{ isEncrypted: true }],
+                    macs: ['abc'],
+                    serial: { value: 'abc' },
+                    files: [{ path: 'abc' }],
+                    processes: [{ path: 'dbcd' }]
+                } as any
+            )
+        expect(result.result).to.be.false;
+
+        ////registry list check
+        posture1.registryList = [{ path: 'abc' }]
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32',
+                    antiviruses: [{ isEnabled: true }],
+                    firewalls: [{ isEnabled: true }],
+                    encryptedDiscs: [{ isEncrypted: true }],
+                    macs: ['abc'],
+                    serial: { value: 'abc' },
+                    files: [{ path: 'abc' }],
+                    processes: [{ path: 'abc' }],
+                    registries: [{ path: 'abcd' }]
+                } as any
+            )
+        expect(result.result).to.be.false;
+
+        ////registry list check
+        posture1.registryList = [{ path: 'abc' }]
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32',
+                    antiviruses: [{ isEnabled: true }],
+                    firewalls: [{ isEnabled: true }],
+                    encryptedDiscs: [{ isEncrypted: true }],
+                    macs: ['abc'],
+                    serial: { value: 'abc' },
+                    files: [{ path: 'abc' }],
+                    processes: [{ path: 'abc' }],
+                    registries: [{ path: 'abc' }]
+                } as any
+            )
+        expect(result.result).to.be.true;
+
+
+
+
+    }).timeout(120000)
+
 
 
 

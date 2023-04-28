@@ -130,6 +130,21 @@ export class ErrorCodesInternal extends ErrorCodes {
     static ErrIpIntelligenceSourceNotFound: string = "ErrIpIntelligenceSourceNotFound";
     static ErrIpIntelligenceBWItemNotFound: string = "ErrIpIntelligenceBWItemNotFound";
     static ErrDevicePostureNotFound: string = 'ErrDevicePostureNotFound';
+    static ErrIpIntelligenceCustomBlackListContains: string = 'ErrIpIntelligenceCustomBlackListContains';
+    static ErrIpIntelligenceBlackListContains: string = 'ErrIpIntelligenceBlackListContains';
+    static ErrIpIntelligenceBlackIp: string = 'ErrIpIntelligenceBlackIp';
+    static ErrNoDevicePostureMatch: string = 'ErrNoDevicePostureMatch';
+    static ErrDevicePostureOsTypeNotAllowed: string = 'ErrDevicePostureOsTypeNotAllowed'
+    static ErrDevicePostureClientVersionNotAllowed: string = 'ErrDevicePostureClientVersionNotAllowed';
+    static ErrDevicePostureFirewallNotAllowed: string = 'ErrDevicePostureFirewallNotAllowed';
+    static ErrDevicePostureAntivirusNotAllowed: string = 'ErrDevicePostureAntivirusNotAllowed';
+    static ErrDevicePostureDiscEncryptedNotAllowed: string = 'ErrDevicePostureDiscEncryptedNotAllowed';
+    static ErrDevicePostureMacNotAllowed: string = 'ErrDevicePostureMacNotAllowed';
+    static ErrDevicePostureSerialNotAllowed: string = 'ErrDevicePostureSerialNotAllowed';
+    static ErrDevicePostureFileNotAllowed: string = 'ErrDevicePostureFileNotAllowed';
+    static ErrDevicePostureRegisryNotAllowed: string = 'ErrDevicePostureRegisryNotAllowed';
+    static ErrDevicePostureProcessNotAllowed: string = 'ErrDevicePostureProcessNotAllowed';
+    static ErrDevicePostureNotChecked: string = 'ErrDevicePostureNotChecked';
 
 
 

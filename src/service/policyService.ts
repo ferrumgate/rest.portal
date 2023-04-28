@@ -17,6 +17,9 @@ import { Util } from "../util";
 import { IpIntelligence } from "../model/IpIntelligence";
 import { IpIntelligenceService } from "./ipIntelligenceService";
 import { OSType } from "../model/authenticationProfile";
+import { ClientDevicePosture } from "../model/device";
+import { DevicePosture } from "../model/authenticationProfile";
+import semvr from 'semver';
 
 
 export interface UserNetworkListResponse {
@@ -26,6 +29,7 @@ export interface UserNetworkListResponse {
     needsIp?: boolean,
     needsGateway?: boolean;
     needsTime?: boolean;
+    needsDevicePosture?: boolean;
 
 }
 
@@ -66,8 +70,23 @@ export enum PolicyAuthnErrors {
     NetworkNotValid,
     SessionNotFound,
     SessionNotValid,
+    DevicePostureNotFound,
+    IpIntelligenceCustomBlackListContains,
+    IpIntelligenceBlackListContains,
+    IpIntelligenceBlackIp,
+    DevicePostureOsTypeNotAllowed,
+    DevicePostureClientVersionNotAllowed,
+    DevicePostureFirewallNotAllowed,
+    DevicePostureAntivirusNotAllowed,
+    DevicePostureDiscEncryptedNotAllowed,
+    DevicePostureMacNotAllowed,
+    DevicePostureSerialNotAllowed,
+    DevicePosturePostureFileNotAllowed,
+    DevicePostureRegistryNotAllowed,
+    DevicePostureProcessNotAllowed,
 
-    NoRuleMatch = 100
+    NoRuleMatch = 100,
+
 }
 
 
@@ -219,29 +238,247 @@ export class PolicyService {
         let ip = clientIp.split('#')[0];//ip can be like 1.2.3.4#34233 ip#port
         //check white lists
         if (await this.isCustomWhiteListContains(rule, ip))
-            return true;
+            return { result: true };
         // check ip intelligence lists
         if (await this.isIpIntelligenceWhiteListContains(rule, ip))
-            return true;
+            return { result: true };
 
         //check black lists
         if (await this.isCustomBlackListContains(rule, ip))
-            return false;
+            return { result: false, errorNumber: PolicyAuthnErrors.IpIntelligenceCustomBlackListContains, error: ErrorCodesInternal.ErrIpIntelligenceCustomBlackListContains };
         // check ip intelligence lists
         if (await this.isIpIntelligenceBlackListContains(rule, ip))
-            return false;
+            return { result: false, errorNumber: PolicyAuthnErrors.IpIntelligenceBlackListContains, error: ErrorCodesInternal.ErrIpIntelligenceBlackListContains };;
 
 
         //check proxy ip
         if (await this.isIpIntelligenceBlackIp(rule, session))
-            return false;
+            return { result: false, errorNumber: PolicyAuthnErrors.IpIntelligenceBlackIp, error: ErrorCodesInternal.ErrIpIntelligenceBlackIp };;
 
         //check country
         if (await this.isIpIntelligenceCountryContains(rule, session.countryCode))
+            return { result: true };
+
+        return { result: false };
+    }
+
+
+    // device posture checks
+
+
+    async isDevicePostureClientVersionAllowed(clientDp: ClientDevicePosture, dp: DevicePosture) {
+        //no rule
+        if (!dp.clientVersions?.length) return true;
+        const dpVersion = dp.clientVersions[0].version;
+        if (!dpVersion) return true;
+
+        //client dont have version info, but rule has
+        const clientVersion = clientDp.clientVersion;
+        if (!clientVersion) return false;
+        if (!semvr.valid(clientVersion) || !semvr.valid(dpVersion)) return false;
+        if (semvr.gte(clientVersion, dpVersion))
             return true;
 
+
         return false;
+
+
     }
+    async isDevicePostureFirewallAllowed(clientDp: ClientDevicePosture, dp: DevicePosture) {
+        if (!dp.firewallList?.length) return true;
+        const dpNeedsFirewall = true;
+        if (clientDp.platform == 'linux') return true;
+        if (!clientDp.firewalls?.length) return false;
+        const clientFirewallStatus = clientDp.firewalls[0].isEnabled;
+
+        if (clientFirewallStatus) return true;
+        return false;
+
+    }
+    async isDevicePostureAntivirusAllowed(clientDp: ClientDevicePosture, dp: DevicePosture) {
+        if (!dp.antivirusList?.length) return true;
+        const dpNeedsAntivirus = true;
+        if (clientDp.platform == 'linux') return true;
+        if (!clientDp.antiviruses?.length) return false;
+        const clientAntivirusStatus = clientDp.antiviruses[0].isEnabled;
+
+        if (clientAntivirusStatus) return true;
+        return false;
+
+    }
+    async isDevicePostureDiscEncryptedAllowed(clientDp: ClientDevicePosture, dp: DevicePosture) {
+        if (!dp.discEncryption) return true;
+        if (!clientDp.encryptedDiscs?.length) return false;
+
+        const clientEncryptedDiscsStatus = clientDp.encryptedDiscs[0].isEncrypted;
+        if (clientEncryptedDiscsStatus) return true;
+        return false;
+
+    }
+    async isDevicePostureMacAllowed(clientDp: ClientDevicePosture, dp: DevicePosture) {
+        //all macs
+        if (!dp.macList?.length) return true;
+
+        if (!clientDp.macs?.length) return false;
+
+        if (dp.macList.some(x => clientDp.macs.map(y => y.toLowerCase()).some(y => y == x.value.toLowerCase()))) return true;
+        return false;
+
+    }
+    async isDevicePostureSerialAllowed(clientDp: ClientDevicePosture, dp: DevicePosture) {
+        //all macs
+        if (!dp.serialList?.length) return true;
+
+        if (!clientDp.serial?.value) return false;
+
+        if (dp.serialList.some(x => clientDp.serial.value == x.value)) return true;
+        return false;
+
+    }
+
+    async isDevicePostureFileAllowed(clientDp: ClientDevicePosture, dp: DevicePosture) {
+        //all macs
+        if (!dp.filePathList?.length) return true;
+
+        if (!clientDp.files?.length) return false;
+        let founded = 0;
+        for (const file of dp.filePathList) {
+            for (const cfile of clientDp.files) {
+                if (cfile.path.toLowerCase().includes(file.path.toLowerCase())) {
+                    if (!file.sha256)
+                        founded++
+                    else
+                        if (cfile.sha256 == file.sha256)
+                            founded++;
+                }
+            }
+        }
+        //if all items founded
+        if (founded == dp.filePathList.length) return true;
+        return false;
+
+    }
+
+    async isDevicePostureProcessAllowed(clientDp: ClientDevicePosture, dp: DevicePosture) {
+        //all macs
+        if (!dp.processList?.length) return true;
+
+        if (!clientDp.processes?.length) return false;
+        let founded = 0;
+        for (const file of dp.processList) {
+            for (const cfile of clientDp.processes) {
+                if (cfile.path.toLowerCase().includes(file.path.toLowerCase())) {
+                    if (!file.sha256)
+                        founded++
+                    else
+                        if (cfile.sha256 == file.sha256)
+                            founded++;
+                }
+            }
+        }
+        //if all items founded
+        if (founded == dp.processList.length) return true;
+        return false;
+
+    }
+
+    async isDevicePostureRegistryAllowed(clientDp: ClientDevicePosture, dp: DevicePosture) {
+        //all macs
+        if (!dp.registryList?.length) return true;
+        if (clientDp.platform != 'win32') return true;
+
+        if (!clientDp.registries?.length) return false;
+        let founded = 0;
+        for (const file of dp.registryList) {
+            for (const cfile of clientDp.registries) {
+                if (cfile.path == file.path && cfile.key == file.key) {
+                    founded++;
+                }
+            }
+        }
+        //if all items founded
+        if (founded == dp.registryList.length) return true;
+        return false;
+
+    }
+
+
+
+
+    async isDevicePostureAllowed(rule: AuthenticationRule, session: AuthSession, devicePostures?: DevicePosture[], clientDp?: ClientDevicePosture,) {
+
+        // no rule, allowed
+        if (!rule.profile?.device) return { result: true }
+        if (!rule.profile.device?.postures.length) return { result: true };
+        // no target list, allowed
+        if (!devicePostures || !devicePostures.length) return { result: true }
+
+        //lookup list
+        const filteredDevicePostures = devicePostures.filter(x => rule.profile.device?.postures.includes(x.id));
+        // no target list, allowed
+        if (!filteredDevicePostures.length) return { result: true }
+
+
+        // no rule found, denied
+        if (!clientDp) return { result: false, errorNumber: PolicyAuthnErrors.DevicePostureNotFound, error: ErrorCodesInternal.ErrDevicePostureNotFound };
+
+        let follow = { errorNumber: PolicyAuthnErrors.NoError, error: '' }
+
+        for (const dp of filteredDevicePostures) {
+            if (dp.os != clientDp.platform) {
+                follow = { errorNumber: PolicyAuthnErrors.DevicePostureOsTypeNotAllowed, error: ErrorCodesInternal.ErrDevicePostureOsTypeNotAllowed }
+                continue;
+            }
+            if (!await this.isDevicePostureClientVersionAllowed(clientDp, dp)) {
+                follow = { errorNumber: PolicyAuthnErrors.DevicePostureClientVersionNotAllowed, error: ErrorCodesInternal.ErrDevicePostureClientVersionNotAllowed }
+                continue;
+            }
+            if (!await this.isDevicePostureFirewallAllowed(clientDp, dp)) {
+                follow = { errorNumber: PolicyAuthnErrors.DevicePostureFirewallNotAllowed, error: ErrorCodesInternal.ErrDevicePostureFirewallNotAllowed }
+                continue;
+            }
+            if (!await this.isDevicePostureAntivirusAllowed(clientDp, dp)) {
+                follow = { errorNumber: PolicyAuthnErrors.DevicePostureAntivirusNotAllowed, error: ErrorCodesInternal.ErrDevicePostureAntivirusNotAllowed }
+                continue;
+            }
+            if (!await this.isDevicePostureDiscEncryptedAllowed(clientDp, dp)) {
+                follow = { errorNumber: PolicyAuthnErrors.DevicePostureDiscEncryptedNotAllowed, error: ErrorCodesInternal.ErrDevicePostureDiscEncryptedNotAllowed }
+                continue;
+            }
+            if (!await this.isDevicePostureMacAllowed(clientDp, dp)) {
+
+                follow = { errorNumber: PolicyAuthnErrors.DevicePostureMacNotAllowed, error: ErrorCodesInternal.ErrDevicePostureMacNotAllowed }
+                continue;
+            }
+            if (!await this.isDevicePostureSerialAllowed(clientDp, dp)) {
+                follow = { errorNumber: PolicyAuthnErrors.DevicePostureSerialNotAllowed, error: ErrorCodesInternal.ErrDevicePostureSerialNotAllowed }
+                continue;
+            }
+            if (!await this.isDevicePostureFileAllowed(clientDp, dp)) {
+                follow = { errorNumber: PolicyAuthnErrors.DevicePosturePostureFileNotAllowed, error: ErrorCodesInternal.ErrDevicePostureFileNotAllowed }
+                continue;
+            }
+            if (!await this.isDevicePostureRegistryAllowed(clientDp, dp)) {
+                follow = { errorNumber: PolicyAuthnErrors.DevicePostureRegistryNotAllowed, error: ErrorCodesInternal.ErrDevicePostureRegisryNotAllowed }
+                continue;
+            }
+            if (!await this.isDevicePostureProcessAllowed(clientDp, dp)) {
+                follow = { errorNumber: PolicyAuthnErrors.DevicePostureProcessNotAllowed, error: ErrorCodesInternal.ErrDevicePostureProcessNotAllowed }
+                continue;
+            }
+
+            return { result: true };
+
+
+        }
+
+        //no rule matched
+        return { result: false, errorNumber: follow.errorNumber, error: follow.error };
+
+
+
+    }
+
 
 
 
@@ -250,7 +487,7 @@ export class PolicyService {
      * @summary check user can create a tunnel, check ips, etc...
      * @returns 
      */
-    async authenticate(user: User, session: AuthSession | undefined, tunnel: Tunnel | undefined) {
+    async authenticate(user: User, session: AuthSession | undefined, tunnel: Tunnel | undefined, clientDp: ClientDevicePosture | undefined) {
         //get tunnel basic information
         this.errorNumber = PolicyAuthnErrors.NoError;
         //const tunnel = await this.tunnelService.getTunnel(tunnelKey);
@@ -305,6 +542,7 @@ export class PolicyService {
         //try to log more error code
         let error = ErrorCodesInternal.ErrNoRuleMatch;
         //logger.info(`policy authentication check ${JSON.stringify(session)}  ${JSON.stringify(tunnel)}}`);
+        const devicePostures = await this.configService.getDevicePosturesAll();
         const policy = await this.configService.getAuthenticationPolicy();
         const rules = await policy.rules.filter(x => x.networkId == network.id);
         for (const rule of rules) {
@@ -314,26 +552,47 @@ export class PolicyService {
             let f2 = await this.is2FA(rule, is2FAValidated);
             let f3 = await this.isIpIntelligenceAllowed(rule, session, tunnel.clientIp);
             let f4 = await this.isTimeAllowed(rule);
+            let f5 = await this.isDevicePostureAllowed(rule, session, devicePostures, clientDp);
 
 
-            if (f1 && f2 && f3 && f4) {
+            if (f1 && f2 && f3.result && f4 && f5.result) {
 
                 return rule;
 
             }
+            //for better visibility
             if (f1) {
+                logger.warn(`user not authenticated ${f2} ${JSON.stringify(f3)} ${f4}}`)
                 if (!f2)
                     error = ErrorCodesInternal.ErrNo2FAMatch;
                 else
-                    if (!f3)
-                        error = ErrorCodesInternal.ErrNoLocationMatch;
-                    else error = ErrorCodesInternal.ErrNoTimeMatch;
+                    if (!f3.result) {
+                        if (f3.errorNumber)
+                            this.errorNumber = f3.errorNumber;
+                        if (f3.error) {
+                            error = f3.error;
+                        }
+                        else
+                            error = ErrorCodesInternal.ErrNoLocationMatch;
+                    }
+                    else if (!f4)
+                        error = ErrorCodesInternal.ErrNoTimeMatch;
+                    else
+                        if (!f5.result) {
+                            if (f5.errorNumber)
+                                this.errorNumber = f5.errorNumber;
+                            if (f5.error)
+                                error = f5.error;
+                        } else
+                            error = ErrorCodesInternal.ErrNoDevicePostureMatch;
 
             }
 
         }
         //no rule match
-        this.errorNumber = PolicyAuthnErrors.NoRuleMatch;
+        //error not set before, set it no match
+        if (this.errorNumber == PolicyAuthnErrors.NoError)
+            this.errorNumber = PolicyAuthnErrors.NoRuleMatch;
         throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, error, 'not authenticated');
     }
 
@@ -347,6 +606,7 @@ export class PolicyService {
         let result: UserNetworkListResponse[] = [];
 
         const networks = await this.configService.getNetworksAll();
+        const devicePostures = await this.configService.getDevicePosturesAll();
         const policy = await this.configService.getAuthenticationPolicy();
         for (const network of networks) {
 
@@ -369,9 +629,11 @@ export class PolicyService {
                 let f1 = await this.isUserIdOrGroupIdAllowed(rule, user);
                 let f2 = await this.is2FA(rule, session.is2FA);
                 let f3 = await this.isIpIntelligenceAllowed(rule, session, clientIp);
-                let f4 = await this.isTimeAllowed(rule);
 
-                if (f1 && f2 && f3 && f4) {
+                let f4 = await this.isTimeAllowed(rule);
+                let f5 = await this.isDevicePostureAllowed(rule, session, devicePostures);
+
+                if (f1 && f2 && f3.result && f4 && f5.result) {
 
                     const gateways = await this.configService.getGatewaysByNetworkId(network.id);
                     if (!gateways.find(x => x.isEnabled)) {
@@ -387,8 +649,9 @@ export class PolicyService {
                             network: network,
                             action: 'deny',
                             needs2FA: !f2,
-                            needsIp: !f3,
-                            needsTime: !f4
+                            needsIp: !f3.result,
+                            needsTime: !f4,
+                            needsDevicePosture: !f5.result
                         });
                     break;
                 }

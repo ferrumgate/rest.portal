@@ -611,13 +611,13 @@ describe('userApiAuthenticated', async () => {
             processes: [],
             processSearch: [],
             registries: [],
-            serial: { serial: '' }
+            serial: { value: '' }
 
         }
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/api/user/current/device/posture/parameters`)
+                .post(`/api/user/current/device/posture`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(posture)
                 .end((err, res) => {

@@ -302,8 +302,8 @@ routerUserAuthenticated.post('/current/device/posture',
         await inputService.checkNotEmpty(clientDevicePosture.clientId)
         await inputService.checkStringLength(clientDevicePosture.clientId, 16);
         await deviceService.saveDevicePosture(clientDevicePosture);
-        const devicelog = await deviceService.convertDevicePostureToDeviceLog(clientDevicePosture, currentUser.id, currentUser.username);
-        await deviceService.save(devicelog);
+        //const devicelog = await deviceService.convertDevicePostureToDeviceLog(clientDevicePosture, currentUser.id, currentUser.username);
+        //await deviceService.save(devicelog);
         await sessionService.setSession(currentSession.id, {
             deviceId: clientDevicePosture.clientId,
             deviceName: clientDevicePosture.hostname,

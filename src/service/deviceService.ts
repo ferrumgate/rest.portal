@@ -22,6 +22,10 @@ export class DeviceService {
         const key = `/device/posture/id/${item.clientId}`;
         await this.redisService.set(key, item, { ttl: 5 * 60 * 1000 });
     }
+    async getDevicePosture(id: string) {
+        const key = `/device/posture/id/${id}`;
+        return await this.redisService.get(key, true) as ClientDevicePosture;
+    }
     async aliveDevicePosture(id: string) {
         const key = `/device/posture/id/${id}`;
         await this.redisService.expire(key, 5 * 60 * 1000);
@@ -36,7 +40,7 @@ export class DeviceService {
             osName: item.os.name || '',
             osVersion: item.os.version || '',
             macs: item.macs?.join(',') || '',
-            serial: item.serial.serial || '',
+            serial: item.serial.value || '',
             platform: item.platform,
             userId: userId,
             username: username,

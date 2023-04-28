@@ -2138,6 +2138,9 @@ export class RedisCachedConfigService extends RedisConfigService {
                     case 'caSSLCertificate':
                         this.nodeCache.del('caSSLCertificate');
                         break;
+                    case 'devicePostures':
+                        this.nodeCache.del('devicePostures');
+                        break;
                     default:
                         logger.warn(`not implemented path ${item.path}`)
                 }
@@ -2236,6 +2239,14 @@ export class RedisCachedConfigService extends RedisConfigService {
         if (val) return val;
         const sup = await super.getCASSLCertificate()
         this.nodeCache.set("caSSLCertificate", sup);
+        return sup;
+    }
+
+    override async getDevicePosturesAll(): Promise<DevicePosture[]> {
+        const val = this.nodeCache.get<DevicePosture[]>('devicePostures');
+        if (val) return val;
+        const sup = await super.getDevicePosturesAll()
+        this.nodeCache.set("devicePostures", sup);
         return sup;
     }
 
