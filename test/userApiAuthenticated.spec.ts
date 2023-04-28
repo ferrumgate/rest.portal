@@ -12,6 +12,8 @@ import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { ExpressApp } from '../src';
 import { SSLCertificate } from '../src/model/cert';
 import { RBACDefault } from '../src/model/rbac';
+import { DevicePosture } from '../src/model/authenticationProfile';
+import { ClientDevicePosture } from '../src/model/device';
 
 
 
@@ -464,7 +466,7 @@ describe('userApiAuthenticated', async () => {
 
 
 
-    it('PUT /user/current/deviceposture/parameters will return 200', async () => {
+    it('GET /user/current/device/posture/parameters will return 200', async () => {
         //prepare data
         const user = getSampleUser();
         await appService.configService.saveUser(user);
@@ -555,7 +557,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/user/current/deviceposture/parameters`)
+                .get(`/api/user/current/device/posture/parameters`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -571,6 +573,69 @@ describe('userApiAuthenticated', async () => {
 
 
     }).timeout(50000);
+
+
+    it('POST /user/current/device/posture will return 200', async () => {
+        //prepare data
+        const user = getSampleUser();
+        await appService.configService.saveUser(user);
+
+        const group: Group = {
+            id: 'group1', name: 'group1', isEnabled: true, labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+        await appService.configService.saveGroup(group);
+
+
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+
+
+        const posture: ClientDevicePosture = {
+            clientId: Util.randomNumberString(16),
+            antiviruses: [],
+            clientSha256: '',
+            clientVersion: '12',
+            encryptedDiscs: [],
+            files: [],
+            firewalls: [],
+            hostname: '',
+            macs: [],
+            memory: { total: 1, free: 1 },
+            os: { name: '', version: '' },
+            platform: 'linux',
+            processes: [],
+            processSearch: [],
+            registries: [],
+            serial: { serial: '' }
+
+        }
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/api/user/current/device/posture/parameters`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(posture)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        const result = response.body;
+        expect(result).exist;
+
+
+
+    }).timeout(50000);
+
+
 
     function createSampleData22() {
 

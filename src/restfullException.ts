@@ -129,6 +129,7 @@ export class ErrorCodesInternal extends ErrorCodes {
     static ErrOnlyAuthLocalIsValid: string = "ErrOnlyAuthLocalIsValid";
     static ErrIpIntelligenceSourceNotFound: string = "ErrIpIntelligenceSourceNotFound";
     static ErrIpIntelligenceBWItemNotFound: string = "ErrIpIntelligenceBWItemNotFound";
+    static ErrDevicePostureNotFound: string = 'ErrDevicePostureNotFound';
 
 
 

@@ -26,7 +26,7 @@ export class DeviceService {
         const key = `/device/posture/id/${id}`;
         await this.redisService.expire(key, 5 * 60 * 1000);
     }
-    async convertDevicePostureToDeviceLog(item: ClientDevicePosture) {
+    async convertDevicePostureToDeviceLog(item: ClientDevicePosture, userId: string, username: string) {
         let device: DeviceLog = {
             id: item.clientId,
             clientVersion: item.clientVersion || '',
@@ -38,6 +38,8 @@ export class DeviceService {
             macs: item.macs?.join(',') || '',
             serial: item.serial.serial || '',
             platform: item.platform,
+            userId: userId,
+            username: username,
             hasEncryptedDisc: item.encryptedDiscs.find(x => x.isEncrypted) ? true : false,
             hasFirewall: item.firewalls.find(x => x.isEnabled) ? true : false,
             hasAntivirus: item.antiviruses.find(x => x.isEnabled) ? true : false,

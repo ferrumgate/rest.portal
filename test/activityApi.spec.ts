@@ -139,7 +139,7 @@ describe('activityApi ', async () => {
         return { activity1, activity2 }
     };
 
-    it('/log/audit', async () => {
+    it('/insight/activity', async () => {
 
         const es = new ESService(configService, host, user, pass);
         await es.reset();

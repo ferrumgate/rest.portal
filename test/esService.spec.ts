@@ -785,6 +785,8 @@ describe('esService ', async () => {
             osVersion: '1.9.2',
             platform: 'linux',
             serial: '1.1.21',
+            userId: '12',
+            username: 'auser'
 
 
         }
@@ -803,6 +805,8 @@ describe('esService ', async () => {
             osVersion: '1.9.2',
             platform: 'darwin',
             serial: '1.1444.21',
+            userId: '12',
+            username: 'auser'
 
 
         }

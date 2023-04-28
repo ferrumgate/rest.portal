@@ -72,14 +72,16 @@ export interface DevicePosture {
     insertDate: string;
     updateDate: string;
     os: OSType;
+    clientVersions?: { version: string }[];
     osVersions?: { name: string, release?: string }[];
     filePathList?: { path: string; sha256?: string; fingerprint?: string }[];
     processList?: { path: string; sha256?: string; fingerprint?: string }[];
     registryList?: { path: string; key?: string, value?: string; }[];
-    hddEncryption?: boolean;
+    discEncryption?: boolean;
     firewallList?: { name: string }[];
     antivirusList?: { name: string }[];
     macList?: { value: string }[];
+    serialList?: { value: string }[];
 }
 export function cloneDevicePosture(val: DevicePosture): DevicePosture {
     return {
@@ -89,15 +91,17 @@ export function cloneDevicePosture(val: DevicePosture): DevicePosture {
         isEnabled: val.isEnabled,
         insertDate: val.insertDate,
         updateDate: val.updateDate,
+        clientVersions: val.clientVersions ? Array.from(val.clientVersions.map(x => { return { version: x.version } })) : undefined,
         os: val.os,
         osVersions: val.osVersions ? Array.from(val.osVersions.map(x => { return { name: x.name, release: x.release } })) : undefined,
         filePathList: val.filePathList ? Array.from(val.filePathList.map(x => { return { path: x.path, sha256: x.sha256, fingerprint: x.fingerprint } })) : undefined,
         processList: val.processList ? Array.from(val.processList.map(x => { return { path: x.path, sha256: x.sha256, fingerprint: x.fingerprint } })) : undefined,
         registryList: val.registryList ? Array.from(val.registryList.map(x => { return { path: x.path, key: x.key, value: x.value } })) : undefined,
-        hddEncryption: Util.isUndefinedOrNull(val.hddEncryption) ? undefined : val.hddEncryption,
+        discEncryption: Util.isUndefinedOrNull(val.discEncryption) ? undefined : val.discEncryption,
         firewallList: val.firewallList ? Array.from(val.firewallList.map(x => { return { name: x.name } })) : undefined,
         antivirusList: val.antivirusList ? Array.from(val.antivirusList.map(x => { return { name: x.name } })) : undefined,
         macList: val.macList ? Array.from(val.macList.map(x => { return { value: x.value } })) : undefined,
+        serialList: val.serialList ? Array.from(val.serialList.map(x => { return { value: x.value } })) : undefined,
     };
 }
 

@@ -34,7 +34,7 @@ import { routerDataAuthenticated } from "./api/dataApi";
 import { routerPKIAuthenticated } from "./api/pkiApi";
 import path from "path";
 import proxy from 'express-http-proxy';
-import { routerDeviceAuthenticated } from "./api/deviceApi";
+import { routerDeviceAuthenticated, routerInsightsDeviceAuthenticated } from "./api/deviceApi";
 
 
 const bodyParser = require('body-parser');
@@ -74,7 +74,7 @@ export class ExpressApp {
 
 
         this.app.use(helmet.default({
-            contentSecurityPolicy: {
+            /* contentSecurityPolicy: {
                 directives: {
                     "default-src": ["'self'"],
                     "base-uri": ["'self'"],
@@ -89,7 +89,8 @@ export class ExpressApp {
                     "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com"],
                     'upgrade-insecure-requests': null
                 }
-            },
+            }, */
+            contentSecurityPolicy: false,
             hsts: false,
         }));
 
@@ -427,6 +428,16 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkCaptcha, 'insightActivityCaptcha', 50),
             asyncHandlerWithArgs(checkLimitedMode),
             routerActivityAuthenticated);
+
+        this.app.use('/api/insight/device',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'insightDevice', 1000),
+            asyncHandlerWithArgs(rateLimit, 'insightDeviceHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'insightDeviceDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'insightDeviceCaptcha', 50),
+            asyncHandlerWithArgs(checkLimitedMode),
+            routerInsightsDeviceAuthenticated);
 
 
         this.app.use('/api/summary',

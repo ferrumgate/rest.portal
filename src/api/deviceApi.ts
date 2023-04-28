@@ -9,7 +9,7 @@ import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import passport from "passport";
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
-import { authorizeAsAdmin } from "./commonApi";
+import { authorizeAsAdmin, authorizeAsAdminOrReporter } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
 import { cloneIpIntelligenceList, cloneIpIntelligenceSource, IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
@@ -18,6 +18,7 @@ import fsp from 'fs/promises'
 import multer from 'multer';
 import { once } from "events";
 import { DevicePosture, cloneDevicePosture } from "../model/authenticationProfile";
+import { SearchDeviceLogsRequest } from "../service/esService";
 const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 } });
 
 /////////////////////////////////  device posture //////////////////////////////////
@@ -40,7 +41,7 @@ routerDeviceAuthenticated.get('/posture/:id',
         const configService = appService.configService;
 
         const posture = await configService.getDevicePosture(id);
-        if (!posture) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGroupNotFound, 'no group');
+        if (!posture) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrDevicePostureNotFound, 'no device posture');
 
         return res.status(200).json(posture);
 
@@ -65,9 +66,9 @@ routerDeviceAuthenticated.get('/posture',
             if (ids) {
                 const parts = ids.split(',');
                 for (const id of parts) {
-                    const group = await configService.getDevicePosture(id);
-                    if (group)
-                        items.push(group);
+                    const posture = await configService.getDevicePosture(id);
+                    if (posture)
+                        items.push(posture);
                 }
 
             } else
@@ -95,7 +96,7 @@ routerDeviceAuthenticated.delete('/posture/:id',
         const auditService = appService.auditService;
 
         const posture = await configService.getDevicePosture(id);
-        if (!posture) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGroupNotFound, 'no group');
+        if (!posture) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrDevicePostureNotFound, 'no device posture');
 
         const { before } = await configService.deleteDevicePosture(posture.id);
         await auditService.logDeleteDevicePosture(currentSession, currentUser, before);
@@ -125,7 +126,7 @@ routerDeviceAuthenticated.put('/posture',
 
         await inputService.checkNotEmpty(input.id);
         const posture = await configService.getDevicePosture(input.id);
-        if (!posture) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGroupNotFound, 'no group');
+        if (!posture) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrDevicePostureNotFound, 'no device posture');
 
         await inputService.checkNotEmpty(input.name);
         input.name = input.name || 'device posture';
@@ -167,12 +168,41 @@ routerDeviceAuthenticated.post('/posture',
         safe.insertDate = new Date().toISOString();
         safe.updateDate = new Date().toISOString();
 
-        const { before, after } = await configService.saveGroup(safe);
-        await auditService.logSaveGroup(currentSession, currentUser, before, after);
+        const { before, after } = await configService.saveDevicePosture(safe);
+        await auditService.logSaveDevicePosture(currentSession, currentUser, before, after);
 
         return res.status(200).json(safe);
 
     }))
+
+
+
+/////////////////////////////////  /insights/device //////////////////////////////////
+export const routerInsightsDeviceAuthenticated = express.Router();
+
+
+
+
+routerInsightsDeviceAuthenticated.get('/',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdminOrReporter),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const query = req.query as SearchDeviceLogsRequest;
+        if (!Util.isUndefinedOrNull(query.isHealthy))
+            query.isHealthy = (query.isHealthy as any) == 'true' ? true : false;
+        logger.info(`getting device logs`);
+        const appService = req.appService as AppService;
+        const auditService = appService.auditService;
+        const activityService = appService.activityService;
+        const deviceService = appService.deviceService;
+
+
+        const data = await deviceService.search(query);
+        return res.status(200).json({ total: data.total, page: query.page, pageSize: query.pageSize, items: data.items });
+
+    }))
+
 
 
 

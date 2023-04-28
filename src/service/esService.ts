@@ -103,6 +103,8 @@ export interface SearchDeviceLogsRequest {
     search?: string;
     page?: number;
     id?: string;
+    userId?: string;
+    username?: string;
     isHealthy?: boolean;
     hostname?: string;
     pageSize?: number;
@@ -1413,6 +1415,14 @@ export class ESService {
                             id: {
                                 type: "keyword"
                             },
+                            userId: {
+                                type: "keyword"
+
+                            },
+                            username: {
+                                type: "keyword"
+
+                            },
                             hostname: {
                                 type: "keyword"
 
@@ -1533,7 +1543,7 @@ export class ESService {
             let item = {
                 query_string: {
                     query: `${req.search}`,
-                    fields: ['id', "hostname", "osName", "osVersion", "macs", "serial", "platform", "clientVersion"]
+                    fields: ['id', "hostname", "osName", "osVersion", "macs", "serial", "platform", "clientVersion", "userId", "username"]
                 }
             }
             request.body.query.bool.must.push(item as never);

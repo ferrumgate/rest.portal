@@ -5,6 +5,8 @@ export interface DeviceLog {
     osVersion: string;
     macs: string;
     serial: string;
+    userId: string;
+    username: string;
     insertDate: string;
     clientVersion: string;
     clientSha256: string;

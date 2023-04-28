@@ -256,13 +256,13 @@ export const routerUserAuthenticated = express.Router();
 
 //// get current user dynamic device posture
 
-routerUserAuthenticated.get('/current/deviceposture/parameters',
+routerUserAuthenticated.get('/current/device/posture/parameters',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
 
-        logger.info(`getting current user networks`);
+        logger.info(`getting current user device posture parameters`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
@@ -280,7 +280,7 @@ routerUserAuthenticated.get('/current/deviceposture/parameters',
 
 //// save current user connected device posture
 
-routerUserAuthenticated.post('/current/deviceposture',
+routerUserAuthenticated.post('/current/device/posture',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(async (req: any, res: any, next: any) => {
@@ -302,6 +302,8 @@ routerUserAuthenticated.post('/current/deviceposture',
         await inputService.checkNotEmpty(clientDevicePosture.clientId)
         await inputService.checkStringLength(clientDevicePosture.clientId, 16);
         await deviceService.saveDevicePosture(clientDevicePosture);
+        const devicelog = await deviceService.convertDevicePostureToDeviceLog(clientDevicePosture, currentUser.id, currentUser.username);
+        await deviceService.save(devicelog);
         await sessionService.setSession(currentSession.id, {
             deviceId: clientDevicePosture.clientId,
             deviceName: clientDevicePosture.hostname,
