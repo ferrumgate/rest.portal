@@ -27,9 +27,11 @@ export interface UserNetworkListResponse {
     action: 'deny' | 'allow',
     needs2FA?: boolean,
     needsIp?: boolean,
+    whyNeedsIp?: string;
     needsGateway?: boolean;
     needsTime?: boolean;
     needsDevicePosture?: boolean;
+    whyNeedsDevicePosture?: string;
 
 }
 
@@ -321,7 +323,7 @@ export class PolicyService {
 
         if (!clientDp.macs?.length) return false;
 
-        if (dp.macList.some(x => clientDp.macs.map(y => y.toLowerCase()).some(y => y == x.value.toLowerCase()))) return true;
+        if (dp.macList.some(x => clientDp.macs.map(y => y.toLowerCase()).some(y => y.trim() == x.value.toLowerCase().trim()))) return true;
         return false;
 
     }
@@ -331,7 +333,7 @@ export class PolicyService {
 
         if (!clientDp.serial?.value) return false;
 
-        if (dp.serialList.some(x => clientDp.serial.value == x.value)) return true;
+        if (dp.serialList.some(x => clientDp.serial.value.trim() == x.value.trim())) return true;
         return false;
 
     }
@@ -345,16 +347,20 @@ export class PolicyService {
         for (const file of dp.filePathList) {
             for (const cfile of clientDp.files) {
                 if (cfile.path.toLowerCase().includes(file.path.toLowerCase())) {
-                    if (!file.sha256)
+                    if (!file.sha256) {
                         founded++
+                        break;
+                    }
                     else
-                        if (cfile.sha256 == file.sha256)
+                        if (cfile.sha256 == file.sha256) {
                             founded++;
+                            break;
+                        }
                 }
             }
         }
         //if all items founded
-        if (founded == dp.filePathList.length) return true;
+        if (founded >= dp.filePathList.length) return true;
         return false;
 
     }
@@ -368,16 +374,20 @@ export class PolicyService {
         for (const file of dp.processList) {
             for (const cfile of clientDp.processes) {
                 if (cfile.path.toLowerCase().includes(file.path.toLowerCase())) {
-                    if (!file.sha256)
+                    if (!file.sha256) {
                         founded++
+                        break;
+                    }
                     else
-                        if (cfile.sha256 == file.sha256)
+                        if (cfile.sha256 == file.sha256) {
                             founded++;
+                            break;
+                        }
                 }
             }
         }
         //if all items founded
-        if (founded == dp.processList.length) return true;
+        if (founded >= dp.processList.length) return true;
         return false;
 
     }
@@ -393,11 +403,12 @@ export class PolicyService {
             for (const cfile of clientDp.registries) {
                 if (cfile.path == file.path && cfile.key == file.key) {
                     founded++;
+                    break;
                 }
             }
         }
         //if all items founded
-        if (founded == dp.registryList.length) return true;
+        if (founded >= dp.registryList.length) return true;
         return false;
 
     }
@@ -426,7 +437,7 @@ export class PolicyService {
 
         for (const dp of filteredDevicePostures) {
             if (dp.os != clientDp.platform) {
-                follow = { errorNumber: PolicyAuthnErrors.DevicePostureOsTypeNotAllowed, error: ErrorCodesInternal.ErrDevicePostureOsTypeNotAllowed }
+                //follow = { errorNumber: PolicyAuthnErrors.DevicePostureOsTypeNotAllowed, error: ErrorCodesInternal.ErrDevicePostureOsTypeNotAllowed }
                 continue;
             }
             if (!await this.isDevicePostureClientVersionAllowed(clientDp, dp)) {
@@ -473,7 +484,12 @@ export class PolicyService {
         }
 
         //no rule matched
-        return { result: false, errorNumber: follow.errorNumber, error: follow.error };
+
+        return {
+            result: false,
+            errorNumber: follow.error ? follow.errorNumber : PolicyAuthnErrors.DevicePostureOsTypeNotAllowed,
+            error: follow.error ? follow.error : ErrorCodesInternal.ErrDevicePostureOsTypeNotAllowed
+        };
 
 
 
@@ -600,11 +616,11 @@ export class PolicyService {
      * @summary find networks that user can connect or why not connect
      * @returns 
      */
-    async userNetworks(user: User, session: AuthSession, clientIp: string) {
+    async userNetworks(user: User, session: AuthSession, clientIp: string, cliendDP?: ClientDevicePosture) {
 
         this.errorNumber = 0;
         let result: UserNetworkListResponse[] = [];
-
+        let resultMap: Map<string, UserNetworkListResponse> = new Map();
         const networks = await this.configService.getNetworksAll();
         const devicePostures = await this.configService.getDevicePosturesAll();
         const policy = await this.configService.getAuthenticationPolicy();
@@ -631,16 +647,18 @@ export class PolicyService {
                 let f3 = await this.isIpIntelligenceAllowed(rule, session, clientIp);
 
                 let f4 = await this.isTimeAllowed(rule);
-                let f5 = await this.isDevicePostureAllowed(rule, session, devicePostures);
+                let f5 = await this.isDevicePostureAllowed(rule, session, devicePostures, cliendDP);
 
                 if (f1 && f2 && f3.result && f4 && f5.result) {
 
                     const gateways = await this.configService.getGatewaysByNetworkId(network.id);
                     if (!gateways.find(x => x.isEnabled)) {
                         result.push({ network: network, action: 'deny', needsGateway: true });
-                    } else
+                    } else {
                         result.push({ network: network, action: 'allow', })
-                    break
+                    }
+                    resultMap.set(network.id, result[result.length - 1]);// if allowed ok
+                    break;
 
 
                 } else if (f1) {
@@ -650,15 +668,18 @@ export class PolicyService {
                             action: 'deny',
                             needs2FA: !f2,
                             needsIp: !f3.result,
+                            whyNeedsIp: f3.error,
                             needsTime: !f4,
-                            needsDevicePosture: !f5.result
+                            needsDevicePosture: !f5.result,
+                            whyNeedsDevicePosture: f5.error
                         });
-                    break;
+                    resultMap.set(network.id, result[result.length - 1]);// if deny, set last deny
+                    //break; dont break
                 }
             }
         }
 
-        return result;
+        return Array.from(resultMap.values());
 
 
     }

@@ -16,6 +16,8 @@ export interface DeviceLog {
     hasAntivirus: boolean;
     isHealthy: boolean;
     whyNotHealthy?: string;
+    networkdId?: string;
+    networkName?: string;
 }
 /// data from client
 export interface ClientDevicePosture {

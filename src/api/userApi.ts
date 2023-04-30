@@ -18,7 +18,7 @@ import { UtilPKI } from "../utilPKI";
 import { cursorTo } from "readline";
 import { SSLCertificate, SSLCertificateBase } from "../model/cert";
 import { ConfigService } from "../service/configService";
-import { ClientDevicePosture } from "../model/device";
+import { ClientDevicePosture, DeviceLog } from "../model/device";
 
 
 
@@ -332,16 +332,36 @@ routerUserAuthenticated.get('/current/network',
         const sessionService = appService.sessionService;
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
+        const deviceService = appService.deviceService;
 
 
-        const networks = await policyService.userNetworks(currentUser, currentSession, currentSession?.ip);
+        const session = req.currentSession as AuthSession;
+        //device log 
+        let deviceLog: DeviceLog | null = null;
+        let devicePosture = await deviceService.getDevicePosture(session.deviceId || '');
+        if (devicePosture)
+            deviceLog = await deviceService.convertDevicePostureToDeviceLog(devicePosture, currentUser, undefined);
+
+        const networks = await policyService.userNetworks(currentUser, currentSession, currentSession?.ip, devicePosture);
         const results = networks.map(x => {
             return {
                 id: x.network.id, name: x.network.name,
-                action: x.action, needs2FA: x.needs2FA, needsIp: x.needsIp,
+                action: x.action, needs2FA: x.needs2FA,
+                needsIp: x.needsIp,
+                needsDevicePosture: x.needsDevicePosture,
                 sshHost: x.network.sshHost,
             }
         })
+        //save device log
+        if (deviceLog) {
+            for (const result of networks) {
+                deviceLog.networkdId = result.network.id;
+                deviceLog.networkName = result.network.name;
+                deviceLog.isHealthy = result.whyNeedsDevicePosture ? false : true;
+                deviceLog.whyNotHealthy = result.whyNeedsDevicePosture;
+                await deviceService.save(deviceLog);
+            }
+        }
 
         return res.status(200).json({ items: results });
 

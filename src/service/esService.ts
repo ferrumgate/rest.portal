@@ -1475,7 +1475,15 @@ export class ESService {
                             whyNotHealthy: {
                                 type: "keyword",
 
-                            }
+                            },
+                            networkId: {
+                                type: "keyword"
+
+                            },
+                            networkName: {
+                                type: "keyword"
+
+                            },
 
                         }
 
@@ -1543,7 +1551,7 @@ export class ESService {
             let item = {
                 query_string: {
                     query: `${req.search}`,
-                    fields: ['id', "hostname", "osName", "osVersion", "macs", "serial", "platform", "clientVersion", "userId", "username"]
+                    fields: ['id', "hostname", "osName", "osVersion", "macs", "serial", "platform", "clientVersion", "userId", "username", "networkId", "networkName"]
                 }
             }
             request.body.query.bool.must.push(item as never);

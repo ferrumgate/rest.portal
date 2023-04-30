@@ -12,7 +12,7 @@ import { RBACDefault } from "../model/rbac";
 import { authorizeAsAdmin } from "./commonApi";
 import { cloneGroup, Group } from "../model/group";
 import { AuthenticationRule, cloneAuthenticationRule } from "../model/authenticationPolicy";
-import { cloneAuthenticatonProfile } from "../model/authenticationProfile";
+import { cloneAuthenticationProfile } from "../model/authenticationProfile";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { cloneAuthorizationRule } from "../model/authorizationPolicy";
 import { AuthSession } from "../model/authSession";

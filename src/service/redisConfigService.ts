@@ -1817,6 +1817,7 @@ export class RedisConfigService extends ConfigService {
 
         cfg.ipIntelligence.sources = await this.rGetAll('ipIntelligence/sources');
         cfg.ipIntelligence.lists = await this.rGetAll('ipIntelligence/lists');
+        cfg.devicePostures = await this.rGetAll('devicePostures');
 
     }
 
@@ -2138,9 +2139,10 @@ export class RedisCachedConfigService extends RedisConfigService {
                     case 'caSSLCertificate':
                         this.nodeCache.del('caSSLCertificate');
                         break;
-                    case 'devicePostures':
-                        this.nodeCache.del('devicePostures');
-                        break;
+                    //this is possible 
+                    /*                     case 'devicePostures':
+                                            this.nodeCache.del('devicePostures');
+                                            break; */
                     default:
                         logger.warn(`not implemented path ${item.path}`)
                 }
@@ -2241,16 +2243,13 @@ export class RedisCachedConfigService extends RedisConfigService {
         this.nodeCache.set("caSSLCertificate", sup);
         return sup;
     }
-
-    override async getDevicePosturesAll(): Promise<DevicePosture[]> {
-        const val = this.nodeCache.get<DevicePosture[]>('devicePostures');
-        if (val) return val;
-        const sup = await super.getDevicePosturesAll()
-        this.nodeCache.set("devicePostures", sup);
-        return sup;
-    }
-
-
+    /*     override async getDevicePosturesAll(): Promise<DevicePosture[]> {
+            const val = this.nodeCache.get<DevicePosture[]>('devicePostures');
+            if (val) return val;
+            const sup = await super.getDevicePosturesAll()
+            this.nodeCache.set("devicePostures", sup);
+            return sup;
+        } */
 
 
 

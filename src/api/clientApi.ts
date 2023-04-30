@@ -86,7 +86,7 @@ routerClientTunnelAuthenticated.post('/',
         let network: Network | undefined;
         let devicePosture: ClientDevicePosture | undefined;
         let appService: AppService | undefined;
-        let deviceLog: DeviceLog | undefined;
+        //let deviceLog: DeviceLog | undefined;
         try {
             appService = req.appService as AppService;
             const configService = appService.configService;
@@ -106,8 +106,8 @@ routerClientTunnelAuthenticated.post('/',
             attachActivityTunnel(req, { id: tunnelKey } as Tunnel);
 
             devicePosture = await deviceService.getDevicePosture(session.deviceId || '');
-            if (devicePosture)
-                deviceLog = await deviceService.convertDevicePostureToDeviceLog(devicePosture, user.id || '', user.username || '');
+            //if (devicePosture)
+            //    deviceLog = await deviceService.convertDevicePostureToDeviceLog(devicePosture, user, undefined);
 
             await inputService.checkIfExists(tunnelKey);
             await inputService.checkStringLength(tunnelKey, 63);
@@ -121,6 +121,12 @@ routerClientTunnelAuthenticated.post('/',
                 if (gateway?.networkId)
                     network = await configService.getNetwork(gateway?.networkId);
             }
+            /*             //set extra data
+                        if (deviceLog) {
+                            deviceLog.networkdId = network?.id;
+                            deviceLog.networkName = network?.name;
+                        } */
+
 
             HelperService.isValidUser(user);
             HelperService.isValidSession(session);
@@ -130,8 +136,8 @@ routerClientTunnelAuthenticated.post('/',
             const rule = await policyService.authenticate(user, session, tunnel, devicePosture);
             tunnel = await tunnelService.createTunnel(user, tunnelKey, session);
 
-            if (deviceLog)
-                await deviceService.save(deviceLog);
+            //if (deviceLog)
+            //    await deviceService.save(deviceLog);
             await systemlogService.write({ path: '/system/tunnels/create', type: 'put', val: tunnel });
             attachActivityTunnel(req, tunnel);
 
@@ -150,7 +156,7 @@ routerClientTunnelAuthenticated.post('/',
         } catch (err: any) {
 
 
-            //try to save device posture
+            /* //try to save device posture
             if (deviceLog && appService)
                 try {
                     deviceLog.isHealthy = false;
@@ -158,7 +164,7 @@ routerClientTunnelAuthenticated.post('/',
                     await appService.deviceService.save(deviceLog);
                 } catch (ignore) {
                     console.log(ignore);
-                }
+                } */
 
             await saveActivityError(req, 'create tunnel', err, (log) => {
                 log.gatewayId = gateway?.id;

@@ -4,6 +4,9 @@ import { ConfigService } from "./configService";
 import { ESService, SearchDeviceLogsRequest } from "./esService";
 import { RedisService } from "./redisService";
 import { logger } from "../common";
+import { User } from "../model/user";
+import { Network } from "../model/network";
+
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /**
  * 
@@ -30,11 +33,11 @@ export class DeviceService {
         const key = `/device/posture/id/${id}`;
         await this.redisService.expire(key, 5 * 60 * 1000);
     }
-    async convertDevicePostureToDeviceLog(item: ClientDevicePosture, userId: string, username: string) {
+    async convertDevicePostureToDeviceLog(item: ClientDevicePosture, user?: User, network?: Network) {
         let device: DeviceLog = {
             id: item.clientId,
             clientVersion: item.clientVersion || '',
-            clientSha256: item.clientVersion || '',
+            clientSha256: item.clientSha256 || '',
             insertDate: new Date().toISOString(),
             hostname: item.hostname,
             osName: item.os.name || '',
@@ -42,8 +45,10 @@ export class DeviceService {
             macs: item.macs?.join(',') || '',
             serial: item.serial.value || '',
             platform: item.platform,
-            userId: userId,
-            username: username,
+            userId: user?.id || '',
+            username: user?.username || '',
+            networkdId: network?.id,
+            networkName: network?.name,
             hasEncryptedDisc: item.encryptedDiscs.find(x => x.isEncrypted) ? true : false,
             hasFirewall: item.firewalls.find(x => x.isEnabled) ? true : false,
             hasAntivirus: item.antiviruses.find(x => x.isEnabled) ? true : false,

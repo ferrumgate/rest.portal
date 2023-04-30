@@ -137,7 +137,7 @@ export interface AuthenticationProfile {
 
 }
 
-export function cloneAuthenticatonProfile(pr: AuthenticationProfile): AuthenticationProfile {
+export function cloneAuthenticationProfile(pr: AuthenticationProfile): AuthenticationProfile {
 
     return {
         is2FA: pr.is2FA,

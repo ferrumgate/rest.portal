@@ -1078,6 +1078,34 @@ describe('policyService ', async () => {
         expect(result[0].needs2FA).to.be.false;
         expect(result[0].needsIp).to.be.false;
         expect(result[0].needsTime).to.be.true;
+        expect(result[0].needsDevicePosture).to.be.false;
+
+
+
+        // 2fa is true, all ips are in blacklist, only 1.1.1.1 is in whitelist but time is ok, device posture problem 
+        session.is2FA = true;
+        rule.profile.ipIntelligence = { isCrawler: true, isHosting: true, isProxy: true, blackLists: [list1.id], whiteLists: [list2.id] };
+
+        rule.profile.times = [];
+        let posture1: DevicePosture = {
+            id: 'posture1',
+            name: 'norhtinged',
+            isEnabled: true,
+            labels: [],
+            os: 'win32',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+
+        }
+        configService.saveDevicePosture(posture1);
+        rule.profile.device = { postures: ['posture1'] }
+        result = await policyService.userNetworks({ id: 'someid', groupIds: ['somegroupid'] } as any, session, session.ip);
+        expect(result.length).to.be.equal(1);
+        expect(result[0].needs2FA).to.be.false;
+        expect(result[0].needsIp).to.be.false;
+        expect(result[0].needsTime).to.be.false;
+        expect(result[0].needsDevicePosture).to.be.true;
 
 
 
@@ -1338,6 +1366,7 @@ describe('policyService ', async () => {
         expect(await policy.isDevicePostureSerialAllowed({} as any, { serialList: [{}] } as any)).to.be.false
 
         expect(await policy.isDevicePostureSerialAllowed({ platform: 'win32', serial: { value: '123' } } as any, { serialList: [{ value: '123' }, { value: '1234' }] } as any)).to.be.true;
+        expect(await policy.isDevicePostureSerialAllowed({ platform: 'win32', serial: { value: '123' } } as any, { serialList: [{ value: '123' }, { value: '1234' }] } as any)).to.be.true;
 
         expect(await policy.isDevicePostureSerialAllowed({ platform: 'win32', serial: { value: '12345' } } as any, { serialList: [{ value: '123' }, { value: '1234' }] } as any)).to.be.false;
 
@@ -1386,7 +1415,7 @@ describe('policyService ', async () => {
 
         expect(await policy.isDevicePostureProcessAllowed({ processes: [{ path: 'test' }] } as any, { processList: [{ path: 'test' }] } as any)).to.be.true
         expect(await policy.isDevicePostureProcessAllowed({ processes: [{ path: 'test' }] } as any, { processList: [{ path: 'test', sha256: 'a' }] } as any)).to.be.false
-        expect(await policy.isDevicePostureProcessAllowed({ processes: [{ path: 'test', sha256: 'a' }] } as any, { processList: [{ path: 'test', sha256: 'a' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureProcessAllowed({ processes: [{ path: 'test', sha256: 'a' }] } as any, { processList: [{ path: 'test', }] } as any)).to.be.true
         expect(await policy.isDevicePostureProcessAllowed({ processes: [{ path: 'test', sha256: 'a' }] } as any, { processList: [{ path: 'test', sha256: 'a' }, { path: 'b' }] } as any)).to.be.false
 
     })
