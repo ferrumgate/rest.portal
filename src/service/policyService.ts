@@ -425,7 +425,7 @@ export class PolicyService {
         if (!devicePostures || !devicePostures.length) return { result: true }
 
         //lookup list
-        const filteredDevicePostures = devicePostures.filter(x => rule.profile.device?.postures.includes(x.id));
+        const filteredDevicePostures = devicePostures.filter(x => x.isEnabled).filter(x => rule.profile.device?.postures.includes(x.id));
         // no target list, allowed
         if (!filteredDevicePostures.length) return { result: true }
 

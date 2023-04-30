@@ -74,7 +74,7 @@ export class ExpressApp {
 
 
         this.app.use(helmet.default({
-            /* contentSecurityPolicy: {
+            contentSecurityPolicy: {
                 directives: {
                     "default-src": ["'self'"],
                     "base-uri": ["'self'"],
@@ -89,8 +89,7 @@ export class ExpressApp {
                     "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com"],
                     'upgrade-insecure-requests': null
                 }
-            }, */
-            contentSecurityPolicy: false,
+            },
             hsts: false,
         }));
 
@@ -169,7 +168,10 @@ export class ExpressApp {
         //middlewares
         this.app.use(bodyParser.json({ limit: '50mb' }));
         this.app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-
+        this.app.use((req: any, res: any, next: any) => {
+            res.setHeader('server', 'ferrumgate')
+            next();
+        });
 
 
 
@@ -505,6 +507,11 @@ export class ExpressApp {
             https: false, memoizeHost: true,
             preserveHostHdr: true,
             timeout: 10000,
+            userResHeaderDecorator(headers, userReq, userRes, proxyReq, proxyRes) {
+                // recieves an Object of headers, returns an Object of headers.
+                headers['server'] = 'ferrumgate'
+                return headers;
+            },
             proxyErrorHandler: function (err, res, next) {
                 next(err);
             }
