@@ -19,11 +19,11 @@ const name = 'auth0'
 export function samlAuth0Init(saml: BaseSaml, url: string) {
     //const google = auth.oauth?.providers.find(x => x.type == 'google')
     passport.use(name, new samlAuth.Strategy({
-        path: `/api/auth/saml/auth0/callback`,
         entryPoint: saml.loginUrl,
         issuer: saml.issuer,
         cert: prepareCert(saml.cert),
         passReqToCallback: true,
+        callbackUrl: `${url}/api/auth/saml/auth0/callback`
 
 
     },
