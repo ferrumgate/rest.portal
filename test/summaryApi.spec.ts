@@ -93,7 +93,7 @@ describe('summaryApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/config`)
+                .get(`/api/summary/config`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -123,7 +123,7 @@ describe('summaryApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/config`)
+                .get(`/api/summary/config`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -148,7 +148,7 @@ describe('summaryApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/active`)
+                .get(`/api/summary/active`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -173,7 +173,7 @@ describe('summaryApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/active`)
+                .get(`/api/summary/active`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -199,7 +199,7 @@ describe('summaryApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/logintry`)
+                .get(`/api/summary/logintry`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -222,7 +222,7 @@ describe('summaryApi', async () => {
         //prepare data
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/createtunnel`)
+                .get(`/api/summary/createtunnel`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -244,7 +244,7 @@ describe('summaryApi', async () => {
         //prepare data
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/2facheck`)
+                .get(`/api/summary/2facheck`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -268,7 +268,7 @@ describe('summaryApi', async () => {
         //prepare data
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/userloginsuccess`)
+                .get(`/api/summary/userloginsuccess`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -291,7 +291,7 @@ describe('summaryApi', async () => {
         //prepare data
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/userloginfailed`)
+                .get(`/api/summary/userloginfailed`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -314,7 +314,7 @@ describe('summaryApi', async () => {
         //prepare data
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/user/logintry`)
+                .get(`/api/summary/user/logintry`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -338,7 +338,7 @@ describe('summaryApi', async () => {
         //prepare data
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/summary/user/logintryhours`)
+                .get(`/api/summary/user/logintryhours`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)

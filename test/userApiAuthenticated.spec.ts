@@ -12,6 +12,8 @@ import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { ExpressApp } from '../src';
 import { SSLCertificate } from '../src/model/cert';
 import { RBACDefault } from '../src/model/rbac';
+import { DevicePosture } from '../src/model/authenticationProfile';
+import { ClientDevicePosture } from '../src/model/device';
 
 
 
@@ -77,7 +79,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/user/current')
+                .get('/api/user/current')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -105,7 +107,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/user/${user.id}`)
+                .get(`/api/user/${user.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -216,7 +218,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/user?search=hamza&page=0&pageSize=2`)
+                .get(`/api/user?search=hamza&page=0&pageSize=2`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -251,7 +253,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/user?isVerified=yes&is2FA=yes&isEmailVerified=yes&isLocked=true`)
+                .get(`/api/user?isVerified=yes&is2FA=yes&isEmailVerified=yes&isLocked=true`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -285,7 +287,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/user/${user1.id}`)
+                .delete(`/api/user/${user1.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -340,7 +342,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/user`)
+                .put(`/api/user`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(user1)
                 .end((err, res) => {
@@ -445,7 +447,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/user/current/network`)
+                .get(`/api/user/current/network`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -461,6 +463,179 @@ describe('userApiAuthenticated', async () => {
 
 
     }).timeout(50000);
+
+
+
+    it('GET /user/current/device/posture/parameters will return 200', async () => {
+        //prepare data
+        const user = getSampleUser();
+        await appService.configService.saveUser(user);
+
+        const group: Group = {
+            id: 'group1', name: 'group1', isEnabled: true, labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+        await appService.configService.saveGroup(group);
+
+
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+
+        appService.configService.config.authenticationPolicy.rules = [];
+
+        const net: Network = {
+            id: '1ksfasdfasf',
+            name: 'somenetwork',
+            labels: [],
+            serviceNetwork: '100.64.0.0/16',
+            clientNetwork: '192.168.0.0/24',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            isEnabled: true
+        }
+        const gateway: Gateway = {
+            id: '123kasdfa',
+            name: 'aserver',
+            labels: [],
+            networkId: net.id,
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+
+
+        appService.configService.config.networks = [net];
+        appService.configService.config.gateways = [gateway];
+        appService.configService.config.devicePostures = [
+            {
+                id: '11231313', insertDate: new Date().toISOString(),
+                updateDate: new Date().toISOString(),
+                isEnabled: true, labels: [], name: 'windows 10', os: 'win32',
+                filePathList: [{ path: 'c:\\test' }],
+                registryList: [{ path: 'test', key: 'test' }],
+                processList: [{ path: 'aboo' }]
+
+            },
+            {
+                id: '11231344', insertDate: new Date().toISOString(),
+                updateDate: new Date().toISOString(),
+                isEnabled: true, labels: [], name: 'windows 10', os: 'win32',
+                filePathList: [{ path: 'c:\\test2' }],
+                registryList: [{ path: 'test2', key: 'test2' }],
+                processList: [{ path: 'aboo' }]
+
+            }
+        ]
+
+        //rule drop
+        let rule: AuthenticationRule = {
+            id: Util.randomNumberString(),
+            name: "zero trust",
+            networkId: net.id,
+            userOrgroupIds: ['someid'],
+            profile: {
+                is2FA: false,
+                blackListIps: [],
+                whiteListIps: [],
+                device: { postures: ['11231313', '11231344'] }
+
+            },
+            isEnabled: true,
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString()
+
+
+        }
+        appService.configService.config.authenticationPolicy.rules = [rule];
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/api/user/current/device/posture/parameters`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        const result = response.body;
+        expect(result.items.length).to.equal(5);
+
+
+
+    }).timeout(50000);
+
+
+    it('POST /user/current/device/posture will return 200', async () => {
+        //prepare data
+        const user = getSampleUser();
+        await appService.configService.saveUser(user);
+
+        const group: Group = {
+            id: 'group1', name: 'group1', isEnabled: true, labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+        await appService.configService.saveGroup(group);
+
+
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+
+
+        const posture: ClientDevicePosture = {
+            clientId: Util.randomNumberString(16),
+            antiviruses: [],
+            clientSha256: '',
+            clientVersion: '12',
+            encryptedDiscs: [],
+            files: [],
+            firewalls: [],
+            hostname: '',
+            macs: [],
+            memory: { total: 1, free: 1 },
+            os: { name: '', version: '' },
+            platform: 'linux',
+            processes: [],
+            processSearch: [],
+            registries: [],
+            serial: { value: '' }
+
+        }
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/api/user/current/device/posture`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(posture)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        const result = response.body;
+        expect(result).exist;
+
+
+
+    }).timeout(50000);
+
+
 
     function createSampleData22() {
 
@@ -495,7 +670,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/user/current/2fa/rekey`)
+                .get(`/api/user/current/2fa/rekey`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -522,7 +697,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/user/current/2fa`)
+                .get(`/api/user/current/2fa`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -553,7 +728,7 @@ describe('userApiAuthenticated', async () => {
         //dont change anything
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/user/current/2fa`)
+                .put(`/api/user/current/2fa`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ is2FA: false })
                 .end((err, res) => {
@@ -570,7 +745,7 @@ describe('userApiAuthenticated', async () => {
         token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/user/current/2fa`)
+                .get(`/api/user/current/2fa`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -587,7 +762,7 @@ describe('userApiAuthenticated', async () => {
         token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/user/current/2fa`)
+                .put(`/api/user/current/2fa`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ is2FA: true, key: rkey, token: t2token })
                 .end((err, res) => {
@@ -616,7 +791,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/user/current/pass`)
+                .put(`/api/user/current/pass`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ oldPass: 'Test123456', newPass: 'Test12345678' })
                 .end((err, res) => {
@@ -651,7 +826,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/user/${user.id}/sensitiveData?apiKey=true&cert=true`)
+                .get(`/api/user/${user.id}/sensitiveData?apiKey=true&cert=true`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -672,7 +847,7 @@ describe('userApiAuthenticated', async () => {
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/user/${user.id}/sensitiveData?apiKey=true`)
+                .get(`/api/user/${user.id}/sensitiveData?apiKey=true`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -691,7 +866,7 @@ describe('userApiAuthenticated', async () => {
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/user/${user.id}/sensitiveData?cert=true`)
+                .get(`/api/user/${user.id}/sensitiveData?cert=true`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -724,7 +899,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/user/${user.id}/sensitiveData`)
+                .put(`/api/user/${user.id}/sensitiveData`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ apiKey: { key: 'newkey' } })
                 .end((err, res) => {
@@ -744,7 +919,7 @@ describe('userApiAuthenticated', async () => {
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/user/${user.id}/sensitiveData`)
+                .put(`/api/user/${user.id}/sensitiveData`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ cert: { publicCrt: 'newkey', parentId: inCerts.find(x => x.category == 'auth')?.id } })
                 .end((err, res) => {
@@ -780,7 +955,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/user/${user.id}/sensitiveData?apiKey=true&cert=true`)
+                .delete(`/api/user/${user.id}/sensitiveData?apiKey=true&cert=true`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -829,7 +1004,7 @@ describe('userApiAuthenticated', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/user?cert=true`)
+                .post(`/api/user?cert=true`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(user)
                 .end((err, res) => {

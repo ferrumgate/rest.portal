@@ -34,6 +34,7 @@ import { routerDataAuthenticated } from "./api/dataApi";
 import { routerPKIAuthenticated } from "./api/pkiApi";
 import path from "path";
 import proxy from 'express-http-proxy';
+import { routerDeviceAuthenticated, routerInsightsDeviceAuthenticated } from "./api/deviceApi";
 
 
 const bodyParser = require('body-parser');
@@ -73,8 +74,23 @@ export class ExpressApp {
 
 
         this.app.use(helmet.default({
-            contentSecurityPolicy: false,
-            hsts: false
+            contentSecurityPolicy: {
+                directives: {
+                    "default-src": ["'self'"],
+                    "base-uri": ["'self'"],
+                    "font-src": ["'self'", "https:", "data:"],
+                    "form-action": ["'self'"],
+                    "frame-ancestors": ["'self'"],
+                    "img-src": ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
+                    "object-src": ["'none'"],
+                    "script-src": ["'self'", "'unsafe-inline'", "https://*.googletagmanager.com"],
+                    "script-src-attr": ["'self'", "'unsafe-inline'"],
+                    "style-src": ["'self'", "https:", "'unsafe-inline'"],
+                    "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com"],
+                    'upgrade-insecure-requests': null
+                }
+            },
+            hsts: false,
         }));
 
         const setAppService = async (req: any, res: any, next: any) => {
@@ -152,7 +168,10 @@ export class ExpressApp {
         //middlewares
         this.app.use(bodyParser.json({ limit: '50mb' }));
         this.app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-
+        this.app.use((req: any, res: any, next: any) => {
+            res.setHeader('server', 'ferrumgate')
+            next();
+        });
 
 
 
@@ -412,6 +431,16 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkLimitedMode),
             routerActivityAuthenticated);
 
+        this.app.use('/api/insight/device',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'insightDevice', 1000),
+            asyncHandlerWithArgs(rateLimit, 'insightDeviceHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'insightDeviceDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'insightDeviceCaptcha', 50),
+            asyncHandlerWithArgs(checkLimitedMode),
+            routerInsightsDeviceAuthenticated);
+
 
         this.app.use('/api/summary',
             asyncHandler(setAppService),
@@ -453,6 +482,16 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerPKIAuthenticated);
 
+        this.app.use('/api/device',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'device', 1000),
+            asyncHandlerWithArgs(rateLimit, 'deviceHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'deviceDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'deviceCaptcha', 50),
+            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
+            routerDeviceAuthenticated);
+
 
         this.app.use('/api/*', function (req: any, res: any) {
             res.status(404).send('not found')
@@ -468,6 +507,11 @@ export class ExpressApp {
             https: false, memoizeHost: true,
             preserveHostHdr: true,
             timeout: 10000,
+            userResHeaderDecorator(headers, userReq, userRes, proxyReq, proxyRes) {
+                // recieves an Object of headers, returns an Object of headers.
+                headers['server'] = 'ferrumgate'
+                return headers;
+            },
             proxyErrorHandler: function (err, res, next) {
                 next(err);
             }
@@ -561,10 +605,5 @@ if (!process.env.NODE_TEST) {
         process.exit(1);
     })
 }
-
-
-
-
-
 
 

@@ -75,7 +75,7 @@ describe('userApiInvite', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/invite')
+                .post('/api/user/invite')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ emails: ['test@ferrumgate.com'] })
                 .end((err, res) => {
@@ -109,7 +109,7 @@ describe('userApiInvite', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/invite')
+                .post('/api/user/invite')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ emails: ['test@ferrumgate.com'] })
                 .end((err, res) => {
@@ -142,7 +142,7 @@ describe('userApiInvite', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/invite')
+                .post('/api/user/invite')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ emails: ['test@ferrumgate.com'] })
                 .end((err, res) => {
@@ -179,7 +179,7 @@ describe('userApiInvite', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/invite')
+                .post('/api/user/invite')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ emails: ['test@ferrumgate.com', 'test2@ferrumgate.com'] })
                 .end((err, res) => {
@@ -204,7 +204,7 @@ describe('userApiInvite', async () => {
  
          let response: any = await new Promise((resolve: any, reject: any) => {
              chai.request(app)
-                 .post('/user/confirmemail?key=deneme')
+                 .post('/api/user/confirmemail?key=deneme')
                  .end((err, res) => {
                      if (err)
                          reject(err);
@@ -226,7 +226,7 @@ describe('userApiInvite', async () => {
  
          let response: any = await new Promise((resolve: any, reject: any) => {
              chai.request(app)
-                 .post('/user/confirmemail?key=deneme')
+                 .post('/api/user/confirmemail?key=deneme')
                  .end((err, res) => {
                      if (err)
                          reject(err);

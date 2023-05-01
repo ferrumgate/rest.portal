@@ -307,6 +307,7 @@ routerAuth.post('/refreshtoken',
             const redisService = appService.redisService;
             const oauth2Service = appService.oauth2Service;
             const sessionService = appService.sessionService;
+            const deviceService = appService.deviceService;
             const systemlogService = appService.systemLogService;
             const request = req.body as { refreshToken: string };
             if (!request.refreshToken) {
@@ -348,6 +349,10 @@ routerAuth.post('/refreshtoken',
                 throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrSessionNotFound, "not authenticated");
 
             await sessionService.setSession(sid, { lastSeen: new Date().toISOString() })
+            //device posture must alive
+            if (authSession.deviceId) {
+                await deviceService.aliveDevicePosture(authSession.deviceId);
+            }
             await sessionService.setExpire(sid);
             await systemlogService.write({ path: '/system/sessions/alive', type: 'put', val: authSession });
 

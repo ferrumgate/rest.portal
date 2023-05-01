@@ -125,7 +125,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/policy/authn/rule/${rule1.id}`)
+                .get(`/api/policy/authn/rule/${rule1.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -153,7 +153,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/policy/authn`)
+                .get(`/api/policy/authn`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -184,7 +184,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/policy/authn/rule/${rule2.id}`)
+                .get(`/api/policy/authn/rule/${rule2.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -215,7 +215,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/policy/authn/rule/absentId`)
+                .get(`/api/policy/authn/rule/absentId`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -248,7 +248,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/policy/authn/rule/${rule2.id}`)
+                .delete(`/api/policy/authn/rule/${rule2.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -279,7 +279,7 @@ describe('policy', async () => {
         rule2.name = 'test';
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/policy/authn/rule`)
+                .put(`/api/policy/authn/rule`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(rule2)
                 .end((err, res) => {
@@ -317,7 +317,7 @@ describe('policy', async () => {
         rule2.name = 'test';
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/policy/authn/rule`)
+                .post(`/api/policy/authn/rule`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(rule1)
                 .end((err, res) => {
@@ -353,7 +353,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/policy/authn/rule/pos/${rule1.id}`)
+                .put(`/api/policy/authn/rule/pos/${rule1.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ previous: 0, current: 2, pivot: rule3.id })
                 .end((err, res) => {
@@ -466,7 +466,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/policy/authz/rule/${rule1.id}`)
+                .get(`/api/policy/authz/rule/${rule1.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -495,7 +495,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/policy/authz`)
+                .get(`/api/policy/authz`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -527,7 +527,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/policy/authz/rule/${rule2.id}`)
+                .get(`/api/policy/authz/rule/${rule2.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -559,7 +559,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/policy/authn/rule/absentId`)
+                .get(`/api/policy/authn/rule/absentId`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -592,7 +592,7 @@ describe('policy', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/policy/authz/rule/${rule2.id}`)
+                .delete(`/api/policy/authz/rule/${rule2.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -623,7 +623,7 @@ describe('policy', async () => {
         rule2.name = 'test';
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/policy/authz/rule`)
+                .put(`/api/policy/authz/rule`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(rule2)
                 .end((err, res) => {
@@ -661,7 +661,7 @@ describe('policy', async () => {
         rule2.name = 'test';
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/policy/authz/rule`)
+                .post(`/api/policy/authz/rule`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(rule1)
                 .end((err, res) => {

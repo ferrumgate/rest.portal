@@ -24,6 +24,7 @@ import { IpIntelligenceCountryList, IpIntelligenceFilterCategory, IpIntelligence
 import IPCIDR from "ip-cidr";
 import { DomainIntelligenceBWItem, DomainIntelligenceSource } from "../model/domainIntelligence";
 import { UtilPKI } from "../utilPKI";
+import { DevicePosture } from "../model/authenticationProfile";
 
 
 
@@ -155,7 +156,8 @@ export class ConfigService {
             ipIntelligence: {
                 sources: [],
                 lists: []
-            }
+            },
+            devicePostures: []
 
         }
     }
@@ -1891,6 +1893,112 @@ export class ConfigService {
         return this.createTrackEvent(source)
 
     }
+
+    ///// device postures
+    async getDevicePosture(id: string): Promise<DevicePosture | undefined> {
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.devicePostures.find(x => x.id == id));
+
+    }
+    async getDevicePostureCount() {
+        this.isReady(); this.isReadable();
+        return this.config.devicePostures.length;
+    }
+
+    async getDevicePosturesBySearch(query: string) {
+        this.isReady(); this.isReadable();
+        const search = query.toLowerCase();
+        const devicePostures = this.config.devicePostures.filter(x => {
+            if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(search)))
+                return true;
+            if (x.name?.toLowerCase().includes(search))
+                return true;
+
+            return false;
+        });
+        return devicePostures.map(x => this.clone(x));
+    }
+    async getDevicePosturesAll() {
+        this.isReady(); this.isReadable();
+        return this.config.devicePostures.map(x => this.clone(x));
+    }
+
+
+    protected async triggerDeleteDevicePosture(dposture: DevicePosture) {
+
+
+        //check policy authentication
+
+        let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
+        this.config.authenticationPolicy.rules.forEach(x => {
+            if (x.profile.device?.postures) {
+                const postureIndex = x.profile.device?.postures.findIndex(x => x == dposture.id);
+                if (postureIndex >= 0) {
+                    let cloned = this.clone(x);
+                    x.profile.device.postures.splice(postureIndex, 1);
+
+                    rulesAuthnChanged.push({ previous: cloned, item: x });
+                }
+            }
+        })
+
+
+
+
+        rulesAuthnChanged.forEach(x => {
+            const trc = this.createTrackEvent(x.previous, x.item);
+            this.emitEvent({ type: 'put', path: 'authenticationPolicy/rules', val: trc.after, before: trc.before })
+        })
+
+
+        const trc = this.createTrackEvent(dposture);
+
+        this.emitEvent({ type: 'del', path: 'devicePostures', val: trc.after, before: trc.before })
+
+
+
+    }
+
+    async deleteDevicePosture(id: string) {
+        this.isReady(); this.isWritable();
+        const indexId = this.config.devicePostures.findIndex(x => x.id == id);
+        const devicePosture = this.config.devicePostures.find(x => x.id == id);
+        if (indexId >= 0 && devicePosture) {
+            this.config.devicePostures.splice(indexId, 1);
+            this.triggerDeleteDevicePosture(devicePosture)
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(devicePosture);
+
+
+    }
+
+    async saveDevicePosture(dposture: DevicePosture) {
+        this.isReady(); this.isWritable();
+        let findedIndex = this.config.devicePostures.findIndex(x => x.id == dposture.id);
+        let finded = findedIndex >= 0 ? this.config.devicePostures[findedIndex] : null;
+        const cloned = this.clone(dposture);
+        if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
+            this.config.devicePostures.push(cloned);
+            findedIndex = this.config.devicePostures.length - 1;
+
+            const trc = this.createTrackEvent(finded, this.config.devicePostures[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'devicePostures', val: trc.after, before: trc.before })
+        } else {
+            this.config.devicePostures[findedIndex] = {
+                ...finded,
+                ...cloned,
+                updateDate: new Date().toISOString()
+            }
+            const trc = this.createTrackEvent(finded, this.config.devicePostures[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'devicePostures', val: trc.after, before: trc.before })
+        }
+        await this.saveConfigToFile();
+        return this.createTrackEvent(finded, this.config.devicePostures[findedIndex]);
+    }
+
 
 
 

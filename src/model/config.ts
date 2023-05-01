@@ -12,6 +12,7 @@ import { SSLCertificate, SSLCertificateEx } from "./cert";
 import { ESSetting } from "./esSetting";
 import { User } from "./user";
 import { IpIntelligence } from "./IpIntelligence";
+import { DevicePosture, DeviceProfile } from "./authenticationProfile";
 
 
 type Nullable<T> = T | null | undefined;
@@ -50,7 +51,8 @@ export type RPath =
     'authorizationPolicy/rulesOrder' |
     'es' | 'flush' |
     'ipIntelligence/sources' |
-    'ipIntelligence/lists';
+    'ipIntelligence/lists' |
+    'devicePostures';
 
 
 
@@ -115,4 +117,7 @@ export interface Config {
     // redisConfigWatchCachedService
     // redisConfigService getConfig and setConfig functions
     ipIntelligence: IpIntelligence;
+
+    //
+    devicePostures: DevicePosture[]
 }

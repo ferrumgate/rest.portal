@@ -18,6 +18,7 @@ import { UtilPKI } from "../utilPKI";
 import { cursorTo } from "readline";
 import { SSLCertificate, SSLCertificateBase } from "../model/cert";
 import { ConfigService } from "../service/configService";
+import { ClientDevicePosture, DeviceLog } from "../model/device";
 
 
 
@@ -253,6 +254,67 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
 
 export const routerUserAuthenticated = express.Router();
 
+//// get current user dynamic device posture
+
+routerUserAuthenticated.get('/current/device/posture/parameters',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+
+        logger.info(`getting current user device posture parameters`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+
+        const results = await policyService.userDevicePostureParameters(currentUser, currentSession, currentSession?.ip);
+
+        return res.status(200).json({ items: results });
+
+    }))
+
+//// save current user connected device posture
+
+routerUserAuthenticated.post('/current/device/posture',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+
+        logger.info(`save current user device posture`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const policyService = appService.policyService;
+        const sessionService = appService.sessionService;
+        const inputService = appService.inputService;
+        const deviceService = appService.deviceService;
+
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const clientDevicePosture = req.body as ClientDevicePosture;
+
+        await inputService.checkNotEmpty(clientDevicePosture.clientId)
+        await inputService.checkStringLength(clientDevicePosture.clientId, 16);
+        await deviceService.saveDevicePosture(clientDevicePosture);
+        //const devicelog = await deviceService.convertDevicePostureToDeviceLog(clientDevicePosture, currentUser.id, currentUser.username);
+        //await deviceService.save(devicelog);
+        await sessionService.setSession(currentSession.id, {
+            deviceId: clientDevicePosture.clientId,
+            deviceName: clientDevicePosture.hostname,
+            osName: clientDevicePosture.os.name,
+            osVersion: clientDevicePosture.os.version,
+            osPlatform: clientDevicePosture.platform
+        })
+        return res.status(200).json({});
+
+    }))
+
 
 //// get current user networks
 
@@ -270,16 +332,36 @@ routerUserAuthenticated.get('/current/network',
         const sessionService = appService.sessionService;
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
+        const deviceService = appService.deviceService;
 
 
-        const networks = await policyService.userNetworks(currentUser, currentSession, currentSession?.ip);
+        const session = req.currentSession as AuthSession;
+        //device log 
+        let deviceLog: DeviceLog | null = null;
+        let devicePosture = await deviceService.getDevicePosture(session.deviceId || '');
+        if (devicePosture)
+            deviceLog = await deviceService.convertDevicePostureToDeviceLog(devicePosture, currentUser, undefined);
+
+        const networks = await policyService.userNetworks(currentUser, currentSession, currentSession?.ip, devicePosture);
         const results = networks.map(x => {
             return {
                 id: x.network.id, name: x.network.name,
-                action: x.action, needs2FA: x.needs2FA, needsIp: x.needsIp,
+                action: x.action, needs2FA: x.needs2FA,
+                needsIp: x.needsIp,
+                needsDevicePosture: x.needsDevicePosture,
                 sshHost: x.network.sshHost,
             }
         })
+        //save device log
+        if (deviceLog) {
+            for (const result of networks) {
+                deviceLog.networkdId = result.network.id;
+                deviceLog.networkName = result.network.name;
+                deviceLog.isHealthy = result.whyNeedsDevicePosture ? false : true;
+                deviceLog.whyNotHealthy = result.whyNeedsDevicePosture;
+                await deviceService.save(deviceLog);
+            }
+        }
 
         return res.status(200).json({ items: results });
 

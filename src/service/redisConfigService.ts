@@ -33,6 +33,7 @@ import IPCIDR from "ip-cidr";
 import { isIPv4 } from "net";
 import * as ipaddr from 'ip-address';
 import { UtilPKI } from "../utilPKI";
+import { DevicePosture } from "../model/authenticationProfile";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -46,7 +47,9 @@ export type RPathCount = 'users/*' |
     'networks/*' |
     'gateways/*' |
     'authenticationPolicy/rules/*' |
-    'authorizationPolicy/rules/*';
+    'authorizationPolicy/rules/*' |
+    'devicePostures/*';
+
 
 
 
@@ -1814,6 +1817,7 @@ export class RedisConfigService extends ConfigService {
 
         cfg.ipIntelligence.sources = await this.rGetAll('ipIntelligence/sources');
         cfg.ipIntelligence.lists = await this.rGetAll('ipIntelligence/lists');
+        cfg.devicePostures = await this.rGetAll('devicePostures');
 
     }
 
@@ -1987,8 +1991,92 @@ export class RedisConfigService extends ConfigService {
         return this.createTrackEvent(list);
     }
 
+    //device posture
+    override async getDevicePosture(id: string): Promise<DevicePosture | undefined> {
+        this.isReady();
+        this.config.devicePostures = await this.rGetAll('devicePostures');
+        return await super.getDevicePosture(id);
+
+    }
+    override async getDevicePostureCount() {
+        this.isReady();
+        this.config.groups = [];
+        return await this.rCount('devicePostures/*');
+
+    }
+
+    override async getDevicePosturesBySearch(query: string) {
+        this.isReady();
+        this.config.devicePostures = await this.rGetAll('devicePostures');
+        return await super.getDevicePosturesBySearch(query);
+    }
+    override async getDevicePosturesAll() {
+        this.isReady();
+        this.config.devicePostures = await this.rGetAll('devicePostures');
+        return await super.getDevicePosturesAll();
+    }
+
+    async triggerDeleteDevicePosture2(posture: DevicePosture, pipeline: RedisPipelineService) {
 
 
+
+
+        //check policy authentication
+
+        let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
+        for (const x of this.config.authenticationPolicy.rules) {
+            if (x.profile.device?.postures) {
+                const postureIdIndex = x.profile.device.postures.findIndex(x => x == posture.id);
+                if (postureIdIndex >= 0) {
+                    let cloned = Util.clone(x);
+                    x.profile.device.postures.splice(postureIdIndex, 1);
+                    await this.rSave('authenticationPolicy/rules', cloned, x, pipeline);
+                    rulesAuthnChanged.push({ previous: cloned, item: x });
+                }
+            }
+        }
+
+
+
+
+    }
+
+    override  async deleteDevicePosture(id: string) {
+        this.isReady();
+        this.config.devicePostures = [];
+        const dposture = await this.rGetWith<DevicePosture>('devicePostures', id);
+
+        if (dposture) {
+            this.config.devicePostures.push(dposture);
+            this.config.devicePostures = await this.rGetAll('devicePostures');
+            this.config.authenticationPolicy.rules = await this.rGetAll('authenticationPolicy/rules');
+
+            const pipeline = await this.redis.multi();
+            await this.triggerDeleteDevicePosture2(dposture, pipeline);
+            await this.rDel('devicePostures', dposture, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+
+        }
+        return this.createTrackEvent(dposture);
+
+    }
+
+    override async saveDevicePosture(dposture: DevicePosture) {
+        this.isReady();
+        this.config.devicePostures = [];
+        const posture = await this.rGetWith<DevicePosture>('devicePostures', dposture.id);
+        if (posture)
+            this.config.devicePostures.push(posture);
+
+        let ret = await super.saveDevicePosture(dposture);
+        const pipeline = await this.redis.multi();
+        await this.rSave('devicePostures', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+
+    }
 
 
 
@@ -2051,6 +2139,10 @@ export class RedisCachedConfigService extends RedisConfigService {
                     case 'caSSLCertificate':
                         this.nodeCache.del('caSSLCertificate');
                         break;
+                    //this is possible 
+                    /*                     case 'devicePostures':
+                                            this.nodeCache.del('devicePostures');
+                                            break; */
                     default:
                         logger.warn(`not implemented path ${item.path}`)
                 }
@@ -2151,8 +2243,13 @@ export class RedisCachedConfigService extends RedisConfigService {
         this.nodeCache.set("caSSLCertificate", sup);
         return sup;
     }
-
-
+    /*     override async getDevicePosturesAll(): Promise<DevicePosture[]> {
+            const val = this.nodeCache.get<DevicePosture[]>('devicePostures');
+            if (val) return val;
+            const sup = await super.getDevicePosturesAll()
+            this.nodeCache.set("devicePostures", sup);
+            return sup;
+        } */
 
 
 

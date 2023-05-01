@@ -32,7 +32,7 @@ describe('test', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/test')
+                .get('/api/test')
                 .end((err, res) => {
                     if (err)
                         reject(err);

@@ -140,7 +140,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/public')
+                .get('/api/config/public')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -163,7 +163,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/common')
+                .get('/api/config/common')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -189,7 +189,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/common')
+                .get('/api/config/common')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -217,7 +217,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/common')
+                .put('/api/config/common')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(newValues)
                 .end((err, res) => {
@@ -247,7 +247,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/captcha')
+                .get('/api/config/captcha')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -273,7 +273,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/captcha')
+                .get('/api/config/captcha')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -302,7 +302,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/captcha')
+                .put('/api/config/captcha')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(newValues)
                 .end((err, res) => {
@@ -334,7 +334,7 @@ describe('configApi ', async () => {
         await appService.configService.setEmailSetting(EmailSetting);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/email')
+                .get('/api/config/email')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -360,7 +360,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/email')
+                .get('/api/config/email')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -389,7 +389,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/captcha')
+                .put('/api/config/captcha')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ ...EmailSetting, fromname: 'ferrumgate' })
                 .end((err, res) => {
@@ -421,7 +421,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete('/config/email')
+                .delete('/api/config/email')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -461,7 +461,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/config/email/check')
+                .post('/api/config/email/check')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ settings: EmailSetting, to: 'hamza@hamzakilic.com' })
                 .end((err, res) => {
@@ -492,7 +492,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/es')
+                .get('/api/config/es')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -517,7 +517,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/captcha')
+                .get('/api/config/captcha')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -545,7 +545,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/config/es')
+                .put('/api/config/es')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(newValues)
                 .end((err, res) => {
@@ -576,7 +576,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/config/es/check')
+                .post('/api/config/es/check')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(newValues)
                 .end((err, res) => {
@@ -619,7 +619,7 @@ describe('configApi ', async () => {
         await appService.configService.setIsConfigured(1);
         let response2: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/export/key')
+                .get('/api/config/export/key')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -636,7 +636,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/config/export/' + response2.body.key)
+                .get('/api/config/export/' + response2.body.key)
                 .set(`Authorization`, `Bearer ${token}`)
                 .buffer()
                 .parse(binaryParser)
@@ -685,7 +685,7 @@ describe('configApi ', async () => {
 
         let response2: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/config/import/' + key)
+                .post('/api/config/import/' + key)
                 .set(`Authorization`, `Bearer ${token}`)
                 .set('content-type', 'multipart/form-data')
                 .attach('config', fs.readFileSync(randomfile), 'file.png')

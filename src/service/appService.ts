@@ -31,6 +31,7 @@ import { ScheduledTasksService } from "./system/sheduledTasksService";
 import { ExpressApp } from "../index";
 import { exec } from "child_process";
 import { PKIService } from "./pkiService";
+import { DeviceService } from "./deviceService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -60,6 +61,7 @@ export class AppService {
     public dhcpService: DhcpService;
     public ipIntelligenceService: IpIntelligenceService;
     public pkiService: PKIService;
+    public deviceService: DeviceService;
 
     /**
      *
@@ -80,7 +82,8 @@ export class AppService {
         dhcp?: DhcpService,
         systemLog?: SystemLogService,
         ipIntelligenceService?: IpIntelligenceService,
-        pkiService?: PKIService
+        pkiService?: PKIService,
+        deviceService?: DeviceService
     ) {
         //create self signed certificates for JWT
         this.systemLogService = systemLog || new SystemLogService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`)
@@ -110,6 +113,7 @@ export class AppService {
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
         this.pkiService = pkiService || new PKIService(this.configService);
+        this.deviceService = deviceService || new DeviceService(this.configService, this.redisService, this.esService);
 
         this.configureES = new EventBufferedExecutor(async () => {
             await this.reconfigureES();

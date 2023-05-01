@@ -113,7 +113,7 @@ describe('clientApi ', async () => {
         await redisService.hset('/tunnel/id/akey', tunnel)
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/client/tunnel/ip')
+                .get('/api/client/tunnel/ip')
                 .set('TunnelKey', 'akey')
                 .end((err, res) => {
                     if (err)
@@ -146,7 +146,7 @@ describe('clientApi ', async () => {
         await redisService.hset('/tunnel/id/akey', tunnel)
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/client/tunnel/confirm')
+                .post('/api/client/tunnel/confirm')
                 .set('TunnelKey', 'akey')
                 .end((err, res) => {
                     if (err)
@@ -176,7 +176,7 @@ describe('clientApi ', async () => {
         })
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/client/tunnel')
+                .post('/api/client/tunnel')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send({ tunnelKey: 'kq0gxvko3j2v5tarpp9s8jsn5faxqd4knr0vplwhtiey3m2jo8k3dux2nvfem5sa' })
                 .end((err, res) => {

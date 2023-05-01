@@ -106,7 +106,7 @@ describe('groupApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/group/${group1.id}`)
+                .get(`/api/group/${group1.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -135,7 +135,7 @@ describe('groupApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/group/${group2.id}`)
+                .get(`/api/group/${group2.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -163,7 +163,7 @@ describe('groupApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/group/absentGroupId`)
+                .get(`/api/group/absentGroupId`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -196,7 +196,7 @@ describe('groupApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/group?search=bla`)
+                .get(`/api/group?search=bla`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -224,7 +224,7 @@ describe('groupApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/group/${group3.id}`)
+                .delete(`/api/group/${group3.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -253,7 +253,7 @@ describe('groupApi', async () => {
         group3.name = 'blabla'
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/group`)
+                .put(`/api/group`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(group3)
                 .end((err, res) => {
@@ -288,7 +288,7 @@ describe('groupApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/group`)
+                .post(`/api/group`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(group1)
                 .end((err, res) => {
@@ -333,7 +333,7 @@ describe('groupApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/group/users`)
+                .get(`/api/group/users`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)

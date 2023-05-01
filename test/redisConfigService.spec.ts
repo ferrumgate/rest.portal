@@ -25,6 +25,7 @@ import IPCIDR from 'ip-cidr';
 import * as ipaddr from 'ip-address';
 import { calculateCountryId } from '../src/model/country';
 import { SSLCertificate, SSLCertificateEx } from '../src/model/cert';
+import { DevicePosture } from '../src/model/authenticationProfile';
 
 
 
@@ -2598,6 +2599,200 @@ describe('redisConfigService', async () => {
 
 
     });
+
+    //// device posture
+
+    it('getDevicePosture', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        await configService.init();
+        configService.config.groups = [];
+        let posture: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: [],
+            os: 'android',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture);
+
+        const returned = await configService.getDevicePosture(posture.id);
+
+        expectToDeepEqual(returned, posture);
+
+
+    });
+
+    it('getDevicePostureBySearch', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+
+        configService.config.devicePostures = [];
+        await configService.init();
+        let posture: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            os: 'android',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture);
+
+        let posture2: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'south',
+            isEnabled: true,
+            labels: ['test'],
+            os: 'linux',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture2);
+
+        const returned = await configService.getDevicePosturesBySearch('test');
+        expect(returned.length).to.equal(2);
+
+        const returned2 = await configService.getDevicePosturesBySearch('abo');
+        expect(returned2.length).to.be.equal(0);
+
+
+    });
+
+
+    it('getDevicePosturesAll', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+
+        configService.config.devicePostures = [];
+        await configService.init();
+        let posture: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            os: 'darwin',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture);
+
+        let posture2: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'south',
+            isEnabled: true,
+            labels: ['test'],
+            os: 'darwin',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture2);
+
+        const returned = await configService.getDevicePosturesAll();
+        expect(returned.length).to.be.equal(2);
+
+
+    });
+
+    it('saveDevicePosture', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+
+        configService.config.devicePostures = [];
+        await configService.init();
+        let posture: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            os: 'ios',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture);
+
+        posture.name = 'north2';
+        //add
+        await configService.saveDevicePosture(posture);
+
+        const returned = await configService.getDevicePosture(posture.id);
+
+        expectToDeepEqual(returned, posture);
+
+    });
+
+    it('deleteDevicePosture', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+
+
+        configService.config.devicePostures = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authenticationPolicy.rulesOrder = [];
+        await configService.init();
+        let posture: DevicePosture = {
+            id: Util.randomNumberString(),
+            name: 'north',
+            isEnabled: true,
+            labels: ['test2'],
+            os: 'darwin',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+
+        }
+        //add
+        await configService.saveDevicePosture(posture);
+
+        //save a rule
+        //save a authentication rule
+        let aRule: AuthenticationRule = {
+            id: 'someid',
+            name: 'test',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            isEnabled: true,
+            networkId: 'abc',
+            profile: {
+                device: { postures: [posture.id] }
+            },
+            userOrgroupIds: []
+
+        };
+
+
+        configService.config.authenticationPolicy.rules.push(aRule);
+        await configService.saveAuthenticationPolicyRule(aRule);
+
+        await configService.deleteDevicePosture(posture.id);
+
+        const returned = await configService.getDevicePosture(posture.id)
+
+        expect(returned).not.exist;
+        const rule = await configService.getAuthenticationPolicyRule(aRule.id)
+        expect(rule?.profile.device?.postures?.length).to.equal(0);
+
+    });
+
 
 
 

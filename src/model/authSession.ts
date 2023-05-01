@@ -13,4 +13,9 @@ export interface AuthSession {
     isProxyIp?: boolean;
     isHostingIp?: boolean;
     isCrawlerIp?: boolean;
+    deviceId?: string;
+    deviceName?: string;
+    osName?: string;
+    osVersion?: string;
+    osPlatform?: string;
 }

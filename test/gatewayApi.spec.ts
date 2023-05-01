@@ -83,7 +83,7 @@ describe('gatewayApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/gateway/${gateway.id}`)
+                .get(`/api/gateway/${gateway.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -117,7 +117,7 @@ describe('gatewayApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/gateway/${gateway.id}`)
+                .get(`/api/gateway/${gateway.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -143,7 +143,7 @@ describe('gatewayApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/gateway/id`)
+                .get(`/api/gateway/id`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -187,7 +187,7 @@ describe('gatewayApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/gateway?search=mest`)
+                .get(`/api/gateway?search=mest`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -220,7 +220,7 @@ describe('gatewayApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/gateway/${gateway.id}`)
+                .delete(`/api/gateway/${gateway.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -255,7 +255,7 @@ describe('gatewayApi', async () => {
         gateway.name = 'blabla'
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/gateway`)
+                .put(`/api/gateway`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(gateway)
                 .end((err, res) => {
@@ -291,7 +291,7 @@ describe('gatewayApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/gateway`)
+                .post(`/api/gateway`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(gateway)
                 .end((err, res) => {

@@ -68,7 +68,7 @@ describe('userApiResetPassword', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/resetpass')
+                .post('/api/user/resetpass')
                 .send({ key: 'deneme' })
                 .end((err, res) => {
                     if (err)
@@ -93,7 +93,7 @@ describe('userApiResetPassword', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/resetpass')
+                .post('/api/user/resetpass')
                 .send({ pass: 'somepassDea1321', key: 'denememe' })
                 .end((err, res) => {
                     if (err)
@@ -117,7 +117,7 @@ describe('userApiResetPassword', async () => {
         await appService.configService.saveUser(user);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/resetpass')
+                .post('/api/user/resetpass')
                 .send({ pass: 'somepass', key: 'denememe' })
                 .end((err, res) => {
                     if (err)
@@ -144,7 +144,7 @@ describe('userApiResetPassword', async () => {
         await appService.redisService.set(`/user/resetpass/deneme`, 'someid2');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/resetpass')
+                .post('/api/user/resetpass')
                 .send({ pass: 'somePas232323', key: 'deneme' })
                 .end((err, res) => {
                     if (err)
@@ -169,7 +169,7 @@ describe('userApiResetPassword', async () => {
         await appService.redisService.set(`/user/resetpass/deneme`, 'someid');
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/user/resetpass')
+                .post('/api/user/resetpass')
                 .send({ pass: 'deneSad223111', key: 'deneme' })
                 .end((err, res) => {
                     if (err)

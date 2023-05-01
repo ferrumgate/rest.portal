@@ -195,7 +195,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: 'hamza@ferrumgate.com', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -217,7 +217,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: 'hamza2@ferrumgate.com', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -256,7 +256,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: 'hamza4@ferrumgate.com', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -294,7 +294,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .set('ApiKey', 'ipdfr6gyi3uzu8fktest')
                 .end((err, res) => {
                     if (err)
@@ -360,7 +360,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .set('Cert', fs.readFileSync(publicCrt3).toString('base64'))
                 .end((err, res) => {
                     if (err)
@@ -397,7 +397,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: 'hx\\domain', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -434,7 +434,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: 'hx\\domain', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -476,7 +476,7 @@ describe('authApi', async () => {
         await configService.setAuthSettingLocal(tmp);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: 'auserdomain', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -520,7 +520,7 @@ describe('authApi', async () => {
         await configService.setAuthSettingLocal(tmp);
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: 'hx\\domain', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -544,7 +544,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: '', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -558,7 +558,7 @@ describe('authApi', async () => {
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: ' ', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -596,7 +596,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: 'hamza6@ferrumgate.com', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -618,7 +618,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: 'hamza@ferrumgate.com', password: 'somepass222' })
                 .end((err, res) => {
                     if (err)
@@ -638,7 +638,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/auth/oauth/google')
+                .get('/api/auth/oauth/google')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -656,7 +656,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/auth/oauth/linkedin')
+                .get('/api/auth/oauth/linkedin')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -674,7 +674,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/auth/saml/auth0')
+                .get('/api/auth/saml/auth0')
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -693,7 +693,7 @@ describe('authApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth')
+                .post('/api/auth')
                 .send({ username: 'hamza@ferrumgate.com', password: 'somepass' })
                 .end((err, res) => {
                     if (err)
@@ -708,7 +708,7 @@ describe('authApi', async () => {
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/2fa')
+                .post('/api/auth/2fa')
                 .send({ key: resp.key, twoFAToken: twoFAToken?.token })
                 .end((err, res) => {
                     if (err)
@@ -730,7 +730,7 @@ describe('authApi', async () => {
         await redisService.set(`/auth/access/test`, { userId: 'someid' });
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/accesstoken')
+                .post('/api/auth/accesstoken')
                 .send({ key: 'test' })
                 .end((err, res) => {
                     if (err)
@@ -760,7 +760,7 @@ describe('authApi', async () => {
         })
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/accesstoken')
+                .post('/api/auth/accesstoken')
                 .send({ key: 'test', tunnelKey: 'testsession' })
                 .end((err, res) => {
                     if (err)
@@ -786,7 +786,7 @@ describe('authApi', async () => {
         await redisService.set(`/auth/access/test`, { userId: 'someid' });
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/accesstoken')
+                .post('/api/auth/accesstoken')
                 .send({ key: 'test' })
                 .end((err, res) => {
                     if (err)
@@ -803,7 +803,7 @@ describe('authApi', async () => {
         const refreshToken = response.body.refreshToken;
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/refreshtoken')
+                .post('/api/auth/refreshtoken')
                 .set('Authorization', `Bearer ${response.body.accessToken}`)
                 .send({ refreshToken: refreshToken })
                 .end((err, res) => {
@@ -827,7 +827,7 @@ describe('authApi', async () => {
         const ex = Util.encrypt(configService.getEncKey(), '12')
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/exchangetoken')
+                .post('/api/auth/exchangetoken')
                 .send({ 'exchangeKey': ex })
                 .end((err, res) => {
                     if (err)
@@ -851,7 +851,7 @@ describe('authApi', async () => {
         await redisService.set(`/auth/access/test`, { userId: 'someid' });
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/accesstoken')
+                .post('/api/auth/accesstoken')
                 .send({ key: 'test' })
                 .end((err, res) => {
                     if (err)
@@ -868,7 +868,7 @@ describe('authApi', async () => {
         const accessToken = response.body.accessToken;
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post('/auth/token/test')
+                .post('/api/auth/token/test')
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send({ something: 'blada' })
                 .end((err, res) => {

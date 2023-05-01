@@ -86,7 +86,7 @@ describe('networkApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/network/${network.id}`)
+                .get(`/api/network/${network.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -120,7 +120,7 @@ describe('networkApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/network/${network.id}`)
+                .get(`/api/network/${network.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -146,7 +146,7 @@ describe('networkApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/network/someid`)
+                .get(`/api/network/someid`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -209,7 +209,7 @@ describe('networkApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/network?search=mest`)
+                .get(`/api/network?search=mest`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -228,7 +228,7 @@ describe('networkApi', async () => {
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/network?ids=${network2.id},${network.id}`)
+                .get(`/api/network?ids=${network2.id},${network.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -267,7 +267,7 @@ describe('networkApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/network/${network.id}`)
+                .delete(`/api/network/${network.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -304,7 +304,7 @@ describe('networkApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/network`)
+                .put(`/api/network`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(network)
                 .end((err, res) => {
@@ -351,7 +351,7 @@ describe('networkApi', async () => {
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/network`)
+                .post(`/api/network`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(network)
                 .end((err, res) => {

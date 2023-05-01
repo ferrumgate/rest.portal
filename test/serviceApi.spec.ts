@@ -123,7 +123,7 @@ describe('serviceApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/service/${service1.id}`)
+                .get(`/api/service/${service1.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -152,7 +152,7 @@ describe('serviceApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/service/${service2.id}`)
+                .get(`/api/service/${service2.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -181,7 +181,7 @@ describe('serviceApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/service/absentGroupId`)
+                .get(`/api/service/absentGroupId`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -213,7 +213,7 @@ describe('serviceApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/service?search=bla`)
+                .get(`/api/service?search=bla`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -241,7 +241,7 @@ describe('serviceApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/service/${service2.id}`)
+                .delete(`/api/service/${service2.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -271,7 +271,7 @@ describe('serviceApi', async () => {
         service2.name = 'blabla'
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/service`)
+                .put(`/api/service`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(service2)
                 .end((err, res) => {
@@ -308,7 +308,7 @@ describe('serviceApi', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/service`)
+                .post(`/api/service`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(service2)
                 .end((err, res) => {
