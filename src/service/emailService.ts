@@ -75,7 +75,7 @@ class Office365Account extends EmailSender {
             pool: true,
             requireTLS: true,
             tls: {
-                ciphers: 'SSLv3'
+                //ciphers: 'SSLv3',
             }
         });
     }
@@ -94,11 +94,13 @@ class SmtpAccount extends EmailSender {
             host: 'localhost',
             port: 25,     // secure SMTP
             secure: isSecure || false, // false for TLS - as a boolean not string - but the default is false so just remove this completely
-            requireTLS: false,
             pool: true,
+            ignoreTLS: true,
+            requireTLS: false,
             tls: {
-                ciphers: 'SSLv3',
-                rejectUnauthorized: false
+                //ciphers: 'SSLv3',
+                minVersion: 'TLSv1',
+                rejectUnauthorized: false,
             },
 
 
@@ -113,8 +115,7 @@ class SmtpAccount extends EmailSender {
                 pass: this.pass
             }
         }
-
-
+        logger.info(options);
         this.transporter = nodemailer.createTransport(options);
     }
 }

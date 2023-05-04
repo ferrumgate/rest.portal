@@ -5,9 +5,12 @@ RUN apt update &&\
 #Create app directory
 WORKDIR /usr/src/app
 ## copy web application dist
-##ADD build/web /usr/src/app/web
+##ADD build/web /usr/src/app/webdocke
 #RUN ls /usr/src/app/web
 RUN sed -i 's/providers = provider_sect/#providers = provider_sect/g' /etc/ssl/openssl.cnf
+RUN sed -i 's/^MinProtocol.*/MinProtocol = TLSv1/g' /etc/ssl/openssl.cnf
+RUN sed -i 's/^CipherString.*/CipherString = DEFAULT:@SECLEVEL=1/g' /etc/ssl/openssl.cnf
+
 
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
