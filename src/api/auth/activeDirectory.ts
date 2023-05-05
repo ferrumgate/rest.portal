@@ -9,7 +9,7 @@ import { User } from '../../model/user';
 import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
 import { group } from 'console';
-import { ErrorCodes, RestfullException } from '../../restfullException';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
 import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
 import { stringify } from 'querystring';
 import { ActivityStatus } from '../../model/activityLog';
@@ -87,6 +87,8 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
                 const source = `${ldap.baseType}-${ldap.type}`;
                 let user = await configService.getUserByUsername(username);
                 if (!user) {
+                    if (!ldap.saveNewUser)
+                        throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrSaveNewUserDisabled, "new user save invalid");
                     let userSave: User = HelperService.createUser(source, username, username, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);

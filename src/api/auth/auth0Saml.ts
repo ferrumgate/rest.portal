@@ -9,7 +9,7 @@ import { User } from '../../model/user';
 import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
 import { group } from 'console';
-import { ErrorCodes, RestfullException } from '../../restfullException';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
 import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
 
 function prepareCert(cert: string) {
@@ -50,6 +50,8 @@ export function samlAuth0Init(saml: BaseSaml, url: string) {
                 const source = `${saml.baseType}-${saml.type}`;
                 let user = await configService.getUserByUsername(username);
                 if (!user) {
+                    if (!saml.saveNewUser)
+                        throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrSaveNewUserDisabled, "new user save invalid");
                     let userSave: User = HelperService.createUser(source, username, uname, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);

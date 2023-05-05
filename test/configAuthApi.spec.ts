@@ -39,7 +39,8 @@ function createSampleSaml1(): BaseSaml {
         isEnabled: true,
 
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
+        saveNewUser: true
     }
 }
 
@@ -61,7 +62,8 @@ function createSampleLdap1(): BaseLdap {
 
         isEnabled: true,
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
+        saveNewUser: true
     }
 }
 
@@ -77,7 +79,8 @@ function createSampleOauth1(): BaseOAuth {
 
         isEnabled: true,
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
+        saveNewUser: true
     }
 }
 function createSampleOAuth2(): BaseOAuth {

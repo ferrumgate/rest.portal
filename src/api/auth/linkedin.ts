@@ -8,7 +8,7 @@ import { AppService } from '../../service/appService';
 import { User } from '../../model/user';
 import { Util } from '../../util';
 import { HelperService } from '../../service/helperService';
-import { ErrorCodes, RestfullException } from '../../restfullException';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
 import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
 
 
@@ -40,6 +40,8 @@ export function oauthLinkedinInit(linkedin: BaseOAuth, url: string) {
                 const source = `${linkedin.baseType}-${linkedin.type}`;
                 let user = await configService.getUserByUsername(email);
                 if (!user) {
+                    if (!linkedin.saveNewUser)
+                        throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrSaveNewUserDisabled, "new user save invalid");
                     let userSave: User = HelperService.createUser(source, email, uname, '');
                     userSave.isVerified = true;
                     await configService.saveUser(userSave);

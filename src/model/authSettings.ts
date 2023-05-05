@@ -18,6 +18,8 @@ export interface BaseAuth {
 export interface BaseOAuth extends BaseAuthId, BaseAuth {
     clientId: string,
     clientSecret: string,
+    //this is a security flag, be carefull
+    saveNewUser?: boolean;
 }
 export interface BaseLdap extends BaseAuthId, BaseAuth {
     host: string,
@@ -28,6 +30,8 @@ export interface BaseLdap extends BaseAuthId, BaseAuth {
     usernameField: string;
     groupnameField: string;
     allowedGroups?: [];
+    //this is a security flag, be carefull
+    saveNewUser?: boolean;
 
 
 }
@@ -38,6 +42,8 @@ export interface BaseSaml extends BaseAuthId, BaseAuth {
     loginUrl: string;
     nameField: string;
     usernameField: string;
+    //this is a security flag, be carefull
+    saveNewUser?: boolean;
 }
 export interface BaseLocal extends BaseAuth {
     isForgotPassword?: boolean;

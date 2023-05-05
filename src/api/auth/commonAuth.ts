@@ -23,7 +23,11 @@ export async function checkUser(user?: User, baseAuth?: BaseAuth) {
     if (!baseAuth)
         throw new RestfullException(401, ErrorCodes.ErrBadArgument, ErrorCodesInternal.ErrInputNotExists, "not authenticated");
     HelperService.isValidUser(user);
-    HelperService.isFromSource(user, `${baseAuth.baseType}-${baseAuth.type}`);
+    //I disabled this validation,
+    // by this way, a user can also authenticate from another source
+    // there is only one risk here that, if two real person uses same email
+    // then there is a risk
+    //HelperService.isFromSource(user, `${baseAuth.baseType}-${baseAuth.type}`);
 
 }
 
