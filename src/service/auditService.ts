@@ -327,6 +327,13 @@ export class AuditService {
             `${currentUser.username}`)
     }
 
+    async logResetPasswordForOtherUser(currentSession: AuthSession, currentUser: User, otherUser: User) {
+
+        await this.executeSave(currentSession, currentUser, {}, { id: otherUser.id, username: otherUser.username },
+            `password hard reset`,
+            `${otherUser.username}`)
+    }
+
 
 
     async search(req: SearchAuditLogsRequest) {

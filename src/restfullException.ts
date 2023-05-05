@@ -54,6 +54,7 @@ export class ErrorCodes {
     static ErrUserSourceConflict: string = 'ErrUserSourceConflict';
     static ErrCaptchaVerifyFailed: string = 'ErrCaptchaVerifyFailed';
     static Err2FAVerifyFailed: string = 'Err2FAVerifyFailed';
+    static Err2FANeeds: string = 'Err2FANeeds';
     static ErrTunnelFailed: string = 'ErrTunnelFailed';
     static ErrIpAssignFailed: string = 'ErrIpAssignFailed';
     static ErrTrackIdAssignFailed: string = 'ErrTrackIdAssignFailed';
