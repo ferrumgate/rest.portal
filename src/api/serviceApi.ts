@@ -112,8 +112,11 @@ routerServiceAuthenticated.put('/',
 
         input.name = input.name || 'service';
         input.labels = input.labels || [];
-        if (!input.tcp && !input.udp) {
-            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'input is invalid');
+        if (!input.ports.some(x => x.port && (x.isTcp || x.isUdp))) {
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'input port is invalid');
+        }
+        if (!input.hosts.some(x => x.host)) {
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'input host is invalid');
         }
         await inputService.checkIfExists(input.networkId);
         const network = await configService.getNetwork(input.networkId);
@@ -122,7 +125,8 @@ routerServiceAuthenticated.put('/',
         }
         await inputService.checkDomain(input.name);
         await inputService.checkIfExists(input.protocol);
-        await inputService.checkNotEmpty(input.host);
+
+
         const safe = cloneService(input);
         //reassign allready assigned ip, system will manage it
         safe.assignedIp = service.assignedIp;
@@ -161,8 +165,11 @@ routerServiceAuthenticated.post('/',
 
         input.name = input.name || 'service';
         input.labels = input.labels || [];
-        if (!input.tcp && !input.udp) {
-            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'input is invalid');
+        if (!input.ports.some(x => x.port && (x.isTcp || x.isUdp))) {
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'input port is invalid');
+        }
+        if (!input.hosts.some(x => x.host)) {
+            throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'input host is invalid');
         }
         await inputService.checkIfExists(input.networkId);
         const network = await configService.getNetwork(input.networkId);
@@ -170,7 +177,7 @@ routerServiceAuthenticated.post('/',
             throw new RestfullException(400, ErrorCodes.ErrNetworkNotFound, ErrorCodesInternal.ErrNetworkNotFound, 'no network found');
         }
         await inputService.checkIfExists(input.protocol);
-        await inputService.checkNotEmpty(input.host);
+
         await inputService.checkDomain(input.name);
         const safe = cloneService(input);
         const allServicesFromThisNetwork = await configService.getServicesByNetworkId(network.id);
@@ -196,9 +203,8 @@ export async function saveSystemDnsService(network: Network, configService: Conf
         isSystem: true,
         count: 1,
         networkId: network.id,
-        host: '1.1.1.1',
-        tcp: 53,
-        udp: 53,
+        hosts: [{ host: '1.1.1.1' }],
+        ports: [{ port: 53, isTcp: false, isUdp: true }],
         assignedIp: getEmptyServiceIp(network, []),
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),

@@ -803,9 +803,10 @@ describe('policyService ', async () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+            hosts: [{ host: '1.2.3.4' }],
             networkId: net.id,
-            tcp: 3306, assignedIp: '1.3',
+            ports: [{ port: 3306, isTcp: true }],
+            assignedIp: '1.3',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             count: 1

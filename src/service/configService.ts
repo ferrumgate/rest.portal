@@ -1487,12 +1487,11 @@ export class ConfigService {
                 return true;
             if (x.name?.toLowerCase().includes(search))
                 return true;
-            if (x.host?.toLocaleLowerCase().includes(search))
+            if (x.hosts?.some(x => x.host?.toLocaleLowerCase().includes(search)))
                 return true;
-            if (x.tcp?.toString().includes(search))
+            if (x.ports?.some(y => y.port.toString().includes(search)))
                 return true;
-            if (x.udp?.toString().includes(search))
-                return true;
+
             if (x.protocol?.toLocaleLowerCase().includes(search))
                 return true;
 

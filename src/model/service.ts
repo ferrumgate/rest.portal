@@ -1,3 +1,17 @@
+
+export interface ServicePort {
+    port: number;
+    isTcp?: boolean;
+    isUdp?: boolean;
+    protocol?: string;
+    [key: string]: any;
+
+}
+export interface ServiceHost {
+    host: string;
+    [key: string]: any;
+
+}
 /**
  * private network service definition like
  * mysql on a machine
@@ -6,10 +20,11 @@ export interface Service {
     id: string;
     name: string;
     labels?: string[];
-    tcp?: number;
-    udp?: number;
+    //listen ports
+    ports: ServicePort[];
     protocol?: string;
-    host: string;
+    //upstream hosts and rules
+    hosts: ServiceHost[];
     count: number;
     networkId: string;
     isEnabled: boolean;
@@ -25,12 +40,11 @@ export function cloneService(service: Service): Service {
         id: service.id,
         name: service.name,
         labels: service.labels,
-        tcp: service.tcp,
-        udp: service.udp,
+        ports: Array.from(JSON.parse(JSON.stringify(service.ports))),
+        hosts: Array.from(JSON.parse(JSON.stringify(service.hosts))),
         protocol: service.protocol,
         networkId: service.networkId,
         isEnabled: service.isEnabled,
-        host: service.host,
         assignedIp: service.assignedIp,
         insertDate: service.insertDate,
         updateDate: service.updateDate,
