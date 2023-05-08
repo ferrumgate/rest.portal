@@ -41,8 +41,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 
 
-const port = Number(process.env.PORT) | 8181;
-const ports = Number(process.env.PORTS) | 8443;
+
 
 export class ExpressApp {
     app: any;
@@ -50,6 +49,8 @@ export class ExpressApp {
     httpsServer: any;
     appService: AppService;
     appSystemService: AppSystemService;
+    port: number;
+    ports: number;
     //bridge between appService and this parent class
     static https = {
         start: async () => {
@@ -57,7 +58,11 @@ export class ExpressApp {
         }
 
     }
-    constructor() {
+    constructor(httpPort?: number, httpsPort?: number) {
+        const port = Number(process.env.PORT) || 8181;
+        const ports = Number(process.env.PORTS) || 8443;
+        this.port = httpPort || port;
+        this.ports = httpsPort || ports;
         this.app = express();
         this.appService = new AppService();
         this.appSystemService = new AppSystemService(this.appService);
@@ -496,8 +501,11 @@ export class ExpressApp {
         this.app.use('/api/*', function (req: any, res: any) {
             res.status(404).send('not found')
         });
+
+        fs.mkdirSync('/tmp/acme-challenge', { recursive: true });
+        this.app.use('/.well-known/acme-challenge', express.static(process.env.ACME_CHALLENGE || '/tmp/acme-challenge', { dotfiles: 'allow' }))
+
         /*
-        this.app.use(express.static(process.env.STATIC_FOLDER || path.join(__dirname, '../', 'web')))
         this.app.use('*', function (req: any, res: any) {
             res.sendFile(path.resolve(process.env.STATIC_FOLDER || path.join(__dirname, '../', 'web'), 'index.html'));
         }); */
@@ -553,8 +561,8 @@ export class ExpressApp {
             this.httpServer.close();
         this.httpServer = null;
         this.httpServer = http.createServer(this.app);
-        this.httpServer.listen(port, () => {
-            logger.info('service started on ', port);
+        this.httpServer.listen(this.port, () => {
+            logger.info('service started on ', this.port);
         })
     }
     async stopHttp() {
@@ -577,8 +585,8 @@ export class ExpressApp {
                 fs.writeFileSync('/tmp/in.cert', int?.publicCrt || '');
                 fs.writeFileSync('/tmp/ca.cert', ca.publicCrt || '');
                 this.httpsServer = https.createServer({ cert: web.publicCrt, key: web.privateKey }, this.app);
-                this.httpsServer.listen(ports, () => {
-                    logger.info('service ssl started on ', ports);
+                this.httpsServer.listen(this.ports, () => {
+                    logger.info('service ssl started on ', this.ports);
                 })
                 this.httpsHash = hash;
             }

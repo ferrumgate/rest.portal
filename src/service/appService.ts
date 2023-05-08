@@ -32,6 +32,8 @@ import { ExpressApp } from "../index";
 import { exec } from "child_process";
 import { PKIService } from "./pkiService";
 import { DeviceService } from "./deviceService";
+import { LetsEncryptService } from "./letsEncryptService";
+import { WatchItem } from "./watchService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -62,6 +64,7 @@ export class AppService {
     public ipIntelligenceService: IpIntelligenceService;
     public pkiService: PKIService;
     public deviceService: DeviceService;
+    public letsEncryptService: LetsEncryptService;
 
     /**
      *
@@ -83,7 +86,8 @@ export class AppService {
         systemLog?: SystemLogService,
         ipIntelligenceService?: IpIntelligenceService,
         pkiService?: PKIService,
-        deviceService?: DeviceService
+        deviceService?: DeviceService,
+        letsEncryptService?: LetsEncryptService
     ) {
         //create self signed certificates for JWT
         this.systemLogService = systemLog || new SystemLogService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`)
@@ -114,6 +118,8 @@ export class AppService {
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
         this.pkiService = pkiService || new PKIService(this.configService);
         this.deviceService = deviceService || new DeviceService(this.configService, this.redisService, this.esService);
+        this.letsEncryptService = letsEncryptService || new LetsEncryptService(this.configService, this.systemLogService, process.env.ACME_CHALLENGE || '/tmp/acme-challenge')
+
 
         this.configureES = new EventBufferedExecutor(async () => {
             await this.reconfigureES();
@@ -176,7 +182,14 @@ export class AppService {
                 await this.configurePKI.push(data.path);
 
         });
+        //lets encrypt service
+        this.configService.events.on('data', async (data: WatchItem<ConfigWatch<any>>) => {
+            if (data.val.path.startsWith('/system/letsencrypt'))
+                await this.letsEncryptService.execute(data.val);
+        });
         await this.configureES.push('');
+
+
 
     }
     async stop() {

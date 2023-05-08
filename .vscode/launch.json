@@ -18,7 +18,8 @@
             ],
             "env": {
                 "NODE_ENV": "development",
-                "PORT": "8181",
+                "PORT2": "8181",
+                "PORT": "5002",
                 "REDIS_HOST": "localhost:6379",
                 "REDIS_SLAVE_HOST": "localhost:6379",
                 "ES_HOST": "https://192.168.88.250:9200",

@@ -14,7 +14,7 @@ import { Gateway, Network } from "../model/network";
 import { Service } from "../model/service";
 import { AuthSession } from "../model/authSession";
 import { Util } from "../util";
-import { IpIntelligence } from "../model/IpIntelligence";
+import { IpIntelligence } from "../model/ipIntelligence";
 import { IpIntelligenceService } from "./ipIntelligenceService";
 import { OSType } from "../model/authenticationProfile";
 import { ClientDevicePosture } from "../model/device";

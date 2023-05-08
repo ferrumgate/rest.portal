@@ -20,7 +20,7 @@ import { AuthorizationRule } from "../model/authorizationPolicy";
 import EventEmitter from "node:events";
 import { ESSetting } from "../model/esSetting";
 import { stringify } from "querystring";
-import { IpIntelligenceCountryList, IpIntelligenceFilterCategory, IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
+import { IpIntelligenceCountryList, IpIntelligenceFilterCategory, IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
 import IPCIDR from "ip-cidr";
 import { DomainIntelligenceBWItem, DomainIntelligenceSource } from "../model/domainIntelligence";
 import { UtilPKI } from "../utilPKI";

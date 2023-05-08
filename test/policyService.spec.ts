@@ -20,7 +20,7 @@ import { IpIntelligenceListService } from '../src/service/ipIntelligenceService'
 import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
 import { InputService } from '../src/service/inputService';
 import { config } from 'process';
-import { IpIntelligenceList } from '../src/model/IpIntelligence';
+import { IpIntelligenceList } from '../src/model/ipIntelligence';
 import { ErrorCodesInternal } from '../src/restfullException';
 import { DevicePosture } from '../src/model/authenticationProfile';
 

@@ -17,7 +17,7 @@ import { AuthCommon, BaseAuth } from "../model/authSettings";
 import { AuthorizationRule } from "../model/authorizationPolicy";
 import { Group } from "../model/group";
 import { ESSetting } from "../model/esSetting";
-import { IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
+import { IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
 import { SSLCertificate } from "../model/cert";
 import { DevicePosture } from "../model/authenticationProfile";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');

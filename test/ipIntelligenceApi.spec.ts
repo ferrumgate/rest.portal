@@ -8,7 +8,7 @@ import { Util } from '../src/util';
 import { Network } from '../src/model/network';
 
 import chaiExclude from 'chai-exclude';
-import { IpIntelligence, IpIntelligenceList, IpIntelligenceListStatus, IpIntelligenceSource } from '../src/model/IpIntelligence';
+import { IpIntelligence, IpIntelligenceList, IpIntelligenceListStatus, IpIntelligenceSource } from '../src/model/ipIntelligence';
 import { ESService } from '../src/service/esService';
 import { ExpressApp } from '../src';
 

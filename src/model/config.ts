@@ -11,7 +11,7 @@ import { Service } from "./service";
 import { SSLCertificate, SSLCertificateEx } from "./cert";
 import { ESSetting } from "./esSetting";
 import { User } from "./user";
-import { IpIntelligence } from "./IpIntelligence";
+import { IpIntelligence } from "./ipIntelligence";
 import { DevicePosture, DeviceProfile } from "./authenticationProfile";
 
 

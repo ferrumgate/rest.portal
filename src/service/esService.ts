@@ -12,7 +12,7 @@ import { logger } from '../common';
 import { RedisConfigWatchCachedService } from './redisConfigWatchCachedService';
 import { RedisConfigService } from './redisConfigService';
 import { ConfigWatch } from '../model/config';
-import { IpIntelligenceList, IpIntelligenceListItem } from '../model/IpIntelligence';
+import { IpIntelligenceList, IpIntelligenceListItem } from '../model/ipIntelligence';
 import { BroadcastService } from './broadcastService';
 import { DeviceLog } from '../model/device';
 

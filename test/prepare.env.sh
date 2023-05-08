@@ -4,10 +4,10 @@ docker stop redis
 set -e
 docker run --net=host --name redis --rm -d redis
 
-#set +e
-#docker stop redis2
-#set -e
-#docker run --name redis2 --rm -d -p 6600:6379 redis
+set +e
+docker stop pebble
+set -e
+docker run --net=host --name pebble -e "PEBBLE_VA_NOSLEEP=1" letsencrypt/pebble
 
 #set +e
 #docker stop redisstack

@@ -12,7 +12,7 @@ import { RBACDefault } from "../model/rbac";
 import { authorizeAsAdmin } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
-import { cloneIpIntelligenceList, cloneIpIntelligenceSource, IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
+import { cloneIpIntelligenceList, cloneIpIntelligenceSource, IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
 import IPCIDR from "ip-cidr";
 import fsp from 'fs/promises'
 import multer from 'multer';

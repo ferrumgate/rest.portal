@@ -22,8 +22,8 @@ export interface SSLCertificate extends SSLCertificateBase {
     insertDate: string;
     updateDate: string;
     isEnabled: boolean;
-
     isSystem?: boolean;
+
 
 }
 export interface SSLCertificateEx extends SSLCertificate {
