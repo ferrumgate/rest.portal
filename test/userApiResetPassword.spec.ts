@@ -34,6 +34,7 @@ describe('userApiResetPassword', async () => {
 
     }
     before(async () => {
+
         await expressApp.start();
         await appService.configService.setConfigPath('/tmp/rest.portal.config.yaml');
         await appService.configService.setEmailSetting({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: '}Q]@c836}7$F+AwK' })

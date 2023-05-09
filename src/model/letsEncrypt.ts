@@ -6,7 +6,7 @@ export interface LetsEncryptChallenge {
 }
 export interface LetsEncrypt {
     domain: string;
-    updateTime: string;
+    updateDate: string;
     email: string;
     challengeType?: 'http' | 'dns';
     privateKey?: string;
@@ -15,4 +15,19 @@ export interface LetsEncrypt {
     fullChainCrt?: string;
     challenge?: LetsEncryptChallenge;
     isEnabled?: boolean;
+}
+
+export function cloneLetsEncrypt(val: LetsEncrypt): LetsEncrypt {
+    return {
+        domain: val.domain,
+        updateDate: val.updateDate,
+        email: val.email,
+        challengeType: val.challengeType,
+        privateKey: val.privateKey,
+        publicCrt: val.publicCrt,
+        fullChainCrt: val.fullChainCrt,
+        challenge: val.challenge ? { ...val.challenge } : undefined,
+        isEnabled: val.isEnabled
+
+    }
 }

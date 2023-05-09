@@ -20,9 +20,10 @@ const expect = chai.expect;
 
 // this class is container for other classes
 describe('LetsEncryptService', async () => {
-    const expressApp = new ExpressApp(5002);
+    const expressApp = new ExpressApp();
     const configService = new ConfigService('fljvc7rm1xfo37imbu3ryc5mfbh9jpm5', `/tmp/${Util.randomNumberString()}`)
     const systemlog = new SystemLogService(new RedisService(), new RedisService(), Util.randomNumberString(32), 'testme');
+    const redis = new RedisService();
     before(async () => {
 
         await expressApp.start();
@@ -33,6 +34,10 @@ describe('LetsEncryptService', async () => {
         await configService.setES({ host: host, user: user, pass: pass });
 
     })
+    after(async () => {
+        await expressApp.stop();
+    })
+
 
     beforeEach((done) => {
 
@@ -60,7 +65,7 @@ describe('LetsEncryptService', async () => {
         - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         Press Enter to Continue`
         const folder = `/tmp/${Util.randomNumberString()}`
-        const lets = new LetsEncryptService(configService, systemlog, folder);
+        const lets = new LetsEncryptService(configService, redis, systemlog, folder);
         const result = await lets.parseChallenge(output, folder);
         expect(result?.key).to.equal('h6eR60tMfe9bSngoRhoGYhcI8nucC4K8964F8V1_6oo');
         expect(result?.value).to.equal('h6eR60tMfe9bSngoRhoGYhcI8nucC4K8964F8V1_6oo.7yYpMMEOzCm3TJVd2vJQH5U6Lj7g91gZs_vdBBcLIi4');
@@ -77,7 +82,7 @@ describe('LetsEncryptService', async () => {
 
 
         const folder = `/tmp/acme-challegence`
-        const lets = new LetsEncryptService(configService, systemlog, folder);
+        const lets = new LetsEncryptService(configService, redis, systemlog, folder);
         let errorOccured = false;
         try {
             const result = await lets.createCertificate('local.ferrumgate.com', 'test@ferrumgate.com', 'http', 'https://localhost:14000/dir');
@@ -94,7 +99,7 @@ describe('LetsEncryptService', async () => {
 
 
         const folder = `/tmp/acme-challenge`
-        const lets = new LetsEncryptService(configService, systemlog, folder);
+        const lets = new LetsEncryptService(configService, redis, systemlog, folder);
 
         const result = await lets.createCertificate('local.ferrumgate.com', 'test@ferrumgate.com', 'http', 'https://localhost:14000/dir');
         expect(result.privateKey).exist;
@@ -106,7 +111,7 @@ describe('LetsEncryptService', async () => {
 
 
         const folder = `/tmp/acme-challenge`
-        const lets = new LetsEncryptService(configService, systemlog, folder);
+        const lets = new LetsEncryptService(configService, redis, systemlog, folder);
 
         const result = await lets.createCertificate('local.ferrumgate.com', 'test@ferrumgate.com', 'http', 'https://localhost:14000/dir');
         expect(result.privateKey).exist;

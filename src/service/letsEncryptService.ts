@@ -10,7 +10,11 @@ import { ConfigWatch } from "../model/config";
 import { SystemLogService } from "./systemLogService";
 import { Util } from "../util";
 import fs from 'fs';
+import { RedLockService } from "./redLockService";
+import { RedisService } from "./redisService";
 
+
+const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
 export class LetsEncryptService {
@@ -18,10 +22,53 @@ export class LetsEncryptService {
     /**
      *
      */
-    constructor(protected configService: ConfigService, protected systemLogService: SystemLogService, protected challengeFolder: string) {
+    redLock: RedLockService;
+    jobList: any[] = [];
+    timer: any;
+    constructor(protected configService: ConfigService, protected redisService: RedisService, protected systemLogService: SystemLogService, protected challengeFolder: string) {
 
+        this.redLock = new RedLockService(this.redisService)
+    }
+
+    async reconfigure() {
+        /*  try {
+             //clear job list and create new one
+             if (this.timer)
+                 clearIntervalAsync(this.timer);
+             this.timer = null;
+             this.jobList = [];
+ 
+             const web = await this.configService.getWebSSLCertificate();
+             const url = await this.configService.getUrl();
+             const domain = new URL(url).hostname;
+             if (web.letsEncrypt?.isEnabled) {
+                 this.jobList.push({
+                     isWebCert: true,
+                     nextCheck: 0
+                 });
+             }
+             await this.checkAll();
+             await this.schedule();
+         } catch (err) {
+             logger.error(err);
+         } */
 
     }
+
+    /*  async checkAll() {
+         logger.info('checking lets encrypt jobs');
+         try {
+             for (const iterator of this.jobList) {
+ 
+             }
+ 
+         } catch (err) {
+ 
+         }
+     }
+     async schedule() {
+ 
+     } */
 
     async saveChallenge(challenge: LetsEncryptChallenge) {
         await fsp.writeFile(path.join(this.challengeFolder, challenge.key), challenge.value);
@@ -126,7 +173,7 @@ export class LetsEncryptService {
         const item: LetsEncrypt = {
             domain: domain,
             email: email,
-            updateTime: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
             challengeType: challengeType,
             privateKey: privateFile,
             publicCrt: publicFile,
@@ -218,7 +265,7 @@ export class LetsEncryptService {
         const item: LetsEncrypt = {
             domain: domain,
             email: email,
-            updateTime: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
             privateKey: privateFile,
             publicCrt: publicFile,
             chainCrt: chainFile,

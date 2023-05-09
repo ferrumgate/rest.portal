@@ -21,6 +21,7 @@ import { SSLCertificate, cloneSSlCertificate, cloneSSlCertificateEx } from "../m
 import { SSLCertificateEx } from "../model/cert";
 import { UtilPKI } from "../utilPKI";
 import { AuditService } from "../service/auditService";
+import { cloneLetsEncrypt } from "../model/letsEncrypt";
 
 
 
@@ -214,6 +215,29 @@ routerPKIAuthenticated.get('/cert/web',
 
     }))
 
+
+export async function resetWebCertificateOnly(configService: ConfigService,) {
+
+    //delete  makes reset certificate and generates a new one
+    const webIntermediate = (await configService.getInSSLCertificateAllSensitive()).filter(x => x.category == 'tls').find(x => x.usages.includes("for web"));
+    if (!webIntermediate) {
+        throw new RestfullException(417, ErrorCodes.ErrSystemIsNotReady, ErrorCodesInternal.ErrSystemIsNotReady, 'no web intermediate cert');
+    }
+
+    const url = await configService.getUrl();
+    const domain1 = new URL(url).hostname;
+
+
+    const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 730, false,
+        [
+            { type: 'domain', value: domain1 },
+
+        ],
+        webIntermediate.publicCrt || '', webIntermediate.privateKey);
+    return { publicCrt, privateKey, webIntermediate };
+
+}
+
 export async function resetWebCertificate(configService: ConfigService, auditService: AuditService, currentSession: AuthSession, currentUser: User) {
     const cert = await configService.getWebSSLCertificateSensitive();
     if (!cert) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no pki cert');
@@ -225,21 +249,9 @@ export async function resetWebCertificate(configService: ConfigService, auditSer
     safe.isSystem = false;
     safe.category = 'web';
     //delete  makes reset certificate and generates a new one
-    const webIntermediate = (await configService.getInSSLCertificateAllSensitive()).filter(x => x.category == 'tls').find(x => x.usages.includes("for web"));
-    if (!webIntermediate) {
-        throw new RestfullException(417, ErrorCodes.ErrSystemIsNotReady, ErrorCodesInternal.ErrSystemIsNotReady, 'no web intermediate cert');
-    }
+    const { publicCrt, privateKey, webIntermediate } = await resetWebCertificateOnly(configService);
+
     safe.parentId = webIntermediate.id;
-    const url = await configService.getUrl();
-    const domain1 = new URL(url).hostname;
-
-
-    const { publicCrt, privateKey } = await UtilPKI.createCertSigned(domain1, 'ferrumgate', 730, false,
-        [
-            { type: 'domain', value: domain1 },
-
-        ],
-        webIntermediate.publicCrt || '', webIntermediate.privateKey);
     safe.publicCrt = publicCrt;
     safe.privateKey = privateKey;
     safe.updateDate = new Date().toISOString();
@@ -270,6 +282,92 @@ routerPKIAuthenticated.delete('/cert/web',
 
     }))
 
+routerPKIAuthenticated.delete('/cert/web/letsencrypt',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        logger.info(`delete pki web letsencrypt`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const auditService = appService.auditService;
+
+        const cert = await configService.getWebSSLCertificate();
+        if (!cert) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no web cert found');
+
+        cert.letsEncrypt = null;
+
+        cert.updateDate = new Date().toISOString();
+
+
+        const { publicCrt, privateKey, webIntermediate } = await resetWebCertificateOnly(configService);
+
+        cert.parentId = webIntermediate.id;
+        cert.publicCrt = publicCrt;
+        cert.privateKey = privateKey;
+        cert.updateDate = new Date().toISOString();
+        const { before, after } = await configService.setWebSSLCertificate(cert);
+        //for audit log
+        (before as any).publicCert = cert.publicCrt ? 'a certificate' : null;
+        (after as any).publicCert = "new certificate"
+        await auditService.logSaveCert(currentSession, currentUser, before, after);
+
+        //always get again, thismakes system more secure, this is a safe function
+        const ret = await configService.getWebSSLCertificate();
+        return res.status(200).json(ret);
+
+
+    }))
+
+routerPKIAuthenticated.post('/cert/web/letsencrypt',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        logger.info(`enable pki web letsencrypt and create new cert for web`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const auditService = appService.auditService;
+        const letsEncrypt = appService.letsEncryptService;
+
+        const cert = await configService.getWebSSLCertificate();
+        if (!cert) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no web cert found');
+
+        const url = await configService.getUrl();
+        const domain = new URL(url).hostname;
+
+
+        //for testing, we need a server variable
+        const server = process.env.LETS_ENCRYPT_SERVER || undefined;
+        cert.letsEncrypt = await letsEncrypt.createCertificate(domain, currentUser.username, 'http', server);
+        //change current web certificate
+        if (cert.letsEncrypt.privateKey && cert.letsEncrypt.publicCrt) {
+            cert.privateKey = cert.letsEncrypt.privateKey;
+            cert.publicCrt = cert.letsEncrypt.publicCrt;
+        }
+
+        cert.updateDate = new Date().toISOString();
+
+        const { before, after } = await configService.setWebSSLCertificate(cert);
+
+        await auditService.logSaveCert(currentSession, currentUser, before, after);
+
+        //always get again, thismakes system more secure, this is a safe function
+        const ret = await configService.getWebSSLCertificate();
+        return res.status(200).json(ret);
+
+
+    }))
+
+
 routerPKIAuthenticated.put('/cert/web',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -296,6 +394,9 @@ routerPKIAuthenticated.put('/cert/web',
         safe.name = input.name;
         safe.updateDate = new Date().toISOString();
         safe.isEnabled = input.isEnabled ? true : false;
+        if (cert.letsEncrypt)
+            safe.letsEncrypt = cloneLetsEncrypt(cert.letsEncrypt);
+
         if (input.privateKey) {
             safe.privateKey = input.privateKey;
             safe.parentId = '';

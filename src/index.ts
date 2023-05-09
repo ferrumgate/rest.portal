@@ -581,9 +581,9 @@ export class ExpressApp {
                 if (this.httpsServer)
                     this.httpsServer.close();
                 this.httpsServer = null;
-                fs.writeFileSync('/tmp/web.cert', web.publicCrt || '');
-                fs.writeFileSync('/tmp/in.cert', int?.publicCrt || '');
-                fs.writeFileSync('/tmp/ca.cert', ca.publicCrt || '');
+                //fs.writeFileSync('/tmp/web.cert', web.publicCrt || '');
+                //fs.writeFileSync('/tmp/in.cert', int?.publicCrt || '');
+                //fs.writeFileSync('/tmp/ca.cert', ca.publicCrt || '');
                 this.httpsServer = https.createServer({ cert: web.publicCrt, key: web.privateKey }, this.app);
                 this.httpsServer.listen(this.ports, () => {
                     logger.info('service ssl started on ', this.ports);

@@ -1,3 +1,4 @@
+import { LetsEncrypt } from "./letsEncrypt";
 
 export interface SSHCertificate {
     publicKey?: string;
@@ -12,6 +13,7 @@ export interface SSLCertificateBase {
     privateKey?: string;
     parentId?: string;
     category?: SSLCertificateCategory;
+    letsEncrypt?: LetsEncrypt | null;
 }
 
 export interface SSLCertificate extends SSLCertificateBase {
@@ -30,6 +32,7 @@ export interface SSLCertificateEx extends SSLCertificate {
     id: string;
 
 }
+
 /**
  *  don't copy certificate public or private keys
  */

@@ -770,6 +770,8 @@ export class ConfigService {
     protected deleteCertSensitive(cert?: SSLCertificate | SSLCertificateEx) {
         if (!cert) return cert;
         delete cert.privateKey;
+        if (cert.letsEncrypt)
+            delete cert.letsEncrypt.privateKey;
         return cert;
     }
 

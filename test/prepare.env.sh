@@ -7,7 +7,26 @@ docker run --net=host --name redis --rm -d redis
 set +e
 docker stop pebble
 set -e
-docker run --net=host --name pebble -e "PEBBLE_VA_NOSLEEP=1" letsencrypt/pebble
+echo '
+{
+  "pebble": {
+    "listenAddress": "0.0.0.0:14000",
+    "managementListenAddress": "0.0.0.0:15000",
+    "certificate": "test/certs/localhost/cert.pem",
+    "privateKey": "test/certs/localhost/key.pem",
+    "httpPort": 8181,
+    "tlsPort": 8443,
+    "ocspResponderURL": "",
+    "externalAccountBindingRequired": false,
+    "domainBlocklist": ["blocked-domain.example"],
+    "retryAfter": {
+        "authz": 3,
+        "order": 5
+    }
+  }
+}
+' >/tmp/my-pebble-config.json
+docker run --net=host --name pebble -e "PEBBLE_VA_NOSLEEP=1" --mount src=/tmp/my-pebble-config.json,target=/test/my-pebble-config.json,type=bind --rm -d letsencrypt/pebble pebble -config /test/my-pebble-config.json
 
 #set +e
 #docker stop redisstack

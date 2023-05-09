@@ -526,6 +526,88 @@ describe('pkiApi', async () => {
     }).timeout(50000);
 
 
+    it('DELETE /pki/cert/web/letsencrypt', async () => {
+
+        await appService.configService.init();
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+        const item: SSLCertificate = {
+            idEx: Util.randomNumberString(),
+            name: 'abc', category: 'web', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(),
+            isEnabled: true, labels: [], privateKey: 'adfaf', publicCrt: 'adfaf'
+            , usages: [], letsEncrypt: {} as any
+        }
+        await configService.setWebSSLCertificate(item);
+
+
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .delete(`/api/pki/cert/web/letsencrypt`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.name).to.equal('abc');
+        expect(response.body.letsEncrypt).to.equal(null);
+
+    }).timeout(50000);
+
+
+    it.skip('POST /pki/cert/web/letsencrypt', async () => {
+        //for testing 
+        //etc host local.ferrumgate.com MACHINE_IP
+        process.env.LETS_ENCRYPT_SERVER = 'https://localhost:14000/dir';
+        await appService.configService.init();
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+        const item: SSLCertificate = {
+            idEx: Util.randomNumberString(),
+            name: 'abc', category: 'web', updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(),
+            isEnabled: true, labels: [], privateKey: 'adfaf', publicCrt: 'adfaf'
+            , usages: [],
+        }
+        await configService.setUrl('http://local.ferrumgate.com');
+        await configService.setWebSSLCertificate(item);
+
+
+        // test search 
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/api/pki/cert/web/letsencrypt`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.name).to.equal('abc');
+        expect(response.body.letsEncrypt).exist;
+        expect(response.body.letsEncrypt.privateKey).not.exist;
+        expect(response.body.letsEncrypt.publicCrt).exist;
+        delete process.env.LETS_ENCRYPT_SERVER;
+
+    }).timeout(50000);
+
+
 
 
 

@@ -18,8 +18,7 @@
             ],
             "env": {
                 "NODE_ENV": "development",
-                "PORT2": "8181",
-                "PORT": "5002",
+                "PORT": "8181",
                 "REDIS_HOST": "localhost:6379",
                 "REDIS_SLAVE_HOST": "localhost:6379",
                 "ES_HOST": "https://192.168.88.250:9200",
@@ -31,7 +30,8 @@
                 "JENCODE": "json",
                 "ENCRYPT_KEY": "bwe7ecxv6pgsc1vbzwh507ey6bftxc41",
                 "STATIC_FOLDER": "/work/projects/ferrum/ui.portal/dist/portal",
-                "UI_HOST": "localhost:4200"
+                "UI_HOST": "localhost:4200",
+                "LETS_ENCRYPT_SERVER": "https://localhost:14000/dir"
             },
             "outputCapture": "console",
             "console": "integratedTerminal",
