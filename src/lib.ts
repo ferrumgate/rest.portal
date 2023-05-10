@@ -33,3 +33,5 @@ export { IpIntelligence, IpIntelligenceList } from './model/ipIntelligence'
 export { IpIntelligenceService, IpIntelligenceListService } from './service/ipIntelligenceService';
 export { DeviceLog, ClientDevicePosture } from './model/device';
 export { DeviceService } from './service/deviceService';
+export { LetsEncryptService } from './service/letsEncryptService';
+export { LetsEncrypt, LetsEncryptChallenge } from './model/letsEncrypt';
