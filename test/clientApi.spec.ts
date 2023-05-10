@@ -65,9 +65,11 @@ describe('clientApi ', async () => {
         name: 'mysql-dev',
         isEnabled: true,
         labels: [],
-        host: '1.2.3.4',
+
         networkId: net.id,
-        tcp: 3306,
+
+        hosts: [{ host: '1.2.3.4' }],
+        ports: [{ port: 3306, isTcp: true }],
         protocol: 'dns',
         isSystem: true,
         assignedIp: '10.0.0.1',

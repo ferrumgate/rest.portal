@@ -11,7 +11,7 @@ export { AuditLog } from './model/auditLog';
 export { AuditService } from './service/auditService';
 export { Util } from './util';
 export { WatchService, WatchItem, WatchBufferedWriteService, WatchGroupService } from './service/watchService'
-export { Service } from './model/service';
+export { Service, ServicePort, ServiceHost } from './model/service';
 export { Tunnel } from './model/tunnel';
 export { Group } from './model/group';
 export { User } from './model/user';
@@ -29,7 +29,9 @@ export { AuthenticationRule, AuthenticationPolicy } from './model/authentication
 export { AuthorizationRule, AuthorizationPolicy } from './model/authorizationPolicy';
 export { InputService } from './service/inputService';
 export { SessionService } from './service/sessionService';
-export { IpIntelligence, IpIntelligenceList } from './model/IpIntelligence'
+export { IpIntelligence, IpIntelligenceList } from './model/ipIntelligence'
 export { IpIntelligenceService, IpIntelligenceListService } from './service/ipIntelligenceService';
 export { DeviceLog, ClientDevicePosture } from './model/device';
 export { DeviceService } from './service/deviceService';
+export { LetsEncryptService } from './service/letsEncryptService';
+export { LetsEncrypt, LetsEncryptChallenge } from './model/letsEncrypt';

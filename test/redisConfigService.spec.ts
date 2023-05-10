@@ -1184,9 +1184,12 @@ describe('redisConfigService', async () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+
+            hosts: [{ host: '1.2.3.4' }],
+            ports: [{ port: 3306, isTcp: true }],
             networkId: 'abcd',
-            tcp: 3306, assignedIp: '1.3',
+
+            assignedIp: '1.3',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             count: 1
@@ -1213,9 +1216,11 @@ describe('redisConfigService', async () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+
+            hosts: [{ host: '1.2.3.4' }],
             networkId: 'abcd',
-            tcp: 3306,
+
+            ports: [{ port: 3306, isTcp: true }],
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
@@ -1230,9 +1235,11 @@ describe('redisConfigService', async () => {
             name: 'remote-desktop-dev',
             isEnabled: true,
             labels: ['test'],
-            host: '192.168.10.10',
+
+            hosts: [{ host: '192.168.10.10' }],
             networkId: 'abcd',
-            tcp: 3306,
+
+            ports: [{ port: 3306, isTcp: true }],
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
@@ -1276,9 +1283,11 @@ describe('redisConfigService', async () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+
+            hosts: [{ host: '1.2.3.4' }],
             networkId: 'abcd',
-            tcp: 3306,
+
+            ports: [{ port: 3306, isTcp: true }],
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
@@ -1293,9 +1302,11 @@ describe('redisConfigService', async () => {
             name: 'remote-desktop-dev',
             isEnabled: true,
             labels: ['test'],
-            host: '192.168.10.10',
+
+            hosts: [{ host: '192.168.10.10' }],
             networkId: 'dabc',
-            tcp: 3306,
+
+            ports: [{ port: 3306, isTcp: true }],
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
@@ -1324,9 +1335,11 @@ describe('redisConfigService', async () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+
+            hosts: [{ host: '1.2.3.4' }],
             networkId: 'abcd',
-            tcp: 3306,
+
+            ports: [{ port: 3306, isTcp: true }],
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
@@ -1341,9 +1354,11 @@ describe('redisConfigService', async () => {
             name: 'remote-desktop-dev',
             isEnabled: true,
             labels: ['test'],
-            host: '192.168.10.10',
+
+            hosts: [{ host: '192.168.10.10' }],
             networkId: 'abcd',
-            tcp: 3306,
+
+            ports: [{ port: 3306, isTcp: true }],
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
@@ -1371,9 +1386,11 @@ describe('redisConfigService', async () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+
+            hosts: [{ host: '1.2.3.4' }],
             networkId: 'abcd',
-            tcp: 3306,
+
+            ports: [{ port: 3306, isTcp: true }],
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
@@ -1406,9 +1423,11 @@ describe('redisConfigService', async () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+
+            hosts: [{ host: '1.2.3.4' }],
             networkId: 'abcd',
-            tcp: 3306,
+
+            ports: [{ port: 3306, isTcp: true }],
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
@@ -2021,9 +2040,11 @@ describe('redisConfigService', async () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+
+            hosts: [{ host: '1.2.3.4' }],
             networkId: network.id,
-            tcp: 3306,
+
+            ports: [{ port: 3306, isTcp: true }],
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
@@ -2269,9 +2290,11 @@ describe('redisConfigService', async () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+
+            hosts: [{ host: '1.2.3.4' }],
             networkId: 'sadid',
-            tcp: 3306,
+
+            ports: [{ port: 3306, isTcp: true }],
             assignedIp: '10.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),

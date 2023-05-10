@@ -13,7 +13,7 @@ import chaiExclude from 'chai-exclude';
 import {
     IpIntelligenceList, IpIntelligenceListFiles, IpIntelligenceListStatus,
     IpIntelligenceSource
-} from '../src/model/IpIntelligence';
+} from '../src/model/ipIntelligence';
 import { IpIntelligenceListService, IpIntelligenceService } from '../src/service/ipIntelligenceService';
 import crypto from 'node:crypto';
 import { InputService } from '../src/service/inputService';

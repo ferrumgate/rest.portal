@@ -6,7 +6,7 @@ import {
     IpIntelligenceListFiles,
     IpIntelligenceListItem,
     IpIntelligenceListStatus, IpIntelligenceSource
-} from "../model/IpIntelligence";
+} from "../model/ipIntelligence";
 import { ConfigService } from "./configService";
 import { RedisPipelineService, RedisService } from "./redisService";
 import fsp from 'fs/promises'

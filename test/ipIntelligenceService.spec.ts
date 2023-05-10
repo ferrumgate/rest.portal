@@ -10,7 +10,7 @@ import { GatewayDetail } from '../src/model/network';
 import os from 'os';
 import { GatewayService } from '../src/service/gatewayService';
 import chaiExclude from 'chai-exclude';
-import { IpIntelligenceSource } from '../src/model/IpIntelligence';
+import { IpIntelligenceSource } from '../src/model/ipIntelligence';
 import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
 import { InputService } from '../src/service/inputService';
 import { ESService } from '../src/service/esService';

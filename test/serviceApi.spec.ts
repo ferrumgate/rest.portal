@@ -40,14 +40,15 @@ function createSampleData() {
         name: 'mysql-dev',
         isEnabled: true,
         labels: [],
-        host: '1.2.3.4',
+        hosts: [{ host: '1.2.3.4' }],
         networkId: 'network1',
-        tcp: 3306,
+        ports: [{ port: 3306, isTcp: true }],
         protocol: 'raw',
         assignedIp: '10.0.0.1',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
         count: 1
+
 
 
     }
@@ -56,9 +57,9 @@ function createSampleData() {
         name: 'remote-desktop-dev',
         isEnabled: true,
         labels: ['test'],
-        host: '192.168.10.10',
+        hosts: [{ host: '192.168.10.10' }],
         networkId: 'network1',
-        tcp: 3306,
+        ports: [{ port: 3306, isTcp: true }],
         protocol: 'raw',
         assignedIp: '10.0.0.1',
         insertDate: new Date().toISOString(),

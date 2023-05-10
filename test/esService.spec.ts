@@ -9,7 +9,7 @@ import { Util } from '../src/util';
 import { ESService, SearchAuditLogsRequest } from '../src/service/esService';
 import { ActivityLog } from '../src/model/activityLog';
 import { ConfigService } from '../src/service/configService';
-import { IpIntelligenceList, IpIntelligenceListItem } from '../src/model/IpIntelligence';
+import { IpIntelligenceList, IpIntelligenceListItem } from '../src/model/ipIntelligence';
 import { DeviceLog } from '../src/model/device';
 
 

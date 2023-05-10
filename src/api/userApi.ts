@@ -787,6 +787,57 @@ routerUserAuthenticated.put('/',
         return res.status(200).json(userDb);
 
     }))
+
+//becarefull, this methods resets a user password
+//must be admin
+routerUserAuthenticated.put('/pass',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const input = req.body as { id: string, pass: string };
+        logger.info(`changing user settings for ${input.id}`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        const isSystemConfigured = await configService.getIsConfigured();
+        if (!isSystemConfigured) {
+            logger.warn(`system is not configured yet`);
+            throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
+        }
+        // user must be logged in with 2FA
+        if (!currentSession.is2FA) {
+            throw new RestfullException(400, ErrorCodes.Err2FANeeds, ErrorCodes.Err2FANeeds, "needs a 2FA login");
+        }
+
+        inputService.checkNotEmpty(input.id);
+        inputService.checkPasswordPolicy(input.pass);
+        const userDb = await configService.getUserById(input.id);
+        if (!userDb) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
+
+        if (process.env.LIMITED_MODE == 'true') {//limited mode only current user update itself
+            const user = req.currentUser as User;
+            if (user.id != userDb.id) {
+                throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
+            }
+        }
+
+        userDb.password = Util.bcryptHash(input.pass);
+        await configService.saveUser(userDb);
+
+        logger.info(`user password hard reset for ${userDb.username}`);
+
+        await auditService.logResetPasswordForOtherUser(req.currentSession, currentUser, userDb);
+
+
+        return res.status(200).json({ result: true });
+
+    }))
+
 // becarefull, this method creates a user,
 // username and password will automatic created
 // just name, groupid, are input
@@ -809,10 +860,20 @@ routerUserAuthenticated.post('/',
         const redisService = appService.redisService;
         const templateService = appService.templateService;
 
-        await inputService.checkNotEmpty(input.name);
+
 
         const groupsIds = (await configService.getGroupsAll()).map(y => y.id);
-        const userNew: User = HelperService.createUser('local-local', Util.randomNumberString(64), input.name);
+        const userNameSurname = input.name || input.username || Util.randomNumberString(64);
+        const username = input.username || Util.randomNumberString(64);
+
+        const dbUser = await configService.getUserByUsername(username);
+        if (dbUser) {
+            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, ErrorCodes.ErrAllreadyExits, "user exists");
+        }
+
+
+        const userNew: User = HelperService.createUser('local-local', username, userNameSurname);
+        userNew.isVerified = true;
         userNew.groupIds = input.groupIds.filter(x => groupsIds.includes(x));
         userNew.roleIds = [RBACDefault.roleUser.id];//no one can create admin just user
 

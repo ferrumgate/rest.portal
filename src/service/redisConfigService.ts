@@ -26,9 +26,9 @@ import { SystemLogService } from "./systemLogService";
 import { ESSetting } from "../model/esSetting";
 import { Config, ConfigWatch, RPath } from "../model/config";
 import { ConfigLogService } from "./configLogService";
-import { IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
-import { IpIntelligenceFilterCategory } from "../model/IpIntelligence";
-import { IpIntelligenceCountryList } from "../model/IpIntelligence";
+import { IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
+import { IpIntelligenceFilterCategory } from "../model/ipIntelligence";
+import { IpIntelligenceCountryList } from "../model/ipIntelligence";
 import IPCIDR from "ip-cidr";
 import { isIPv4 } from "net";
 import * as ipaddr from 'ip-address';
@@ -348,17 +348,27 @@ export class RedisConfigService extends ConfigService {
             const revisionExits = await this.rExists('revision');
             if (revisionExits)
                 this.config.revision = await this.rGetDirect<number>('revision') || 0;
+
+            let version = 0;
             const versionExits = await this.rExists('version');
             if (versionExits)
-                this.config.version = await this.rGet<number>('version') || 0;
+                version = await this.rGet<number>('version') || 0;
 
-            if (!versionExits) {//if not saved before, first installing system
+            if (version < 1) {//if not saved before, first installing system
                 logger.info("config service not saved before");
                 logger.info("create default values");
                 await this.saveV1();
-
-
+                version = 1;
             }
+
+            //for new versions just implement
+            if (version < 2) {//if not saved before, first installing system
+                logger.info("config service version upgrade to 2");
+                logger.info("create default values");
+                //await this.saveV2();
+                //version = 2;
+            }
+
 
             clearIntervalAsync(this.timerInterval);
             this.timerInterval = null;
@@ -401,7 +411,7 @@ export class RedisConfigService extends ConfigService {
     }
     async saveV1() {
         const pipeline = await this.redis.multi();
-        await this.rSave('version', undefined, this.config.version, pipeline);
+        await this.rSave('version', undefined, 1, pipeline);
         await this.rSave('isConfigured', undefined, this.config.isConfigured, pipeline);
 
         await this.rSaveArray('users', this.config.users, pipeline,

@@ -69,9 +69,13 @@ async function createSampleData(): Promise<any> {
         name: 'mysql-dev',
         isEnabled: true,
         labels: [],
-        host: '1.2.3.4',
+
         networkId: network.id,
-        tcp: 3306, assignedIp: '1.3',
+
+
+        hosts: [{ host: '1.2.3.4' }],
+        ports: [{ port: 3306, isTcp: true }],
+        assignedIp: '1.3',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
         count: 1

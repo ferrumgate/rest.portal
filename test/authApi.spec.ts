@@ -412,7 +412,7 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-    it('POST /auth with result 401 because source is wrong', async () => {
+    it('POST /auth with result 200 source is different but not problem', async () => {
 
         const user5: User = {
             username: 'hx\\domain',
@@ -444,7 +444,7 @@ describe('authApi', async () => {
                 });
         })
 
-        expect(response.status).to.equal(401);
+        expect(response.status).to.equal(200);
 
 
     }).timeout(50000);

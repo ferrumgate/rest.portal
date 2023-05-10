@@ -1,7 +1,7 @@
 FROM node:18.13.0-bullseye-slim
 RUN apt update &&\
     apt install --assume-yes --no-install-recommends openssl \
-    ca-certificates gnupg
+    ca-certificates gnupg certbot
 #Create app directory
 WORKDIR /usr/src/app
 ## copy web application dist

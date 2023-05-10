@@ -50,7 +50,8 @@ export class RedisConfigWatchService extends ConfigService {
     constructor(private redis: RedisService, private redisStream: RedisService,
         systemlog: SystemLogService,
         private followSystemLog: boolean,
-        encryptKey: string, uniqueName = 'redisconfig', configFile?: string, logReadWaitMS = 1000) {
+        encryptKey: string, uniqueName = 'redisconfig',
+        configFile?: string, logReadWaitMS = 1000) {
         super(encryptKey, configFile);
         this.redisConfig = new RedisConfigService(this.redis, this.redisStream, systemlog, encryptKey, uniqueName, configFile, logReadWaitMS);
 

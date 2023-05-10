@@ -156,6 +156,7 @@ function copyAuthOAuth(auth: BaseOAuth): BaseOAuth {
             isEnabled: auth.isEnabled,
             insertDate: auth.insertDate,
             updateDate: auth.updateDate,
+            saveNewUser: auth.saveNewUser
 
         }
     throw new Error('not implemented copyAuthOAuth');
@@ -299,6 +300,7 @@ function copyAuthLdap(auth: BaseLdap): BaseLdap {
             isEnabled: auth.isEnabled,
             insertDate: auth.insertDate,
             updateDate: auth.updateDate,
+            saveNewUser: auth.saveNewUser
 
         }
     throw new Error('not implemented copyAuthLdap');
@@ -453,7 +455,9 @@ function copyAuthSaml(auth: BaseSaml): BaseSaml {
             usernameField: auth.usernameField,
             fingerPrint: auth.fingerPrint,
             insertDate: auth.insertDate,// no problem about copy these client unsafe variables we will override in api calls
-            updateDate: auth.updateDate // no problem about copy these client unsafe variables, we will override in api calls
+            updateDate: auth.updateDate, // no problem about copy these client unsafe variables, we will override in api calls
+            saveNewUser: auth.saveNewUser
+
         }
     throw new Error('not implemented copyAuthLdap');
 }

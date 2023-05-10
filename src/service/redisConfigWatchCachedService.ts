@@ -9,7 +9,7 @@ import { Service } from "../model/service";
 import { User } from "../model/user";
 import { ItemWithId, RedisConfigWatchService } from "./redisConfigWatchService";
 import { SSLCertificate } from "../model/cert";
-import { IpIntelligenceSource } from "../model/IpIntelligence";
+import { IpIntelligenceSource } from "../model/ipIntelligence";
 import { DevicePosture } from "../model/authenticationProfile";
 
 class NodeCacheForThis extends NodeCache {

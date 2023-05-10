@@ -20,7 +20,7 @@ import { AuthorizationRule } from "../model/authorizationPolicy";
 import EventEmitter from "node:events";
 import { ESSetting } from "../model/esSetting";
 import { stringify } from "querystring";
-import { IpIntelligenceCountryList, IpIntelligenceFilterCategory, IpIntelligenceList, IpIntelligenceSource } from "../model/IpIntelligence";
+import { IpIntelligenceCountryList, IpIntelligenceFilterCategory, IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
 import IPCIDR from "ip-cidr";
 import { DomainIntelligenceBWItem, DomainIntelligenceSource } from "../model/domainIntelligence";
 import { UtilPKI } from "../utilPKI";
@@ -770,6 +770,8 @@ export class ConfigService {
     protected deleteCertSensitive(cert?: SSLCertificate | SSLCertificateEx) {
         if (!cert) return cert;
         delete cert.privateKey;
+        if (cert.letsEncrypt)
+            delete cert.letsEncrypt.privateKey;
         return cert;
     }
 
@@ -1487,12 +1489,11 @@ export class ConfigService {
                 return true;
             if (x.name?.toLowerCase().includes(search))
                 return true;
-            if (x.host?.toLocaleLowerCase().includes(search))
+            if (x.hosts?.some(x => x.host?.toLocaleLowerCase().includes(search)))
                 return true;
-            if (x.tcp?.toString().includes(search))
+            if (x.ports?.some(y => y.port.toString().includes(search)))
                 return true;
-            if (x.udp?.toString().includes(search))
-                return true;
+
             if (x.protocol?.toLocaleLowerCase().includes(search))
                 return true;
 
