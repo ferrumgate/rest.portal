@@ -175,7 +175,7 @@ export class AuditService {
     async logDeleteUser(currentSession: AuthSession, currentUser: User, before?: User) {
         await this.executeDelete(currentSession, currentUser, before,
             `user deleted`,
-            `${before?.username}||''`);
+            `${before?.username || ''}`);
     }
     async logUpdateAuthenticationRulePos(currentSession: AuthSession, currentUser: User, item: AuthenticationRule, iBefore: number, iAfter: number) {
         await this.executeTryCatch(async () => {
