@@ -13,6 +13,7 @@ import { saveSystemDnsService } from "./serviceApi";
 import { AuthSession } from "../model/authSession";
 import { resetWebCertificate } from "./pkiApi";
 import { getNotJoinedGateways } from "./gatewayApi";
+import { authorizeAsAdmin } from "./commonApi";
 
 
 
@@ -33,6 +34,7 @@ export const routerConfigureAuthenticated = express.Router();
 routerConfigureAuthenticated.post('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
+    asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         logger.info(`configuring system for startup`);
         const appService = req.appService as AppService;

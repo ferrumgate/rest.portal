@@ -181,7 +181,7 @@ export class ExpressApp {
 
 
 
-        this.app.use("/api/test/activedirectory",
+        /* this.app.use("/api/test/activedirectory",
             asyncHandler(cors(corsOptionsDelegate)),
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
@@ -201,7 +201,7 @@ export class ExpressApp {
             asyncHandler(async (req: any, res: any, next: any) => {
                 assert(req.appService);
                 res.status(200).json({ result: "ok", clientIp: req.clientIp });
-            }));
+            })); */
         this.app.use("/api/test",
             asyncHandler(cors(corsOptionsDelegate)),
             asyncHandler(setAppService),
