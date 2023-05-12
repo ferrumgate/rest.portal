@@ -597,23 +597,35 @@ export class ConfigService {
         //check policy authentication
 
         let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
-        this.config.authenticationPolicy.rules.forEach(x => {
+        let rulesAuthnDeleted: { previous: AuthenticationRule }[] = [];
+        this.config.authenticationPolicy.rules.forEach((x, index, arr) => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == user.id);
             if (userIdIndex >= 0) {
                 const prev = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
-                rulesAuthnChanged.push({ previous: prev, item: x });
+                if (x.userOrgroupIds.length)
+                    rulesAuthnChanged.push({ previous: prev, item: x });
+                else {
+                    arr.splice(index, 1);
+                    rulesAuthnDeleted.push({ previous: prev })
+                }
             }
         })
         //check authorization
 
         let rulesAuthzChanged: { previous: AuthorizationRule, item: AuthorizationRule }[] = [];
-        this.config.authorizationPolicy.rules.forEach(x => {
+        let rulesAuthzDeleted: { previous: AuthorizationRule }[] = [];
+        this.config.authorizationPolicy.rules.forEach((x, index, arr) => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == user.id);
             if (userIdIndex >= 0) {
                 const prev = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
-                rulesAuthzChanged.push({ previous: prev, item: x });
+                if (x.userOrgroupIds.length)
+                    rulesAuthzChanged.push({ previous: prev, item: x });
+                else {
+                    arr.splice(index, 1);
+                    rulesAuthzDeleted.push({ previous: prev })
+                }
             }
         })
 
@@ -621,10 +633,18 @@ export class ConfigService {
             const trc = this.createTrackEvent(x.previous, x.item)
             this.emitEvent({ type: 'put', path: 'authenticationPolicy/rules', val: trc.after, before: trc.before })
         })
+        rulesAuthnDeleted.forEach(x => {
+            const trc = this.createTrackEvent(x.previous)
+            this.emitEvent({ type: 'del', path: 'authenticationPolicy/rules', val: trc.after, before: trc.before })
+        })
 
         rulesAuthzChanged.forEach(x => {
             const trc = this.createTrackEvent(x.previous, x.item)
             this.emitEvent({ type: 'put', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before });
+        })
+        rulesAuthzDeleted.forEach(x => {
+            const trc = this.createTrackEvent(x.previous)
+            this.emitEvent({ type: 'del', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before });
         })
 
         const trc = this.createTrackEvent(user)
@@ -1384,25 +1404,35 @@ export class ConfigService {
         //check policy authentication
 
         let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
-        this.config.authenticationPolicy.rules.forEach(x => {
+        let rulesAuthnDeleted: { previous: AuthenticationRule }[] = [];
+        this.config.authenticationPolicy.rules.forEach((x, index, arr) => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
             if (userIdIndex >= 0) {
                 let cloned = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
-
-                rulesAuthnChanged.push({ previous: cloned, item: x });
+                if (x.userOrgroupIds.length)
+                    rulesAuthnChanged.push({ previous: cloned, item: x });
+                else {
+                    arr.splice(index, 1);
+                    rulesAuthnDeleted.push({ previous: cloned });
+                }
             }
         })
         //check authorization
 
         let rulesAuthzChanged: { previous: AuthorizationRule, item: AuthorizationRule }[] = [];
-        this.config.authorizationPolicy.rules.forEach(x => {
+        let rulesAuthzDeleted: { previous: AuthorizationRule }[] = [];
+        this.config.authorizationPolicy.rules.forEach((x, index, arr) => {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
             if (userIdIndex >= 0) {
                 let cloned = this.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
-
-                rulesAuthzChanged.push({ previous: cloned, item: x });
+                if (x.userOrgroupIds.length) {
+                    rulesAuthzChanged.push({ previous: cloned, item: x });
+                } else {
+                    arr.splice(index, 1);
+                    rulesAuthzDeleted.push({ previous: cloned })
+                }
             }
         })
 
@@ -1415,10 +1445,18 @@ export class ConfigService {
             const trc = this.createTrackEvent(x.previous, x.item);
             this.emitEvent({ type: 'put', path: 'authenticationPolicy/rules', val: trc.after, before: trc.before })
         })
+        rulesAuthnDeleted.forEach(x => {
+            const trc = this.createTrackEvent(x.previous);
+            this.emitEvent({ type: 'del', path: 'authenticationPolicy/rules', val: trc.after, before: trc.before })
+        })
 
         rulesAuthzChanged.forEach(x => {
             const trc = this.createTrackEvent(x.previous, x.item)
             this.emitEvent({ type: 'put', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before })
+        })
+        rulesAuthzDeleted.forEach(x => {
+            const trc = this.createTrackEvent(x.previous)
+            this.emitEvent({ type: 'del', path: 'authorizationPolicy/rules', val: trc.after, before: trc.before })
         })
 
         const trc = this.createTrackEvent(grp);

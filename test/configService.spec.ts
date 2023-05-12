@@ -1554,19 +1554,22 @@ describe('configService', async () => {
         await configService.deleteUser(aUser.id);
         expect(configService.config.authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
         expect(configService.config.authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
+        expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
+        expect(configService.config.authenticationPolicy.rules.length).to.equal(0);
+
 
         expect(eventDatas.length).to.equal(3);
 
-        expect(eventDatas[0].type).to.equal('put')
+        expect(eventDatas[0].type).to.equal('del')
         expect(eventDatas[0].path).to.equal('authenticationPolicy/rules');
         expect(eventDatas[0].before.id).exist;
-        expect(eventDatas[0].val.id).exist;
+        expect(eventDatas[0].val).not.exist;
 
 
-        expect(eventDatas[1].type).to.equal('put')
+        expect(eventDatas[1].type).to.equal('del')
         expect(eventDatas[1].path).to.equal('authorizationPolicy/rules');
         expect(eventDatas[1].before.id).exist;
-        expect(eventDatas[1].val.id).exist;
+        expect(eventDatas[1].val).not.exist;
 
 
         expect(eventDatas[2].type).to.equal('del');
@@ -1885,20 +1888,22 @@ describe('configService', async () => {
         await configService.deleteGroup(aGroup.id);
         expect(configService.config.authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aGroup.id))).to.not.exist;
         expect(configService.config.authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
+        expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
+        expect(configService.config.authenticationPolicy.rules.length).to.equal(0);
 
         expect(eventDatas.length).to.equal(4);
 
 
-        expect(eventDatas[1].type).to.equal('put')
+        expect(eventDatas[1].type).to.equal('del')
         expect(eventDatas[1].path).to.equal('authenticationPolicy/rules');
         expect(eventDatas[1].before.id).exist;
-        expect(eventDatas[1].val.id).exist;
+        expect(eventDatas[1].val).not.exist;
 
 
-        expect(eventDatas[2].type).to.equal('put')
+        expect(eventDatas[2].type).to.equal('del')
         expect(eventDatas[2].path).to.equal('authorizationPolicy/rules');
         expect(eventDatas[2].before.id).exist;
-        expect(eventDatas[2].val.id).exist;
+        expect(eventDatas[2].val).not.exist;
 
 
         expect(eventDatas[3].type).to.equal('del');

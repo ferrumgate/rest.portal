@@ -1933,6 +1933,8 @@ describe('redisConfigService', async () => {
         const authorizationPolicy = await configService.getAuthorizationPolicy();
         expect(authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
         expect(authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
+        expect(authorizationPolicy.rules.length).to.equal(0);
+        expect(authenticationPolicy.rules.length).to.equal(0);
 
         await configService.logWatcher.watcher.read();
         await configService.logWatcher.watcher.read();
@@ -2254,6 +2256,8 @@ describe('redisConfigService', async () => {
         const authenticationPolicy = await configService.getAuthenticationPolicy();
         expect(authorizationPolicy.rules.find(x => x.userOrgroupIds.includes(aGroup.id))).to.not.exist;
         expect(authenticationPolicy.rules.find(x => x.userOrgroupIds.includes(aUser.id))).to.not.exist;
+        expect(authorizationPolicy.rules.length).to.equal(0);
+        expect(authenticationPolicy.rules.length).to.equal(0);
 
         await configService.logWatcher.watcher.read();
         await configService.logWatcher.watcher.read();

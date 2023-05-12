@@ -725,25 +725,39 @@ export class RedisConfigService extends ConfigService {
     async triggerUserDeleted2(user: User, pipeline: RedisPipelineService): Promise<void> {
         //check policy authentication
         let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
+        let rulesAuthnDeleted: { previous: AuthenticationRule }[] = [];
         for (const rule of this.config.authenticationPolicy.rules) {
             const userIdIndex = rule.userOrgroupIds.findIndex(x => x == user.id);
             if (userIdIndex >= 0) {
                 const prev = Util.clone(rule);
                 rule.userOrgroupIds.splice(userIdIndex, 1);
-                rulesAuthnChanged.push({ previous: prev, item: rule });
-                await this.rSave('authenticationPolicy/rules', prev, rule, pipeline);
+                if (rule.userOrgroupIds.length) {
+                    rulesAuthnChanged.push({ previous: prev, item: rule });
+                    await this.rSave('authenticationPolicy/rules', prev, rule, pipeline);
+
+                } else {
+                    rulesAuthnDeleted.push({ previous: prev });
+                    await this.rDel('authenticationPolicy/rules', prev, pipeline);
+
+                }
             }
         }
 
         //check authorization
         let rulesAuthzChanged: { previous: AuthorizationRule, item: AuthorizationRule }[] = [];
+        let rulesAuthzDeleted: { previous: AuthorizationRule }[] = [];
         for (const rule of this.config.authorizationPolicy.rules) {
             const userIdIndex = rule.userOrgroupIds.findIndex(x => x == user.id);
             if (userIdIndex >= 0) {
                 const prev = Util.clone(rule);
                 rule.userOrgroupIds.splice(userIdIndex, 1);
-                rulesAuthzChanged.push({ previous: prev, item: rule });
-                await this.rSave('authorizationPolicy/rules', prev, rule, pipeline);
+                if (rule.userOrgroupIds.length) {
+                    rulesAuthzChanged.push({ previous: prev, item: rule });
+                    await this.rSave('authorizationPolicy/rules', prev, rule, pipeline);
+                } else {
+                    rulesAuthzDeleted.push({ previous: prev });
+                    await this.rDel('authorizationPolicy/rules', prev, pipeline);
+                }
             }
         }
 
@@ -1400,25 +1414,37 @@ export class RedisConfigService extends ConfigService {
         //check policy authentication
 
         let rulesAuthnChanged: { previous: AuthenticationRule, item: AuthenticationRule }[] = [];
+        let rulesAuthnDeleted: { previous: AuthenticationRule }[] = [];
         for (const x of this.config.authenticationPolicy.rules) {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
             if (userIdIndex >= 0) {
                 let cloned = Util.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
-                await this.rSave('authenticationPolicy/rules', cloned, x, pipeline);
-                rulesAuthnChanged.push({ previous: cloned, item: x });
+                if (x.userOrgroupIds.length) {
+                    await this.rSave('authenticationPolicy/rules', cloned, x, pipeline);
+                    rulesAuthnChanged.push({ previous: cloned, item: x });
+                } else {
+                    await this.rDel('authenticationPolicy/rules', cloned, pipeline);
+                    rulesAuthnDeleted.push({ previous: cloned, });
+                }
             }
         }
         //check authorization
 
         let rulesAuthzChanged: { previous: AuthorizationRule, item: AuthorizationRule }[] = [];
+        let rulesAuthzDeleted: { previous: AuthorizationRule }[] = [];
         for (const x of this.config.authorizationPolicy.rules) {
             const userIdIndex = x.userOrgroupIds.findIndex(x => x == grp.id);
             if (userIdIndex >= 0) {
                 let cloned = Util.clone(x);
                 x.userOrgroupIds.splice(userIdIndex, 1);
-                await this.rSave('authorizationPolicy/rules', cloned, x, pipeline);
-                rulesAuthzChanged.push({ previous: cloned, item: x });
+                if (x.userOrgroupIds.length) {
+                    await this.rSave('authorizationPolicy/rules', cloned, x, pipeline);
+                    rulesAuthzChanged.push({ previous: cloned, item: x });
+                } else {
+                    await this.rDel('authorizationPolicy/rules', cloned, pipeline);
+                    rulesAuthzDeleted.push({ previous: cloned });
+                }
             }
         }
 
