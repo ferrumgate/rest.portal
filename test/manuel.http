@@ -1,8 +1,12 @@
 #active directory testing
-POST http://localhost:8080/api/auth/local
+POST https://secure.interpress.com/api/client/tunnel
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVzIjoxNjg0MDY2ODAwMzY3LCJ1c2VyIjp7ImlkIjoiaVhlZE5tbG1jc3E0MDl2RyIsInNpZCI6ImhjUkl2Y3NCd2JMaDRwRVVzMkVmdVpIRVpoOTZCZUlXd2lkbjBRemFxRTlDRzV1blFEVTRTVXhWOUZJeFlnYTIifSwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTY4NDA2NjI1OX0.AzEVs068cRW4wabpIaqL4LtUjkNps7BxHea8TFCqm5M3C_ew5lQtSmhQSH1wbYtKdgD7TBeaA2gxJZWZ1QActgAhIbfp6QsLkemtRyBOqFCRI0RP7K83_i96uppXkGaWsF5bSo8mDqryR6DsFDhQIIL4xtrJ-VbiA25JJ5WxhcdIyAMi-f56rDusN1qdFCpQcV2X7idV4o-_J-Gb2XkO-I-8m1q5Jq-FB84l1ZF9xDQIURXI3hcIhrGPr1-50eJ8Rp4FUxIWU_R9AKavMaxcsWV6gmkJOu3jPhOb6T1bjxGhVDkXpVXL39wpsEqyss1hdQuYD99i6z9IBLCaMAIk1A
 
 {
-    "username":"hamza",
-    "password":"Qa12345678"
+    "tunnelKey":"3DTjRaMVgksNfykbuTpIPC4NrpeSDo0Vpt2bQB0Olj3t6ACRGNtiOmMbYV5bSZ75"
 }
+
+
+
+
