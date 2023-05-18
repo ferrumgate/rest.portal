@@ -15,14 +15,14 @@ import { attachActivitySource, attachActivityUser, attachActivityUsername, check
 function prepareCert(cert: string) {
     return cert.replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').replace('\r\n', '').replace('\n', '').replace(' ', '');
 }
-const name = 'auth0'
-export function samlAuth0Init(saml: BaseSaml, url: string) {
+const name = 'azure'
+export function samlAzureInit(saml: BaseSaml, url: string) {
     passport.use(name, new samlAuth.Strategy({
         entryPoint: saml.loginUrl,
         issuer: saml.issuer,
         cert: prepareCert(saml.cert),
         passReqToCallback: true,
-        callbackUrl: `${url}/api/auth/saml/auth0/callback`
+        callbackUrl: `${url}/api/auth/saml/azure/callback`
 
 
     },
@@ -78,6 +78,6 @@ export function samlAuth0Init(saml: BaseSaml, url: string) {
     return name;
 }
 
-export function samlAuth0Unuse() {
+export function samlAzureUnuse() {
     passport.unuse(name);
 }

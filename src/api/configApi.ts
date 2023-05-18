@@ -49,6 +49,7 @@ async function getPublicConfig(configService: ConfigService) {
     const googleOAuth = oauth?.providers.find(x => x.type == 'google');
     const linkedOAuth = oauth?.providers.find(x => x.type == 'linkedin');
     const auth0 = saml?.providers.find(x => x.type == 'auth0');
+    const azure = saml?.providers.find(x => x.type == 'azure');
     return {
         captchaSiteKey: captcha.client,
         isConfigured: isConfigured,
@@ -59,7 +60,8 @@ async function getPublicConfig(configService: ConfigService) {
             },
             oAuthGoogle: googleOAuth?.isEnabled ? {} : undefined,
             oAuthLinkedin: linkedOAuth?.isEnabled ? {} : undefined,
-            samlAuth0: auth0?.isEnabled ? {} : undefined
+            samlAuth0: auth0?.isEnabled ? {} : undefined,
+            samlAzure: azure?.isEnabled ? {} : undefined,
         }
     };
 }

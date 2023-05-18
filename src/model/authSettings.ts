@@ -7,7 +7,7 @@ export interface BaseAuth {
 
     name: string;
     baseType: 'local' | 'oauth' | 'saml' | 'ldap';
-    type: 'local' | 'google' | 'linkedin' | 'activedirectory' | 'auth0';
+    type: 'local' | 'google' | 'linkedin' | 'activedirectory' | 'auth0' | 'azure';
     tags?: string[];
 
     isEnabled: boolean;
