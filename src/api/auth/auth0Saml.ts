@@ -35,7 +35,7 @@ export function samlAuth0Init(saml: BaseSaml, url: string) {
                 attachActivityUsername(req, username);
                 const uname = profile.attributes[saml.nameField];
 
-                logger.info(`passport active directory with username: ${username}`);
+                logger.info(`passport auth0/saml directory with username: ${username}`);
                 const appService = req.appService as AppService;
                 const configService = appService.configService;
                 const redisService = appService.redisService;

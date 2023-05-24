@@ -153,7 +153,7 @@ routerAuth.get('/saml/auth0',
 
 routerAuth.use('/saml/azure/callback',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['auth0']),
+    asyncHandlerWithArgs(passportAuthenticate, ['azure']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
