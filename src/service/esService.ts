@@ -1569,7 +1569,9 @@ export class ESService {
 
 
 export class ESServiceLimited extends ESService {
+    override async reConfigure(host: string, username?: string | undefined, password?: string | undefined, refresh_interval?: string | undefined): Promise<void> {
 
+    }
     override async auditCreateIndexIfNotExits(item: AuditLog): Promise<[ESAuditLog, string]> {
 
         return [{ ...item }, 'ferrumgate-audit'];
@@ -1592,6 +1594,19 @@ export class ESServiceLimited extends ESService {
     }
     override async activitySave(items: [ESActivityLog, string][]): Promise<void> {
         await fsp.appendFile(`/var/log/ferrumgate/activity-${this.dateFormat(new Date())}`, JSON.stringify(items.map(x => x[0])) + '\n');
+    }
+
+    override async deviceCreateIndexIfNotExits(item: DeviceLog): Promise<[ESDeviceLog, string]> {
+        let index = `ferrumgate-device-${this.dateFormat(item.insertDate)}`;
+        let esitem: ESDeviceLog =
+        {
+            ...item
+
+        };
+        return [esitem, index];
+    }
+    override async deviceSave(items: [ESDeviceLog, string][]): Promise<void> {
+        await fsp.appendFile(`/var/log/ferrumgate/device-${this.dateFormat(new Date())}`, JSON.stringify(items.map(x => x[0])) + '\n');
     }
 }
 
