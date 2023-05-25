@@ -48,4 +48,9 @@ export class GatewayService {
         const gatewayDetail = await this.redisService.hgetAll(key) as unknown as GatewayDetail;
         return this.normalize(gatewayDetail);
     }
+    async deleteAliveById(id: string) {
+        let key = `/alive/gateway/id/${id}`;
+        await this.redisService.delete(key);
+
+    }
 }
