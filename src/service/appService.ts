@@ -43,6 +43,7 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 export class AppService {
     public rateLimit: RateLimitService;
     public redisService: RedisService;
+    public redisLocalService: RedisService;
     public configService: ConfigService;
     public inputService: InputService;
     public captchaService: CaptchaService;
@@ -71,7 +72,7 @@ export class AppService {
      */
     constructor(
         cfg?: ConfigService, rateLimit?: RateLimitService,
-        redis?: RedisService, input?: InputService,
+        redis?: RedisService, redisLocal?: RedisService, input?: InputService,
         captcha?: CaptchaService, licence?: LicenceService,
         template?: TemplateService, email?: EmailService,
         twoFA?: TwoFAService, oauth2?: OAuth2Service,
@@ -87,7 +88,8 @@ export class AppService {
         ipIntelligenceService?: IpIntelligenceService,
         pkiService?: PKIService,
         deviceService?: DeviceService,
-        letsEncryptService?: LetsEncryptService
+        letsEncryptService?: LetsEncryptService,
+
     ) {
         //create self signed certificates for JWT
         this.systemLogService = systemLog || new SystemLogService(AppService.createRedisService(), AppService.createRedisService(), process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`)
@@ -98,6 +100,7 @@ export class AppService {
                 process.env.ENCRYPT_KEY || Util.randomNumberString(32), `rest.portal/${(process.env.GATEWAY_ID || Util.randomNumberString(16))}`,
                 '/etc/ferrumgate/config.yaml', 15000);
         this.redisService = redis || AppService.createRedisService()
+        this.redisLocalService = redisLocal || AppService.createRedisLocalService()
         this.rateLimit = rateLimit || new RateLimitService(this.configService, this.redisService);
         this.inputService = input || new InputService();
         this.captchaService = captcha || new CaptchaService(this.configService);
@@ -110,14 +113,14 @@ export class AppService {
         this.dhcpService = dhcp || new DhcpService(this.configService, this.redisService);
         this.tunnelService = tunnel || new TunnelService(this.configService, this.redisService, this.dhcpService);
         this.esService = es || new ESService(this.configService);
-        this.activityService = activity || new ActivityService(this.redisService, this.esService);
-        this.auditService = audit || new AuditService(this.configService, this.redisService, this.esService);
+        this.activityService = activity || new ActivityService(this.redisLocalService, this.esService);
+        this.auditService = audit || new AuditService(this.configService, this.redisLocalService, this.esService);
         this.ipIntelligenceService = ipIntelligenceService || new IpIntelligenceService(this.configService, this.redisService, this.inputService, this.esService);
         this.policyService = policy || new PolicyService(this.configService, this.ipIntelligenceService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
         this.pkiService = pkiService || new PKIService(this.configService);
-        this.deviceService = deviceService || new DeviceService(this.configService, this.redisService, this.esService);
+        this.deviceService = deviceService || new DeviceService(this.configService, this.redisLocalService, this.esService);
         this.letsEncryptService = letsEncryptService || new LetsEncryptService(this.configService, this.redisService, this.systemLogService, process.env.ACME_CHALLENGE || '/tmp/acme-challenge')
 
 
@@ -139,6 +142,9 @@ export class AppService {
 
     static createRedisService() {
         return new RedisService(process.env.REDIS_HOST || "localhost:6379", process.env.REDIS_PASS);
+    }
+    static createRedisLocalService() {
+        return new RedisService(process.env.REDIS_LOCAL_HOST || "localhost:6379", process.env.REDIS_LOCAL_PASS);
     }
     configureES: EventBufferedExecutor;
     public async reconfigureES() {
@@ -226,7 +232,7 @@ export class AppService {
 
 export class AppSystemService {
 
-    public redisSlaveWatcher: RedisWatcherService;
+    //public redisSlaveWatcher: RedisWatcherService;
     public scheduledTasks: ScheduledTasksService;
     // public configPublicListener: ConfigPublicListener;
 
@@ -235,19 +241,19 @@ export class AppSystemService {
     /**
      *
      */
-    constructor(app: AppService, redisSlaveWatcher?: RedisWatcherService, scheduledTasks?: ScheduledTasksService
+    constructor(app: AppService, scheduledTasks?: ScheduledTasksService
     ) {
-        this.redisSlaveWatcher = redisSlaveWatcher || new RedisWatcherService(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS);
+        //this.redisSlaveWatcher = redisSlaveWatcher || new RedisWatcherService(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS);
         this.scheduledTasks = scheduledTasks || new ScheduledTasksService();
         //  this.configPublicListener = configPublic || new ConfigPublicListener(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
 
 
     }
-    createRedisSlave() {
-        return new RedisService(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS)
-    }
+    /*  createRedisSlave() {
+         return new RedisService(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS)
+     } */
     async start() {
-        await this.redisSlaveWatcher.start();
+        //await this.redisSlaveWatcher.start();
         await this.scheduledTasks.start();
 
 
@@ -256,7 +262,7 @@ export class AppSystemService {
         //await this.activityLogToES.start();
     }
     async stop() {
-        await this.redisSlaveWatcher.stop();
+        //await this.redisSlaveWatcher.stop();
         await this.scheduledTasks.stop();
 
         //await this.configPublicListener.stop();

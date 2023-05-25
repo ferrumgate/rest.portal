@@ -688,6 +688,24 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
+    it('GET /auth/saml/azure with result 200', async () => {
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/api/auth/saml/azure')
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.redirects.length).to.equal(1);
+
+
+    }).timeout(50000);
+
 
     it('POST /auth/2fa with result 200', async () => {
 

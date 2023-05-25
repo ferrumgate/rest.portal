@@ -148,6 +148,35 @@ routerAuth.get('/saml/auth0',
 );
 
 
+/////////////////////////// /auth/azure //////////////////////////
+
+
+routerAuth.use('/saml/azure/callback',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['azure']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const currentUser: User = req.currentUser as User;
+        logger.info(`authenticated user: ${currentUser.username}`);
+        const two2FA = await execute2FA(req);
+        const obj = { key: two2FA.key, is2FA: currentUser.is2FA ? 'true' : 'false' };
+        const query = new URLSearchParams(obj);
+
+
+        return res.redirect(`/login/callback/saml/azure?${query.toString()}`)
+    })
+);
+
+routerAuth.get('/saml/azure',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['azure']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        return res.status(200).json({});
+    })
+);
+
+
 
 
 

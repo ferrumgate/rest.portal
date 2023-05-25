@@ -13,6 +13,7 @@ import { logger } from "../../common";
 import { samlAuth0Init, samlAuth0Unuse } from "./auth0Saml";
 import { exchangeKeyInit, exchangeKeyUnuse } from "./exchangeKey";
 import { certInit, certUnuse } from "./certificate";
+import { samlAzureInit, samlAzureUnuse } from "./azureSaml";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -93,6 +94,14 @@ export async function passportInit(req: any, res: any, next: any) {
         const auth0 = saml?.providers.find(x => x.type == 'auth0');
         if (auth0 && auth0.isEnabled) {
             const saml = samlAuth0Init(auth0, url);
+            activeStrategies.push(saml);
+        }
+
+        // init azure saml
+        samlAzureUnuse();
+        const azure = saml?.providers.find(x => x.type == 'azure');
+        if (azure && azure.isEnabled) {
+            const saml = samlAzureInit(azure, url);
             activeStrategies.push(saml);
         }
         passportConf.activeStrategies = activeStrategies;

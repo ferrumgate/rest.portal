@@ -139,12 +139,17 @@ routerGatewayAuthenticated.delete('/:id',
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const auditService = appService.auditService;
+        const gatewayService = appService.gatewayService;
 
         const gateway = await configService.getGateway(id);
-        if (!gateway) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGatewayNotFound, 'no gateway');
+        const gatewayAlive = await gatewayService.getAliveById(id);
+        if (!gateway && !gatewayAlive) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrGatewayNotFound, 'no gateway');
 
-        const { before } = await configService.deleteGateway(gateway.id);
-        await auditService.logDeleteGateway(currentSession, currentUser, before);
+        await gatewayService.deleteAliveById(id);
+        if (gateway) {
+            const { before } = await configService.deleteGateway(gateway.id);
+            await auditService.logDeleteGateway(currentSession, currentUser, before);
+        }
 
         return res.status(200).json({});
 
