@@ -34,6 +34,8 @@ import { PKIService } from "./pkiService";
 import { DeviceService } from "./deviceService";
 import { LetsEncryptService } from "./letsEncryptService";
 import { WatchItem } from "./watchService";
+import { FqdnIntelligence } from "../model/fqdnIntelligence";
+import { FqdnIntelligenceService } from "./fqdnIntelligenceService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -66,6 +68,7 @@ export class AppService {
     public pkiService: PKIService;
     public deviceService: DeviceService;
     public letsEncryptService: LetsEncryptService;
+    public fqdnIntelligenceService: FqdnIntelligenceService;
 
     /**
      *
@@ -89,6 +92,7 @@ export class AppService {
         pkiService?: PKIService,
         deviceService?: DeviceService,
         letsEncryptService?: LetsEncryptService,
+        fqdnIntelligenceService?: FqdnIntelligenceService
 
     ) {
         //create self signed certificates for JWT
@@ -121,7 +125,8 @@ export class AppService {
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
         this.pkiService = pkiService || new PKIService(this.configService);
         this.deviceService = deviceService || new DeviceService(this.configService, this.redisLocalService, this.esService);
-        this.letsEncryptService = letsEncryptService || new LetsEncryptService(this.configService, this.redisService, this.systemLogService, process.env.ACME_CHALLENGE || '/tmp/acme-challenge')
+        this.letsEncryptService = letsEncryptService || new LetsEncryptService(this.configService, this.redisService, this.systemLogService, process.env.ACME_CHALLENGE || '/tmp/acme-challenge');
+        this.fqdnIntelligenceService = fqdnIntelligenceService || new FqdnIntelligenceService(this.configService, this.redisService, this.inputService, this.esService);
 
 
         this.configureES = new EventBufferedExecutor(async () => {

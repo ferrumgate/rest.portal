@@ -2821,6 +2821,56 @@ describe('redisConfigService', async () => {
     });
 
 
+    it('getFqdnIntelligenceSources/saveFqdnIntelligenceSource/deleteFqdnIntelligenceSource', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.fqdnIntelligence.sources = [];
+        await configService.init();
+
+        const source = await configService.getFqdnIntelligenceSources();
+        expect(source.length).to.equal(0);
+
+        const item = { name: 'test', type: 'test2', id: Util.randomNumberString(), insertDate: '', updateDate: '' };
+        await configService.saveFqdnIntelligenceSource(item);
+
+        const source2 = await configService.getFqdnIntelligenceSources();
+        expect(source2.length).to.equal(1);
+
+        await configService.deleteFqdnIntelligenceSource(item.id);
+        const source3 = await configService.getFqdnIntelligenceSources();
+        expect(source3.length).to.equal(0);
+
+
+    });
+
+    it('getFqdnIntelligenceList/saveFqdnIntelligenceList/deleteFqdnIntelligenceList', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.fqdnIntelligence.sources = [];
+        await configService.init();
+
+        const lists = await configService.getFqdnIntelligenceLists();
+        expect(lists.length).to.equal(0);
+
+        const item = { name: 'test', type: 'test2', id: Util.randomNumberString(), insertDate: '', updateDate: '' };
+        await configService.saveFqdnIntelligenceList(item);
+
+        const source2 = await configService.getFqdnIntelligenceLists();
+        expect(source2.length).to.equal(1);
+
+        const source3 = await configService.getFqdnIntelligenceList(source2[0].id);
+        expect(source3).exist;
+
+        await configService.deleteFqdnIntelligenceSource(item.id);
+        const source4 = await configService.getFqdnIntelligenceSources();
+        expect(source4.length).to.equal(0);
+
+
+    });
+
+
 
 
 

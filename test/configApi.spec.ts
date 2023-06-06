@@ -10,6 +10,7 @@ import { EmailSetting } from '../src/model/emailSetting';
 import yaml from 'yaml';
 import { Email, EmailService } from '../src/service/emailService';
 import { ExpressApp } from '../src';
+import { esHost, esPass, esUser } from './common.spec';
 
 
 chai.use(chaiHttp);
@@ -569,9 +570,9 @@ describe('configApi ', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const newValues = {
-            host: 'https://192.168.88.250:9200',
-            user: 'elastic',
-            pass: '123456'
+            host: esHost,
+            user: esUser,
+            pass: esPass
         }
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -600,9 +601,9 @@ describe('configApi ', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const newValues = {
-            host: 'https://192.168.88.250:9200',
-            user: 'elastic',
-            pass: '123456'
+            host: esHost,
+            user: esUser,
+            pass: esPass
         }
         const binaryParser = function (res: any, cb: any) {
             res.setEncoding("binary");
@@ -671,9 +672,9 @@ describe('configApi ', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const newValues = {
-            host: 'https://192.168.88.250:9200',
-            user: 'elastic',
-            pass: '123456'
+            host: esHost,
+            user: esUser,
+            pass: esPass
         }
 
         await appService.configService.setES(newValues);

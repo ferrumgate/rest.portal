@@ -13,6 +13,7 @@ import { ESSetting } from "./esSetting";
 import { User } from "./user";
 import { IpIntelligence } from "./ipIntelligence";
 import { DevicePosture, DeviceProfile } from "./authenticationProfile";
+import { FqdnIntelligence } from "./fqdnIntelligence";
 
 
 type Nullable<T> = T | null | undefined;
@@ -52,7 +53,9 @@ export type RPath =
     'es' | 'flush' |
     'ipIntelligence/sources' |
     'ipIntelligence/lists' |
-    'devicePostures';
+    'devicePostures' |
+    'fqdnIntelligence/sources' |
+    'fqdnIntelligence/lists';
 
 
 
@@ -119,5 +122,11 @@ export interface Config {
     ipIntelligence: IpIntelligence;
 
     //
-    devicePostures: DevicePosture[]
+    devicePostures: DevicePosture[];
+
+    // adding new property needs to lookup 
+    // redisConfigWatchService 
+    // redisConfigWatchCachedService
+    // redisConfigService getConfig and setConfig functions
+    fqdnIntelligence: FqdnIntelligence;
 }

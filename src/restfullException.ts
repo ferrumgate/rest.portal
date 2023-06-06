@@ -146,7 +146,8 @@ export class ErrorCodesInternal extends ErrorCodes {
     static ErrDevicePostureRegisryNotAllowed: string = 'ErrDevicePostureRegisryNotAllowed';
     static ErrDevicePostureProcessNotAllowed: string = 'ErrDevicePostureProcessNotAllowed';
     static ErrDevicePostureNotChecked: string = 'ErrDevicePostureNotChecked';
-    static ErrSaveNewUserDisabled: string = 'ErrSaveNewUserDisabled'
+    static ErrSaveNewUserDisabled: string = 'ErrSaveNewUserDisabled';
+    static ErrFqdnIntelligenceSourceNotFound: string = "ErrFqdnIntelligenceSourceNotFound";
 
 
 

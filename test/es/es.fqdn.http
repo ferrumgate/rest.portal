@@ -1,0 +1,165 @@
+# username elastic
+# password 123456
+#IP=192.168.88.250:9200
+
+
+GET http://192.168.88.10:9200/_cat/indices
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+
+
+###
+DELETE http://192.168.88.10:9200/ip-intelligence-list
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+
+####
+
+PUT http://192.168.88.10:9200/ip-intelligence-list-2
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+
+
+###
+PUT http://192.168.88.10:9200/ip-intelligence-list-2/_mapping
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+  
+
+    "properties": {
+
+       "id": {
+        "type": "keyword"
+      },
+      "page": {
+        "type": "integer"
+      },
+      "network": {
+        "type": "ip_range",
+        "fields": {
+            "value": {
+                 "type": "keyword"
+             }
+           }
+        
+      }
+     
+    }
+  
+}
+
+
+####
+GET http://192.168.88.10:9200/ip-intelligence-list/_mapping?pretty
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+
+
+
+
+#####
+POST http://192.168.88.10:9200/ip-intelligence-list-2/_doc
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+    "id":"123456",
+    "page":5,
+    "network":"192.168.0.0/16"
+}
+
+####
+
+POST http://192.168.88.10:9200/ip-intelligence-list-2/_doc
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+    "id":"123456",
+    "page":6,
+    "network":"192.168.1.0/24"
+}
+
+###
+POST http://192.168.88.10:9200/ip-intelligence-list-2/_doc
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+    "id":"123456",
+    "page":6,
+    "network":"192.168.1.10/32"
+}
+
+####
+GET http://192.168.88.10:9200/ip-intelligence-list*/_search
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+  "size":0,
+ "query": {
+           "match_all": {}
+          },
+  "aggs":{
+          "id_agg":{
+                     "terms": {"field": "id"}
+                    }
+        }
+}
+
+
+####
+GET http://192.168.88.10:9200/ip-intelligence-list/_search
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+    "query": {
+    "term": {
+      "network": "192.168.1.15"
+    }
+  }
+}
+
+####
+
+GET http://192.168.88.10:9200/ip-intelligence-list/_search
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+    "query": {
+    "term": {
+      "network.value": "192.168.1.10/32"
+    }
+  }
+}
+
+####
+POST http://192.168.88.10:9200/ip-intelligence-list/_delete_by_query
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+    "query": {
+    "term": {
+      "network": "192.168.1.10"
+    }
+  }
+}
+
+
+####
+
+GET http://192.168.88.10:9200/ip-intelligence-list*/_search?scroll=1m
+Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
+Content-Type: application/json
+
+{
+ "query": {
+           "match_all": {}
+          }
+}

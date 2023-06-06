@@ -10,14 +10,13 @@ import { GatewayDetail } from '../src/model/network';
 import os from 'os';
 import { GatewayService } from '../src/service/gatewayService';
 import chaiExclude from 'chai-exclude';
-import {
-    IpIntelligenceList, IpIntelligenceListFiles, IpIntelligenceListStatus,
-    IpIntelligenceSource
-} from '../src/model/ipIntelligence';
-import { IpIntelligenceListService, IpIntelligenceService } from '../src/service/ipIntelligenceService';
 import crypto from 'node:crypto';
 import { InputService } from '../src/service/inputService';
 import { ESService } from '../src/service/esService';
+import { FqdnIntelligenceListService } from '../src/service/fqdnIntelligenceService';
+import { FqdnIntelligenceList } from '../src/model/fqdnIntelligence';
+import { FqdnIntelligenceListStatus } from '../src/model/fqdnIntelligence';
+import { FqdnIntelligenceListFiles } from '../src/model/fqdnIntelligence';
 import { esHost, esPass, esUser } from './common.spec';
 
 
@@ -35,8 +34,7 @@ function expectToDeepEqual(a: any, b: any) {
 }
 
 
-
-describe('ipIntelligenceListService', async () => {
+describe('fqdnIntelligenceListService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', filename);
     const redisService = new RedisService();
@@ -59,7 +57,7 @@ describe('ipIntelligenceListService', async () => {
         await redisService.set("/test", data);
         const data2 = await redisService.get("/test", false);
         const tmpFile = `/tmp/${Util.randomNumberString()}`;
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
         await intel.downloadFileFromRedis("/test", tmpFile);
         expect(fs.existsSync(tmpFile)).to.be.true;
 
@@ -70,7 +68,7 @@ describe('ipIntelligenceListService', async () => {
         const data = crypto.randomBytes(4 * 1024 * 1024);
         await redisService.hset("/test", { test: data });
         const tmpFile = `/tmp/${Util.randomNumberString()}`;
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
         await intel.downloadFileFromRedisH("/test", 'test', tmpFile, 'test', '/tmp');
         expect(fs.existsSync(tmpFile)).to.be.true;
 
@@ -81,10 +79,10 @@ describe('ipIntelligenceListService', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8\n//testme");
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\n.co.uk\n//testme\n*.test.me");
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
         const files = await intel.splitFile(tmpFolder, tmpFolderFile, 10000);
-        expect(files.length).to.equal(3);
+        expect(files.length).to.equal(4);
         expect(files[0].page = 6706);
         expect(files[0].hash).exist;
         expect(files[0].filename).exist;
@@ -96,15 +94,15 @@ describe('ipIntelligenceListService', async () => {
     it('getListStatus/saveListStatus/deleteListStatus', async () => {
 
 
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '', labels: [],
         }
-        const status: IpIntelligenceListStatus = {
+        const status: FqdnIntelligenceListStatus = {
             id: item.id,
             hash: 'adfa', lastCheck: 'adf', lastError: '',
         }
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
         await intel.saveListStatus(item, status);
 
         const data = await intel.getListStatus(item);
@@ -121,16 +119,16 @@ describe('ipIntelligenceListService', async () => {
 
     it('getDbFileList/saveDbFileList/deleteDbFileList/deleteDbFileList2', async () => {
 
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '', labels: [],
         }
 
-        const files: IpIntelligenceListFiles = {
+        const files: FqdnIntelligenceListFiles = {
             '0': { page: 5, hash: "string" },
             '1110': { page: 5, hash: "string" }
         }
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
         await intel.saveDbFileList(item, files);
 
         const files2 = await intel.getDbFileList(item);
@@ -160,28 +158,28 @@ describe('ipIntelligenceListService', async () => {
 
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8");
-        const item: IpIntelligenceList = {
+        fs.writeFileSync(tmpFolderFile, "www.google.com\nyahoo.com\nferrumgate.com");
+        const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
             labels: [],
         }
 
-        const files: IpIntelligenceListFiles = {
+        const files: FqdnIntelligenceListFiles = {
             '0': { page: 5, hash: "string" },
             '1110': { page: 5, hash: "string" }
         }
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
         await intel.saveToStore(item, tmpFolderFile, 0);
         await Util.sleep(1000);
-        const listId = await intel.getByIp(item.id, '1.1.1.1')
+        const listId = await intel.getByFqdn(item.id, 'www.google.com')
         expect(listId).exist;
 
 
 
         await intel.deleteFromStore(item, 0);
         await Util.sleep(1000);
-        const listId2 = await intel.getByIp(item.id, '1.1.1.1')
+        const listId2 = await intel.getByFqdn(item.id, 'google2.com')
         expect(listId2).not.exist;
 
 
@@ -193,8 +191,8 @@ describe('ipIntelligenceListService', async () => {
 
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8");
-        const item: IpIntelligenceList = {
+        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com");
+        const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
             labels: [],
             file: {
@@ -202,7 +200,7 @@ describe('ipIntelligenceListService', async () => {
             }
         }
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
 
         await intel.saveListFile(item, tmpFolderFile);
         const status = await intel.getListStatus(item);
@@ -223,7 +221,7 @@ describe('ipIntelligenceListService', async () => {
         expect(status3?.isChanged).to.be.false;
 
 
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8\n3.3.3.3");
+        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com\nco.uk");
         await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
         await intel.process(item);
@@ -234,7 +232,7 @@ describe('ipIntelligenceListService', async () => {
 
 
 
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com\nco.uk\nio");
         await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
         await intel.process(item);
@@ -245,21 +243,21 @@ describe('ipIntelligenceListService', async () => {
     }).timeout(50000);
 
 
-    it.skip('process http version', async () => {
+    it('process http version', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
 
         fs.mkdirSync(tmpFolder);
 
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
             labels: [],
             http: {
-                url: 'https://snort-org-site.s3.amazonaws.com/production/document_files/files/000/022/328/original/ip_filter.blf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAU7AK5ITMJQBJPARJ%2F20230321%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230321T144308Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=44af69f4e0b1cfad5cefc3ae63c5e23e6843849fe15350bd54caa959e4c5d9d1',
+                url: 'https://v.firebog.net/hosts/static/w3kbl.txt',
                 checkFrequency: 1
             }
         }
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
 
 
         const status = await intel.getListStatus(item);
@@ -289,8 +287,8 @@ describe('ipIntelligenceListService', async () => {
 
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8");
-        const item: IpIntelligenceList = {
+        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com\nco.uk");
+        const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
             labels: [],
             file: {
@@ -298,7 +296,7 @@ describe('ipIntelligenceListService', async () => {
             }
         }
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
 
         await intel.saveListFile(item, tmpFolderFile);
         const status = await intel.getListStatus(item);
@@ -327,8 +325,8 @@ describe('ipIntelligenceListService', async () => {
 
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8");
-        const item: IpIntelligenceList = {
+        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com\nco.uk");
+        const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
             labels: [],
             file: {
@@ -336,9 +334,9 @@ describe('ipIntelligenceListService', async () => {
             }
         }
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
 
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com\nco.uk\nwww.yahoo.com");
         await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
         await intel.process(item);
@@ -346,8 +344,8 @@ describe('ipIntelligenceListService', async () => {
 
         let items = await intel.getAllListItems(item, () => true);
         expect(items.length).to.equal(5);
-        expect(items.includes('1.1.1.1/32')).to.be.true;
-        expect(items.includes('192.168.0.0/24')).to.be.true;
+        expect(items.includes('www.yahoo.com')).to.be.true;
+        expect(items.includes('co.uk')).to.be.true;
         console.log(items);
 
 
@@ -355,13 +353,13 @@ describe('ipIntelligenceListService', async () => {
     }).timeout(120000);
 
 
-    it('getByIp', async () => {
+    it('getByFqdn', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
 
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
 
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
             labels: [],
             file: {
@@ -369,83 +367,36 @@ describe('ipIntelligenceListService', async () => {
             }
         }
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
 
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3\n192.168.0.1/32\n192.168.9.10/32\n192.168.10.0/24");
+        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com\nco.uk");
         await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
         await intel.process(item);
         await Util.sleep(1000);
 
-        const id = await intel.getByIp(item.id, '1.1.1.1')
+        const id = await intel.getByFqdn(item.id, 'www.google.com')
         expect(id).exist;
 
-        const id2 = await intel.getByIp(item.id, '192.168.0.0')
+        const id2 = await intel.getByFqdn(item.id, 'com')
         expect(id2).exist;
 
-        const id3 = await intel.getByIp(item.id, '192.168.0.1')
+        const id3 = await intel.getByFqdn(item.id, 'ferrumgate.com')
         expect(id3).exist;
 
 
 
-        const id5 = await intel.getByIp(item.id, '192.168.1.10')
-        expect(id5).not.exist;
-
-        const id6 = await intel.getByIp(item.id, '192.168.9.10')
-        expect(id6).exist;
-
-
-        const id7 = await intel.getByIp(item.id, '192.168.10.15')
-        expect(id7).exist;
-
-        const id8 = await intel.getByIp(item.id, '192.168.9.11')
+        const id8 = await intel.getByFqdn(item.id, 'www.amazon.com')
         expect(id8).not.exist;
 
     }).timeout(50000);
 
 
 
-    it('getByIp intersection', async () => {
-        const tmpFolder = `/tmp/${Util.randomNumberString()}`;
-
-        fs.mkdirSync(tmpFolder);
-        const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-
-        const item: IpIntelligenceList = {
-            id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
-            labels: [],
-            file: {
-                source: "test.txt"
-            }
-        }
-
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
-
-        fs.writeFileSync(tmpFolderFile, "192.168.10.0/24\n192.168.0.0/16");
-        await intel.saveListFile(item, tmpFolderFile);
-        //process again ischanged false
-        await intel.process(item);
-        await Util.sleep(1000);
-
-        const id = await intel.getByIp(item.id, '192.168.10.1')
-        expect(id).exist;
-
-        const id2 = await intel.getByIp(item.id, '192.168.0.0')
-        expect(id2).exist;
-
-        const id3 = await intel.getByIp(item.id, '192.168.3.10')
-        expect(id3).exist;
 
 
 
-        const id5 = await intel.getByIp(item.id, '192.167.1.10')
-        expect(id5).not.exist;
-
-
-    }).timeout(50000);
-
-
-    it('getByIpAll', async () => {
+    it('getByFqdnAll', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
 
         fs.mkdirSync(tmpFolder);
@@ -453,7 +404,7 @@ describe('ipIntelligenceListService', async () => {
         //first file
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
 
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
             labels: [],
             file: {
@@ -461,9 +412,9 @@ describe('ipIntelligenceListService', async () => {
             }
         }
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
 
-        fs.writeFileSync(tmpFolderFile, "192.168.10.0/24\n192.168.0.0/16");
+        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com\nco.uk");
         await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
         await intel.process(item);
@@ -472,7 +423,7 @@ describe('ipIntelligenceListService', async () => {
 
         const tmpFolderFile2 = `${tmpFolder}/${Util.randomNumberString()}`;
 
-        const item2: IpIntelligenceList = {
+        const item2: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
             labels: [],
             file: {
@@ -482,14 +433,14 @@ describe('ipIntelligenceListService', async () => {
 
 
 
-        fs.writeFileSync(tmpFolderFile2, "192.168.10.0/24\n192.168.0.0/16");
+        fs.writeFileSync(tmpFolderFile2, "www.google.com\ncom\nferrumgate.com");
         await intel.saveListFile(item2, tmpFolderFile2);
         //process again ischanged false
         await intel.process(item2);
 
         await Util.sleep(1000);
 
-        const id = await intel.getByIpAll('192.168.10.1')
+        const id = await intel.getByFqdnAll('ferrumgate.com')
         expect(id.items.length == 2).to.be.true;
         expect(id.items.find(x => x == item.id)).exist
         expect(id.items.find(y => y == item2.id)).exist;
@@ -502,12 +453,12 @@ describe('ipIntelligenceListService', async () => {
 
     it('compareSystemHealth', async () => {
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
 
-        await redisService.set('/intelligence/ip/list/1/file', 0);
-        await redisService.set('/intelligence/ip/list/1/status', 0);
+        await redisService.set('/intelligence/fqdn/list/1/file', 0);
+        await redisService.set('/intelligence/fqdn/list/1/status', 0);
         await intel.compareSystemHealth([{ id: '2' } as any]);
-        const item = await redisService.get('/intelligence/ip/list/1/file', false);
+        const item = await redisService.get('/intelligence/fqdn/list/1/file', false);
         expect(item).not.exist;
 
 
@@ -516,7 +467,7 @@ describe('ipIntelligenceListService', async () => {
 
     it('prepareFile', async () => {
 
-        const intel = new IpIntelligenceListService(redisService, inputService, esService);
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
         const baseFolder = `/tmp/${Util.randomNumberString()}`;
         fs.mkdirSync(baseFolder);
 
@@ -539,17 +490,17 @@ describe('ipIntelligenceListService', async () => {
 
     /*     it('manuel', async () => {
     
-            const item2: IpIntelligenceList = {
+            const item2: FqdnIntelligenceList = {
                 id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
                 labels: [],
                 http: {
-                    url: 'https://feodotracker.abuse.ch/downloads/ipblocklist.csv',
+                    url: 'https://raw.githubusercontent.com/PolishFiltersTeam/KADhosts/master/KADhosts.txt',
                     checkFrequency: 1
                 },
-                splitter: ',', splitterIndex: 1
+                splitter: ' ', splitterIndex: 1
             }
     
-            const intel = new IpIntelligenceListService(redisService, inputService, esService);
+            const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
             await intel.process(item2)
             console.log(intel);
     

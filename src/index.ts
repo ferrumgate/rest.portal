@@ -35,6 +35,7 @@ import { routerPKIAuthenticated } from "./api/pkiApi";
 import path from "path";
 import proxy from 'express-http-proxy';
 import { routerDeviceAuthenticated, routerInsightsDeviceAuthenticated } from "./api/deviceApi";
+import { routerFqdnIntelligenceAuthenticated } from "./api/fqdnIntelligenceApi";
 
 
 const bodyParser = require('body-parser');
@@ -496,6 +497,16 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkCaptcha, 'deviceCaptcha', 50),
             asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerDeviceAuthenticated);
+
+        this.app.use('/api/fqdn/intelligence',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'fqdnIntelligence', 1000),
+            asyncHandlerWithArgs(rateLimit, 'fqdnIntelligenceHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'fqdnIntelligenceDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'fqdnIntelligenceCaptcha', 50),
+            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
+            routerFqdnIntelligenceAuthenticated);
 
 
         this.app.use('/api/*', function (req: any, res: any) {

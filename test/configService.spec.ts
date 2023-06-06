@@ -2250,6 +2250,75 @@ describe('configService', async () => {
     });
 
 
+    it('getIpIntelligenceSources/saveIpIntelligenceSource/deleteIpIntelligence', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+
+            sources: [],
+            lists: []
+        }
+
+        const filter = await configService.getIpIntelligenceSources();
+        expect(filter.length).to.equal(0);
+        const item = { name: 'test', type: 'test', id: Util.randomNumberString(), insertDate: '', updateDate: '' };
+        await configService.saveIpIntelligenceSource(
+            item
+        );
+        const filter2 = await configService.getIpIntelligenceSources();
+        expect(filter2.length).to.equal(1);
+
+        await configService.deleteIpIntelligenceSource(item.id);
+        const filter3 = await configService.getIpIntelligenceSources();
+        expect(filter3.length).to.equal(0);
+
+
+    });
+
+
+    it('getFqdnIntelligenceList/saveFqdnIntelligenceList/deleteFqdnIntelligenceList', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+
+            sources: [],
+            lists: []
+        }
+        configService.config.fqdnIntelligence = {
+
+            sources: [],
+            lists: []
+        }
+
+        const filter = await configService.getFqdnIntelligenceLists();
+        expect(filter.length).to.equal(0);
+        const item = { name: 'test', type: 'test', id: Util.randomNumberString(), insertDate: '', updateDate: '', labels: [] };
+        await configService.saveFqdnIntelligenceList(
+            item
+        );
+        const filter2 = await configService.getFqdnIntelligenceLists();
+        expect(filter2.length).to.equal(1);
+
+        await configService.deleteFqdnIntelligenceList(item.id);
+        const filter3 = await configService.getFqdnIntelligenceLists();
+        expect(filter3.length).to.equal(0);
+
+
+    });
+
+
 
 
 

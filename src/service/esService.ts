@@ -15,6 +15,8 @@ import { ConfigWatch } from '../model/config';
 import { IpIntelligenceList, IpIntelligenceListItem } from '../model/ipIntelligence';
 import { BroadcastService } from './broadcastService';
 import { DeviceLog } from '../model/device';
+import { MAP } from 'yaml/dist/nodes/Node';
+import { FqdnIntelligenceListItem } from '../model/fqdnIntelligence';
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -153,6 +155,24 @@ export interface ScrollIpIntelligenceListRequest {
     id: string;
 }
 
+// fqdn intelligence
+
+export interface ESFqdnIntelligenceListItem extends FqdnIntelligenceListItem {
+
+}
+export interface SearchFqdnIntelligenceListRequest {
+    id?: string;
+    searchFqdn: string;
+
+}
+
+export interface DeleteFqdnIntelligenceListRequest {
+    id: string;
+    page?: number;
+}
+export interface ScrollFqdnIntelligenceListRequest {
+    id: string;
+}
 
 /**
  * @summary elastic service
@@ -163,6 +183,7 @@ export class ESService {
     private activityIndexes: Map<string, string> = new Map<string, string>();
     private deviceIndexes: Map<string, string> = new Map<string, string>();
     private ipIntelligenceListIndexes: Map<string, string> = new Map<string, string>();
+    private fqdnIntelligenceListIndexes: Map<string, string> = new Map<string, string>();
     private client!: ES.Client;
     host?: string;
     username?: string;
@@ -196,6 +217,7 @@ export class ESService {
         this.auditIndexes = new Map<string, string>();
         this.activityIndexes = new Map<string, string>();
         this.ipIntelligenceListIndexes = new Map<string, string>();
+        this.fqdnIntelligenceListIndexes = new Map<string, string>();
         this.client = new ES.Client(option);
 
     }
@@ -550,6 +572,9 @@ export class ESService {
 
 
     }
+
+
+
 
 
 
@@ -1564,6 +1589,192 @@ export class ESService {
         return returnResult;
 
     }
+
+    // fqdn intelligence
+
+    async fqdnIntelligenceListCreateIndexIfNotExits(item: FqdnIntelligenceListItem): Promise<[ESFqdnIntelligenceListItem, string]> {
+        await this.createClient();
+        let date = Date.now();
+        let index = `fqdn-intelligence-list-${item.id.toLowerCase()}`;
+        let esitem: ESFqdnIntelligenceListItem =
+        {
+            ...item
+
+        };
+        if (this.fqdnIntelligenceListIndexes.has(index)) return [esitem, index];
+
+        let exists = (await this.client.indices.exists({ index: index }));
+        if (!exists) {
+
+
+            await this.client.indices.create({
+                index: index,
+                body: {
+                    settings: {
+                        index: {
+                            number_of_replicas: 1,
+                            number_of_shards: 1,
+                            "refresh_interval": this.refreshInterval,
+                            translog: {
+                                "durability": "async",
+                                "sync_interval": "10s",
+                                "flush_threshold_size": "1gb"
+                            }
+
+
+                        }
+                    },
+                    mappings: {
+
+
+                        properties: {
+                            insertDate: {
+                                type: 'date', // type is a required attribute if index is specified
+
+                            },
+
+                            id: {
+                                type: "keyword"
+
+                            },
+
+                            page: {
+                                type: "integer"
+
+                            },
+                            fqdn: {
+                                type: "keyword",
+
+
+                            }
+                        }
+
+                    }
+                }
+            })
+
+
+        }
+        this.fqdnIntelligenceListIndexes.set(index, index);
+        return [esitem, index];
+    }
+
+    async fqdnIntelligenceListItemSave(items: [ESFqdnIntelligenceListItem, string][]): Promise<void> {
+        await this.createClient();
+        let result: any[] = [];
+        let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
+        mapped.forEach(x => {
+            result = result.concat(x);
+        });
+        await this.client.bulk({
+            body: result
+        })
+    }
+
+    async searchFqdnIntelligenceList(req: SearchFqdnIntelligenceListRequest) {
+        await this.createClient();
+        let request = {
+            ignore_unavailable: true,
+            index: `fqdn-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`,
+            body: {
+
+                size: 0,
+                query: {
+                    bool: {
+                        must: [
+                            {
+                                term: {
+                                    fqdn: req.searchFqdn
+                                }
+                            }
+                        ]
+                    }
+                },
+                "aggs": {
+                    "id_agg": {
+                        "terms": { "field": "id" }
+                    }
+                }
+            }
+        };
+
+
+        const result = await this.client.search(request) as any;
+        return { items: result?.aggregations?.id_agg?.buckets?.map((x: any) => x.key) as string[] || [] }
+
+    }
+    async deleteFqdnIntelligenceList(req: DeleteFqdnIntelligenceListRequest) {
+        await this.createClient();
+        if (req.page == undefined) {
+            //delete index
+            const del = `fqdn-intelligence-list-${req.id.toLowerCase()}`;
+            await this.deleteIndexes([del])
+            this.ipIntelligenceListIndexes.delete(del);
+            return { deletedCount: 1 }
+        } else {
+            //delete by query
+            let request = {
+                ignore_unavailable: true,
+                index: `fqdn-intelligence-list-${req.id.toLowerCase()}`,
+                body: {
+
+
+                    query: {
+                        bool: {
+                            must: [
+                                {
+                                    term: {
+                                        id: req.id
+                                    }
+                                },
+                                {
+                                    term: {
+                                        page: req.page
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            };
+
+
+            const result = await this.client.deleteByQuery(request);
+            return { deletedCount: result.deleted }
+        }
+
+    }
+
+    async scrollFqdnIntelligenceList(req: ScrollIpIntelligenceListRequest, cont: () => boolean, callback: (item: FqdnIntelligenceListItem) => Promise<void>) {
+        await this.createClient();
+        let request = {
+            ignore_unavailable: true,
+            index: `fqdn-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`,
+            scroll: '1m',
+            body: {
+                query: {
+                    "match_all": {}
+                }
+
+            }
+        };
+
+
+        let { _scroll_id, hits } = await this.client.search(request, {}) as any;
+
+        while (cont() && hits && hits.hits.length) {
+            for (const item of hits.hits.map((x: any) => x._source)) {
+                await callback(item);
+            }
+            let result = await this.client.scroll({ scroll_id: _scroll_id, scroll: '1m' })
+            _scroll_id = result._scroll_id;
+            hits = result.hits;
+
+        }
+
+
+    }
+
 
 }
 

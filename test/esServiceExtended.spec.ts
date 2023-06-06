@@ -4,15 +4,14 @@ import { ConfigService } from '../src/service/configService';
 import { ESService, ESServiceExtended } from '../src/service/esService';
 import { Util } from '../src/util';
 import { RedisService } from '../src/service/redisService';
+import { esHost, esPass, esUser } from './common.spec';
 
 
 
 
 
 const expect = chai.expect;
-const esHost = 'https://192.168.88.250:9200';
-const esUser = "elastic";
-const esPass = '123456';
+
 
 describe('esServiceExtended ', async () => {
     const redis = new RedisService();

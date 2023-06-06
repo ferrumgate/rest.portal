@@ -8,6 +8,7 @@ import { AuditLog } from '../src/model/auditLog';
 import { Util } from '../src/util';
 import { ESService } from '../src/service/esService';
 import { ConfigService } from '../src/service/configService';
+import { esHost, esPass, esUser } from './common.spec';
 
 
 
@@ -19,9 +20,7 @@ const expect = chai.expect;
 
 describe('auditService ', async () => {
     const streamKey = '/logs/audit';
-    const esHost = 'https://192.168.88.250:9200';
-    const esUser = "elastic";
-    const esPass = '123456';
+
     const config = new ConfigService('fljvc7rm1xfo37imbu3ryc5mfbh9jpm5', `/tmp/${Util.randomNumberString()}`)
     before(async () => {
         await config.setES({ host: esHost, user: esUser, pass: esPass })

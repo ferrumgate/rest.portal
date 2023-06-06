@@ -10,14 +10,11 @@ import { Gateway } from '../src/model/network';
 import { AuditLog } from '../src/model/auditLog';
 import { ESService } from '../src/service/esService';
 import { ExpressApp } from '../src';
+import { esHost, esPass, esUser } from './common.spec';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
 
-
-const esHost = 'https://192.168.88.250:9200';
-const esUser = "elastic";
-const esPass = '123456';
 
 describe('auditApi ', async () => {
     const expressApp = new ExpressApp();
@@ -90,9 +87,6 @@ describe('auditApi ', async () => {
 
     }).timeout(50000);
 
-    const host = 'https://192.168.88.250:9200';
-    const user = 'elastic';
-    const pass = '123456';
 
     function createSampleData2() {
         let audit1: AuditLog = {
@@ -133,7 +127,7 @@ describe('auditApi ', async () => {
 
     it('/log/audit', async () => {
 
-        const es = new ESService(configService, host, user, pass);
+        const es = new ESService(configService, esHost, esUser, esPass);
         await Util.sleep(1000);//wait for connecting
         await es.reset();
         const { audit1, audit2, audit3 } = createSampleData2();

@@ -23,6 +23,7 @@ import { config } from 'process';
 import { IpIntelligenceList } from '../src/model/ipIntelligence';
 import { ErrorCodesInternal } from '../src/restfullException';
 import { DevicePosture } from '../src/model/authenticationProfile';
+import { esHost, esPass, esUser } from './common.spec';
 
 
 
@@ -36,9 +37,9 @@ const expect = chai.expect;
 
 describe('policyService ', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
-    const host = 'https://192.168.88.250:9200';
-    const user = 'elastic';
-    const pass = '123456';
+    const host = esHost;
+    const user = esUser;
+    const pass = esPass;
 
     beforeEach(async () => {
 

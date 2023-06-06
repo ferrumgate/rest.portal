@@ -480,7 +480,8 @@ export class IpIntelligenceListService {
 
         let items: [IpIntelligenceListItem, string][] = [];
         await Util.readFileLineByLine(file, async (line: string) => {
-
+            if (line.startsWith('#'))
+                return true;
             if (!line.includes('/'))//must be cidr
                 if (line.includes(":"))
                     line += '/128';

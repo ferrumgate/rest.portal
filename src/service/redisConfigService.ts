@@ -34,6 +34,8 @@ import { isIPv4 } from "net";
 import * as ipaddr from 'ip-address';
 import { UtilPKI } from "../utilPKI";
 import { DevicePosture } from "../model/authenticationProfile";
+import { FqdnIntelligenceSource } from "../model/fqdnIntelligence";
+import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -365,8 +367,8 @@ export class RedisConfigService extends ConfigService {
             if (version < 2) {//if not saved before, first installing system
                 logger.info("config service version upgrade to 2");
                 logger.info("create default values");
-                //await this.saveV2();
-                //version = 2;
+                await this.saveV2();
+                version = 2;
             }
 
 
@@ -523,9 +525,21 @@ export class RedisConfigService extends ConfigService {
 
             await this.rSave('webSSLCertificate', undefined, cert, pipeline);
         }
+        await this.rSaveArray('ipIntelligence/lists', this.config.ipIntelligence.lists || [], pipeline);
+        await this.rSaveArray('ipIntelligence/sources', this.config.ipIntelligence.sources || [], pipeline);
+        await this.rSaveArray('devicePostures', this.config.devicePostures || [], pipeline);
 
         await pipeline.exec();
 
+    }
+
+    async saveV2() {
+
+        const pipeline = await this.redis.multi();
+        await this.rSave('version', undefined, 2, pipeline);
+        await this.rSaveArray('fqdnIntelligence/lists', this.config.fqdnIntelligence.lists || [], pipeline);
+        await this.rSaveArray('fqdnIntelligence/sources', this.config.fqdnIntelligence.sources || [], pipeline);
+        await pipeline.exec();
     }
 
     override emitEvent<T>(event: ConfigWatch<T>): void {
@@ -1855,6 +1869,11 @@ export class RedisConfigService extends ConfigService {
         cfg.ipIntelligence.lists = await this.rGetAll('ipIntelligence/lists');
         cfg.devicePostures = await this.rGetAll('devicePostures');
 
+        cfg.fqdnIntelligence.sources = await this.rGetAll('fqdnIntelligence/sources');
+        cfg.fqdnIntelligence.lists = await this.rGetAll('fqdnIntelligence/lists');
+
+
+
     }
 
     /**
@@ -1904,6 +1923,9 @@ export class RedisConfigService extends ConfigService {
 
         await this.rSaveArray('ipIntelligence/sources', cfg.ipIntelligence.sources, pipeline);
         await this.rSaveArray('ipIntelligence/lists', cfg.ipIntelligence.lists, pipeline);
+
+        await this.rSaveArray('fqdnIntelligence/sources', cfg.fqdnIntelligence.sources, pipeline);
+        await this.rSaveArray('fqdnIntelligence/lists', cfg.fqdnIntelligence.lists, pipeline);
 
 
         await pipeline.exec();
@@ -2112,6 +2134,124 @@ export class RedisConfigService extends ConfigService {
         await pipeline.exec();
         return ret;
 
+    }
+
+
+
+    /////////////////// fqdn intelligence /////////////////////////////
+
+
+
+    override async getFqdnIntelligenceSources(): Promise<FqdnIntelligenceSource[]> {
+        this.isReady();
+        this.config.fqdnIntelligence.sources = await this.rGetAll('fqdnIntelligence/sources');
+        return await super.getFqdnIntelligenceSources();
+    }
+    override async getFqdnIntelligenceSource(id: string) {
+        this.isReady();
+        this.config.fqdnIntelligence.sources = [];
+        const src = await this.rGetWith<FqdnIntelligenceSource>(`fqdnIntelligence/sources`, id);
+        if (src) {
+            this.config.fqdnIntelligence.sources.push(src);
+        }
+        return await super.getFqdnIntelligenceSource(id);
+    }
+
+    async saveFqdnIntelligenceSource(source: FqdnIntelligenceSource) {
+        this.isReady();
+        this.config.fqdnIntelligence.sources = [];
+        const src = await this.rGetWith<FqdnIntelligenceSource>('fqdnIntelligence/sources', source.id);
+        if (src) this.config.fqdnIntelligence.sources.push(src);
+        let ret = await super.saveFqdnIntelligenceSource(source);
+        const pipeline = await this.redis.multi();
+        await this.rSave('fqdnIntelligence/sources', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+    async deleteFqdnIntelligenceSource(id: string) {
+        this.isReady();
+
+        this.config.fqdnIntelligence.sources = [];
+
+        const source = await this.rGetWith<FqdnIntelligenceSource>('fqdnIntelligence/sources', id);
+        if (source) {
+            this.config.fqdnIntelligence.sources.push(source);
+            const pipeline = await this.redis.multi();
+            await this.rDel('fqdnIntelligence/sources', source, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return this.createTrackEvent(source)
+    }
+
+
+    override async getFqdnIntelligenceLists(): Promise<FqdnIntelligenceList[]> {
+        this.isReady();
+        this.config.fqdnIntelligence.lists = await this.rGetAll('fqdnIntelligence/lists');
+        return await super.getFqdnIntelligenceLists();
+    }
+    override async getFqdnIntelligenceList(id: string) {
+        this.isReady();
+        this.config.fqdnIntelligence.lists = [];
+        const src = await this.rGetWith<FqdnIntelligenceList>(`fqdnIntelligence/lists`, id);
+        if (src) {
+            this.config.fqdnIntelligence.lists.push(src);
+        }
+        return await super.getFqdnIntelligenceList(id);
+    }
+
+    async saveFqdnIntelligenceList(list: FqdnIntelligenceList) {
+        this.isReady();
+        this.config.fqdnIntelligence.lists = [];
+        const src = await this.rGetWith<FqdnIntelligenceList>('fqdnIntelligence/lists', list.id);
+        if (src) this.config.fqdnIntelligence.lists.push(src);
+        let ret = await super.saveFqdnIntelligenceList(list);
+        const pipeline = await this.redis.multi();
+        await this.rSave('fqdnIntelligence/lists', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+    async triggerFqdnIntelligenceListDeleted(list: FqdnIntelligenceList, pipeline: RedisPipelineService) {
+
+
+        for (const it of this.config.authorizationPolicy.rules) {
+            let before = null;
+            let changed = false;
+            if (it.profile.fqdnIntelligence?.blackLists.includes(list.id)) {
+                before = Util.clone(it);
+                it.profile.fqdnIntelligence.blackLists = it.profile.fqdnIntelligence.blackLists.filter(x => list.id != x);
+                changed = true;
+            }
+            if (it.profile.fqdnIntelligence?.whiteLists.includes(list.id)) {
+                if (!before)
+                    before = Util.clone(it);
+                it.profile.fqdnIntelligence.whiteLists = it.profile.fqdnIntelligence.whiteLists.filter(x => list.id != x);
+                changed = true;
+            }
+            if (changed) {
+                await this.rSave('authorizationPolicy/rules', before, it, pipeline);
+            }
+        }
+    }
+
+    async deleteFqdnIntelligenceList(id: string) {
+        this.isReady();
+
+        this.config.fqdnIntelligence.lists = [];
+
+        const list = await this.rGetWith<FqdnIntelligenceList>('fqdnIntelligence/lists', id);
+        if (list) {
+            this.config.fqdnIntelligence.lists.push(list);
+            this.config.authenticationPolicy = await this.getAuthenticationPolicy();
+            const pipeline = await this.redis.multi();
+            await this.triggerFqdnIntelligenceListDeleted(list, pipeline);
+            await this.rDel('fqdnIntelligence/lists', list, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return this.createTrackEvent(list);
     }
 
 
