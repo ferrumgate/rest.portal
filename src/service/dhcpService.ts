@@ -38,12 +38,12 @@ export class DhcpService {
             const ip = Util.bigIntegerToIp(s);
             const isExists = await this.redis.containsKey(`/tunnel/ip/${ip}`);
             if (!isExists) {
-                const added = await this.redis.setnx(`/tunnel/ip/${ip}`, 'reserved', 5 * 1000);
+                const added = await this.redis.setnx(`/tunnel/ip/${ip}`, 'reserved', 10 * 1000);
                 if (added) {
                     this.lastUsedIps.set(network.id, s);
                     return { network: network, ip: s };
                 }
-            }
+            } else this.lastUsedIps.set(network.id, s);//for performance,
         }
 
         logger.fatal("tunnel ip pool is over");
@@ -65,22 +65,29 @@ export class DhcpService {
     async getEmptyTrackId() {
         for (let i = this.lastUsedTrackId + 1; i < 4294967295; ++i) {
             const isExists = await this.redis.containsKey(`/tunnel/trackId/${i}`);
-            if (!isExists)
-                return {
-                    trackId: i
-                };
-        }
-        for (let i = 1; i < this.lastUsedTrackId; ++i) {
-            const isExists = await this.redis.containsKey(`/tunnel/trackId/${i}`);
             if (!isExists) {
-                const added = await this.redis.setnx(`/tunnel/trackId/${i}`, 'reserved', 5 * 1000);
+                const added = await this.redis.setnx(`/tunnel/trackId/${i}`, 'reserved', 10 * 1000);
                 if (added) {
                     this.lastUsedTrackId = i;
                     return {
                         trackId: i
                     };
                 }
-            }
+            } else
+                this.lastUsedTrackId = i;//for performance
+        }
+        for (let i = 1; i < this.lastUsedTrackId; ++i) {
+            const isExists = await this.redis.containsKey(`/tunnel/trackId/${i}`);
+            if (!isExists) {
+                const added = await this.redis.setnx(`/tunnel/trackId/${i}`, 'reserved', 10 * 1000);
+                if (added) {
+                    this.lastUsedTrackId = i;
+                    return {
+                        trackId: i
+                    };
+                }
+            } else
+                this.lastUsedTrackId = i;//for performance
         }
         logger.fatal("tunnel track id pool is over");
         throw new RestfullException(500, ErrorCodes.ErrTrackIdAssignFailed, ErrorCodes.ErrTrackIdAssignFailed, 'track id pool is over');

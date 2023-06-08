@@ -672,6 +672,24 @@ describe('util ', () => {
 
     });
 
+    it('nanosecond', async () => {
+        const start = Util.nanosecond() / 1000000;
+        await Util.sleep(1000);
+        const now = Util.nanosecond() / 1000000;
+        const dif = now - start;
+        expect(dif).to.greaterThanOrEqual(1000);
+
+    });
+
+    it('milisecond', async () => {
+        const start = Util.milisecond()
+        await Util.sleep(1000);
+        const now = Util.milisecond();
+        const dif = now - start;
+        expect(dif).to.greaterThanOrEqual(1000);
+
+    });
+
 
 
 
