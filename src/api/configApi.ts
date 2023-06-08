@@ -25,7 +25,7 @@ import fsp from 'fs/promises';
 import multer from 'multer';
 import { Config } from "log4js";
 import { attachActivitySession, attachActivityUser, saveActivity } from "./auth/commonAuth";
-const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 } });
+const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 100 * 1024 * 1024 } });
 
 
 /////////////////////////////////  public //////////////////////////////////

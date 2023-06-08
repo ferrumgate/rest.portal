@@ -52,18 +52,18 @@ describe('fqdnIntelligenceListService', async () => {
         await esService.reset();
         await Util.sleep(1000);
     })
-    it('downloadFileFromRedis', async () => {
-        const data = crypto.randomBytes(4 * 1024 * 1024);
-        await redisService.set("/test", data);
-        const data2 = await redisService.get("/test", false);
-        const tmpFile = `/tmp/${Util.randomNumberString()}`;
-        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
-        await intel.downloadFileFromRedis("/test", tmpFile);
-        expect(fs.existsSync(tmpFile)).to.be.true;
-
-
-
-    }).timeout(500000);
+    /*  it('downloadFileFromRedis', async () => {
+         const data = crypto.randomBytes(4 * 1024 * 1024);
+         await redisService.set("/test", data);
+         const data2 = await redisService.get("/test", false);
+         const tmpFile = `/tmp/${Util.randomNumberString()}`;
+         const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
+         await intel.downloadFileFromRedis("/test", tmpFile);
+         expect(fs.existsSync(tmpFile)).to.be.true;
+ 
+ 
+ 
+     }).timeout(500000); */
     it('downloadFileFromRedis', async () => {
         const data = crypto.randomBytes(4 * 1024 * 1024);
         await redisService.hset("/test", { test: data });

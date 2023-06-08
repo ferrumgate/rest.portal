@@ -105,10 +105,10 @@ export class FqdnIntelligenceListService {
     constructor(protected redisService: RedisService, protected inputService: InputService, protected esService: ESService) {
 
     }
-    async downloadFileFromRedis(key: string, filename: string) {
+    /* async downloadFileFromRedis(key: string, filename: string) {
         const file = await this.redisService.get(key, false) as Buffer;
         await fsp.writeFile(filename, file);
-    }
+    } */
     async prepareFile(originalFilename: string, filename: string, baseDirectory: string) {
         const nextDir = `${baseDirectory}/${Util.randomNumberString(16)}`
         await fsp.mkdir(nextDir);

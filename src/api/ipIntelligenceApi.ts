@@ -17,7 +17,7 @@ import IPCIDR from "ip-cidr";
 import fsp from 'fs/promises'
 import multer from 'multer';
 import { once } from "events";
-const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 } });
+const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 100 * 1024 * 1024 } });
 
 /////////////////////////////////  ip intelligence //////////////////////////////////
 export const routerIpIntelligenceAuthenticated = express.Router();
