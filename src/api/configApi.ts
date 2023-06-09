@@ -97,8 +97,9 @@ routerConfigAuthenticated.get('/common',
 
         const url = await configService.getUrl();
         const domain = await configService.getDomain();
+        const httptoHttpsRedirect = await configService.getHttpToHttpsRedirect();
 
-        return res.status(200).json({ url: url, domain: domain });
+        return res.status(200).json({ url: url, domain: domain, httpsRedirect: httptoHttpsRedirect });
 
     }))
 
@@ -108,7 +109,7 @@ routerConfigAuthenticated.put('/common',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
-        const input = req.body as { url?: string, domain?: string };
+        const input = req.body as { url?: string, domain?: string, httpsRedirect?: boolean };
         logger.info(`changing config common settings`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
@@ -121,6 +122,7 @@ routerConfigAuthenticated.put('/common',
 
         const url = await configService.getUrl();
         const domain = await configService.getDomain();
+        const httpsRedirect = await configService.getHttpToHttpsRedirect();
         if (input.url && input.url != url) {
             await inputService.checkUrl(input.url);
             const { before, after } = await configService.setUrl(input.url);
@@ -133,6 +135,10 @@ routerConfigAuthenticated.put('/common',
             await inputService.checkDomain(input.domain);
             const { before, after } = await configService.setDomain(input.domain);
             await auditService.logSetDomain(currentSession, currentUser, before, after);
+        }
+        if (input.httpsRedirect != httpsRedirect) {
+            const { before, after } = await configService.setHttpToHttpsRedirect(input.httpsRedirect ? true : false);
+            await auditService.logSetHttpToHttpsRedirect(currentSession, currentUser, before, after);
         }
         const urlAfter = await configService.getUrl();
         const domainAfter = await configService.getDomain();

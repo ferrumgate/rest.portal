@@ -528,7 +528,6 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('ipIntelligence/lists', this.config.ipIntelligence.lists || [], pipeline);
         await this.rSaveArray('ipIntelligence/sources', this.config.ipIntelligence.sources || [], pipeline);
         await this.rSaveArray('devicePostures', this.config.devicePostures || [], pipeline);
-
         await pipeline.exec();
 
     }
@@ -539,6 +538,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('version', undefined, 2, pipeline);
         await this.rSaveArray('fqdnIntelligence/lists', this.config.fqdnIntelligence.lists || [], pipeline);
         await this.rSaveArray('fqdnIntelligence/sources', this.config.fqdnIntelligence.sources || [], pipeline);
+        await this.rSave('httpToHttpsRedirect', undefined, this.config.domain, pipeline);
         await pipeline.exec();
     }
 
@@ -1871,7 +1871,7 @@ export class RedisConfigService extends ConfigService {
 
         cfg.fqdnIntelligence.sources = await this.rGetAll('fqdnIntelligence/sources');
         cfg.fqdnIntelligence.lists = await this.rGetAll('fqdnIntelligence/lists');
-
+        cfg.httpToHttpsRedirect = await this.rGet('httpToHttpsRedirect') || false;
 
 
     }
@@ -1926,6 +1926,7 @@ export class RedisConfigService extends ConfigService {
 
         await this.rSaveArray('fqdnIntelligence/sources', cfg.fqdnIntelligence.sources, pipeline);
         await this.rSaveArray('fqdnIntelligence/lists', cfg.fqdnIntelligence.lists, pipeline);
+        await this.rSave('httpToHttpsRedirect', undefined, cfg.httpToHttpsRedirect, pipeline);
 
 
         await pipeline.exec();
@@ -2254,6 +2255,22 @@ export class RedisConfigService extends ConfigService {
         return this.createTrackEvent(list);
     }
 
+    override async getHttpToHttpsRedirect(): Promise<boolean> {
+        this.isReady();
+        this.config.httpToHttpsRedirect = await this.rGet<boolean>('httpToHttpsRedirect') || false;
+        return await super.getHttpToHttpsRedirect();
+    }
+    async setHttpToHttpsRedirect(val: boolean) {
+        this.isReady();
+        this.config.httpToHttpsRedirect = await this.rGet<boolean>('domain') || false;
+        const ret = await super.setHttpToHttpsRedirect(val);
+        const pipeline = await this.redis.multi();
+        await this.rSave('httpToHttpsRedirect', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
 
 
 }
@@ -2314,6 +2331,9 @@ export class RedisCachedConfigService extends RedisConfigService {
                         break;
                     case 'caSSLCertificate':
                         this.nodeCache.del('caSSLCertificate');
+                        break;
+                    case 'httpToHttpsRedirect':
+                        this.nodeCache.del('httpToHttpsRedirect');
                         break;
                     //this is possible 
                     /*                     case 'devicePostures':
@@ -2427,7 +2447,19 @@ export class RedisCachedConfigService extends RedisConfigService {
             return sup;
         } */
 
+    override async getHttpToHttpsRedirect(): Promise<boolean> {
+        const val = this.nodeCache.get<boolean>('httpToHttpsRedirect');
+        if (val) return val;
+        const sup = await super.getHttpToHttpsRedirect();
+        this.nodeCache.set('httpToHttpsRedirect', sup);
+        return sup;
+    }
 
+    override async setHttpToHttpsRedirect(val: boolean) {
+        const ret = await super.setHttpToHttpsRedirect(val);
+        this.nodeCache.set('httpToHttpsRedirect', ret.after);
+        return ret;
+    }
 
 
 }

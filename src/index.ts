@@ -52,12 +52,15 @@ export class ExpressApp {
     appSystemService: AppSystemService;
     port: number;
     ports: number;
+    httpToHttpsRedirect: boolean;
     //bridge between appService and this parent class
-    static https = {
-        start: async () => {
+    static do = {
+        reconfigure: async () => {
+
+        },
+        startHttps: async () => {
 
         }
-
     }
     constructor(httpPort?: number, httpsPort?: number) {
         const port = Number(process.env.PORT) || 8181;
@@ -68,8 +71,12 @@ export class ExpressApp {
         this.appService = new AppService();
         this.appSystemService = new AppSystemService(this.appService);
         this.app.appService = this.appService;
-        ExpressApp.https.start = async () => {
-            await this.startHttps();
+        this.httpToHttpsRedirect = process.env.NODE_ENV == 'development' ? false : true;
+        ExpressApp.do.reconfigure = async () => {
+            await this.reconfigure()
+        }
+        ExpressApp.do.startHttps = async () => {
+            await this.startHttps()
         }
     }
     async init() {
@@ -98,6 +105,9 @@ export class ExpressApp {
             },
             hsts: false,
         }));
+        this.app.enable('trust proxy');
+
+
 
         const setAppService = async (req: any, res: any, next: any) => {
             req.appService = this.appService;//important
@@ -164,6 +174,17 @@ export class ExpressApp {
             next();
         };
 
+        const httpToHttpsRedirect = async (req: any, res: any, next: any) => {
+            if (!req.secure && this.httpToHttpsRedirect) {
+                let hostname = req.headers.host as string;
+                hostname = hostname.split(':')[0];
+                if (this.ports != 443)
+                    hostname = hostname + ':' + this.ports;
+                return res.redirect("https://" + hostname + req.originalUrl);
+            }
+            next();
+        };
+
 
 
 
@@ -178,6 +199,9 @@ export class ExpressApp {
             res.setHeader('server', 'ferrumgate')
             next();
         });
+
+        //http to https redirect
+        this.app.use(asyncHandler(httpToHttpsRedirect));
 
 
 
@@ -602,6 +626,10 @@ export class ExpressApp {
                 this.httpsHash = hash;
             }
         }
+
+    }
+    async reconfigure() {
+        this.httpToHttpsRedirect = await this.appService.configService.getHttpToHttpsRedirect();
 
     }
     async stopHttps() {

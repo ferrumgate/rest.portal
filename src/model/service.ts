@@ -22,7 +22,7 @@ export interface Service {
     labels?: string[];
     //listen ports
     ports: ServicePort[];
-    protocol?: string;
+    protocol?: 'dns' | 'raw' | string;
     //upstream hosts and rules
     hosts: ServiceHost[];
     count: number;

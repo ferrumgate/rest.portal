@@ -142,6 +142,9 @@ export class AppService {
         this.configureLetsEncrypt = new EventBufferedExecutor(async () => {
             await this.reconfigureLetsEncrypt();
         })
+        this.configureHttpToHttps = new EventBufferedExecutor(async () => {
+            await this.reconfigureHttptoHttps();
+        })
 
     }
 
@@ -163,7 +166,7 @@ export class AppService {
 
     configureHttps: EventBufferedExecutor;
     public async reconfigureHttps() {
-        await ExpressApp.https.start();
+        await ExpressApp.do.startHttps();
 
     }
     configurePKI: EventBufferedExecutor;
@@ -178,6 +181,12 @@ export class AppService {
 
     }
 
+    configureHttpToHttps: EventBufferedExecutor;
+    public async reconfigureHttptoHttps() {
+        await ExpressApp.do.reconfigure();
+
+    }
+
     async start() {
 
 
@@ -188,6 +197,7 @@ export class AppService {
             await this.configureES.push('ready');
             await this.configureHttps.push('ready');
             await this.configurePKI.push('ready');
+            await this.configureHttpToHttps.push('ready');
 
         })
         this.configService.events.on('configChanged', async (data: ConfigWatch<any>) => {
@@ -205,6 +215,9 @@ export class AppService {
                 await this.configurePKI.push(data.path);
             if (data.path == '/config/url') {
                 await this.configureLetsEncrypt.push(data.path);
+            }
+            if (data.path == '/config/httpToHttpsRedirect') {
+                await this.configureHttpToHttps.push(data.path);
             }
 
         });
@@ -307,6 +320,7 @@ export class EventBufferedExecutor {
 
             }
             clearIntervalAsync(this.interval);
+            this.interval = null;
 
         }, this.errorOccured ? 5000 : 1000);
     }

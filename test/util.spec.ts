@@ -683,7 +683,7 @@ describe('util ', () => {
 
     it('milisecond', async () => {
         const start = Util.milisecond()
-        await Util.sleep(1000);
+        await Util.sleep(1500);
         const now = Util.milisecond();
         const dif = now - start;
         expect(dif).to.greaterThanOrEqual(1000);

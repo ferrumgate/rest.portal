@@ -161,7 +161,8 @@ export class ConfigService {
             fqdnIntelligence: {
                 sources: [],
                 lists: []
-            }
+            },
+            httpToHttpsRedirect: true,
 
         }
     }
@@ -2148,6 +2149,21 @@ export class ConfigService {
         return this.createTrackEvent(source)
 
     }
+    async getHttpToHttpsRedirect(): Promise<boolean> {
+        this.isReady(); this.isReadable();
+        return this.config.httpToHttpsRedirect ? true : false;
+    }
+
+    async setHttpToHttpsRedirect(val: boolean) {
+        this.isReady(); this.isWritable();
+        let previous = this.config.httpToHttpsRedirect;
+        this.config.httpToHttpsRedirect = val;
+        const trc = this.createTrackEvent(previous, this.config.httpToHttpsRedirect)
+        this.emitEvent({ type: 'put', path: 'httpToHttpsRedirect', val: trc.after, before: trc.before })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.httpToHttpsRedirect);
+    }
+
 
 
 

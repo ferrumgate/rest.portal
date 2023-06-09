@@ -55,7 +55,8 @@ export type RPath =
     'ipIntelligence/lists' |
     'devicePostures' |
     'fqdnIntelligence/sources' |
-    'fqdnIntelligence/lists';
+    'fqdnIntelligence/lists' |
+    'httpToHttpsRedirect';
 
 
 
@@ -129,4 +130,7 @@ export interface Config {
     // redisConfigWatchCachedService
     // redisConfigService getConfig and setConfig functions
     fqdnIntelligence: FqdnIntelligence;
+
+    //redirect http requests to https
+    httpToHttpsRedirect: boolean;
 }

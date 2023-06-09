@@ -156,6 +156,12 @@ export class AuditService {
             `domain settings updated`,
             `${before || after}`)
     }
+    async logSetHttpToHttpsRedirect(currentSession: AuthSession, currentUser: User, before?: boolean, after?: boolean) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `http to https redirect settings updated`,
+            `${before || after}`)
+    }
     async logSetUrl(currentSession: AuthSession, currentUser: User, before?: string, after?: string) {
         await this.executeSave(currentSession, currentUser, before, after, 'url updated',
             `${before || after}`)

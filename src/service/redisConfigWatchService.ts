@@ -274,6 +274,9 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'devicePostures':
                             await this.processArray(this.config.devicePostures, path, item, val.id);
                             break;
+                        case 'httpToHttpsRedirect':
+                            this.config.httpToHttpsRedirect = await this.redisConfig.rGet('httpToHttpsRedirect') || false
+                            break;
                         default:
                             logger.warn(`not implemented path ${item.path}`);
                             throw new Error(`not implemented path ${item.path}`)
