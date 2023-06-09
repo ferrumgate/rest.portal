@@ -76,6 +76,26 @@ describe('dhcpService', () => {
             const { trackId } = await dhcp.getEmptyTrackId();
             expect(trackId).exist;
             expect(trackId).to.equal(i);
+
+            dhcp.lastUsedTrackId = i;
+        }
+
+
+
+    }).timeout(10000)
+
+    it('getEmptyTrackId will return unique trackId', async () => {
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
+
+
+
+        const dhcp = new DhcpService(configService, simpleRedis);
+        for (let i = 1; i < 100; ++i) {
+            const { trackId } = await dhcp.getEmptyTrackId();
+            expect(trackId).exist;
+            expect(trackId).to.equal(i);
+            expect(await simpleRedis.exists('/tunnel/trackId/' + i)).to.be.true;
             dhcp.lastUsedTrackId = i;
         }
 

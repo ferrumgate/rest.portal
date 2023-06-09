@@ -103,6 +103,10 @@ export class TunnelService {
         //security check
         if (!tunnel.authenticatedTime) {
             //peer ip must be set before 
+            //10 second timeout
+            const tenSecondMilisecond = 10 * 1000;
+            const startMS = Util.milisecond();
+
             const { network, ip } = await this.dhcp.getEmptyIp(tunnel.gatewayId || '');
             const { trackId } = await this.dhcp.getEmptyTrackId();
             const ipstr = Util.bigIntegerToIp(ip);
@@ -126,6 +130,13 @@ export class TunnelService {
 
             await this.redisService.hset(key, { serviceNetwork: gateNetwork.serviceNetwork });
             await this.redisService.expire(key, 5 * 60 * 1000);
+
+
+            const now = Util.milisecond();
+            const diff = now - startMS;
+            if (diff > tenSecondMilisecond)
+                throw new RestfullException(408, ErrorCodes.ErrTimeout, ErrorCodes.ErrTimeout, `confirm took much then 10 second  value ms:${diff}`)
+
             // at the end
             //send every thing ok message to waiting client to finish tunneling
             const authenticationChannel = `/tunnel/authentication/${tunnelKey}`;

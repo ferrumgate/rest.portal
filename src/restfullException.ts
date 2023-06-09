@@ -83,6 +83,7 @@ export class ErrorCodes {
     static ErrIpNotValid: string = 'ErrIpNotValid'
     static ErrSystemParameter: string = "ErrSystemParameter";
     static ErrCertificateIsNotValid: string = 'ErrCertificateIsNotValid';
+    static ErrTimeout: string = 'ErrTimeout';
 
 }
 

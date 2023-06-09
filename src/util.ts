@@ -460,6 +460,16 @@ export const Util = {
         const [second, nanosecond] = process.hrtime();
         return second * NS_PER_SEC + nanosecond;
     },
+    milisecond() {
+        const NS_PER_SEC = 1e9;
+        const [second, nanosecond] = process.hrtime();
+        return (second * NS_PER_SEC + nanosecond) / 1000000;
+    },
+    milisecondInt() {
+        const NS_PER_SEC = 1e9;
+        const [second, nanosecond] = process.hrtime();
+        return Math.trunc((second * NS_PER_SEC + nanosecond) / 1000000);
+    },
     now() {
         return new Date().getTime();
     },
