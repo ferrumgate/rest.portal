@@ -54,7 +54,7 @@ describe('ipIntelligenceListService', async () => {
         await esService.reset();
         await Util.sleep(1000);
     })
-    it('downloadFileFromRedis', async () => {
+    /* it('downloadFileFromRedis', async () => {
         const data = crypto.randomBytes(4 * 1024 * 1024);
         await redisService.set("/test", data);
         const data2 = await redisService.get("/test", false);
@@ -65,7 +65,7 @@ describe('ipIntelligenceListService', async () => {
 
 
 
-    }).timeout(500000);
+    }).timeout(500000); */
     it('downloadFileFromRedis', async () => {
         const data = crypto.randomBytes(4 * 1024 * 1024);
         await redisService.hset("/test", { test: data });

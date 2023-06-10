@@ -232,7 +232,7 @@ routerFqdnIntelligenceAuthenticated.get('/list/:id/file',
         if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrFqdnIntelligenceSourceNotFound, 'no fqdn intellegence list');
 
         res.attachment(`${list.name}_${new Date().toISOString()}`);
-        await fqdnIntelligence.listService.getAllListItems(list, () => true, async (item: string) => {
+        await fqdnIntelligence.listService.getAllListItems(list, async (item: string) => {
             res.write(item);
             res.write('\n');
         })
@@ -258,7 +258,7 @@ routerFqdnIntelligenceAuthenticated.get('/list',
         if (search && inputService.checkDomain(search, false)) {
             const listIds = await fqdnIntelligence.listService.getByFqdnAll(search);
             const allLists = await configService.getFqdnIntelligenceLists();
-            allLists.filter(x => listIds.items.includes(x.id)).forEach(y => lists.push(y));
+            allLists.filter(x => listIds.includes(x.id)).forEach(y => lists.push(y));
 
 
 

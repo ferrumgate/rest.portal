@@ -25,6 +25,9 @@ import IPCIDR from "ip-cidr";
 import { contentSecurityPolicy } from "helmet";
 import { ESService } from "./esService";
 import isFQDN from "validator/lib/isFQDN";
+import diff from 'diff';
+import filediff from 'text-file-diff';
+import TextFileDiff from "text-file-diff";
 
 export abstract class FqdnIntelligenceSourceService {
 
@@ -38,7 +41,7 @@ export abstract class FqdnIntelligenceSourceService {
 }
 
 
-
+//not used
 export class FqdnIntelligenceService {
     protected service: FqdnIntelligenceSourceService | null = null;
     protected serviceCount = -1;
@@ -80,7 +83,7 @@ export class FqdnIntelligenceService {
         await this.createService();
 
 
-        if (this.service) {
+        /* if (this.service) {
             //check from cache
             const item = await this.redisIntel.get(`/fqdn/intelligence/${fqdn}`, true);
             if (item) return item as FqdnIntelligenceItem;
@@ -89,7 +92,7 @@ export class FqdnIntelligenceService {
                 await this.redisIntel.set(`/fqdn/intelligence/${fqdn}`, result, { ttl: 6 * 60 * 60 * 1000 });//set 6 hours ttl
             }
             return result;
-        }
+        } */
         return null;
 
     }
@@ -102,13 +105,32 @@ export class FqdnIntelligenceListService {
     /**
      *
      */
-    constructor(protected redisService: RedisService, protected inputService: InputService, protected esService: ESService) {
+    constructor(protected redisService: RedisService, protected inputService: InputService, protected esService: ESService, protected splitCount = 10000) {
 
     }
-    /* async downloadFileFromRedis(key: string, filename: string) {
-        const file = await this.redisService.get(key, false) as Buffer;
+
+
+    async downloadFileFromRedisH(key: string, field: string, filename: string, originalFileName: string, baseDirectory: string) {
+        const file = await this.redisService.hgetBuffer(key, field) as Buffer;
         await fsp.writeFile(filename, file);
-    } */
+        await this.prepareFile(originalFileName, filename, baseDirectory);
+    }
+
+    async downloadFileFromUrl(url: string, baseDirectory: string, filename: string) {
+        await Util.downloadFile(url, filename);
+        await this.prepareFile(url, filename, baseDirectory);
+
+
+    }
+
+    async hashOfFile(filename: string) {
+        logger.info(`hashing file ${filename}`);
+        return await md5(filename);
+    }
+    async sortFile(filename: string) {
+        logger.info(`sorting file ${filename}`);
+        await Util.exec(`sort -o ${filename} ${filename}`);
+    }
     async prepareFile(originalFilename: string, filename: string, baseDirectory: string) {
         const nextDir = `${baseDirectory}/${Util.randomNumberString(16)}`
         await fsp.mkdir(nextDir);
@@ -131,23 +153,6 @@ export class FqdnIntelligenceListService {
                 await Util.mergeAllFiles(files.sort((a, b) => a.localeCompare(b)), filename);
             }
     }
-    async downloadFileFromRedisH(key: string, field: string, filename: string, originalFileName: string, baseDirectory: string) {
-        const file = await this.redisService.hgetBuffer(key, field) as Buffer;
-        await fsp.writeFile(filename, file);
-        await this.prepareFile(originalFileName, filename, baseDirectory);
-    }
-
-    async downloadFileFromUrl(url: string, baseDirectory: string, filename: string) {
-        await Util.downloadFile(url, filename);
-        await this.prepareFile(url, filename, baseDirectory);
-
-
-    }
-
-    async hashOfFile(filename: string) {
-        return await md5(filename);
-    }
-
 
 
 
@@ -201,6 +206,10 @@ export class FqdnIntelligenceListService {
                 if (opened[1].items.length)
                     await opened[1].handle.write(opened[1].items.join('\n') + '\n');
             }
+            for (const f of files) {
+
+                await this.sortFile(f[1].filepath);
+            }
             let retItems = [];
             for (const f of files) {
                 retItems.push({ filename: f[1].filepath, page: f[1].page, hash: await this.hashOfFile(f[1].filepath) });
@@ -231,10 +240,10 @@ export class FqdnIntelligenceListService {
     }
 
     async saveListStatus(item: FqdnIntelligenceList, status: FqdnIntelligenceListStatus, pipeline?: RedisPipelineService) {
-        return await (this.redisService || pipeline).set(`/intelligence/fqdn/list/${item.id}/status`, status);
+        return await (pipeline || this.redisService).set(`/intelligence/fqdn/list/${item.id}/status`, status);
     }
     async deleteListStatus(item: FqdnIntelligenceList, pipeline?: RedisPipelineService) {
-        return await (this.redisService || pipeline).delete(`/intelligence/fqdn/list/${item.id}/status`);
+        return await (pipeline || this.redisService).delete(`/intelligence/fqdn/list/${item.id}/status`);
     }
 
 
@@ -250,35 +259,81 @@ export class FqdnIntelligenceListService {
         Object.keys(cloned).forEach(y => {
             cloned[y] = JSON.stringify(cloned[y]);
         })
-        return await (this.redisService || pipeline).hset(`/intelligence/fqdn/list/${item.id}/files`, cloned);
+        return await (pipeline || this.redisService).hset(`/intelligence/fqdn/list/${item.id}/files`, cloned);
     }
+
     async deleteDbFileList(item: FqdnIntelligenceList, pipeline?: RedisPipelineService) {
-        return await (this.redisService || pipeline).delete(`/intelligence/fqdn/list/${item.id}/files`);
+        return await (pipeline || this.redisService).delete(`/intelligence/fqdn/list/${item.id}/files`);
     }
     async deleteDbFileList2(item: FqdnIntelligenceList, page: number, pipeline?: RedisPipelineService) {
-        return await (this.redisService || pipeline).hdel(`/intelligence/fqdn/list/${item.id}/files`, [page.toString()]);
+        return await (pipeline || this.redisService).hdel(`/intelligence/fqdn/list/${item.id}/files`, [page.toString()]);
     }
+    async saveDbFilePage(item: FqdnIntelligenceList, page: number, filename: string, pipeline?: RedisPipelineService) {
+        const key = `/intelligence/fqdn/list/${item.id}/pages`;
+
+        const buffer = await fsp.readFile(filename, { encoding: 'binary' });
+        let obj = {} as any;
+        obj[page.toString()] = buffer;
+        await (pipeline || this.redisService).hset(key, obj);
+
+    }
+    async getDbFilePage(item: FqdnIntelligenceList, page: number, filename: string) {
+        const key = `/intelligence/fqdn/list/${item.id}/pages`;
+        const file = await this.redisService.hgetBuffer(key, page.toString()) as Buffer;
+        if (!file) return null;
+        await fsp.writeFile(filename, file);
+        return filename;
+
+    }
+    async getDbFilePages(item: FqdnIntelligenceList) {
+        const key = `/intelligence/fqdn/list/${item.id}/pages`;
+        const data = await this.redisService.hgetAll(key)
+        let items = [];
+        for (const key of Object.keys(data)) {
+            items.push({ page: key, data: data[key] })
+        }
+        return items;
+
+
+    }
+    async deleteDbFilePage(item: FqdnIntelligenceList, page: number, pipeline?: RedisPipelineService) {
+        const key = `/intelligence/fqdn/list/${item.id}/pages`;
+        await (pipeline || this.redisService).hdel(key, [page.toString()]);
+
+    }
+    async deleteDbFilePages(item: FqdnIntelligenceList, pipeline?: RedisPipelineService) {
+        const key = `/intelligence/fqdn/list/${item.id}/pages`;
+        await (pipeline || this.redisService).delete(key);
+
+    }
+
     async saveListFile(item: FqdnIntelligenceList, filename: string, pipeline?: RedisPipelineService) {
         const key = `/intelligence/fqdn/list/${item.id}/file`;
-        const multi = pipeline || await this.redisService.multi();
+
         const buffer = await fsp.readFile(filename, { encoding: 'binary' });
-        await multi.hset(key, { content: buffer });
-        if (!pipeline)
-            await multi.exec();
+        await (pipeline || this.redisService).hset(key, { content: buffer });
+
     }
 
     async deleteListFile(item: FqdnIntelligenceList, pipeline?: RedisPipelineService) {
         const key = `/intelligence/fqdn/list/${item.id}/file`;
-        const multi = pipeline || await this.redisService.multi();
-        await multi.delete(key);
-        if (!pipeline)
-            await multi.exec();
-    }
 
-    async deleteFromStore(item: FqdnIntelligenceList, page?: number) {
-        await this.esService.deleteFqdnIntelligenceList({ id: item.id, page: page });
+        await (pipeline || this.redisService).delete(key);
 
     }
+    async getListFile(item: FqdnIntelligenceList, filename: string) {
+        const key = `/intelligence/fqdn/list/${item.id}/file`;
+        const file = await this.redisService.hgetBuffer(key, 'content') as Buffer;
+        if (!file) return null
+        await fsp.writeFile(filename, file);
+        return filename;
+
+    }
+
+
+
+
+
 
     async compareSystemHealth(items: FqdnIntelligenceList[]) {
         const keys = await this.redisService.getAllKeys('/intelligence/fqdn/list/*');
@@ -298,36 +353,6 @@ export class FqdnIntelligenceListService {
 
 
 
-    async saveToStore(item: FqdnIntelligenceList, file: string, page: number) {
-
-        let items: [FqdnIntelligenceListItem, string][] = [];
-        await Util.readFileLineByLine(file, async (line: string) => {
-            if (line.startsWith('#'))
-                return true;
-
-            line = line.replace(/^\*+/, '').replace(/\*$/, '');
-            line = line.replace(/^\.+/, '').replace(/\.$/, '');
-
-            const isfqdn = isFQDN(line, { require_tld: false });
-            if (isfqdn) {
-                let val: FqdnIntelligenceListItem =
-                    { id: item.id, insertDate: new Date().toISOString(), fqdn: line.toString(), page: page };
-
-
-                const tmp = await this.esService.fqdnIntelligenceListCreateIndexIfNotExits(val)
-                items.push(tmp);
-                if (items.length >= 1000) {
-                    await this.esService.fqdnIntelligenceListItemSave(items);
-                    items = [];
-                }
-            }
-            return true;
-        })
-        if (items.length) {
-            await this.esService.fqdnIntelligenceListItemSave(items);
-            items = [];
-        }
-    }
 
     /**
      * search in listId
@@ -335,8 +360,10 @@ export class FqdnIntelligenceListService {
      * @returns first founded list id
      */
     async getByFqdn(listId: string, fqdn: string) {
-        const items = await this.esService.searchFqdnIntelligenceList({ searchFqdn: fqdn, id: listId });
-        return items.items.length ? items.items[0] : null;
+        const items = await this.redisService.smembers(`/fqdn/${fqdn}/list`)
+        if (items.includes(listId)) return fqdn;
+        return null;
+
 
     }
     /**
@@ -345,20 +372,27 @@ export class FqdnIntelligenceListService {
      * @returns first founded list id
      */
     async getByFqdnAll(fqdn: string) {
-        return await this.esService.searchFqdnIntelligenceList({ searchFqdn: fqdn });
+        return await this.redisService.smembers(`/fqdn/${fqdn}/list`)
+
 
     }
 
     async deleteList(item: FqdnIntelligenceList) {
         //we need to get all  pages of list first
-
+        await this.deleteAllListFqdns(item);
         const trx = await this.redisService.multi();
         await this.deleteDbFileList(item, trx);
         await this.deleteListStatus(item, trx);
         await this.deleteListFile(item, trx);
+        await this.deleteDbFilePages(item, trx);
         await trx.exec();
-        await this.deleteFromStore(item);
+
     }
+    createDirectory(path: string) {
+        fs.mkdirSync(path, { recursive: true });
+    }
+
+
 
     /**
      * we wrote for support downloading files
@@ -367,14 +401,67 @@ export class FqdnIntelligenceListService {
      * @param callback 
      * @returns 
      */
-    async getAllListItems(item: FqdnIntelligenceList, cont: () => boolean, callback?: (item: string) => Promise<void>) {
+    async getAllListItems(item: FqdnIntelligenceList, callback?: (item: string) => Promise<void>) {
         let items: string[] = [];
-        await this.esService.scrollFqdnIntelligenceList({ id: item.id }, cont, async (val: FqdnIntelligenceListItem) => {
-            if (callback)
-                await callback(val.fqdn);
-            else items.push(val.fqdn);
-        })
-        return items;
+        const tmpDirectory = `/tmp/${Util.randomNumberString(16)}`;
+        await this.createDirectory(tmpDirectory);
+        try {
+            const files = await this.getDbFileList(item);
+            if (!files) return;
+            let fileList = [];
+            const props = Object.keys(files);
+            for (const key of props) {
+                const page = files[key] as { page: number, hash: string }
+                const tmpfile = `${tmpDirectory}/${Util.randomNumberString(16)}`;
+                const exists = await this.getDbFilePage(item, page.page, tmpfile);
+                if (exists)
+                    fileList.push(tmpfile);
+            }
+            for (const file of fileList) {
+                await Util.readFileLineByLine(file, async (line: string) => {
+                    if (callback)
+                        await callback(line);
+                    else
+                        items.push(line);
+                    return true;
+                })
+            }
+
+            return items;
+        } finally {
+            try {
+                await fsp.rm(tmpDirectory, { recursive: true, force: true });
+            } catch (ignore) { }
+        }
+
+    }
+    async deleteAllListFqdns(item: FqdnIntelligenceList) {
+        const tmpDirectory = `/tmp/${Util.randomNumberString(16)}`;
+        await this.createDirectory(tmpDirectory);
+        try {
+            const files = await this.getDbFileList(item);
+            if (!files) return;
+
+            const props = Object.keys(files);
+            for (const key of props) {
+                const page = files[key] as { page: number, hash: string }
+                const tmpfile = `${tmpDirectory}/${Util.randomNumberString(16)}`;
+                const exists = await this.getDbFilePage(item, page.page, tmpfile);
+                if (exists) {
+                    await this.deleteDbFilePageFqdn(item, tmpfile);
+                    await this.deleteDbFilePage(item, page.page);
+                    await this.deleteDbFileList2(item, page.page);
+
+                }
+            }
+
+        } catch (ignore) {
+
+        } finally {
+            try {
+                await fsp.rm(tmpDirectory, { recursive: true, force: true });
+            } catch (ignore) { }
+        }
 
     }
     async resetList(item: FqdnIntelligenceList) {
@@ -387,13 +474,29 @@ export class FqdnIntelligenceListService {
         status.hash = '';
         status.lastError = 'reset';
         status.lastCheck = new Date().toISOString()
-        await this.deleteFromStore(item);
+
+
+        await this.deleteAllListFqdns(item);
         const trx = await this.redisService.multi();
+        await this.deleteDbFilePages(item, trx);
         await this.saveListStatus(item, status, trx);
         await this.deleteListStatus(item, trx);
         await this.deleteDbFileList(item, trx);
         await trx.exec();
 
+    }
+
+
+
+    async deleteDbFilePageFqdn(item: FqdnIntelligenceList, filepath: string) {
+        let multi = await this.redisService.pipeline();
+        await Util.readFileLineByLine(filepath, async (line) => {
+            if (line) {
+                await multi.sremove(`/fqdn/${line}/list`, item.id);
+            }
+            return true;
+        })
+        await multi.exec();
     }
 
 
@@ -428,7 +531,7 @@ export class FqdnIntelligenceListService {
             if (hash != fileHash) {
                 hash = fileHash;
                 logger.info(`fqdn intelligence splitting file ${tmpFilename}`)
-                const files = await this.splitFile(tmpDirectory, tmpFilename, 10000, item.splitter, item.splitterIndex);
+                const files = await this.splitFile(tmpDirectory, tmpFilename, this.splitCount, item.splitter, item.splitterIndex);
                 hasFile = files.length > 0;
                 // make map for fast iteration
                 const filesMap: Map<number, { page: number, hash: string, filename: string }> = new Map();
@@ -447,44 +550,79 @@ export class FqdnIntelligenceListService {
 
                 //compare each other
                 for (const iterator of dbFilesMap.values()) {
+
                     if (!filesMap.has(iterator.page)) {//delete this from database
                         logger.info(`fqdn intelligence ${item.name} deleting page:${iterator.page}`)
-
-                        await this.deleteFromStore(item, iterator.page);
-                        const multi = await this.redisService.multi();
-                        await this.deleteDbFileList2(item, iterator.page, multi);
-                        await multi.exec();
+                        const tmpFilenameTmp = `${tmpDirectory}/${Util.randomNumberString(16)}`
+                        const isExists = await this.getDbFilePage(item, iterator.page, tmpFilenameTmp);
+                        if (isExists) {
+                            await this.deleteDbFilePageFqdn(item, tmpFilenameTmp);
+                        }
+                        //await this.deleteFromStore(item, iterator.page);
+                        {
+                            let multi = await this.redisService.multi();
+                            await this.deleteDbFilePage(item, iterator.page, multi);
+                            await this.deleteDbFileList2(item, iterator.page, multi);
+                            await multi.exec();
+                        }
                         isChanged = true;
                     }
                 }
 
                 for (const iterator of filesMap.values()) {//save or update
-                    //delete this from database first, because hash changed of file
+
                     if (dbFilesMap.has(iterator.page)) {
                         if (dbFilesMap.get(iterator.page)?.hash != iterator.hash) {
                             logger.info(`fqdn intelligence ${item.name} updating page:${iterator.page}`);
 
-                            await this.deleteFromStore(item, iterator.page);
-                            const multi = await this.redisService.multi();
-                            await this.deleteDbFileList2(item, iterator.page, multi);
-                            await multi.exec();
 
-                            const multi2 = await this.redisService.multi();
-                            await this.saveToStore(item, iterator.filename, iterator.page);
-                            const savelist: FqdnIntelligenceListFiles = {};
-                            savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
-                            await this.saveDbFileList(item, savelist);
-                            await multi2.exec();
+                            const tmpFilenameTmp = `${tmpDirectory}/${Util.randomNumberString(16)}`
+                            const isExits = await this.getDbFilePage(item, iterator.page, tmpFilenameTmp);
+                            if (isExits) {
+                                const differ = new TextFileDiff();
+                                const multi = await this.redisService.pipeline();
+                                differ.on('-', async (line) => {
+                                    await multi.sremove(`/fqdn/${line}/list`, item.id);
+                                })
+                                differ.on('+', async (line) => {
+                                    await multi.sadd(`/fqdn/${line}/list`, item.id);
+                                })
+
+                                await differ.diff(tmpFilenameTmp, iterator.filename);
+                                await multi.exec();
+                            }
+                            {
+                                const multi = await this.redisService.multi();
+                                const savelist: FqdnIntelligenceListFiles = {};
+                                savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
+                                await this.saveDbFilePage(item, iterator.page, iterator.filename, multi);
+                                await this.saveDbFileList(item, savelist, multi);
+                                await multi.exec();
+                            }
                             isChanged = true;
                         }
                     } else {
                         logger.info(`fqdn intelligence ${item.name} saving page:${iterator.page}`)
-                        const multi2 = await this.redisService.multi();
-                        await this.saveToStore(item, iterator.filename, iterator.page);
-                        const savelist: FqdnIntelligenceListFiles = {};
-                        savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
-                        await this.saveDbFileList(item, savelist);
-                        await multi2.exec();
+                        //
+
+                        {
+                            const multi = await this.redisService.pipeline();
+                            await Util.readFileLineByLine(iterator.filename, async (line) => {
+                                if (line) {
+                                    await multi.sadd(`/fqdn/${line}/list`, item.id);
+                                }
+                                return true;
+                            })
+                            await multi.exec();
+                        }
+                        {
+                            const multi = await this.redisService.multi()
+                            const savelist: FqdnIntelligenceListFiles = {};
+                            savelist[iterator.page] = { hash: iterator.hash, page: iterator.page };
+                            await this.saveDbFileList(item, savelist, multi);
+                            await this.saveDbFilePage(item, iterator.page, iterator.filename, multi);
+                            await multi.exec();
+                        }
                         isChanged = true;
                     }
                 }

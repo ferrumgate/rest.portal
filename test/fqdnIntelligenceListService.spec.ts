@@ -52,18 +52,7 @@ describe('fqdnIntelligenceListService', async () => {
         await esService.reset();
         await Util.sleep(1000);
     })
-    /*  it('downloadFileFromRedis', async () => {
-         const data = crypto.randomBytes(4 * 1024 * 1024);
-         await redisService.set("/test", data);
-         const data2 = await redisService.get("/test", false);
-         const tmpFile = `/tmp/${Util.randomNumberString()}`;
-         const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
-         await intel.downloadFileFromRedis("/test", tmpFile);
-         expect(fs.existsSync(tmpFile)).to.be.true;
- 
- 
- 
-     }).timeout(500000); */
+
     it('downloadFileFromRedis', async () => {
         const data = crypto.randomBytes(4 * 1024 * 1024);
         await redisService.hset("/test", { test: data });
@@ -153,38 +142,61 @@ describe('fqdnIntelligenceListService', async () => {
     })
 
 
-    it('saveToStore/delStore', async () => {
+    it('saveDbFilePage/getDbFilePage/deleteDbFilePage', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
 
         fs.mkdirSync(tmpFolder);
-        const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "www.google.com\nyahoo.com\nferrumgate.com");
+        const testFile = `${tmpFolder}/${Util.randomNumberString()}`;
+        fs.writeFileSync(testFile, "www.google.com\nyahoo.com\nferrumgate.com");
         const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
             labels: [],
         }
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
+        //check if exists
+        {
+            const tmpFile = `${tmpFolder}/${Util.randomNumberString()}`
 
-        const files: FqdnIntelligenceListFiles = {
-            '0': { page: 5, hash: "string" },
-            '1110': { page: 5, hash: "string" }
+            const result = await intel.getDbFilePage(item, 0, tmpFile);
+            expect(result).to.be.null;
+            expect(fs.existsSync(tmpFile)).to.be.false;
         }
 
-        const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
-        await intel.saveToStore(item, tmpFolderFile, 0);
-        await Util.sleep(1000);
-        const listId = await intel.getByFqdn(item.id, 'www.google.com')
-        expect(listId).exist;
+        //save 
+        {
+            const tmpFile2 = `${tmpFolder}/${Util.randomNumberString()}`
+            await intel.saveDbFilePage(item, 0, testFile);
+        }
 
+        //get it back
+        {
+            const tmpFile = `${tmpFolder}/${Util.randomNumberString()}`
 
+            const result = await intel.getDbFilePage(item, 0, tmpFile);
+            expect(result).exist;
+            expect(fs.existsSync(tmpFile)).to.be.true;
+        }
 
-        await intel.deleteFromStore(item, 0);
-        await Util.sleep(1000);
-        const listId2 = await intel.getByFqdn(item.id, 'google2.com')
-        expect(listId2).not.exist;
+        //delete 
+        {
+            const tmpFile2 = `${tmpFolder}/${Util.randomNumberString()}`
+            await intel.deleteDbFilePage(item, 0);
+        }
+
+        //get it back
+        {
+            const tmpFile = `${tmpFolder}/${Util.randomNumberString()}`
+
+            const result = await intel.getDbFilePage(item, 0, tmpFile);
+            expect(result).to.be.null;
+            expect(fs.existsSync(tmpFile)).to.be.false;
+        }
 
 
 
     })
+
+
 
     it('process file version', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -207,40 +219,174 @@ describe('fqdnIntelligenceListService', async () => {
         expect(status).not.exist;
 
         //process first
-        await intel.process(item);
-
-        const status2 = await intel.getListStatus(item);
-        expect(status2).exist;
-        expect(status2?.isChanged).to.be.true;
+        let lastCheck: string | null | undefined = '';
+        {
+            await intel.process(item);
+            const status2 = await intel.getListStatus(item);
+            expect(status2).exist;
+            expect(status2?.isChanged).to.be.true;
+            const files = await intel.getDbFileList(item);
+            expect(files).exist;
+            expect(Object.keys(files || {}).length).to.equal(3);
+            const pages = await intel.getDbFilePages(item);
+            expect(pages.length).to.equal(3);
+            lastCheck = status2?.lastCheck;
+            const fqdn = await intel.getByFqdnAll('www.google.com')
+            expect(fqdn[0]).exist;
+            const fqdn2 = await intel.getByFqdnAll('com')
+            expect(fqdn2[0]).exist;
+            const fqdn3 = await intel.getByFqdnAll('ferrumgate.com')
+            expect(fqdn3[0]).exist;
+            const fqdn4 = await intel.getByFqdnAll('test.com')
+            expect(fqdn4[0]).not.exist;
+        }
 
         //process again ischanged false
-        await intel.process(item);
-        const status3 = await intel.getListStatus(item);
-        expect(status3).exist;
-        expect(status3?.lastCheck).not.equal(status2?.lastCheck);
-        expect(status3?.isChanged).to.be.false;
+        {
+            await intel.process(item);
+            const status3 = await intel.getListStatus(item);
+            expect(status3).exist;
+            expect(status3?.lastCheck).not.equal(lastCheck);
+            expect(status3?.isChanged).to.be.false;
+            lastCheck = status3?.lastCheck;
+            const files = await intel.getDbFileList(item);
+            expect(files).exist;
+            expect(Object.keys(files || {}).length).to.equal(3);
+            const pages = await intel.getDbFilePages(item);
+            expect(pages.length).to.equal(3);
+        }
 
 
         fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com\nco.uk");
         await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
-        await intel.process(item);
-        const status4 = await intel.getListStatus(item);
-        expect(status4).exist;
-        expect(status4?.lastCheck).not.equal(status3?.lastCheck);
-        expect(status4?.isChanged).to.be.true;
+        {
+            await intel.process(item);
+            const status4 = await intel.getListStatus(item);
+            expect(status4).exist;
+            expect(status4?.lastCheck).not.equal(lastCheck);
+            expect(status4?.isChanged).to.be.true;
+            lastCheck = status4?.lastCheck;
+            const files = await intel.getDbFileList(item);
+            expect(files).exist;
+            expect(Object.keys(files || {}).length).to.equal(4);
+            const pages = await intel.getDbFilePages(item);
+            expect(pages.length).to.equal(4);
+            const fqdn = await intel.getByFqdnAll('www.google.com')
+            expect(fqdn[0]).exist;
+            const fqdn2 = await intel.getByFqdnAll('com')
+            expect(fqdn2[0]).exist;
+            const fqdn3 = await intel.getByFqdnAll('ferrumgate.com')
+            expect(fqdn3[0]).exist;
+            const fqdn4 = await intel.getByFqdnAll('co.uk')
+            expect(fqdn4[0]).exist;
+        }
 
 
 
-        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com\nco.uk\nio");
-        await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
-        await intel.process(item);
+        {
+            await intel.process(item);
+
+
+            fs.writeFileSync(tmpFolderFile, "ferrumgate.com\nco.uk");
+            await intel.saveListFile(item, tmpFolderFile);
+            //process again ischanged false
+            await intel.process(item);
+            const files = await intel.getDbFileList(item);
+            expect(files).exist;
+            expect(Object.keys(files || {}).length).to.equal(2);
+            const pages = await intel.getDbFilePages(item);
+            expect(pages.length).to.equal(2);
+            const fqdn = await intel.getByFqdnAll('www.google.com')
+            expect(fqdn[0]).not.exist;
+            const fqdn2 = await intel.getByFqdnAll('com')
+            expect(fqdn2[0]).not.exist;
+            const fqdn3 = await intel.getByFqdnAll('ferrumgate.com')
+            expect(fqdn3[0]).exist;
+            const fqdn4 = await intel.getByFqdnAll('co.uk')
+            expect(fqdn4[0]).exist;
+        }
 
 
 
 
-    }).timeout(50000);
+    }).timeout(150000);
+
+
+    it('process file version', async () => {
+        const tmpFolder = `/tmp/${Util.randomNumberString()}`;
+
+        fs.mkdirSync(tmpFolder);
+        const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
+        fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com");
+        const item: FqdnIntelligenceList = {
+            id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '',
+            labels: [],
+            file: {
+                source: "test.txt"
+            }
+        }
+
+        const intel = new FqdnIntelligenceListService(redisService, inputService, esService, 1);
+
+        await intel.saveListFile(item, tmpFolderFile);
+        const status = await intel.getListStatus(item);
+        expect(status).not.exist;
+
+        //process first
+        let lastCheck: string | null | undefined = '';
+        {
+            await intel.process(item);
+            const status2 = await intel.getListStatus(item);
+            expect(status2).exist;
+            expect(status2?.isChanged).to.be.true;
+            const files = await intel.getDbFileList(item);
+            expect(files).exist;
+            expect(Object.keys(files || {}).length).to.equal(1);
+            const pages = await intel.getDbFilePages(item);
+            expect(pages.length).to.equal(1);
+            lastCheck = status2?.lastCheck;
+            const fqdn = await intel.getByFqdnAll('www.google.com')
+            expect(fqdn[0]).exist;
+            const fqdn2 = await intel.getByFqdnAll('com')
+            expect(fqdn2[0]).exist;
+            const fqdn3 = await intel.getByFqdnAll('ferrumgate.com')
+            expect(fqdn3[0]).exist;
+            const fqdn4 = await intel.getByFqdnAll('test.com')
+            expect(fqdn4[0]).not.exist;
+        }
+
+        fs.writeFileSync(tmpFolderFile, "co.uk\ntest.com\ncom");
+        await intel.saveListFile(item, tmpFolderFile);
+        {
+            await intel.process(item);
+            const status2 = await intel.getListStatus(item);
+            expect(status2).exist;
+            expect(status2?.isChanged).to.be.true;
+            const files = await intel.getDbFileList(item);
+            expect(files).exist;
+            expect(Object.keys(files || {}).length).to.equal(1);
+            const pages = await intel.getDbFilePages(item);
+            expect(pages.length).to.equal(1);
+            lastCheck = status2?.lastCheck;
+            const fqdn = await intel.getByFqdnAll('www.google.com')
+            expect(fqdn[0]).not.exist;
+            const fqdn2 = await intel.getByFqdnAll('com')
+            expect(fqdn2[0]).exist;
+            const fqdn3 = await intel.getByFqdnAll('ferrumgate.com')
+            expect(fqdn3[0]).not.exist;
+            const fqdn4 = await intel.getByFqdnAll('co.uk')
+            expect(fqdn4[0]).exist;
+            const fqdn5 = await intel.getByFqdnAll('test.com')
+            expect(fqdn5[0]).exist;
+        }
+    })
+
+
+
+
+
 
 
     it('process http version', async () => {
@@ -304,15 +450,18 @@ describe('fqdnIntelligenceListService', async () => {
 
         //process first
         await intel.process(item);
-
-        const keys1 = await redisService.getAllKeys('*');
-        expect(keys1.length > 0).to.be.true;
-
-        //process again ischanged false
         await intel.deleteList(item);
 
-        const keys = await redisService.getAllKeys('*');
-        expect(keys.length).to.equal(0);
+        const files = await intel.getDbFileList(item);
+        expect(files).exist;
+        expect(Object.keys(files || {}).length).to.equal(0);
+        const pages = await intel.getDbFilePages(item);
+        expect(pages.length).to.equal(0);
+        const status2 = await intel.getListStatus(item);
+        expect(status2).not.exist;
+        const tmpFile = '/tmp/abc'
+        const status5 = await intel.getListFile(item, tmpFile);
+        expect(status5).not.exist;
 
 
 
@@ -342,10 +491,10 @@ describe('fqdnIntelligenceListService', async () => {
         await intel.process(item);
         await Util.sleep(1000);
 
-        let items = await intel.getAllListItems(item, () => true);
-        expect(items.length).to.equal(5);
-        expect(items.includes('www.yahoo.com')).to.be.true;
-        expect(items.includes('co.uk')).to.be.true;
+        let items = await intel.getAllListItems(item);
+        expect(items?.length).to.equal(5);
+        expect(items?.includes('www.yahoo.com')).to.be.true;
+        expect(items?.includes('co.uk')).to.be.true;
         console.log(items);
 
 
@@ -441,9 +590,9 @@ describe('fqdnIntelligenceListService', async () => {
         await Util.sleep(1000);
 
         const id = await intel.getByFqdnAll('ferrumgate.com')
-        expect(id.items.length == 2).to.be.true;
-        expect(id.items.find(x => x == item.id)).exist
-        expect(id.items.find(y => y == item2.id)).exist;
+        expect(id.length == 2).to.be.true;
+        expect(id.find(x => x == item.id)).exist
+        expect(id.find(y => y == item2.id)).exist;
 
 
 

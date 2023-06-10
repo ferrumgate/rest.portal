@@ -59,6 +59,7 @@ describe('ipIntelligenceApi', async () => {
         await appService.configService.init();
         await appService.configService.setIsConfigured(1);
         await appService.esService.reConfigure(esHost, esUser, esPass, '1s');
+        await appService.esIntelService.reConfigure(esHost, esUser, esPass, '1s');
 
     })
 

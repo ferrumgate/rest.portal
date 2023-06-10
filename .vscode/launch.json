@@ -21,6 +21,7 @@
                 "PORT": "8181",
                 "REDIS_HOST": "localhost:6379",
                 "REDIS_LOCAL_HOST": "localhost:6379",
+                "REDIS_INTEL_HOST": "localhost:6379",
                 "ES_HOST": "http://localhost:9200",
                 "ES_USER": "elastic",
                 "ES_PASS": "123456",
