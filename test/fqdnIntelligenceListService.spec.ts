@@ -59,6 +59,8 @@ describe('fqdnIntelligenceListService', async () => {
         const tmpFile = `/tmp/${Util.randomNumberString()}`;
         const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
         await intel.downloadFileFromRedisH("/test", 'test', tmpFile, 'test', '/tmp');
+        const filedata = fs.readFileSync(tmpFile);
+        expect(filedata.length).to.equal(4 * 1024 * 1024);
         expect(fs.existsSync(tmpFile)).to.be.true;
 
     }).timeout(500000);

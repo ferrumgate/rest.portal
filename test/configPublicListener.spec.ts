@@ -238,7 +238,7 @@ describe('configPublicListener ', async () => {
     it('executeMessage', async () => {
 
         const { gateway, gateway2, network, service, configService } = await createSampleData();
-        const watcher = new RedisWatcherService('localhost:6379');
+        const watcher = new RedisWatcherService(undefined, 'localhost:6379');
         await watcher.start();
         const listener = new ConfigPublicListener(configService, new RedisService('localhost:6379'),
             watcher);

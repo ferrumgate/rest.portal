@@ -274,6 +274,12 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'devicePostures':
                             await this.processArray(this.config.devicePostures, path, item, val.id);
                             break;
+                        case 'fqdnIntelligence/sources':
+                            await this.processArray(this.config.fqdnIntelligence.sources, path, item, val.id);
+                            break;
+                        case 'fqdnIntelligence/lists':
+                            await this.processArray(this.config.fqdnIntelligence.lists, path, item, val.id);
+                            break;
                         case 'httpToHttpsRedirect':
                             this.config.httpToHttpsRedirect = await this.redisConfig.rGet('httpToHttpsRedirect') || false
                             break;

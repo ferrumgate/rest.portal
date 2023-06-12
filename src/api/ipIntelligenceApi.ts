@@ -159,7 +159,7 @@ routerIpIntelligenceAuthenticated.post('/list/file',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(upload.single('file')),
     asyncHandler(async (req: any, res: any, next: any) => {
-        logger.info(`uploading a file`);
+        logger.info(`uploading ip intelligence file`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
         const appService = req.appService as AppService;
@@ -194,8 +194,7 @@ routerIpIntelligenceAuthenticated.post('/list/file',
 
         await fsp.mkdir('/tmp/uploads', { recursive: true });
         const path = `/tmp/uploads/${key}`
-        const buf = await fsp.readFile(file.path, { encoding: 'binary' });
-        await fsp.writeFile(path, buf);
+        await fsp.copyFile(file.path, path);
 
         return res.status(200).json({ key: key });
 

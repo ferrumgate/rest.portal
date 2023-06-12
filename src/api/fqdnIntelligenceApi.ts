@@ -17,7 +17,7 @@ import multer from 'multer';
 import { once } from "events";
 import { FqdnIntelligenceList, FqdnIntelligenceSource, cloneFqdnIntelligenceList, fqdnCategories } from "../model/fqdnIntelligence";
 import { cloneFqdnIntelligenceSource } from "../model/fqdnIntelligence";
-const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 } });
+const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 100 * 1024 * 1024 } });
 
 /////////////////////////////////  fqdn intelligence //////////////////////////////////
 export const routerFqdnIntelligenceAuthenticated = express.Router();
@@ -159,7 +159,7 @@ routerFqdnIntelligenceAuthenticated.post('/list/file',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(upload.single('file')),
     asyncHandler(async (req: any, res: any, next: any) => {
-        logger.info(`uploading a file`);
+        logger.info(`uploading fqdn intelligence file`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
         const appService = req.appService as AppService;
@@ -194,9 +194,7 @@ routerFqdnIntelligenceAuthenticated.post('/list/file',
 
         await fsp.mkdir('/tmp/uploads', { recursive: true });
         const path = `/tmp/uploads/${key}`
-        const buf = await fsp.readFile(file.path, { encoding: 'binary' });
-        await fsp.writeFile(path, buf);
-
+        await fsp.copyFile(file.path, path);
         return res.status(200).json({ key: key });
 
     }))

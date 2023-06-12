@@ -105,14 +105,14 @@ export class FqdnIntelligenceListService {
     /**
      *
      */
-    constructor(protected redisService: RedisService, protected inputService: InputService, protected esService: ESService, protected splitCount = 10000) {
+    constructor(protected redisService: RedisService, protected inputService: InputService, protected esService: ESService, protected splitCount = 1000) {
 
     }
 
 
     async downloadFileFromRedisH(key: string, field: string, filename: string, originalFileName: string, baseDirectory: string) {
         const file = await this.redisService.hgetBuffer(key, field) as Buffer;
-        await fsp.writeFile(filename, file);
+        await fsp.writeFile(filename, file, { encoding: 'binary' });
         await this.prepareFile(originalFileName, filename, baseDirectory);
     }
 
@@ -124,18 +124,18 @@ export class FqdnIntelligenceListService {
     }
 
     async hashOfFile(filename: string) {
-        logger.info(`hashing file ${filename}`);
+        logger.info(`fqdn intelligence hashing file ${filename}`);
         return await md5(filename);
     }
     async sortFile(filename: string) {
-        logger.info(`sorting file ${filename}`);
+        logger.info(`fqdn intelligence sorting file ${filename}`);
         await Util.exec(`sort -o ${filename} ${filename}`);
     }
     async prepareFile(originalFilename: string, filename: string, baseDirectory: string) {
         const nextDir = `${baseDirectory}/${Util.randomNumberString(16)}`
         await fsp.mkdir(nextDir);
         if (originalFilename.endsWith('.zip')) {
-            logger.info(`extracting zip file`);
+            logger.info(`fqdn intelligence extracting zip file ${filename}`);
             await Util.extractZipFile(filename, nextDir);
             //find all files
             const files = await Util.listAllFiles(nextDir);
@@ -144,7 +144,7 @@ export class FqdnIntelligenceListService {
             await Util.mergeAllFiles(files.sort((a, b) => a.localeCompare(b)), filename);
         } else
             if (originalFilename.endsWith('.tar.gz')) {
-                logger.info(`extracting zip file`);
+                logger.info(`fqdn intelligence extracting tar.gz file ${filename}`);
                 await Util.extractTarGz(filename, nextDir);
                 //find all files
                 const files = await Util.listAllFiles(nextDir);
@@ -281,7 +281,7 @@ export class FqdnIntelligenceListService {
         const key = `/intelligence/fqdn/list/${item.id}/pages`;
         const file = await this.redisService.hgetBuffer(key, page.toString()) as Buffer;
         if (!file) return null;
-        await fsp.writeFile(filename, file);
+        await fsp.writeFile(filename, file, { encoding: 'binary' });
         return filename;
 
     }
@@ -309,8 +309,7 @@ export class FqdnIntelligenceListService {
 
     async saveListFile(item: FqdnIntelligenceList, filename: string, pipeline?: RedisPipelineService) {
         const key = `/intelligence/fqdn/list/${item.id}/file`;
-
-        const buffer = await fsp.readFile(filename, { encoding: 'binary' });
+        const buffer = await fsp.readFile(filename);
         await (pipeline || this.redisService).hset(key, { content: buffer });
 
     }
@@ -325,7 +324,7 @@ export class FqdnIntelligenceListService {
         const key = `/intelligence/fqdn/list/${item.id}/file`;
         const file = await this.redisService.hgetBuffer(key, 'content') as Buffer;
         if (!file) return null
-        await fsp.writeFile(filename, file);
+        await fsp.writeFile(filename, file, { encoding: 'binary' });
         return filename;
 
     }
@@ -443,11 +442,14 @@ export class FqdnIntelligenceListService {
             if (!files) return;
 
             const props = Object.keys(files);
+            let pageCount = 0;
             for (const key of props) {
+                pageCount++;
                 const page = files[key] as { page: number, hash: string }
                 const tmpfile = `${tmpDirectory}/${Util.randomNumberString(16)}`;
                 const exists = await this.getDbFilePage(item, page.page, tmpfile);
                 if (exists) {
+                    logger.info(`delete fqdn list ${item.name} page ${pageCount}/${props.length} data`);
                     await this.deleteDbFilePageFqdn(item, tmpfile);
                     await this.deleteDbFilePage(item, page.page);
                     await this.deleteDbFileList2(item, page.page);

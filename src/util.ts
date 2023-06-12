@@ -1,5 +1,4 @@
 import Axios from 'axios';
-import extract from 'extract-zip';
 import fs from 'fs';
 import * as ipAddress from 'ip-address';
 import { BigInteger } from 'jsbn';
@@ -24,6 +23,7 @@ import highwayhash from 'highwayhash';
 import nreadlines from 'n-readlines';
 import decompress from 'decompress';
 const decompressTargz = require('decompress-targz');
+const decompressUnzip = require('decompress-unzip');
 import dir from 'recursive-readdir';
 const mergeFiles = require('merge-files');
 import * as pvtsutils from "pvtsutils";
@@ -151,7 +151,12 @@ export const Util = {
     },
     extractZipFile: async (path: string, toFolder: string): Promise<string> => {
 
-        await extract(path, { dir: toFolder });
+        //await extract(path, { dir: toFolder });
+        await decompress(path, toFolder, {
+            plugins: [
+                decompressUnzip()
+            ]
+        })
         return toFolder;
     },
     zipFolder: async (folder: string, topath: string): Promise<void> => {

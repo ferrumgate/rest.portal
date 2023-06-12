@@ -178,7 +178,7 @@ export class ExpressApp {
             if (!req.secure && this.httpToHttpsRedirect) {
                 let hostname = req.headers.host as string;
                 hostname = hostname.split(':')[0];
-                if (this.ports != 443)
+                if (this.ports != 443 && process.env.NODE_ENV == 'development')
                     hostname = hostname + ':' + this.ports;
                 return res.redirect("https://" + hostname + req.originalUrl);
             }

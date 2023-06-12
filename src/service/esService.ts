@@ -1590,7 +1590,8 @@ export class ESService {
 
     }
 
-    // fqdn intelligence
+    // fqdn intelligence 
+    // we are not using 
 
     async fqdnIntelligenceListCreateIndexIfNotExits(item: FqdnIntelligenceListItem): Promise<[ESFqdnIntelligenceListItem, string]> {
         await this.createClient();

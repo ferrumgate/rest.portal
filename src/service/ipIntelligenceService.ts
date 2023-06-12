@@ -296,7 +296,7 @@ export class IpIntelligenceListService {
         const nextDir = `${baseDirectory}/${Util.randomNumberString(16)}`
         await fsp.mkdir(nextDir);
         if (originalFilename.endsWith('.zip')) {
-            logger.info(`extracting zip file`);
+            logger.info(`ip intelligence extracting zip file ${filename}`);
             await Util.extractZipFile(filename, nextDir);
             //find all files
             const files = await Util.listAllFiles(nextDir);
@@ -305,7 +305,7 @@ export class IpIntelligenceListService {
             await Util.mergeAllFiles(files.sort((a, b) => a.localeCompare(b)), filename);
         } else
             if (originalFilename.endsWith('.tar.gz')) {
-                logger.info(`extracting zip file`);
+                logger.info(`ip intelligence extracting zip file ${filename}`);
                 await Util.extractTarGz(filename, nextDir);
                 //find all files
                 const files = await Util.listAllFiles(nextDir);
@@ -316,7 +316,7 @@ export class IpIntelligenceListService {
     }
     async downloadFileFromRedisH(key: string, field: string, filename: string, originalFileName: string, baseDirectory: string) {
         const file = await this.redisService.hgetBuffer(key, field) as Buffer;
-        await fsp.writeFile(filename, file);
+        await fsp.writeFile(filename, file, { encoding: 'binary' });
         await this.prepareFile(originalFileName, filename, baseDirectory);
     }
 
@@ -438,8 +438,7 @@ export class IpIntelligenceListService {
     }
     async saveListFile(item: IpIntelligenceList, filename: string, pipeline?: RedisPipelineService) {
         const key = `/intelligence/ip/list/${item.id}/file`;
-
-        const buffer = await fsp.readFile(filename, { encoding: 'binary' });
+        const buffer = await fsp.readFile(filename);
         await (pipeline || this.redisService).hset(key, { content: buffer });
 
     }
@@ -603,7 +602,7 @@ export class IpIntelligenceListService {
             if (hash != fileHash) {
                 hash = fileHash;
                 logger.info(`ip intelligence splitting file ${tmpFilename}`)
-                const files = await this.splitFile(tmpDirectory, tmpFilename, 10000, item.splitter, item.splitterIndex);
+                const files = await this.splitFile(tmpDirectory, tmpFilename, 1000, item.splitter, item.splitterIndex);
                 hasFile = files.length > 0;
                 // make map for fast iteration
                 const filesMap: Map<number, { page: number, hash: string, filename: string }> = new Map();
