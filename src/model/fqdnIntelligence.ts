@@ -124,4 +124,8 @@ export const fqdnCategories: FqdnIntelligenceCategory[] = [
         name: "WhiteList",
         isVisible: false
     },
-]
+];
+
+export const fqdnCategoriesMap = new Map<string, FqdnIntelligenceCategory>(fqdnCategories.map(obj => {
+    return [obj.id, obj];
+}),)

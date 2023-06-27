@@ -25,6 +25,7 @@ import fsp from 'fs/promises';
 import multer from 'multer';
 import { Config } from "log4js";
 import { attachActivitySession, attachActivityUser, saveActivity } from "./auth/commonAuth";
+import { BrandSetting } from "../model/brandSetting";
 const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 100 * 1024 * 1024 } });
 
 
@@ -45,6 +46,7 @@ async function getPublicConfig(configService: ConfigService) {
     const saml = await configService.getAuthSettingSaml();
     const ldap = await configService.getAuthSettingLdap();
     const local = await configService.getAuthSettingLocal();
+    const brand = await configService.getBrand();
 
     const googleOAuth = oauth?.providers.find(x => x.type == 'google');
     const linkedOAuth = oauth?.providers.find(x => x.type == 'linkedin');
@@ -62,6 +64,9 @@ async function getPublicConfig(configService: ConfigService) {
             oAuthLinkedin: linkedOAuth?.isEnabled ? {} : undefined,
             samlAuth0: auth0?.isEnabled ? {} : undefined,
             samlAzure: azure?.isEnabled ? {} : undefined,
+        },
+        brand: {
+            ...brand
         }
     };
 }
@@ -187,7 +192,10 @@ routerConfigAuthenticated.put('/captcha',
 
         const captcha = await configService.getCaptcha();
         if (captcha.client != input.client || captcha.server != input.server) {
-            const { before, after } = await configService.setCaptcha(input);
+            const { before, after } = await configService.setCaptcha({
+                client: input.client,
+                server: input.server
+            });
             await auditService.logSetCaptcha(currentSession, currentUser, before, after);
         }
         const again = await configService.getCaptcha();
@@ -360,7 +368,7 @@ routerConfigAuthenticated.post('/email/check',
 
 
 
-////////////////////////////// captcha ///////////////////////////////////////
+////////////////////////////// es ///////////////////////////////////////
 
 routerConfigAuthenticated.get('/es',
     asyncHandler(passportInit),
@@ -398,7 +406,13 @@ routerConfigAuthenticated.put('/es',
 
         const es = await configService.getES();
         if (es.host != input.host || es.pass != input.pass || es.user || input.user || es.deleteOldRecordsMaxDays != input.deleteOldRecordsMaxDays) {
-            const { before, after } = await configService.setES(input);
+            const { before, after } = await configService.setES({
+                host: input.host,
+                deleteOldRecordsMaxDays: input.deleteOldRecordsMaxDays,
+                pass: input.pass,
+                user: input.user,
+
+            });
             await auditService.logSetES(currentSession, currentUser, before, after);
         }
         const again = await configService.getES();
@@ -541,6 +555,62 @@ routerConfigAuthenticated.post('/import/:key',
         return res.status(200).json({});
 
     }))
+
+
+
+
+////////////////////////////// brand ///////////////////////////////////////
+
+routerConfigAuthenticated.get('/brand',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`getting config brand parameters`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const brand = await configService.getBrand();
+
+
+        return res.status(200).json(brand || {});
+
+    }))
+
+routerConfigAuthenticated.put('/brand',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const input = req.body as BrandSetting;
+        logger.info(`changing config brand settings`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const redisService = appService.redisService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        const brand = await configService.getBrand();
+        if (brand.name != input.name || brand.logoBlack != input.logoBlack || brand.logoWhite != input.logoWhite) {
+            const { before, after } = await configService.setBrand({ name: input.name, logoBlack: input.logoBlack, logoWhite: input.logoWhite });
+            await auditService.logSetBrand(currentSession, currentUser, before, after);
+        }
+        const again = await configService.getBrand();
+        return res.status(200).json(again);
+
+    }))
+
+
+
+
+
+
+
 
 
 

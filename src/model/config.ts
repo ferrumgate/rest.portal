@@ -14,6 +14,7 @@ import { User } from "./user";
 import { IpIntelligence } from "./ipIntelligence";
 import { DevicePosture, DeviceProfile } from "./authenticationProfile";
 import { FqdnIntelligence } from "./fqdnIntelligence";
+import { BrandSetting } from "./brandSetting";
 
 
 type Nullable<T> = T | null | undefined;
@@ -56,7 +57,8 @@ export type RPath =
     'devicePostures' |
     'fqdnIntelligence/sources' |
     'fqdnIntelligence/lists' |
-    'httpToHttpsRedirect';
+    'httpToHttpsRedirect' |
+    'brand';
 
 
 
@@ -102,6 +104,7 @@ export interface Config {
     captcha: Captcha,
     email: EmailSetting,
     logo: LogoSetting,
+    brand: BrandSetting;
     /**
      * @summary RBAC roles and rights
      */

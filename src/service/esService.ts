@@ -814,6 +814,10 @@ export class ESService {
                                 type: "keyword"
 
                             },
+                            serviceProtocol: {
+                                type: "keyword"
+
+                            },
                             gatewayId: {
                                 type: "keyword"
 
@@ -901,6 +905,21 @@ export class ESService {
                             },
                             isCrawlerIp: {
                                 type: 'boolean'
+                            },
+                            dnsQueryType: {
+                                type: "keyword"
+                            },
+                            dnsQuery: {
+                                type: "keyword"
+                            },
+                            dnsStatus: {
+                                type: "keyword"
+                            },
+                            dnsFqdnCategoryId: {
+                                type: "keyword"
+                            },
+                            dnsFqdnCategoryName: {
+                                type: "keyword"
                             }
 
 
@@ -1004,7 +1023,7 @@ export class ESService {
                 query_string: {
                     query: `${req.search}`,
                     fields: ['requestId', "type", "authSource", "ip", "statusMessage", "statusMessage2", "serviceId", "serviceName", "assignedIp", "sourceIp", "destinationIp",
-                        "username", "userId", "gatewayId", "gatewayName", "networkId", "networkName", "authnId", "authnName", "authzId", "authzName"]
+                        "username", "userId", "gatewayId", "gatewayName", "networkId", "networkName", "authnId", "authnName", "authzId", "authzName", "dnsFqdnCategoryId", "dnsQuery", "dnsFqdnCategoryName"]
                 }
             }
             request.body.query.bool.must.push(item as never);

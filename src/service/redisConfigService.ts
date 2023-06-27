@@ -36,6 +36,7 @@ import { UtilPKI } from "../utilPKI";
 import { DevicePosture } from "../model/authenticationProfile";
 import { FqdnIntelligenceSource } from "../model/fqdnIntelligence";
 import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
+import { BrandSetting } from "../model/brandSetting";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
@@ -539,6 +540,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('fqdnIntelligence/lists', this.config.fqdnIntelligence.lists || [], pipeline);
         await this.rSaveArray('fqdnIntelligence/sources', this.config.fqdnIntelligence.sources || [], pipeline);
         await this.rSave('httpToHttpsRedirect', undefined, this.config.domain, pipeline);
+        await this.rSave('brand', undefined, this.config.brand, pipeline);
         await pipeline.exec();
     }
 
@@ -981,7 +983,7 @@ export class RedisConfigService extends ConfigService {
     }
     override async setLogo(logo: LogoSetting | {}) {
         this.isReady();
-        this.config.logo = await this.rGet<LogoSetting>('email') || {};
+        this.config.logo = await this.rGet<LogoSetting>('logo') || {};
         const ret = await super.setLogo(logo);
         const pipeline = await this.redis.multi();
         await this.rSave('logo', ret.before, ret.after, pipeline);
@@ -1872,8 +1874,7 @@ export class RedisConfigService extends ConfigService {
         cfg.fqdnIntelligence.sources = await this.rGetAll('fqdnIntelligence/sources');
         cfg.fqdnIntelligence.lists = await this.rGetAll('fqdnIntelligence/lists');
         cfg.httpToHttpsRedirect = await this.rGet('httpToHttpsRedirect') || false;
-
-
+        cfg.brand = await this.rGet('brand') || {};
     }
 
     /**
@@ -1927,7 +1928,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('fqdnIntelligence/sources', cfg.fqdnIntelligence.sources, pipeline);
         await this.rSaveArray('fqdnIntelligence/lists', cfg.fqdnIntelligence.lists, pipeline);
         await this.rSave('httpToHttpsRedirect', undefined, cfg.httpToHttpsRedirect, pipeline);
-
+        await this.rSave('brand', undefined, cfg.brand, pipeline);
 
         await pipeline.exec();
         this.config = this.createConfig();
@@ -2266,6 +2267,24 @@ export class RedisConfigService extends ConfigService {
         const ret = await super.setHttpToHttpsRedirect(val);
         const pipeline = await this.redis.multi();
         await this.rSave('httpToHttpsRedirect', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    /// brand
+
+    override async getBrand(): Promise<BrandSetting> {
+        this.isReady();
+        this.config.brand = await this.rGet<BrandSetting>('brand') || {};
+        return await super.getBrand();
+    }
+    override async setBrand(brand: BrandSetting | {}) {
+        this.isReady();
+        this.config.brand = await this.rGet<BrandSetting>('brand') || {};
+        const ret = await super.setBrand(brand);
+        const pipeline = await this.redis.multi();
+        await this.rSave('brand', ret.before, ret.after, pipeline);
         await this.saveLastUpdateTime(pipeline);
         await pipeline.exec();
         return ret;

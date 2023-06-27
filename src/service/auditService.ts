@@ -22,6 +22,7 @@ import { SSLCertificate } from "../model/cert";
 import { DevicePosture } from "../model/authenticationProfile";
 import { FqdnIntelligenceSource } from "../model/fqdnIntelligence";
 import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
+import { BrandSetting } from "../model/brandSetting";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -299,6 +300,12 @@ export class AuditService {
 
         await this.executeSave(currentSession, currentUser, before, after,
             `es settings updated`,
+            ``,)
+    }
+    async logSetBrand(currentSession: AuthSession, currentUser: User, before?: BrandSetting, after?: BrandSetting) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `brand settings updated`,
             ``,)
     }
     async logConfigExport(currentSession: AuthSession, currentUser: User) {

@@ -25,6 +25,7 @@ import IPCIDR from "ip-cidr";
 import { UtilPKI } from "../utilPKI";
 import { DevicePosture } from "../model/authenticationProfile";
 import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
+import { BrandSetting } from "../model/brandSetting";
 
 
 
@@ -163,6 +164,7 @@ export class ConfigService {
                 lists: []
             },
             httpToHttpsRedirect: true,
+            brand: {}
 
         }
     }
@@ -2162,6 +2164,24 @@ export class ConfigService {
         this.emitEvent({ type: 'put', path: 'httpToHttpsRedirect', val: trc.after, before: trc.before })
         await this.saveConfigToFile();
         return this.createTrackEvent(previous, this.config.httpToHttpsRedirect);
+    }
+
+    /// brand
+    async getBrand(): Promise<BrandSetting> {
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.brand);
+    }
+    async setBrand(brand: BrandSetting | {}) {
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(brand);
+        let prev = this.config.brand;
+        this.config.brand = {
+            ...cloned
+        }
+        const trc = this.createTrackEvent(prev, this.config.brand);
+        this.emitEvent({ type: 'put', path: 'brand', val: trc.after, before: trc.before })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.brand);
     }
 
 

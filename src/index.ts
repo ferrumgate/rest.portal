@@ -174,12 +174,13 @@ export class ExpressApp {
             next();
         };
 
-        const httpToHttpsRedirect = async (req: any, res: any, next: any) => {
+        const redirectHttpToHttps = async (req: any, res: any, next: any) => {
             if (!req.secure && this.httpToHttpsRedirect) {
                 let hostname = req.headers.host as string;
                 hostname = hostname.split(':')[0];
                 if (this.ports != 443 && process.env.NODE_ENV == 'development')
                     hostname = hostname + ':' + this.ports;
+
                 return res.redirect("https://" + hostname + req.originalUrl);
             }
             next();
@@ -201,7 +202,7 @@ export class ExpressApp {
         });
 
         //http to https redirect
-        this.app.use(asyncHandler(httpToHttpsRedirect));
+        this.app.use(asyncHandler(redirectHttpToHttps));
 
 
 
@@ -629,7 +630,7 @@ export class ExpressApp {
 
     }
     async reconfigure() {
-        this.httpToHttpsRedirect = await this.appService.configService.getHttpToHttpsRedirect();
+        this.httpToHttpsRedirect = process.env.NODE_ENV == 'development' ? false : await this.appService.configService.getHttpToHttpsRedirect();
 
     }
     async stopHttps() {

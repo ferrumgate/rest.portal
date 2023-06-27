@@ -35,5 +35,5 @@ export { DeviceLog, ClientDevicePosture } from './model/device';
 export { DeviceService } from './service/deviceService';
 export { LetsEncryptService } from './service/letsEncryptService';
 export { LetsEncrypt, LetsEncryptChallenge } from './model/letsEncrypt';
-export { FqdnIntelligence, FqdnIntelligenceList } from './model/fqdnIntelligence'
+export { FqdnIntelligence, FqdnIntelligenceList, fqdnCategories, fqdnCategoriesMap } from './model/fqdnIntelligence'
 export { FqdnIntelligenceService, FqdnIntelligenceListService } from './service/fqdnIntelligenceService';

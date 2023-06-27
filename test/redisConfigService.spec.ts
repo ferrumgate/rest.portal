@@ -2871,6 +2871,36 @@ describe('redisConfigService', async () => {
     });
 
 
+    it('getHttpToHttpsRedirect/setHttpToHttpsRedirect', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.httpToHttpsRedirect = true;
+        await configService.init();
+        expect(configService.config.httpToHttpsRedirect).to.be.true;
+
+        await configService.setHttpToHttpsRedirect(false);
+        const db = await configService.getHttpToHttpsRedirect()
+        expect(db).to.be.false;
+
+
+    });
+    it('getBrand/setBrand', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.brand = {};
+        await configService.init();
+        expect(configService.config.brand.name).not.exist;
+
+        await configService.setBrand({ name: 'test' });
+        const db = await configService.getBrand();
+        expect(db.name).to.equal('test');
+
+
+    });
+
+
 
 
 

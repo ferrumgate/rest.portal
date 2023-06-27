@@ -5,7 +5,7 @@
   "main": "index.js",
   "typings": "lib.d.ts",
   "scripts": {
-    "test": "JENCODE=json CONFIGSERVICE_TYPE=CONFIG  NODE_ENV=development NODE_TEST=true DEBUG2=nock.*  ES_HOST=http://192.168.88.10:9200     ES_USER=elastic ES_PASS=123456 node   ./node_modules/mocha/bin/mocha --exit --timeout 120000 --require ts-node/register  test/**/ipIntelligenceApi.spec.ts",
+    "test": "JENCODE=json CONFIGSERVICE_TYPE=CONFIG  NODE_ENV=development NODE_TEST=true DEBUG2=nock.*  ES_HOST=http://192.168.88.10:9200     ES_USER=elastic ES_PASS=123456 node   ./node_modules/mocha/bin/mocha --exit --timeout 120000 --require ts-node/register  test/**/configApi.spec.ts",
     "testintegration": "DEBUG=nock.* node ./node_modules/mocha/bin/mocha --exit  --require ts-node/register test/**/*.spec.integration.ts",
     "build": "tsc && cp -R src/service/templates build/src/service/  && cp package.json ./build/src/ && sed -i  s/index.js/lib.js/g ./build/src/package.json",
     "start": "tsc && NODE_ENV=development node ./build/src/index.js",

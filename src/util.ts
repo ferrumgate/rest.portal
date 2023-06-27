@@ -329,6 +329,34 @@ export const Util = {
             })
         })
     },
+    async spawn(cmd: string, args?: string[], throwError = true, redirectErr = false) {
+
+        return new Promise((resolve, reject) => {
+
+            let buf = Buffer.from([]);
+            const process = ChildProcess.spawn(cmd, args);
+            process.on('exit', (code) => {
+                if (code && throwError)
+                    reject(buf.toString('utf-8'));
+                else {
+
+                    resolve(buf.toString('utf-8'));
+                }
+            })
+            process.stdout.on('data', (data: Buffer) => {
+                buf = Buffer.concat([buf, data]);
+            })
+            process.stderr.on('data', (data: Buffer) => {
+                if (!redirectErr)
+                    buf = Buffer.concat([buf, data]);
+            })
+            process.on('error', (err) => {
+                reject(err);
+            })
+
+
+        })
+    },
 
 
     async createSelfSignedCrt(domain: string, days = '3650', folder?: string) {

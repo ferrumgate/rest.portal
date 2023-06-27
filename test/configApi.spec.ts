@@ -119,6 +119,7 @@ describe('configApi ', async () => {
                 server: '6Lcw_scfAAAAAFKwZuGa9vxuFF7ezh8ZtsQazdS0'
             }
         )
+        await configService.setBrand({ name: 'ferrumgate' })
         await configService.init();
 
     })
@@ -153,6 +154,7 @@ describe('configApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.captchaSiteKey).exist;
         expect(response.body.captchaSiteKey).to.equal('6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH');
+        expect(response.body.brand.name).to.equal('ferrumgate');
 
 
     }).timeout(50000);
@@ -390,9 +392,9 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/api/config/captcha')
+                .put('/api/config/email')
                 .set(`Authorization`, `Bearer ${token}`)
-                .send({ ...EmailSetting, fromname: 'ferrumgate' })
+                .send({ ...EmailSetting, user: 'ferrumgate' })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -402,7 +404,7 @@ describe('configApi ', async () => {
         })
 
         expect(response.status).to.equal(200);
-        expect(response.body.fromname).to.equal('ferrumgate');
+        expect(response.body.user).to.equal('ferrumgate');
 
 
 
@@ -518,7 +520,7 @@ describe('configApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get('/api/config/captcha')
+                .get('/api/config/es')
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -700,13 +702,92 @@ describe('configApi ', async () => {
 
         expect(response2.status).to.equal(200);
 
+    }).timeout(50000);
 
 
+    it('GET /config/brand will return empty object', async () => {
+        await appService.configService.saveUser(user);
+        await appService.configService.setBrand({});
 
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/api/config/brand')
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.name).not.exist;
+
+
+    }).timeout(50000);
+
+    it('GET /config/brand will return 401, only admin users', async () => {
+        const clonedUser = Util.clone(user);
+        clonedUser.roleIds = ['User'];
+        await appService.configService.saveUser(clonedUser);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/api/config/brand')
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(401);
 
 
 
     }).timeout(50000);
+
+
+    it('PUT /config/es will return 200, with new fields', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const newValues = {
+            name: 'serverkey',
+            logoWhite: 'adfa'
+        }
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/api/config/brand')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(newValues)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.name).to.equal('serverkey');
+        expect(response.body.logoWhite).to.equal('adfa');
+        expect(response.body.name).to.equal('serverkey');
+
+
+
+    }).timeout(50000);
+
 
 
 
