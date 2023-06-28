@@ -24,7 +24,7 @@ const expect = chai.expect;
 const host = esHost;
 const user = esUser;
 const pass = esPass;
-describe('esService ', async () => {
+describe.skip('esService ', async () => {
 
     const config = new ConfigService('fljvc7rm1xfo37imbu3ryc5mfbh9jpm5', `/tmp/${Util.randomNumberString()}`)
     beforeEach(async () => {

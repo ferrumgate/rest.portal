@@ -597,6 +597,13 @@ routerConfigAuthenticated.put('/brand',
 
         const brand = await configService.getBrand();
         if (brand.name != input.name || brand.logoBlack != input.logoBlack || brand.logoWhite != input.logoWhite) {
+            if (input.logoBlack)
+                if (!input.logoBlack.startsWith('data:image'))
+                    throw new RestfullException(500, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "only image files");
+
+            if (input.logoWhite)
+                if (!input.logoWhite.startsWith('data:image'))
+                    throw new RestfullException(500, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "only image files");
             const { before, after } = await configService.setBrand({ name: input.name, logoBlack: input.logoBlack, logoWhite: input.logoWhite });
             await auditService.logSetBrand(currentSession, currentUser, before, after);
         }

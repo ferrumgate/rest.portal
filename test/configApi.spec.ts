@@ -756,14 +756,14 @@ describe('configApi ', async () => {
     }).timeout(50000);
 
 
-    it('PUT /config/es will return 200, with new fields', async () => {
+    it('PUT /config/brand will return 200, with new fields', async () => {
 
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const newValues = {
             name: 'serverkey',
-            logoWhite: 'adfa'
+            logoWhite: 'data:imageadfa'
         }
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -781,7 +781,7 @@ describe('configApi ', async () => {
 
         expect(response.status).to.equal(200);
         expect(response.body.name).to.equal('serverkey');
-        expect(response.body.logoWhite).to.equal('adfa');
+        expect(response.body.logoWhite).to.equal('data:imageadfa');
         expect(response.body.name).to.equal('serverkey');
 
 
