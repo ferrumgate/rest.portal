@@ -1919,16 +1919,16 @@ export class RedisConfigService extends ConfigService {
             await this.rListAdd('authorizationPolicy/rulesOrder', order, true, pipeline);
         }
         await this.rSave('lastUpdateTime', undefined, cfg.lastUpdateTime, pipeline);
-        await this.rSave('es', undefined, cfg.es, pipeline);
+        await this.rSave('es', undefined, cfg.es || {}, pipeline);
 
 
-        await this.rSaveArray('ipIntelligence/sources', cfg.ipIntelligence.sources, pipeline);
-        await this.rSaveArray('ipIntelligence/lists', cfg.ipIntelligence.lists, pipeline);
+        await this.rSaveArray('ipIntelligence/sources', cfg.ipIntelligence?.sources || [], pipeline);
+        await this.rSaveArray('ipIntelligence/lists', cfg.ipIntelligence?.lists || [], pipeline);
 
-        await this.rSaveArray('fqdnIntelligence/sources', cfg.fqdnIntelligence.sources, pipeline);
-        await this.rSaveArray('fqdnIntelligence/lists', cfg.fqdnIntelligence.lists, pipeline);
-        await this.rSave('httpToHttpsRedirect', undefined, cfg.httpToHttpsRedirect, pipeline);
-        await this.rSave('brand', undefined, cfg.brand, pipeline);
+        await this.rSaveArray('fqdnIntelligence/sources', cfg.fqdnIntelligence?.sources || [], pipeline);
+        await this.rSaveArray('fqdnIntelligence/lists', cfg.fqdnIntelligence?.lists || [], pipeline);
+        await this.rSave('httpToHttpsRedirect', undefined, cfg.httpToHttpsRedirect || false, pipeline);
+        await this.rSave('brand', undefined, cfg.brand || {}, pipeline);
 
         await pipeline.exec();
         this.config = this.createConfig();
