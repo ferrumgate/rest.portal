@@ -13,6 +13,8 @@ import { ESSetting } from "./esSetting";
 import { User } from "./user";
 import { IpIntelligence } from "./ipIntelligence";
 import { DevicePosture, DeviceProfile } from "./authenticationProfile";
+import { FqdnIntelligence } from "./fqdnIntelligence";
+import { BrandSetting } from "./brandSetting";
 
 
 type Nullable<T> = T | null | undefined;
@@ -52,7 +54,11 @@ export type RPath =
     'es' | 'flush' |
     'ipIntelligence/sources' |
     'ipIntelligence/lists' |
-    'devicePostures';
+    'devicePostures' |
+    'fqdnIntelligence/sources' |
+    'fqdnIntelligence/lists' |
+    'httpToHttpsRedirect' |
+    'brand';
 
 
 
@@ -98,6 +104,7 @@ export interface Config {
     captcha: Captcha,
     email: EmailSetting,
     logo: LogoSetting,
+    brand: BrandSetting;
     /**
      * @summary RBAC roles and rights
      */
@@ -119,5 +126,14 @@ export interface Config {
     ipIntelligence: IpIntelligence;
 
     //
-    devicePostures: DevicePosture[]
+    devicePostures: DevicePosture[];
+
+    // adding new property needs to lookup 
+    // redisConfigWatchService 
+    // redisConfigWatchCachedService
+    // redisConfigService getConfig and setConfig functions
+    fqdnIntelligence: FqdnIntelligence;
+
+    //redirect http requests to https
+    httpToHttpsRedirect: boolean;
 }

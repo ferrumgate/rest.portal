@@ -18,6 +18,7 @@ import { IpIntelligenceListService, IpIntelligenceService } from '../src/service
 import crypto from 'node:crypto';
 import { InputService } from '../src/service/inputService';
 import { ESService } from '../src/service/esService';
+import { esHost, esPass, esUser } from './common.spec';
 
 
 
@@ -33,20 +34,18 @@ function expectToDeepEqual(a: any, b: any) {
     expect(a).to.deep.equal(b);
 }
 
-const eshost = 'https://192.168.88.250:9200';
-const esuser = 'elastic';
-const espass = '123456';
+
 
 describe('ipIntelligenceListService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', filename);
     const redisService = new RedisService();
     const inputService = new InputService();
-    const esService = new ESService(configService, eshost, esuser, espass, '1s');
+    const esService = new ESService(configService, esHost, esUser, esPass, '1s');
 
     before(async () => {
         await configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
-        await configService.setES({ host: eshost, user: esuser, pass: espass });
+        await configService.setES({ host: esHost, user: esUser, pass: esPass });
         await configService.saveConfigToFile();
         await configService.loadConfigFromFile();
     })
@@ -55,7 +54,7 @@ describe('ipIntelligenceListService', async () => {
         await esService.reset();
         await Util.sleep(1000);
     })
-    it('downloadFileFromRedis', async () => {
+    /* it('downloadFileFromRedis', async () => {
         const data = crypto.randomBytes(4 * 1024 * 1024);
         await redisService.set("/test", data);
         const data2 = await redisService.get("/test", false);
@@ -66,7 +65,7 @@ describe('ipIntelligenceListService', async () => {
 
 
 
-    }).timeout(500000);
+    }).timeout(500000); */
     it('downloadFileFromRedis', async () => {
         const data = crypto.randomBytes(4 * 1024 * 1024);
         await redisService.hset("/test", { test: data });

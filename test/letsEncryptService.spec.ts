@@ -9,11 +9,10 @@ import { SystemLogService } from '../src/service/systemLogService';
 import { RedisService } from '../src/service/redisService';
 import { ExpressApp } from '../src';
 import fs from 'fs';
+import { esHost, esPass, esUser } from './common.spec';
 
 
-const host = 'https://192.168.88.250:9200';
-const user = 'elastic';
-const pass = '123456';
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -31,7 +30,7 @@ describe('LetsEncryptService', async () => {
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
         await configService.init();
-        await configService.setES({ host: host, user: user, pass: pass });
+        await configService.setES({ host: esHost, user: esUser, pass: esPass });
 
     })
     after(async () => {

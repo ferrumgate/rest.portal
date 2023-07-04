@@ -7,15 +7,13 @@ import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Gateway } from '../src/model/network';
+import { esHost, esPass, esUser } from './common.spec';
 
 
 chai.use(chaiHttp);
 const expect = chai.expect;
 
 
-const eshost = 'https://192.168.88.250:9200';
-const esuser = 'elastic';
-const espass = '123456';
 /**
  * authenticated user api tests
  */
@@ -32,7 +30,7 @@ describe('summaryApi', async () => {
         await configService.setConfigPath(filename);
         await configService.init();
         await appService.configService.setIsConfigured(1);
-        await appService.esService.reConfigure(eshost, esuser, espass, '1s');
+        await appService.esService.reConfigure(esHost, esUser, esPass, '1s');
     })
     after(async () => {
         await expressApp.stop();

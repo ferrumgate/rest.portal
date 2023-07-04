@@ -13,14 +13,13 @@ import { DevicePosture } from '../src/model/authenticationProfile';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { ESService } from '../src/service/esService';
 import { DeviceLog } from '../src/model/device';
+import { esHost, esPass, esUser } from './common.spec';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
 chai.use(chaiExclude);
 
-const host = 'https://192.168.88.250:9200';
-const user = 'elastic';
-const pass = '123456';
+
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -445,7 +444,7 @@ describe('deviceApi', async () => {
 
     it('/insight/device', async () => {
         await appService.configService.init();
-        const es = new ESService(configService, host, user, pass);
+        const es = new ESService(configService, esHost, esUser, esPass);
         await es.reset();
         const { log1, log2 } = createSampleData2();
         let data = await es.deviceCreateIndexIfNotExits(log1);

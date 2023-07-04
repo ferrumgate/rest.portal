@@ -19,7 +19,7 @@ import multer from 'multer';
 import { once } from "events";
 import { DevicePosture, cloneDevicePosture } from "../model/authenticationProfile";
 import { SearchDeviceLogsRequest } from "../service/esService";
-const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 } });
+const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 100 * 1024 * 1024 } });
 
 /////////////////////////////////  device posture //////////////////////////////////
 export const routerDeviceAuthenticated = express.Router();

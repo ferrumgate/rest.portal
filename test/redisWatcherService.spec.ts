@@ -18,7 +18,7 @@ chai.use(chaiExclude);
 
 
 describe('redisWatcherService ', async () => {
-
+    const simpleRedis = new RedisService('localhost:6379');
     beforeEach(async () => {
         const simpleRedis = new RedisService('localhost:6379');
         await simpleRedis.flushAll();
@@ -26,7 +26,7 @@ describe('redisWatcherService ', async () => {
 
 
     it('isMaster', async () => {
-        const redis = new RedisWatcherService('localhost:6379');
+        const redis = new RedisWatcherService(simpleRedis);
         expect(redis.isMaster).to.be.false;
         await redis.checkRedisIsMaster();
         expect(redis.isMaster).to.be.true;
@@ -35,7 +35,7 @@ describe('redisWatcherService ', async () => {
 
     it('start', async () => {
 
-        const redis = new RedisWatcherService('localhost:6379');
+        const redis = new RedisWatcherService(simpleRedis);
         expect(redis.isMaster).to.be.false;
         await redis.start();
 

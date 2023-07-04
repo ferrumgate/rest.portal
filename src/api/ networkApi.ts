@@ -136,6 +136,29 @@ routerNetworkAuthenticated.put('/',
         const safe = cloneNetwork(input);
         safe.insertDate = network.insertDate;
         safe.updateDate = new Date().toISOString();
+
+        if (network.serviceNetwork != safe.serviceNetwork)//service network changed
+        {
+            let usedIps: string[] = []
+            const allServicesFromThisNetwork = await configService.getServicesByNetworkId(safe.id);
+            const dns = allServicesFromThisNetwork.find(x => x.isSystem && x.protocol == 'dns');
+            if (dns) {//first dns service
+                dns.assignedIp = getEmptyServiceIp(safe, []);
+                await configService.saveService(dns);
+                usedIps.push(dns.assignedIp);
+            }
+
+            for (const svc of allServicesFromThisNetwork) {
+                if (svc.id != dns?.id) {
+                    svc.assignedIp = getEmptyServiceIp(safe, usedIps);
+                    await configService.saveService(svc);
+                    usedIps.push(svc.assignedIp);
+                }
+            }
+
+        }
+
+
         const { before, after } = await configService.saveNetwork(safe);
         await auditService.logSaveNetwork(currentSession, currentUser, before, after);
 

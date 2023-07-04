@@ -31,9 +31,7 @@ function expectToDeepEqual(a: any, b: any) {
 }
 
 
-const eshost = 'https://192.168.88.250:9200';
-const esuser = 'elastic';
-const espass = '123456';
+
 
 /**
  * authenticated user api tests

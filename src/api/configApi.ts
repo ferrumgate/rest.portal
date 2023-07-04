@@ -25,7 +25,8 @@ import fsp from 'fs/promises';
 import multer from 'multer';
 import { Config } from "log4js";
 import { attachActivitySession, attachActivityUser, saveActivity } from "./auth/commonAuth";
-const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 } });
+import { BrandSetting } from "../model/brandSetting";
+const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 100 * 1024 * 1024 } });
 
 
 /////////////////////////////////  public //////////////////////////////////
@@ -45,6 +46,7 @@ async function getPublicConfig(configService: ConfigService) {
     const saml = await configService.getAuthSettingSaml();
     const ldap = await configService.getAuthSettingLdap();
     const local = await configService.getAuthSettingLocal();
+    const brand = await configService.getBrand();
 
     const googleOAuth = oauth?.providers.find(x => x.type == 'google');
     const linkedOAuth = oauth?.providers.find(x => x.type == 'linkedin');
@@ -62,6 +64,9 @@ async function getPublicConfig(configService: ConfigService) {
             oAuthLinkedin: linkedOAuth?.isEnabled ? {} : undefined,
             samlAuth0: auth0?.isEnabled ? {} : undefined,
             samlAzure: azure?.isEnabled ? {} : undefined,
+        },
+        brand: {
+            ...brand
         }
     };
 }
@@ -97,8 +102,9 @@ routerConfigAuthenticated.get('/common',
 
         const url = await configService.getUrl();
         const domain = await configService.getDomain();
+        const httptoHttpsRedirect = await configService.getHttpToHttpsRedirect();
 
-        return res.status(200).json({ url: url, domain: domain });
+        return res.status(200).json({ url: url, domain: domain, httpsRedirect: httptoHttpsRedirect });
 
     }))
 
@@ -108,7 +114,7 @@ routerConfigAuthenticated.put('/common',
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
-        const input = req.body as { url?: string, domain?: string };
+        const input = req.body as { url?: string, domain?: string, httpsRedirect?: boolean };
         logger.info(`changing config common settings`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
@@ -121,6 +127,7 @@ routerConfigAuthenticated.put('/common',
 
         const url = await configService.getUrl();
         const domain = await configService.getDomain();
+        const httpsRedirect = await configService.getHttpToHttpsRedirect();
         if (input.url && input.url != url) {
             await inputService.checkUrl(input.url);
             const { before, after } = await configService.setUrl(input.url);
@@ -133,6 +140,10 @@ routerConfigAuthenticated.put('/common',
             await inputService.checkDomain(input.domain);
             const { before, after } = await configService.setDomain(input.domain);
             await auditService.logSetDomain(currentSession, currentUser, before, after);
+        }
+        if (input.httpsRedirect != httpsRedirect) {
+            const { before, after } = await configService.setHttpToHttpsRedirect(input.httpsRedirect ? true : false);
+            await auditService.logSetHttpToHttpsRedirect(currentSession, currentUser, before, after);
         }
         const urlAfter = await configService.getUrl();
         const domainAfter = await configService.getDomain();
@@ -181,7 +192,10 @@ routerConfigAuthenticated.put('/captcha',
 
         const captcha = await configService.getCaptcha();
         if (captcha.client != input.client || captcha.server != input.server) {
-            const { before, after } = await configService.setCaptcha(input);
+            const { before, after } = await configService.setCaptcha({
+                client: input.client,
+                server: input.server
+            });
             await auditService.logSetCaptcha(currentSession, currentUser, before, after);
         }
         const again = await configService.getCaptcha();
@@ -354,7 +368,7 @@ routerConfigAuthenticated.post('/email/check',
 
 
 
-////////////////////////////// captcha ///////////////////////////////////////
+////////////////////////////// es ///////////////////////////////////////
 
 routerConfigAuthenticated.get('/es',
     asyncHandler(passportInit),
@@ -392,7 +406,13 @@ routerConfigAuthenticated.put('/es',
 
         const es = await configService.getES();
         if (es.host != input.host || es.pass != input.pass || es.user || input.user || es.deleteOldRecordsMaxDays != input.deleteOldRecordsMaxDays) {
-            const { before, after } = await configService.setES(input);
+            const { before, after } = await configService.setES({
+                host: input.host,
+                deleteOldRecordsMaxDays: input.deleteOldRecordsMaxDays,
+                pass: input.pass,
+                user: input.user,
+
+            });
             await auditService.logSetES(currentSession, currentUser, before, after);
         }
         const again = await configService.getES();
@@ -535,6 +555,69 @@ routerConfigAuthenticated.post('/import/:key',
         return res.status(200).json({});
 
     }))
+
+
+
+
+////////////////////////////// brand ///////////////////////////////////////
+
+routerConfigAuthenticated.get('/brand',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`getting config brand parameters`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const brand = await configService.getBrand();
+
+
+        return res.status(200).json(brand || {});
+
+    }))
+
+routerConfigAuthenticated.put('/brand',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const input = req.body as BrandSetting;
+        logger.info(`changing config brand settings`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const appService = req.appService as AppService;
+        const redisService = appService.redisService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        const brand = await configService.getBrand();
+        if (brand.name != input.name || brand.logoBlack != input.logoBlack || brand.logoWhite != input.logoWhite) {
+            if (input.logoBlack)
+                if (!input.logoBlack.startsWith('data:image'))
+                    throw new RestfullException(500, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "only image files");
+
+            if (input.logoWhite)
+                if (!input.logoWhite.startsWith('data:image'))
+                    throw new RestfullException(500, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "only image files");
+            const { before, after } = await configService.setBrand({ name: input.name, logoBlack: input.logoBlack, logoWhite: input.logoWhite });
+            await auditService.logSetBrand(currentSession, currentUser, before, after);
+        }
+        const again = await configService.getBrand();
+        return res.status(200).json(again);
+
+    }))
+
+
+
+
+
+
+
 
 
 

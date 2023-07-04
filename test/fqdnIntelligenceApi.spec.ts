@@ -8,9 +8,9 @@ import { Util } from '../src/util';
 import { Network } from '../src/model/network';
 
 import chaiExclude from 'chai-exclude';
-import { IpIntelligence, IpIntelligenceList, IpIntelligenceListStatus, IpIntelligenceSource } from '../src/model/ipIntelligence';
 import { ESService } from '../src/service/esService';
 import { ExpressApp } from '../src';
+import { FqdnIntelligenceList, FqdnIntelligenceListStatus, FqdnIntelligenceSource } from '../src/model/fqdnIntelligence';
 import { esHost, esPass, esUser } from './common.spec';
 
 
@@ -30,10 +30,11 @@ function expectToDeepEqual(a: any, b: any) {
 
 
 
+
 /**
  * authenticated user api tests
  */
-describe('ipIntelligenceApi', async () => {
+describe('fqdnIntelligenceApi', async () => {
     const expressApp = new ExpressApp();
     const app = expressApp.app;
     const appService = (expressApp.appService) as AppService;
@@ -59,7 +60,6 @@ describe('ipIntelligenceApi', async () => {
         await appService.configService.init();
         await appService.configService.setIsConfigured(1);
         await appService.esService.reConfigure(esHost, esUser, esPass, '1s');
-        await appService.esIntelService.reConfigure(esHost, esUser, esPass, '1s');
 
     })
 
@@ -68,8 +68,8 @@ describe('ipIntelligenceApi', async () => {
         appService.configService.config.users = [];
         appService.configService.config.networks = [];
         appService.configService.config.gateways = [];
-        appService.configService.config.ipIntelligence.sources = [];
-        appService.configService.config.ipIntelligence.lists = [];
+        appService.configService.config.fqdnIntelligence.sources = [];
+        appService.configService.config.fqdnIntelligence.lists = [];
         await redisService.flushAll();
         await appService.esService.reset();
     })
@@ -87,18 +87,18 @@ describe('ipIntelligenceApi', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-        const item: IpIntelligenceSource = {
+        const item: FqdnIntelligenceSource = {
             id: Util.randomNumberString(),
             name: 'abc', type: 'acdf', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
         }
 
-        await appService.configService.saveIpIntelligenceSource(item);
+        await appService.configService.saveFqdnIntelligenceSource(item);
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/ip/intelligence/source`)
+                .get(`/api/fqdn/intelligence/source`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -115,9 +115,9 @@ describe('ipIntelligenceApi', async () => {
 
 
 
-    //// ip intelligence source 
+    //// fqdn intelligence source 
 
-    it('GET /ip/intelligence/source will return items', async () => {
+    it('GET /fqdn/intelligence/source will return items', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -125,18 +125,18 @@ describe('ipIntelligenceApi', async () => {
 
 
 
-        const item: IpIntelligenceSource = {
+        const item: FqdnIntelligenceSource = {
             id: Util.randomNumberString(),
             name: 'abc', type: 'acdf', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
         }
 
-        await appService.configService.saveIpIntelligenceSource(item);
+        await appService.configService.saveFqdnIntelligenceSource(item);
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/ip/intelligence/source`)
+                .get(`/api/fqdn/intelligence/source`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -155,7 +155,7 @@ describe('ipIntelligenceApi', async () => {
 
     }).timeout(50000);
 
-    it('DELETE /ip/intelligence/source', async () => {
+    it('DELETE /fqdn/intelligence/source', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -163,18 +163,18 @@ describe('ipIntelligenceApi', async () => {
 
 
 
-        const item: IpIntelligenceSource = {
+        const item: FqdnIntelligenceSource = {
             id: Util.randomNumberString(),
             name: 'abc', type: 'acdf', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
         }
 
-        await appService.configService.saveIpIntelligenceSource(item);
+        await appService.configService.saveFqdnIntelligenceSource(item);
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/api/ip/intelligence/source/` + item.id)
+                .delete(`/api/fqdn/intelligence/source/` + item.id)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -185,13 +185,13 @@ describe('ipIntelligenceApi', async () => {
         })
         expect(response.status).to.equal(200);
 
-        const items = await appService.configService.getIpIntelligenceSources();
+        const items = await appService.configService.getFqdnIntelligenceSources();
         expect(items.length).to.equal(0);
 
 
     }).timeout(50000);
 
-    it('POST /ip/intelligence/source', async () => {
+    it('POST /fqdn/intelligence/source', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -199,18 +199,18 @@ describe('ipIntelligenceApi', async () => {
 
 
 
-        const item: IpIntelligenceSource = {
+        const item: FqdnIntelligenceSource = {
             id: Util.randomNumberString(), apiKey: 'abc',
             name: 'abc', type: 'acdf', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
         }
 
-        //await appService.configService.saveIpIntelligenceSource(item);
+        //await appService.configService.saveFqdnIntelligenceSource(item);
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/api/ip/intelligence/source`)
+                .post(`/api/fqdn/intelligence/source`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item)
                 .end((err, res) => {
@@ -223,13 +223,13 @@ describe('ipIntelligenceApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body).exist;
 
-        const items = await appService.configService.getIpIntelligenceSources();
+        const items = await appService.configService.getFqdnIntelligenceSources();
         expect(items.length).to.equal(1);
 
 
     }).timeout(50000);
 
-    it('PUT /ip/intelligence/source', async () => {
+    it('PUT /fqdn/intelligence/source', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -237,18 +237,18 @@ describe('ipIntelligenceApi', async () => {
 
 
 
-        const item: IpIntelligenceSource = {
+        const item: FqdnIntelligenceSource = {
             id: Util.randomNumberString(), apiKey: 'abc',
             name: 'abc', type: 'acdf', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
         }
 
-        await appService.configService.saveIpIntelligenceSource(item);
+        await appService.configService.saveFqdnIntelligenceSource(item);
         item.apiKey = 'def'
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/api/ip/intelligence/source`)
+                .put(`/api/fqdn/intelligence/source`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item)
                 .end((err, res) => {
@@ -261,7 +261,7 @@ describe('ipIntelligenceApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body).exist;
 
-        const items = await appService.configService.getIpIntelligenceSources();
+        const items = await appService.configService.getFqdnIntelligenceSources();
         expect(items.length).to.equal(1);
         expect(items[0].apiKey).to.equal('def');
 
@@ -269,29 +269,29 @@ describe('ipIntelligenceApi', async () => {
 
 
 
-    it('GET /ip/intelligence/list will return items', async () => {
+    it('GET /fqdn/intelligence/list will return items', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let id = Util.randomNumberString();
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: id, labels: ['test'],
             name: 'abc', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(), file: { source: 'test.txt' }
         }
-        const status: IpIntelligenceListStatus = {
+        const status: FqdnIntelligenceListStatus = {
             id: item.id
         }
 
-        await appService.configService.saveIpIntelligenceList(item);
-        await appService.ipIntelligenceService.listService.saveListStatus(item, status);
+        await appService.configService.saveFqdnIntelligenceList(item);
+        await appService.fqdnIntelligenceService.listService.saveListStatus(item, status);
 
         // test all 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/ip/intelligence/list`)
+                .get(`/api/fqdn/intelligence/list`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -311,7 +311,7 @@ describe('ipIntelligenceApi', async () => {
         // test search 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/ip/intelligence/list?search=te`)
+                .get(`/api/fqdn/intelligence/list?search=te`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -327,22 +327,22 @@ describe('ipIntelligenceApi', async () => {
         expectToDeepEqual(response.body.items[0], item);
         expectToDeepEqual(response.body.itemsStatus[0], status);
 
-        // test search ip
-        //prepare ips
+        // test search fqdn
+        //prepare fqdns
         item.id = id;//set it back
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
 
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
-        await appService.ipIntelligenceService.listService.saveListFile(item, tmpFolderFile);
+        fs.writeFileSync(tmpFolderFile, "www.google.com\nferrumgate.com\ncom\nco.uk\nwww.facebook.com");
+        await appService.fqdnIntelligenceService.listService.saveListFile(item, tmpFolderFile);
         //process
-        await appService.ipIntelligenceService.listService.process(item);
+        await appService.fqdnIntelligenceService.listService.process(item);
         await Util.sleep(1000);
 
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/ip/intelligence/list?search=192.168.0.4`)
+                .get(`/api/fqdn/intelligence/list?search=ferrumgate.com`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -367,42 +367,42 @@ describe('ipIntelligenceApi', async () => {
     }).timeout(50000);
 
 
-    it('PUT /ip/intelligence/list/id/reset will reset items', async () => {
+    it('PUT /fqdn/intelligence/list/id/reset will reset items', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let id = Util.randomNumberString();
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: id, labels: ['test'],
             name: 'abc', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(), file: { source: 'test.txt' }
         }
-        const status: IpIntelligenceListStatus = {
+        const status: FqdnIntelligenceListStatus = {
             id: item.id
         }
 
-        await appService.configService.saveIpIntelligenceList(item);
-        await appService.ipIntelligenceService.listService.saveListStatus(item, status);
+        await appService.configService.saveFqdnIntelligenceList(item);
+        await appService.fqdnIntelligenceService.listService.saveListStatus(item, status);
 
 
-        // test search ip
-        //prepare ips
+        // test search fqdn
+        //prepare fqdns
         item.id = id;//set it back
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
 
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
-        await appService.ipIntelligenceService.listService.saveListFile(item, tmpFolderFile);
+        fs.writeFileSync(tmpFolderFile, "www.google.com\nferrumgate.com\ncom\nco.uk\nwww.facebook.com");
+        await appService.fqdnIntelligenceService.listService.saveListFile(item, tmpFolderFile);
         //process
-        await appService.ipIntelligenceService.listService.process(item);
+        await appService.fqdnIntelligenceService.listService.process(item);
         await Util.sleep(1000);
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/ip/intelligence/list?search=192.168.0.4`)
+                .get(`/api/fqdn/intelligence/list?search=com`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -423,7 +423,7 @@ describe('ipIntelligenceApi', async () => {
         item.id = id;//set it back
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/api/ip/intelligence/list/${item.id}/reset`)
+                .put(`/api/fqdn/intelligence/list/${item.id}/reset`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -434,12 +434,12 @@ describe('ipIntelligenceApi', async () => {
         })
         expect(response.status).to.equal(200);
 
-        const result = await appService.ipIntelligenceService.listService.getByIp(item.id, '192.168.0.4')
+        const result = await appService.fqdnIntelligenceService.listService.getByFqdn(item.id, 'ferrumgate.com')
         expect(result).not.exist;
 
-        const result2 = await appService.ipIntelligenceService.listService.getListStatus(item);
+        const result2 = await appService.fqdnIntelligenceService.listService.getListStatus(item);
         expect(result2).not.exist;
-        const result3 = await appService.ipIntelligenceService.listService.getDbFileList(item);
+        const result3 = await appService.fqdnIntelligenceService.listService.getDbFileList(item);
         expect(Object.keys(result3 || {}).length == 0).to.be.true;
 
 
@@ -447,42 +447,42 @@ describe('ipIntelligenceApi', async () => {
 
 
 
-    it('DELETE /ip/intelligence/list', async () => {
+    it('DELETE /fqdn/intelligence/list', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         let id = Util.randomNumberString();
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: id, labels: ['test'],
             name: 'abc', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(), file: { source: 'test.txt' }
         }
-        const status: IpIntelligenceListStatus = {
+        const status: FqdnIntelligenceListStatus = {
             id: item.id
         }
 
-        await appService.configService.saveIpIntelligenceList(item);
-        await appService.ipIntelligenceService.listService.saveListStatus(item, status);
+        await appService.configService.saveFqdnIntelligenceList(item);
+        await appService.fqdnIntelligenceService.listService.saveListStatus(item, status);
 
 
-        //prepare ips
+        //prepare fqdns
         item.id = id;//set it back
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
 
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
-        await appService.ipIntelligenceService.listService.saveListFile(item, tmpFolderFile);
+        fs.writeFileSync(tmpFolderFile, "www.google.com\nferrumgate.com\ncom\nco.uk\nwww.facebook.com");
+        await appService.fqdnIntelligenceService.listService.saveListFile(item, tmpFolderFile);
         //process
-        await appService.ipIntelligenceService.listService.process(item);
+        await appService.fqdnIntelligenceService.listService.process(item);
         await Util.sleep(1000);
 
         // test all 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .delete(`/api/ip/intelligence/list/${item.id}`)
+                .delete(`/api/fqdn/intelligence/list/${item.id}`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)
@@ -494,11 +494,11 @@ describe('ipIntelligenceApi', async () => {
         expect(response.status).to.equal(200);
         await Util.sleep(1000);
 
-        const result = await appService.configService.getIpIntelligenceList(id);
+        const result = await appService.configService.getFqdnIntelligenceList(id);
         expect(result).not.exist;
-        const result2 = await appService.ipIntelligenceService.listService.getListStatus(item);
+        const result2 = await appService.fqdnIntelligenceService.listService.getListStatus(item);
         expect(result2).not.exist;
-        const listId = await appService.ipIntelligenceService.listService.getByIp(item.id, '1.1.1.1')
+        const listId = await appService.fqdnIntelligenceService.listService.getByFqdn(item.id, 'www.google.com')
         expect(listId).not.exist;
 
 
@@ -506,14 +506,14 @@ describe('ipIntelligenceApi', async () => {
     }).timeout(50000);
 
 
-    it('POST /ip/intelligence/list', async () => {
+    it('POST /fqdn/intelligence/list', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const filekey = Util.randomNumberString();
 
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: '',
             labels: ['test'],
             name: 'abc', updateDate: new Date().toISOString(),
@@ -524,12 +524,12 @@ describe('ipIntelligenceApi', async () => {
 
         fs.mkdirSync(tmpFolder, { recursive: true });
         const tmpFolderFile = `${tmpFolder}/${filekey}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+        fs.writeFileSync(tmpFolderFile, "www.google.com\nferrumgate.com\ncom\nco.uk\nwww.facebook.com");
 
         // test all 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/api/ip/intelligence/list`)
+                .post(`/api/fqdn/intelligence/list`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item)
                 .end((err, res) => {
@@ -540,11 +540,11 @@ describe('ipIntelligenceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        const savedItem = response.body as IpIntelligenceList;
+        const savedItem = response.body as FqdnIntelligenceList;
 
-        const result = await appService.configService.getIpIntelligenceList(savedItem.id);
+        const result = await appService.configService.getFqdnIntelligenceList(savedItem.id);
         expect(result).exist;
-        const result2 = await redisService.exists(`/intelligence/ip/list/${savedItem.id}/file`)
+        const result2 = await redisService.exists(`/intelligence/fqdn/list/${savedItem.id}/file`)
         expect(result2).to.be.true;
 
 
@@ -554,39 +554,39 @@ describe('ipIntelligenceApi', async () => {
 
 
 
-    it('PUT /ip/intelligence/list', async () => {
+    it('PUT /fqdn/intelligence/list', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const filekey = Util.randomNumberString();
 
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(),
             labels: ['test'],
             name: 'abc', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(), file: { source: 'test.txt' }
         }
 
-        const status: IpIntelligenceListStatus = {
+        const status: FqdnIntelligenceListStatus = {
             id: item.id
         }
 
-        await appService.configService.saveIpIntelligenceList(item);
-        await appService.ipIntelligenceService.listService.saveListStatus(item, status);
+        await appService.configService.saveFqdnIntelligenceList(item);
+        await appService.fqdnIntelligenceService.listService.saveListStatus(item, status);
 
         const tmpFolder = `/tmp/uploads`;
 
         fs.mkdirSync(tmpFolder, { recursive: true });
         const tmpFolderFile = `${tmpFolder}/${filekey}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+        fs.writeFileSync(tmpFolderFile, "www.google.com\nferrumgate.com\ncom\nco.uk\nwww.facebook.com");
         item.name = 'abo';
         if (item.file)
             item.file.key = filekey;
         // test all 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put(`/api/ip/intelligence/list`)
+                .put(`/api/fqdn/intelligence/list`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(item)
                 .end((err, res) => {
@@ -597,12 +597,12 @@ describe('ipIntelligenceApi', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-        const savedItem = response.body as IpIntelligenceList;
+        const savedItem = response.body as FqdnIntelligenceList;
 
-        const result: IpIntelligenceList | undefined = await appService.configService.getIpIntelligenceList(savedItem.id);
+        const result: FqdnIntelligenceList | undefined = await appService.configService.getFqdnIntelligenceList(savedItem.id);
         expect(result).exist;
         expect(result?.name).to.equal('abo');
-        const result2 = await redisService.exists(`/intelligence/ip/list/${savedItem.id}/file`)
+        const result2 = await redisService.exists(`/intelligence/fqdn/list/${savedItem.id}/file`)
         expect(result2).to.be.true;
 
 
@@ -611,7 +611,7 @@ describe('ipIntelligenceApi', async () => {
     }).timeout(50000);
 
 
-    it('POST /ip/intelligence/list/file', async () => {
+    it('POST /fqdn/intelligence/list/file', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -621,11 +621,11 @@ describe('ipIntelligenceApi', async () => {
 
         fs.mkdirSync(tmpFolder, { recursive: true });
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
+        fs.writeFileSync(tmpFolderFile, "www.google.com\nferrumgate.com\ncom\nco.uk\nwww.facebook.com");
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .post(`/api/ip/intelligence/list/file`)
+                .post(`/api/fqdn/intelligence/list/file`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .set('content-type', 'multipart/form-data')
                 .attach('file', tmpFolderFile, 'file.txt')
@@ -647,7 +647,7 @@ describe('ipIntelligenceApi', async () => {
     }).timeout(50000);
 
 
-    it('GET /ip/intelligence/list/:id/file', async () => {
+    it('GET /fqdn/intelligence/list/:id/file', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -655,33 +655,33 @@ describe('ipIntelligenceApi', async () => {
 
 
         let id = Util.randomNumberString();
-        const item: IpIntelligenceList = {
+        const item: FqdnIntelligenceList = {
             id: id, labels: ['test'],
             name: 'abc', updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(), file: { source: 'test.txt' }
         }
-        const status: IpIntelligenceListStatus = {
+        const status: FqdnIntelligenceListStatus = {
             id: item.id
         }
 
-        await appService.configService.saveIpIntelligenceList(item);
-        await appService.ipIntelligenceService.listService.saveListStatus(item, status);
+        await appService.configService.saveFqdnIntelligenceList(item);
+        await appService.fqdnIntelligenceService.listService.saveListStatus(item, status);
 
 
-        //prepare ips
+        //prepare fqdn
         item.id = id;//set it back
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
 
         fs.mkdirSync(tmpFolder);
         const tmpFolderFile = `${tmpFolder}/${Util.randomNumberString()}`;
-        fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
-        await appService.ipIntelligenceService.listService.saveListFile(item, tmpFolderFile);
+        fs.writeFileSync(tmpFolderFile, "www.google.com\nferrumgate.com\ncom\nco.uk\nwww.facebook.com");
+        await appService.fqdnIntelligenceService.listService.saveListFile(item, tmpFolderFile);
         //process
-        await appService.ipIntelligenceService.listService.process(item);
+        await appService.fqdnIntelligenceService.listService.process(item);
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .get(`/api/ip/intelligence/list/${item.id}/file`)
+                .get(`/api/fqdn/intelligence/list/${item.id}/file`)
                 .set(`Authorization`, `Bearer ${token}`)
                 .end((err, res) => {
                     if (err)

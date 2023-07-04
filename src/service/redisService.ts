@@ -207,6 +207,22 @@ export class RedisPipelineService {
         return this.pipeline;
     }
 
+    async sadd(key: string, value: string | number | any[]) {
+        if (Array.isArray(value))
+            return await this.pipeline.sadd(key, ...(value as []));
+        else
+            return await this.pipeline.sadd(key, value);
+    }
+    async sremove(key: string, value: string | number | any[]) {
+        if (Array.isArray(value))
+            return await this.pipeline.srem(key, ...(value as []));
+        else
+            return await this.pipeline.srem(key, value);
+    }
+    async smembers(key: string) {
+        return await this.pipeline.smembers(key);
+    }
+
 
 
 }

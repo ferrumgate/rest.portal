@@ -25,6 +25,7 @@ export interface ActivityLog {
     tunnelId?: string;
     serviceId?: string;
     serviceName?: string;
+    serviceProtocol?: string;
     networkId?: string;
     networkName?: string;
     gatewayId?: string;
@@ -54,4 +55,11 @@ export interface ActivityLog {
     isProxyIp?: boolean;
     isHostingIp?: boolean;
     isCrawlerIp?: boolean;
+    //dns related fields
+    dnsQueryType?: string;
+    dnsQuery?: string;
+    dnsStatus?: string;
+    dnsFqdnCategoryId?: string;
+    dnsFqdnCategoryName?: string;
+
 }

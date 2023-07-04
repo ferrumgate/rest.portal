@@ -10,8 +10,8 @@ export class RedisWatcherService {
     isMaster = false;
     private lastRedisMasterCheck = 0;
     private redis: RedisService;
-    constructor(host?: string, pass?: string) {
-        this.redis = new RedisService(host, pass);
+    constructor(redisService?: RedisService, host?: string, pass?: string) {
+        this.redis = redisService || new RedisService(host, pass);
     }
     async start() {
         await this.checkRedisIsMaster();

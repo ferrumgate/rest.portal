@@ -12,34 +12,34 @@ import { RBACDefault } from "../model/rbac";
 import { authorizeAsAdmin } from "./commonApi";
 import { cloneNetwork, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
-import { cloneIpIntelligenceList, cloneIpIntelligenceSource, IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
-import IPCIDR from "ip-cidr";
 import fsp from 'fs/promises'
 import multer from 'multer';
 import { once } from "events";
+import { FqdnIntelligenceList, FqdnIntelligenceSource, cloneFqdnIntelligenceList, fqdnCategories } from "../model/fqdnIntelligence";
+import { cloneFqdnIntelligenceSource } from "../model/fqdnIntelligence";
 const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 100 * 1024 * 1024 } });
 
-/////////////////////////////////  ip intelligence //////////////////////////////////
-export const routerIpIntelligenceAuthenticated = express.Router();
+/////////////////////////////////  fqdn intelligence //////////////////////////////////
+export const routerFqdnIntelligenceAuthenticated = express.Router();
 
 
 
-//  /ip/intelligence/source
-routerIpIntelligenceAuthenticated.get('/source',
+//  /fqdn/intelligence/source
+routerFqdnIntelligenceAuthenticated.get('/source',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
 
-        logger.info(`query ip intelligence source`);
+        logger.info(`query fqdn intelligence source`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
-        const sources = await configService.getIpIntelligenceSources();
+        const sources = await configService.getFqdnIntelligenceSources();
         return res.status(200).json({ items: sources });
 
     }))
 
-routerIpIntelligenceAuthenticated.delete('/source/:id',
+routerFqdnIntelligenceAuthenticated.delete('/source/:id',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
@@ -49,27 +49,27 @@ routerIpIntelligenceAuthenticated.delete('/source/:id',
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
-        logger.info(`delete ip intelligence source with id: ${id}`);
+        logger.info(`delete fqdn intelligence source with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const auditService = appService.auditService;
 
-        const source = await configService.getIpIntelligenceSource(id);
-        if (!source) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellengence source');
+        const source = await configService.getFqdnIntelligenceSource(id);
+        if (!source) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrFqdnIntelligenceSourceNotFound, 'no fqdn intellengence source');
 
-        const { before } = await configService.deleteIpIntelligenceSource(source.id);
-        await auditService.logDeleteIpIntelligenceSource(currentSession, currentUser, before);
+        const { before } = await configService.deleteFqdnIntelligenceSource(source.id);
+        await auditService.logDeleteFqdnIntelligenceSource(currentSession, currentUser, before);
         return res.status(200).json({});
 
     }))
 
-routerIpIntelligenceAuthenticated.put('/source',
+routerFqdnIntelligenceAuthenticated.put('/source',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
-        const input = req.body as IpIntelligenceSource;
-        logger.info(`changing ip intelligence source for ${input.id}`);
+        const input = req.body as FqdnIntelligenceSource;
+        logger.info(`changing fqdn intelligence source for ${input.id}`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
@@ -80,27 +80,27 @@ routerIpIntelligenceAuthenticated.put('/source',
 
         await inputService.checkNotEmpty(input.id);
         await inputService.checkNotEmpty(input.apiKey);
-        const source = await configService.getIpIntelligenceSource(input.id);
-        if (!source) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intelligence source');
+        const source = await configService.getFqdnIntelligenceSource(input.id);
+        if (!source) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrFqdnIntelligenceSourceNotFound, 'no fqdn intelligence source');
 
 
         input.name = input.type;
-        const safe = cloneIpIntelligenceSource(input);
+        const safe = cloneFqdnIntelligenceSource(input);
         safe.insertDate = source.insertDate;
         safe.updateDate = new Date().toISOString();
-        const { before, after } = await configService.saveIpIntelligenceSource(safe);
-        await auditService.logSaveIpIntelligenceSource(currentSession, currentUser, before, after);
+        const { before, after } = await configService.saveFqdnIntelligenceSource(safe);
+        await auditService.logSaveFqdnIntelligenceSource(currentSession, currentUser, before, after);
 
         return res.status(200).json(safe);
 
     }))
 
-routerIpIntelligenceAuthenticated.post('/source',
+routerFqdnIntelligenceAuthenticated.post('/source',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
-        logger.info(`saving a new ip intelligence source`);
+        logger.info(`saving a new fqdn intelligence source`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
         const appService = req.appService as AppService;
@@ -108,30 +108,30 @@ routerIpIntelligenceAuthenticated.post('/source',
         const inputService = appService.inputService;
         const auditService = appService.auditService;
 
-        const input = req.body as IpIntelligenceSource;
+        const input = req.body as FqdnIntelligenceSource;
         input.id = Util.randomNumberString(16);
 
         await inputService.checkNotEmpty(input.apiKey);
 
         input.name = input.type;
 
-        const safe = cloneIpIntelligenceSource(input);
+        const safe = cloneFqdnIntelligenceSource(input);
         safe.insertDate = new Date().toISOString();
         safe.updateDate = new Date().toISOString();
-        const { before, after } = await configService.saveIpIntelligenceSource(safe);
-        await auditService.logSaveIpIntelligenceSource(currentSession, currentUser, before, after);
+        const { before, after } = await configService.saveFqdnIntelligenceSource(safe);
+        await auditService.logSaveFqdnIntelligenceSource(currentSession, currentUser, before, after);
         return res.status(200).json(safe);
 
     }))
 
 
-routerIpIntelligenceAuthenticated.post('/source/check',
+routerFqdnIntelligenceAuthenticated.post('/source/check',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
-        const input = req.body as IpIntelligenceSource;
-        logger.info(`check ip intelligence source ${input.type}`);
+        const input = req.body as FqdnIntelligenceSource;
+        logger.info(`check fqdn intelligence source ${input.type}`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
@@ -139,27 +139,27 @@ routerIpIntelligenceAuthenticated.post('/source/check',
         const configService = appService.configService;
         const inputService = appService.inputService;
         const auditService = appService.auditService;
-        const ipIntelligence = appService.ipIntelligenceService;
+        const fqdnIntelligence = appService.fqdnIntelligenceService;
 
 
         await inputService.checkNotEmpty(input.apiKey);
-        await ipIntelligence.check(input);
+        await fqdnIntelligence.check(input);
 
         return res.status(200).json({});
 
     }))
 
 
-// ip/intelligence/list
+// fqdn/intelligence/list
 
 
-routerIpIntelligenceAuthenticated.post('/list/file',
+routerFqdnIntelligenceAuthenticated.post('/list/file',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(upload.single('file')),
     asyncHandler(async (req: any, res: any, next: any) => {
-        logger.info(`uploading ip intelligence file`);
+        logger.info(`uploading fqdn intelligence file`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
         const appService = req.appService as AppService;
@@ -195,7 +195,6 @@ routerIpIntelligenceAuthenticated.post('/list/file',
         await fsp.mkdir('/tmp/uploads', { recursive: true });
         const path = `/tmp/uploads/${key}`
         await fsp.copyFile(file.path, path);
-
         return res.status(200).json({ key: key });
 
     }))
@@ -204,7 +203,7 @@ routerIpIntelligenceAuthenticated.post('/list/file',
 
 
 
-routerIpIntelligenceAuthenticated.get('/list/:id/file',
+routerFqdnIntelligenceAuthenticated.get('/list/:id/file',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
@@ -212,14 +211,14 @@ routerIpIntelligenceAuthenticated.get('/list/:id/file',
     asyncHandler(async (req: any, res: any, next: any) => {
         let id = req.params.id;
 
-        logger.info(`downloading a file`);
+        logger.info(`downloading fqdn file ${id}`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
         const auditService = appService.auditService;
-        const ipIntelligence = appService.ipIntelligenceService;
+        const fqdnIntelligence = appService.fqdnIntelligenceService;
 
         const isSystemConfigured = await configService.getIsConfigured();
         if (!isSystemConfigured) {
@@ -227,11 +226,11 @@ routerIpIntelligenceAuthenticated.get('/list/:id/file',
             throw new RestfullException(417, ErrorCodes.ErrNotConfigured, ErrorCodes.ErrNotConfigured, "not configured yet");
         }
 
-        const list = await configService.getIpIntelligenceList(id);
-        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellegence list');
+        const list = await configService.getFqdnIntelligenceList(id);
+        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrFqdnIntelligenceSourceNotFound, 'no fqdn intellegence list');
 
         res.attachment(`${list.name}_${new Date().toISOString()}`);
-        await ipIntelligence.listService.getAllListItems(list, () => true, async (item: string) => {
+        await fqdnIntelligence.listService.getAllListItems(list, async (item: string) => {
             res.write(item);
             res.write('\n');
         })
@@ -242,26 +241,28 @@ routerIpIntelligenceAuthenticated.get('/list/:id/file',
 
 
 
-routerIpIntelligenceAuthenticated.get('/list',
+routerFqdnIntelligenceAuthenticated.get('/list',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
         const search = req.query.search;
-        logger.info(`query ip intelligence list`);
+        logger.info(`query fqdn intelligence list`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
-        const ipIntelligence = appService.ipIntelligenceService;
+        const fqdnIntelligence = appService.fqdnIntelligenceService;
         const inputService = appService.inputService;
-        let lists: IpIntelligenceList[] = [];
-        if (search && inputService.checkIp(search, false)) {
-            const listIds = await ipIntelligence.listService.getByIpAll(search);
-            const allLists = await configService.getIpIntelligenceLists();
-            allLists.filter(x => listIds.items.includes(x.id)).forEach(y => lists.push(y));
+        let lists: FqdnIntelligenceList[] = [];
+        if (search && inputService.checkDomain(search, false)) {
+            const listIds = await fqdnIntelligence.listService.getByFqdnAll(search);
+            const allLists = await configService.getFqdnIntelligenceLists();
+            allLists.filter(x => listIds.includes(x.id)).forEach(y => lists.push(y));
 
 
-        } else {
-            lists = await configService.getIpIntelligenceLists();
+
+        }
+        if (!lists.length) {
+            lists = await configService.getFqdnIntelligenceLists();
             if (search) {
                 lists = lists.filter(x => {
                     if (x.name.toLowerCase().includes(search)) return true;
@@ -272,13 +273,13 @@ routerIpIntelligenceAuthenticated.get('/list',
                 })
             }
         }
-        let statusList = await ipIntelligence.listService.getListStatusBulk(lists);
+        let statusList = await fqdnIntelligence.listService.getListStatusBulk(lists);
         return res.status(200).json({ items: lists, itemsStatus: statusList });
 
     }))
 
 
-routerIpIntelligenceAuthenticated.delete('/list/:id',
+routerFqdnIntelligenceAuthenticated.delete('/list/:id',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
@@ -288,26 +289,26 @@ routerIpIntelligenceAuthenticated.delete('/list/:id',
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
-        logger.info(`delete ip intelligence list with id: ${id}`);
+        logger.info(`delete fqdn intelligence list with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const auditService = appService.auditService;
-        const ipIntelligence = appService.ipIntelligenceService;
+        const fqdnIntelligence = appService.fqdnIntelligenceService;
 
-        const list = await configService.getIpIntelligenceList(id);
-        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellegence list');
+        const list = await configService.getFqdnIntelligenceList(id);
+        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrFqdnIntelligenceSourceNotFound, 'no fqdn intellegence list');
 
-        await ipIntelligence.listService.deleteList(list);
+        await fqdnIntelligence.listService.deleteList(list);
 
-        const { before } = await configService.deleteIpIntelligenceList(list.id);
-        await auditService.logDeleteIpIntelligenceList(currentSession, currentUser, before);
+        const { before } = await configService.deleteFqdnIntelligenceList(list.id);
+        await auditService.logDeleteFqdnIntelligenceList(currentSession, currentUser, before);
 
         return res.status(200).json({});
 
     }))
 
 
-routerIpIntelligenceAuthenticated.put('/list/:id/reset',
+routerFqdnIntelligenceAuthenticated.put('/list/:id/reset',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
@@ -317,34 +318,34 @@ routerIpIntelligenceAuthenticated.put('/list/:id/reset',
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
-        logger.info(`delete ip intelligence list with id: ${id}`);
+        logger.info(`delete fqdn intelligence list with id: ${id}`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const auditService = appService.auditService;
-        const ipIntelligence = appService.ipIntelligenceService;
+        const fqdnIntelligence = appService.fqdnIntelligenceService;
 
-        const list = await configService.getIpIntelligenceList(id);
-        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intellegence list');
+        const list = await configService.getFqdnIntelligenceList(id);
+        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrFqdnIntelligenceSourceNotFound, 'no fqdn intellegence list');
 
-        await ipIntelligence.listService.resetList(list);
-        await auditService.logResetIpIntelligenceList(currentSession, currentUser, list, list);
+        await fqdnIntelligence.listService.resetList(list);
+        await auditService.logResetFqdnIntelligenceList(currentSession, currentUser, list, list);
 
         list.updateDate = new Date().toISOString();
-        const { before, after } = await configService.saveIpIntelligenceList(list);
-        await auditService.logSaveIpIntelligenceList(currentSession, currentUser, before, after);
+        const { before, after } = await configService.saveFqdnIntelligenceList(list);
+        await auditService.logSaveFqdnIntelligenceList(currentSession, currentUser, before, after);
 
         return res.status(200).json({});
 
     }))
 
 
-routerIpIntelligenceAuthenticated.put('/list',
+routerFqdnIntelligenceAuthenticated.put('/list',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
-        const input = req.body as IpIntelligenceList;
-        logger.info(`changing ip intelligence list ${input.id}`);
+        const input = req.body as FqdnIntelligenceList;
+        logger.info(`changing fqdn intelligence list ${input.id}`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
 
@@ -352,31 +353,31 @@ routerIpIntelligenceAuthenticated.put('/list',
         const configService = appService.configService;
         const inputService = appService.inputService;
         const auditService = appService.auditService;
-        const ipIntelligenceService = appService.ipIntelligenceService;
+        const fqdnIntelligenceService = appService.fqdnIntelligenceService;
 
         await inputService.checkNotEmpty(input.id);
         await inputService.checkNotEmpty(input.name);
         if (input.http) {
             await inputService.checkNotEmpty(input.http.url);
         }
-        const list = await configService.getIpIntelligenceList(input.id);
-        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrIpIntelligenceSourceNotFound, 'no ip intelligence source');
+        const list = await configService.getFqdnIntelligenceList(input.id);
+        if (!list) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrFqdnIntelligenceSourceNotFound, 'no fqdn intelligence source');
 
         //if item is file
         let fileUploadedName = input.file?.key;//we must set here, next fuction will delete this
 
-        const safe = cloneIpIntelligenceList(input);
+        const safe = cloneFqdnIntelligenceList(input);
         safe.insertDate = list.insertDate;
         safe.updateDate = new Date().toISOString();
-        const { before, after } = await configService.saveIpIntelligenceList(safe);
-        await auditService.logSaveIpIntelligenceList(currentSession, currentUser, before, after);
+        const { before, after } = await configService.saveFqdnIntelligenceList(safe);
+        await auditService.logSaveFqdnIntelligenceList(currentSession, currentUser, before, after);
         if (fileUploadedName && after) {//log file to redis intelligence
             const path = `/tmp/uploads/${fileUploadedName}`
-            await ipIntelligenceService.listService.saveListFile(after, path);
-            await ipIntelligenceService.listService.deleteListStatus(after);
+            await fqdnIntelligenceService.listService.saveListFile(after, path);
+            await fqdnIntelligenceService.listService.deleteListStatus(after);
             await fsp.unlink(path);
         } else if (after) {
-            await ipIntelligenceService.listService.deleteListStatus(after);
+            await fqdnIntelligenceService.listService.deleteListStatus(after);
         }
 
         return res.status(200).json(safe);
@@ -384,22 +385,22 @@ routerIpIntelligenceAuthenticated.put('/list',
     }))
 
 
-routerIpIntelligenceAuthenticated.post('/list',
+routerFqdnIntelligenceAuthenticated.post('/list',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(upload.single('file')),
     asyncHandler(async (req: any, res: any, next: any) => {
-        logger.info(`saving a new ip intelligence list`);
+        logger.info(`saving a new fqdn intelligence list`);
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const inputService = appService.inputService;
         const auditService = appService.auditService;
-        const ipIntelligenceService = appService.ipIntelligenceService;
+        const fqdnIntelligenceService = appService.fqdnIntelligenceService;
 
-        const input = req.body as IpIntelligenceList;
+        const input = req.body as FqdnIntelligenceList;
         input.id = Util.randomNumberString(16);
 
         await inputService.checkNotEmpty(input.name);
@@ -412,24 +413,39 @@ routerIpIntelligenceAuthenticated.post('/list',
         //if item is file
         let fileUploadedName = input.file?.key;//we must set here, next fuction will delete this
 
-        const safe = cloneIpIntelligenceList(input);
+        const safe = cloneFqdnIntelligenceList(input);
         safe.insertDate = new Date().toISOString();
         safe.updateDate = new Date().toISOString();
 
 
 
 
-        const { before, after } = await configService.saveIpIntelligenceList(safe);
-        await auditService.logSaveIpIntelligenceList(currentSession, currentUser, before, after);
+        const { before, after } = await configService.saveFqdnIntelligenceList(safe);
+        await auditService.logSaveFqdnIntelligenceList(currentSession, currentUser, before, after);
         if (fileUploadedName && after) {//log file to redis intelligence
             const path = `/tmp/uploads/${fileUploadedName}`
-            await ipIntelligenceService.listService.saveListFile(after, path);
+            await fqdnIntelligenceService.listService.saveListFile(after, path);
             await fsp.unlink(path);
         }
         return res.status(200).json(safe);
 
     }))
 
+
+// category list
+
+//  /fqdn/intelligence/category
+routerFqdnIntelligenceAuthenticated.get('/category',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        logger.info(`query fqdn intelligence category`);
+        const appService = req.appService as AppService;
+        return res.status(200).json({ items: fqdnCategories });
+
+    }))
 
 
 

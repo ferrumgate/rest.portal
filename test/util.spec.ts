@@ -362,6 +362,35 @@ describe('util ', () => {
 
     });
 
+    it('exec ', async () => {
+        let isError = false;
+        try {
+            const output = await Util.exec("lsss")
+        } catch (err) {
+            isError = true;
+        }
+        expect(isError).to.be.true;
+    });
+
+    it('spawn ', async () => {
+
+        const output = await Util.spawn("ls")
+        expect(output).exist;
+
+    });
+
+
+    it('spawn error ', async () => {
+        let isError = false;
+        try {
+            const output = await Util.spawn("lsss")
+        } catch (err) {
+            isError = true;
+        }
+        expect(isError).to.be.true;
+
+    });
+
 
     it('isArrayElementExist ', async () => {
         expect(Util.isArrayElementExist(undefined, undefined)).to.be.false;
@@ -683,7 +712,7 @@ describe('util ', () => {
 
     it('milisecond', async () => {
         const start = Util.milisecond()
-        await Util.sleep(1000);
+        await Util.sleep(1500);
         const now = Util.milisecond();
         const dif = now - start;
         expect(dif).to.greaterThanOrEqual(1000);

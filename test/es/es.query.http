@@ -114,16 +114,16 @@ Content-Type: application/json
 
 
 ####
-GET 192.168.88.250:9200/_cat/indices
+GET 192.168.43.238:9200/_cat/indices
 Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
 
 ####
-GET https://192.168.88.250:9200/ferrumgate-activity-20230204/_search
+GET https://192.168.88.250:9200/ferrumgate-activity-20230622/_search
 Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
 
 ####
 
-DELETE  192.168.88.250:9200/ferrumgate-audit
+DELETE  192.168.88.250:9200/ferrumgate-activity-20230622
 Authorization: Basic ZWxhc3RpYzoxMjM0NTY=
 
 ###

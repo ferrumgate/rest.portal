@@ -12,6 +12,7 @@ import { ActivityLog } from '../src/model/activityLog';
 import { ConfigService } from '../src/service/configService';
 import { config } from 'process';
 import { ExpressApp } from '../src';
+import { esHost, esPass, esUser } from './common.spec';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -28,10 +29,6 @@ describe('activityApi ', async () => {
     const configService = appService.configService;
     const sessionService = appService.sessionService;
 
-    const host = 'https://192.168.88.250:9200';
-    const user = 'elastic';
-    const pass = '123456';
-
 
 
     before(async () => {
@@ -41,7 +38,7 @@ describe('activityApi ', async () => {
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
         await configService.init();
-        await configService.setES({ host: host, user: user, pass: pass })
+        await configService.setES({ host: esHost, user: esUser, pass: esPass })
 
     })
 
@@ -141,7 +138,7 @@ describe('activityApi ', async () => {
 
     it('/insight/activity', async () => {
 
-        const es = new ESService(configService, host, user, pass);
+        const es = new ESService(configService, esHost, esUser, esPass);
         await es.reset();
         const { activity1, activity2 } = createSampleData2();
         let data = await es.activityCreateIndexIfNotExits(activity1);

@@ -1,209 +1,83 @@
 
-import chai, { util } from 'chai';
+import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs, { read } from 'fs';
+import fs from 'fs';
 import { AppService } from '../src/service/appService';
-import { IntelligenceLogService } from '../src/service/intelligenceLogService';
-import { FqdnIntelligenceService } from '../src/service/fqdnIntelligenceService';
-import { DomainIntelligenceBWItem } from '../src/model/domainIntelligence';
-import { RedisService } from '../src/service/redisService';
-import { SystemLogService } from '../src/service/systemLogService';
-import { RedisConfigService } from '../src/service/redisConfigService';
+import { ConfigService } from '../src/service/configService';
 import { Util } from '../src/util';
-
+import { RedisService } from '../src/service/redisService';
+import { GatewayDetail } from '../src/model/network';
+import os from 'os';
+import { GatewayService } from '../src/service/gatewayService';
+import chaiExclude from 'chai-exclude';
+import { IpIntelligenceSource } from '../src/model/ipIntelligence';
+import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
+import { InputService } from '../src/service/inputService';
+import { ESService } from '../src/service/esService';
+import { FqdnIntelligenceSource } from '../src/model/fqdnIntelligence';
+import { FqdnIntelligenceService } from '../src/service/fqdnIntelligenceService';
 
 
 chai.use(chaiHttp);
 const expect = chai.expect;
+chai.use(chaiExclude);
 
+function expectToDeepEqual(a: any, b: any) {
+    delete a.insertDate;
+    delete a.updateDate;
+    delete b.insertDate;
+    delete b.updateDate;
+    expect(a).to.deep.equal(b);
+}
+const apiKey = '';
 
+describe('fqdnIntelligenceService', async () => {
+    const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+    const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', filename);
+    const redisService = new RedisService();
+    const inputService = new InputService();
 
-
-describe('intelligenceLogService', async () => {
-
-    const redis = new RedisService();
-    const redisStream = new RedisService();
-    beforeEach(async () => {
-
-        await redis.flushAll();
+    before(async () => {
+        await configService.setLogo({ default: fs.readFileSync('./src/service/templates/logo.txt').toString() });
+        await configService.saveConfigToFile();
+        await configService.loadConfigFromFile();
     })
-    const encKey = 'u88aapisbdvmufeptows0a5l53sa1r3v';
-
-
-    it('encrypt/decrypt', async () => {
-        const systemlog = new SystemLogService(redis, redisStream, encKey, 'testme');
-        const configService = new RedisConfigService(redis, redisStream, systemlog, encKey, 'testme2');
-        const fqdn = new FqdnIntelligenceService(configService, redis, encKey);
-        const testData = 'www.yahoo.com';
-        const encStr = fqdn.encrypt(testData);
-        const decStr = fqdn.decrypt(encStr.toString());
-        //expect(decStr).to.equal(testData);
-
-
-    }).timeout(10000);
-
-    it('rSaveBigObj', async () => {
-        const systemlog = new SystemLogService(redis, redisStream, encKey, 'testme');
-        const configService = new RedisConfigService(redis, redisStream, systemlog, encKey, 'testme2');
-        const fqdn = new FqdnIntelligenceService(configService, redis, encKey);
-        const bwitem: DomainIntelligenceBWItem = {
-            fqdn: 'www.yahoo.com', insertDate: new Date().toISOString()
-
-        }
-        await fqdn.rSaveBigObj('domainIntelligence/blackList', bwitem.fqdn, ['fqdn'], undefined, bwitem);
-        const item = await fqdn.rGetWithBigObj(`domainIntelligence/blackList`, bwitem.fqdn, ['fqdn']);
-        expect(item).exist;
-        // expect(item).deep.equal(bwitem);
+    beforeEach(async () => {
+        await redisService.flushAll();
+    })
 
 
 
-    }).timeout(10000);
-
-    it('rDelBigObj', async () => {
-        const systemlog = new SystemLogService(redis, redisStream, encKey, 'testme');
-        const configService = new RedisConfigService(redis, redisStream, systemlog, encKey, 'testme2');
-        const fqdn = new FqdnIntelligenceService(configService, redis, encKey);
-        const bwitem: DomainIntelligenceBWItem = {
-            fqdn: 'www.yahoo.com', insertDate: new Date().toISOString()
-
-        }
-        await fqdn.rSaveBigObj('domainIntelligence/blackList', bwitem.fqdn, ['fqdn'], undefined, bwitem);
-        const item = await fqdn.rGetWithBigObj(`domainIntelligence/blackList`, bwitem.fqdn, ['fqdn']);
-        expect(item).exist;
-        //expect(item).deep.equal(bwitem);
-
-        await fqdn.rDelBigObj('domainIntelligence/blackList', item, bwitem.fqdn);
-
-        const item2 = await fqdn.rGetWithBigObj(`domainIntelligence/blackList`, bwitem.fqdn, ['fqdn']);
-        //expect(item2).not.exist;
+    /*  it('reConfigure', async () => {
+         const source: FqdnIntelligenceSource = {
+             id: Util.randomNumberString(),
+             insertDate: '', name: 'brightcloud.org', type: 'brightcloud.org', updateDate: '',
+             apiKey: apiKey, isSecurityPlan: true
+         }
+         await configService.saveFqdnIntelligenceSource(source);
+         const esService = new ESService(configService);
+         class Mock extends FqdnIntelligenceService {
+            
+    constructor(configService: ConfigService, redisService: RedisService, esService: ESService) {
+        super(configService, redisService, inputService, esService);
+    
+    }
+    getClass() {
+        return this.service;
+    }
+    }
+        const intel = new Mock(configService, redisService, esService);
+    expect(intel.getClass()).not.exist;
+    const result = await intel.reConfigure();
+    expect(intel.getClass()).exist;
+    
+    
+    }).timeout(500000); 
+    */
 
 
 
 
-    }).timeout(10000);
-
-
-
-    it('rSaveBigObj performance', async () => {
-        const systemlog = new SystemLogService(redis, redisStream, encKey, 'testme');
-        const configService = new RedisConfigService(redis, redisStream, systemlog, encKey, 'testme2');
-        const fqdn = new FqdnIntelligenceService(configService, redis, encKey);
-        let list = [];
-        for (let i = 0; i < 100000; ++i) {
-            const bwitem: DomainIntelligenceBWItem = {
-                fqdn: Util.randomNumberString(32), insertDate: new Date().toISOString()
-
-            }
-            list.push(bwitem);
-        }
-        let start = Util.nanosecond();
-        let pipeline = await redis.multi();
-        for (const bwitem of list) {
-            await fqdn.rSaveBigObj('domainIntelligence/blackList', bwitem.fqdn, ['fqdn'], undefined, bwitem, pipeline);
-        }
-        await pipeline.exec();
-        let end = Util.nanosecond();
-
-        console.log(`first save milisecond:${(end - start) / 1000 / 1000}`)
-
-        //try again
-        list = [];
-        for (let i = 0; i < 100000; ++i) {
-            const bwitem: DomainIntelligenceBWItem = {
-                fqdn: Util.randomNumberString(32), insertDate: new Date().toISOString()
-
-            }
-            list.push(bwitem);
-        }
-        start = Util.nanosecond();
-        pipeline = await redis.multi();
-        for (const bwitem of list) {
-            await fqdn.rSaveBigObj('domainIntelligence/blackList', bwitem.fqdn, ['fqdn'], undefined, bwitem, pipeline);
-        }
-        await pipeline.exec();
-        end = Util.nanosecond();
-
-        console.log(`second save milisecond:${(end - start) / 1000 / 1000}`)
-
-
-
-    }).timeout(120000);
-
-
-    it('rSaveBigObj getall multi performance', async () => {
-        const systemlog = new SystemLogService(redis, redisStream, encKey, 'testme');
-        const configService = new RedisConfigService(redis, redisStream, systemlog, encKey, 'testme2');
-        const fqdn = new FqdnIntelligenceService(configService, redis, encKey);
-        let list = [];
-        for (let i = 0; i < 100000; ++i) {
-            const bwitem: DomainIntelligenceBWItem = {
-                fqdn: Util.randomNumberString(32), insertDate: new Date().toISOString()
-
-            }
-            list.push(bwitem);
-        }
-        let start = Util.nanosecond();
-        let pipeline = await redis.multi();
-        for (const bwitem of list) {
-            await fqdn.rSaveBigObj('domainIntelligence/blackList', bwitem.fqdn, ['fqdn'], undefined, bwitem, pipeline);
-        }
-        await pipeline.exec();
-        let end = Util.nanosecond();
-
-        console.log(`first save milisecond:${(end - start) / 1000 / 1000}`)
-
-        //get all
-
-        start = Util.nanosecond();
-
-
-        const items3 = await fqdn.rGetAllBigMulti('domainIntelligence/blackList', ['fqdn']);
-
-        end = Util.nanosecond();
-
-        console.log(`getall  multi len: ${items3.length} milisecond:${(end - start) / 1000 / 1000}`);
-
-
-
-    }).timeout(120000);
-
-
-    it('rGetWithBigObjs performance', async () => {
-        const systemlog = new SystemLogService(redis, redisStream, encKey, 'testme');
-        const configService = new RedisConfigService(redis, redisStream, systemlog, encKey, 'testme2');
-        const fqdn = new FqdnIntelligenceService(configService, redis, encKey);
-        let list = [];
-        for (let i = 0; i < 100000; ++i) {
-            const bwitem: DomainIntelligenceBWItem = {
-                fqdn: Util.randomNumberString(32), insertDate: new Date().toISOString()
-
-            }
-            list.push(bwitem);
-        }
-        let start = Util.nanosecond();
-        let pipeline = await redis.multi();
-        for (const bwitem of list) {
-            await fqdn.rSaveBigObj('domainIntelligence/blackList', bwitem.fqdn, ['fqdn'], undefined, bwitem, pipeline);
-        }
-        await pipeline.exec();
-        let end = Util.nanosecond();
-
-        console.log(`first save milisecond:${(end - start) / 1000 / 1000}`)
-
-        //get all
-
-        start = Util.nanosecond();
-
-
-        const items3 = await fqdn.rGetWithBigObjs('domainIntelligence/blackList', list.map(x => x.fqdn), ['fqdn']);
-
-        end = Util.nanosecond();
-
-        console.log(`rGetWithBigObjs  multi len: ${items3.length} milisecond:${(end - start) / 1000 / 1000}`);
-
-
-
-    }).timeout(120000);
 
 
 

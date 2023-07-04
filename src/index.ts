@@ -35,6 +35,7 @@ import { routerPKIAuthenticated } from "./api/pkiApi";
 import path from "path";
 import proxy from 'express-http-proxy';
 import { routerDeviceAuthenticated, routerInsightsDeviceAuthenticated } from "./api/deviceApi";
+import { routerFqdnIntelligenceAuthenticated } from "./api/fqdnIntelligenceApi";
 
 
 const bodyParser = require('body-parser');
@@ -51,12 +52,15 @@ export class ExpressApp {
     appSystemService: AppSystemService;
     port: number;
     ports: number;
+    httpToHttpsRedirect: boolean;
     //bridge between appService and this parent class
-    static https = {
-        start: async () => {
+    static do = {
+        reconfigure: async () => {
+
+        },
+        startHttps: async () => {
 
         }
-
     }
     constructor(httpPort?: number, httpsPort?: number) {
         const port = Number(process.env.PORT) || 8181;
@@ -67,8 +71,12 @@ export class ExpressApp {
         this.appService = new AppService();
         this.appSystemService = new AppSystemService(this.appService);
         this.app.appService = this.appService;
-        ExpressApp.https.start = async () => {
-            await this.startHttps();
+        this.httpToHttpsRedirect = process.env.NODE_ENV == 'development' ? false : true;
+        ExpressApp.do.reconfigure = async () => {
+            await this.reconfigure()
+        }
+        ExpressApp.do.startHttps = async () => {
+            await this.startHttps()
         }
     }
     async init() {
@@ -97,6 +105,9 @@ export class ExpressApp {
             },
             hsts: false,
         }));
+        this.app.enable('trust proxy');
+
+
 
         const setAppService = async (req: any, res: any, next: any) => {
             req.appService = this.appService;//important
@@ -163,6 +174,18 @@ export class ExpressApp {
             next();
         };
 
+        const redirectHttpToHttps = async (req: any, res: any, next: any) => {
+            if (!req.secure && this.httpToHttpsRedirect) {
+                let hostname = req.headers.host as string;
+                hostname = hostname.split(':')[0];
+                if (this.ports != 443 && process.env.NODE_ENV == 'development')
+                    hostname = hostname + ':' + this.ports;
+
+                return res.redirect("https://" + hostname + req.originalUrl);
+            }
+            next();
+        };
+
 
 
 
@@ -177,6 +200,9 @@ export class ExpressApp {
             res.setHeader('server', 'ferrumgate')
             next();
         });
+
+        //http to https redirect
+        this.app.use(asyncHandler(redirectHttpToHttps));
 
 
 
@@ -497,6 +523,16 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerDeviceAuthenticated);
 
+        this.app.use('/api/fqdn/intelligence',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'fqdnIntelligence', 1000),
+            asyncHandlerWithArgs(rateLimit, 'fqdnIntelligenceHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'fqdnIntelligenceDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'fqdnIntelligenceCaptcha', 50),
+            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
+            routerFqdnIntelligenceAuthenticated);
+
 
         this.app.use('/api/*', function (req: any, res: any) {
             res.status(404).send('not found')
@@ -591,6 +627,10 @@ export class ExpressApp {
                 this.httpsHash = hash;
             }
         }
+
+    }
+    async reconfigure() {
+        this.httpToHttpsRedirect = process.env.NODE_ENV == 'development' ? false : await this.appService.configService.getHttpToHttpsRedirect();
 
     }
     async stopHttps() {

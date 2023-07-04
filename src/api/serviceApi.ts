@@ -130,6 +130,7 @@ routerServiceAuthenticated.put('/',
         const safe = cloneService(input);
         //reassign allready assigned ip, system will manage it
         safe.assignedIp = service.assignedIp;
+
         //copy orijinal 
         safe.insertDate = service.insertDate;
         safe.updateDate = new Date().toISOString();
@@ -139,6 +140,25 @@ routerServiceAuthenticated.put('/',
             safe.isEnabled = service.isEnabled;
             safe.isSystem = service.isSystem;
         }
+
+        if (service.networkId != safe.networkId) {//network changed
+            const targetNetwork = await configService.getNetwork(safe.networkId);
+            if (!targetNetwork) {
+                throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'target network not found');
+            }
+            const allServicesFromThisNetwork = await configService.getServicesByNetworkId(targetNetwork.id);
+            safe.assignedIp = getEmptyServiceIp(network, allServicesFromThisNetwork.map(x => x.assignedIp));
+            const policies = await configService.getAuthorizationPolicy();
+            for (const pol of policies.rules) {
+                if (pol.serviceId == service.id) {
+                    if (pol.networkId != safe.networkId) {
+                        pol.networkId = safe.networkId;
+                        await configService.saveAuthorizationPolicyRule(pol);
+                    }
+                }
+            }
+        }
+
         const { before, after } = await configService.saveService(safe);
         await auditService.logSaveService(currentSession, currentUser, before, after);
         return res.status(200).json(safe);

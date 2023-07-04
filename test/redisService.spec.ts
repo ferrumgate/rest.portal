@@ -6,8 +6,8 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
 import { RedisService, RedisServiceManuel } from '../src/service/redisService';
-import cryp from 'crypto';
-
+import crypto from 'crypto';
+import fsp from 'fs/promises'
 
 
 chai.use(chaiHttp);
@@ -241,6 +241,28 @@ describe('redisService', () => {
 
 
     }).timeout(10000)
+
+    it('redis hgetBuffer hset', async () => {
+
+        const simpleRedis = new RedisService('localhost:6379');
+        let obj = { ttl: 10 };
+        const data = crypto.randomBytes(1024);
+        await simpleRedis.hset('test', { content: data });
+        let fieldValue = await simpleRedis.hgetBuffer('test', 'content') as any;
+        expect(fieldValue.length).to.equal(1024);
+        const randomFile = '/tmp/' + Util.randomNumberString();
+        await fsp.writeFile(randomFile, data, { encoding: 'binary' });
+
+        const buf2 = await fsp.readFile(randomFile);
+
+        await simpleRedis.hset('test', { content2: buf2 });
+        fieldValue = await simpleRedis.hgetBuffer('test', 'content2') as any;
+        expect(fieldValue.length).to.equal(1024);
+
+
+
+
+    }).timeout(100000)
 
     it('redis publish', async () => {
 

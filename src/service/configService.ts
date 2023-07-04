@@ -22,9 +22,10 @@ import { ESSetting } from "../model/esSetting";
 import { stringify } from "querystring";
 import { IpIntelligenceCountryList, IpIntelligenceFilterCategory, IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
 import IPCIDR from "ip-cidr";
-import { DomainIntelligenceBWItem, DomainIntelligenceSource } from "../model/domainIntelligence";
 import { UtilPKI } from "../utilPKI";
 import { DevicePosture } from "../model/authenticationProfile";
+import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
+import { BrandSetting } from "../model/brandSetting";
 
 
 
@@ -157,7 +158,13 @@ export class ConfigService {
                 sources: [],
                 lists: []
             },
-            devicePostures: []
+            devicePostures: [],
+            fqdnIntelligence: {
+                sources: [],
+                lists: []
+            },
+            httpToHttpsRedirect: true,
+            brand: {}
 
         }
     }
@@ -2040,6 +2047,142 @@ export class ConfigService {
 
 
 
+
+    ///////// fqdn intelligence /////////////////////////////////////
+
+
+
+    async getFqdnIntelligenceSources() {
+        this.isReady(); this.isReadable();
+        const config = this.clone(this.config.fqdnIntelligence.sources);
+        return config;
+    }
+    async getFqdnIntelligenceSource(id: string) {
+        this.isReady(); this.isReadable();
+        const source = this.config.fqdnIntelligence.sources.find(x => x.id == id);
+        if (!source) {
+            return source;
+        }
+        return this.clone(source);
+    }
+    async saveFqdnIntelligenceSource(source: IpIntelligenceSource) {
+        this.isReady(); this.isReadable();
+        let findedIndex = this.config.fqdnIntelligence.sources.findIndex(x => x.id == source.id);
+        let finded = this.config.fqdnIntelligence.sources[findedIndex];
+        const cloned = this.clone(source);
+        if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
+            this.config.fqdnIntelligence.sources.push(cloned);
+            findedIndex = this.config.fqdnIntelligence.sources.length - 1;
+            const trc = this.createTrackEvent(finded, this.config.fqdnIntelligence.sources[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'fqdnIntelligence/sources', val: trc.after, before: trc.before });
+        } else {
+            this.config.fqdnIntelligence.sources[findedIndex] = {
+                ...finded,
+                ...cloned,
+                updateDate: new Date().toISOString()
+            }
+            const trc = this.createTrackEvent(finded, this.config.fqdnIntelligence.sources[findedIndex])
+            this.emitEvent({ type: 'put', path: 'fqdnIntelligence/sources', val: trc.after, before: trc.before });
+        }
+        await this.saveConfigToFile();
+        return this.createTrackEvent(finded, this.config.fqdnIntelligence.sources[findedIndex]);
+    }
+    async deleteFqdnIntelligenceSource(id: string) {
+        this.isReady(); this.isWritable();
+        const indexId = this.config.fqdnIntelligence.sources.findIndex(x => x.id == id);
+        const source = this.config.fqdnIntelligence.sources.find(x => x.id == id);
+        if (indexId >= 0 && source) {
+            this.config.fqdnIntelligence.sources.splice(indexId, 1);
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(source)
+
+    }
+
+
+
+    async getFqdnIntelligenceLists() {
+        this.isReady(); this.isReadable();
+        const config = this.clone(this.config.fqdnIntelligence.lists);
+        return config;
+    }
+    async getFqdnIntelligenceList(id: string) {
+        this.isReady(); this.isReadable();
+        const source = this.config.fqdnIntelligence.lists.find(x => x.id == id);
+        if (!source) {
+            return source;
+        }
+        return this.clone(source);
+    }
+    async saveFqdnIntelligenceList(list: FqdnIntelligenceList) {
+        this.isReady(); this.isReadable();
+        let findedIndex = this.config.fqdnIntelligence.lists.findIndex(x => x.id == list.id);
+        let finded = this.config.fqdnIntelligence.lists[findedIndex];
+        const cloned = this.clone(list);
+        if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
+            this.config.fqdnIntelligence.lists.push(cloned);
+            findedIndex = this.config.fqdnIntelligence.lists.length - 1;
+            const trc = this.createTrackEvent(finded, this.config.fqdnIntelligence.lists[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'fqdnIntelligence/lists', val: trc.after, before: trc.before });
+        } else {
+            this.config.fqdnIntelligence.lists[findedIndex] = {
+                ...finded,
+                ...cloned,
+                updateDate: new Date().toISOString()
+            }
+            const trc = this.createTrackEvent(finded, this.config.fqdnIntelligence.lists[findedIndex])
+            this.emitEvent({ type: 'put', path: 'fqdnIntelligence/lists', val: trc.after, before: trc.before });
+        }
+        await this.saveConfigToFile();
+        return this.createTrackEvent(finded, this.config.fqdnIntelligence.lists[findedIndex]);
+    }
+    async deleteFqdnIntelligenceList(id: string) {
+        this.isReady(); this.isWritable();
+        const indexId = this.config.fqdnIntelligence.lists.findIndex(x => x.id == id);
+        const source = this.config.fqdnIntelligence.lists.find(x => x.id == id);
+        if (indexId >= 0 && source) {
+            this.config.fqdnIntelligence.lists.splice(indexId, 1);
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(source)
+
+    }
+    async getHttpToHttpsRedirect(): Promise<boolean> {
+        this.isReady(); this.isReadable();
+        return this.config.httpToHttpsRedirect ? true : false;
+    }
+
+    async setHttpToHttpsRedirect(val: boolean) {
+        this.isReady(); this.isWritable();
+        let previous = this.config.httpToHttpsRedirect;
+        this.config.httpToHttpsRedirect = val;
+        const trc = this.createTrackEvent(previous, this.config.httpToHttpsRedirect)
+        this.emitEvent({ type: 'put', path: 'httpToHttpsRedirect', val: trc.after, before: trc.before })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.httpToHttpsRedirect);
+    }
+
+    /// brand
+    async getBrand(): Promise<BrandSetting> {
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.brand);
+    }
+    async setBrand(brand: BrandSetting | {}) {
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(brand);
+        let prev = this.config.brand;
+        this.config.brand = {
+            ...cloned
+        }
+        const trc = this.createTrackEvent(prev, this.config.brand);
+        this.emitEvent({ type: 'put', path: 'brand', val: trc.after, before: trc.before })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.brand);
+    }
 
 
 

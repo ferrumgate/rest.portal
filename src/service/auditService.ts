@@ -20,6 +20,9 @@ import { ESSetting } from "../model/esSetting";
 import { IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
 import { SSLCertificate } from "../model/cert";
 import { DevicePosture } from "../model/authenticationProfile";
+import { FqdnIntelligenceSource } from "../model/fqdnIntelligence";
+import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
+import { BrandSetting } from "../model/brandSetting";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -152,6 +155,12 @@ export class AuditService {
 
         await this.executeSave(currentSession, currentUser, before, after,
             `domain settings updated`,
+            `${before || after}`)
+    }
+    async logSetHttpToHttpsRedirect(currentSession: AuthSession, currentUser: User, before?: boolean, after?: boolean) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `http to https redirect settings updated`,
             `${before || after}`)
     }
     async logSetUrl(currentSession: AuthSession, currentUser: User, before?: string, after?: string) {
@@ -293,6 +302,12 @@ export class AuditService {
             `es settings updated`,
             ``,)
     }
+    async logSetBrand(currentSession: AuthSession, currentUser: User, before?: BrandSetting, after?: BrandSetting) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `brand settings updated`,
+            ``,)
+    }
     async logConfigExport(currentSession: AuthSession, currentUser: User) {
 
         await this.executeSave(currentSession, currentUser, {}, {},
@@ -409,6 +424,44 @@ export class AuditService {
         await this.executeSave(currentSession, currentUser, before, after,
             `device posture ${before ? 'updated' : 'created'}`,
             `${before?.name || after?.name}`)
+    }
+
+
+    async logSaveFqdnIntelligenceSource(currentSession: AuthSession, currentUser: User, before?: FqdnIntelligenceSource, after?: FqdnIntelligenceSource) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `fqdn intelligence source ${before ? 'updated' : 'created'}`,
+            `${before?.name || after?.name}`,)
+
+    }
+    async logDeleteFqdnIntelligenceSource(currentSession: AuthSession, currentUser: User, before?: FqdnIntelligenceSource, after?: FqdnIntelligenceSource) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `fqdn intelligence source deleted}`,
+            `${before?.name}`,)
+
+    }
+
+    async logSaveFqdnIntelligenceList(currentSession: AuthSession, currentUser: User, before?: FqdnIntelligenceList, after?: FqdnIntelligenceList) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `fqdn intelligence list ${before ? 'updated' : 'created'}`,
+            `${before?.name || after?.name}`,)
+
+    }
+    async logDeleteFqdnIntelligenceList(currentSession: AuthSession, currentUser: User, before?: FqdnIntelligenceList, after?: FqdnIntelligenceList) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `fqdn intelligence list deleted`,
+            `${before?.name}`,)
+
+    }
+    async logResetFqdnIntelligenceList(currentSession: AuthSession, currentUser: User, before?: IpIntelligenceList, after?: IpIntelligenceList) {
+
+        await this.executeSave(currentSession, currentUser, before, before,
+            `fqdn intelligence list reseted`,
+            `${before?.name}`,)
+
     }
 
 
