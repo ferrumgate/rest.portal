@@ -346,9 +346,11 @@ routerUserAuthenticated.get('/current/network',
         const results = networks.map(x => {
             return {
                 id: x.network.id, name: x.network.name,
-                action: x.action, needs2FA: x.needs2FA,
+                action: x.action,
+                needs2FA: x.needs2FA,
                 needsIp: x.needsIp,
                 needsDevicePosture: x.needsDevicePosture,
+                needsTime: x.needsTime,
                 sshHost: x.network.sshHost,
             }
         })

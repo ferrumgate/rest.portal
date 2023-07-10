@@ -578,7 +578,7 @@ export class PolicyService {
             }
             //for better visibility
             if (f1) {
-                logger.warn(`user not authenticated ${f2} ${JSON.stringify(f3)} ${f4}}`)
+                logger.warn(`user not authenticated f2:${f2} f3:${JSON.stringify(f3)} f4:${f4} f5:${JSON.stringify(f5)}`)
                 if (!f2)
                     error = ErrorCodesInternal.ErrNo2FAMatch;
                 else

@@ -228,11 +228,16 @@ export class ExpressApp {
                 assert(req.appService);
                 res.status(200).json({ result: "ok", clientIp: req.clientIp });
             })); */
+
+
+
+        // this function used by clients for redirect testing
+        // dont delete this function
         this.app.use("/api/test",
             asyncHandler(cors(corsOptionsDelegate)),
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
-            asyncHandlerWithArgs(rateLimit, 'test', 2),
+            asyncHandlerWithArgs(rateLimit, 'test', 100),
             asyncHandlerWithArgs(checkLimitedMode, 'DELETE', 'PUT'),
             asyncHandler(async (req: any, res: any, next: any) => {
                 assert(req.appService);

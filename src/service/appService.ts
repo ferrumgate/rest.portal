@@ -124,14 +124,14 @@ export class AppService {
         this.esIntelService = esIntel || AppService.createESIntelService(this.configService);
         this.activityService = activity || new ActivityService(this.redisLocalService, this.esService);
         this.auditService = audit || new AuditService(this.configService, this.redisLocalService, this.esService);
-        this.ipIntelligenceService = ipIntelligenceService || new IpIntelligenceService(this.configService, this.redisIntelService, this.inputService, this.esIntelService);
+        this.ipIntelligenceService = ipIntelligenceService || new IpIntelligenceService(this.configService, this.redisService, this.inputService, this.esService);
         this.policyService = policy || new PolicyService(this.configService, this.ipIntelligenceService);
         this.gatewayService = gateway || new GatewayService(this.configService, this.redisService);
         this.summaryService = summary || new SummaryService(this.configService, this.tunnelService, this.sessionService, this.redisService, this.esService);
         this.pkiService = pkiService || new PKIService(this.configService);
-        this.deviceService = deviceService || new DeviceService(this.configService, this.redisLocalService, this.esService);
+        this.deviceService = deviceService || new DeviceService(this.configService, this.redisService, this.redisLocalService, this.esService);
         this.letsEncryptService = letsEncryptService || new LetsEncryptService(this.configService, this.redisService, this.systemLogService, process.env.ACME_CHALLENGE || '/tmp/acme-challenge');
-        this.fqdnIntelligenceService = fqdnIntelligenceService || new FqdnIntelligenceService(this.configService, this.redisIntelService, this.inputService, this.esIntelService);
+        this.fqdnIntelligenceService = fqdnIntelligenceService || new FqdnIntelligenceService(this.configService, this.redisService, this.inputService, this.esService);
 
 
         this.configureES = new EventBufferedExecutor(async () => {
