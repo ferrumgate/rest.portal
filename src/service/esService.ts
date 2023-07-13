@@ -19,7 +19,7 @@ import { MAP } from 'yaml/dist/nodes/Node';
 import { FqdnIntelligenceListItem } from '../model/fqdnIntelligence';
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
-
+const ThreeMinutes = 3 * 60 * 1000;
 
 
 export interface ESAuditLog extends AuditLog {
@@ -179,11 +179,11 @@ export interface ScrollFqdnIntelligenceListRequest {
  */
 export class ESService {
 
-    private auditIndexes: Map<string, string> = new Map<string, string>();
-    private activityIndexes: Map<string, string> = new Map<string, string>();
-    private deviceIndexes: Map<string, string> = new Map<string, string>();
-    private ipIntelligenceListIndexes: Map<string, string> = new Map<string, string>();
-    private fqdnIntelligenceListIndexes: Map<string, string> = new Map<string, string>();
+    private auditIndexes: Map<string, number> = new Map<string, number>();
+    private activityIndexes: Map<string, number> = new Map<string, number>();
+    private deviceIndexes: Map<string, number> = new Map<string, number>();
+    private ipIntelligenceListIndexes: Map<string, number> = new Map<string, number>();
+    private fqdnIntelligenceListIndexes: Map<string, number> = new Map<string, number>();
     private client!: ES.Client;
     host?: string;
     username?: string;
@@ -214,10 +214,10 @@ export class ESService {
             tls: { rejectUnauthorized: false },
 
         }
-        this.auditIndexes = new Map<string, string>();
-        this.activityIndexes = new Map<string, string>();
-        this.ipIntelligenceListIndexes = new Map<string, string>();
-        this.fqdnIntelligenceListIndexes = new Map<string, string>();
+        this.auditIndexes = new Map<string, number>();
+        this.activityIndexes = new Map<string, number>();
+        this.ipIntelligenceListIndexes = new Map<string, number>();
+        this.fqdnIntelligenceListIndexes = new Map<string, number>();
         this.client = new ES.Client(option);
 
     }
@@ -286,7 +286,8 @@ export class ESService {
             ...item
 
         };
-        if (this.auditIndexes.has(index)) return [esitem, index];
+        const foundedIndex = this.auditIndexes.get(index);
+        if ((foundedIndex || 0) > new Date().getTime()) return [esitem, index];
 
         let exists = (await this.client.indices.exists({ index: index }));
         if (!exists) {
@@ -363,7 +364,7 @@ export class ESService {
 
 
         }
-        this.auditIndexes.set(index, index);
+        this.auditIndexes.set(index, new Date().getTime() + ThreeMinutes);
         return [esitem, index];
     }
 
@@ -393,7 +394,8 @@ export class ESService {
             ...item
 
         };
-        if (this.ipIntelligenceListIndexes.has(index)) return [esitem, index];
+        const foundedIndex = this.ipIntelligenceListIndexes.get(index);
+        if ((foundedIndex || 0) > new Date().getTime()) return [esitem, index];
 
         let exists = (await this.client.indices.exists({ index: index }));
         if (!exists) {
@@ -452,7 +454,7 @@ export class ESService {
 
 
         }
-        this.ipIntelligenceListIndexes.set(index, index);
+        this.ipIntelligenceListIndexes.set(index, new Date().getTime() + ThreeMinutes);
         return [esitem, index];
     }
 
@@ -701,7 +703,8 @@ export class ESService {
             ...item
 
         };
-        if (this.activityIndexes.has(index)) return [esitem, index];
+        const foundedIndex = this.activityIndexes.get(index);
+        if (foundedIndex || 0 > new Date().getTime()) return [esitem, index];
 
         let exists = (await this.client.indices.exists({ index: index }));
         if (!exists) {
@@ -931,7 +934,7 @@ export class ESService {
 
 
         }
-        this.auditIndexes.set(index, index);
+        this.auditIndexes.set(index, new Date().getTime() + ThreeMinutes);
         return [esitem, index];
     }
 
@@ -1425,7 +1428,8 @@ export class ESService {
             ...item
 
         };
-        if (this.deviceIndexes.has(index)) return [esitem, index];
+        const foundedIndex = this.deviceIndexes.get(index);
+        if ((foundedIndex || 0) > new Date().getTime()) return [esitem, index];
 
         let exists = (await this.client.indices.exists({ index: index }));
         if (!exists) {
@@ -1537,7 +1541,7 @@ export class ESService {
 
 
         }
-        this.deviceIndexes.set(index, index);
+        this.deviceIndexes.set(index, new Date().getTime() + ThreeMinutes);
         return [esitem, index];
     }
 
@@ -1621,7 +1625,8 @@ export class ESService {
             ...item
 
         };
-        if (this.fqdnIntelligenceListIndexes.has(index)) return [esitem, index];
+        const foundedIndex = this.fqdnIntelligenceListIndexes.get(index);
+        if ((foundedIndex || 0) > new Date().getTime()) return [esitem, index];
 
         let exists = (await this.client.indices.exists({ index: index }));
         if (!exists) {
@@ -1675,7 +1680,7 @@ export class ESService {
 
 
         }
-        this.fqdnIntelligenceListIndexes.set(index, index);
+        this.fqdnIntelligenceListIndexes.set(index, new Date().getTime() + ThreeMinutes);
         return [esitem, index];
     }
 

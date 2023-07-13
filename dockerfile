@@ -29,6 +29,7 @@ WORKDIR /usr/src/app
 ###    end=$(grep -n 'end point for delete' build/src/service/configService.js |cut -d':' -f1); \
 ###    sed -i "${start},${end}d" build/src/service/configService.js
 
-
+RUN mkdir -p /var/lib/ferrumgate
+RUN chown -R node:node /var/lib/ferrumgate
 USER node
 CMD ["npm","run","startdocker"]

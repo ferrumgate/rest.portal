@@ -228,11 +228,16 @@ export class ExpressApp {
                 assert(req.appService);
                 res.status(200).json({ result: "ok", clientIp: req.clientIp });
             })); */
+
+
+
+        // this function used by clients for redirect testing
+        // dont delete this function
         this.app.use("/api/test",
             asyncHandler(cors(corsOptionsDelegate)),
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
-            asyncHandlerWithArgs(rateLimit, 'test', 2),
+            asyncHandlerWithArgs(rateLimit, 'test', 100),
             asyncHandlerWithArgs(checkLimitedMode, 'DELETE', 'PUT'),
             asyncHandler(async (req: any, res: any, next: any) => {
                 assert(req.appService);
@@ -620,7 +625,34 @@ export class ExpressApp {
                 //fs.writeFileSync('/tmp/web.cert', web.publicCrt || '');
                 //fs.writeFileSync('/tmp/in.cert', int?.publicCrt || '');
                 //fs.writeFileSync('/tmp/ca.cert', ca.publicCrt || '');
-                this.httpsServer = https.createServer({ cert: web.publicCrt, key: web.privateKey }, this.app);
+                const certsfolder = '/var/lib/ferrumgate/certs'
+                const privFile = `${certsfolder}/private.key`;
+                const pubFile = `${certsfolder}/public.crt`;
+                fs.mkdirSync(certsfolder, { recursive: true });
+                if (fs.existsSync(certsfolder) && fs.existsSync(privFile) && fs.existsSync(pubFile)) {
+                    const options: { key: Buffer, cert: Buffer, ca: Buffer[] } = {
+                        key: fs.readFileSync(privFile),
+                        cert: fs.readFileSync(pubFile),
+                        ca: []
+                    }
+
+                    if (fs.existsSync(`${certsfolder}/ca_root.crt`)) {
+                        const caroot = fs.readFileSync(`${certsfolder}/ca_root.crt`);
+                        options.ca.push(caroot);
+                    }
+                    if (fs.existsSync(`${certsfolder}/ca_bundle.crt`)) {
+                        const cabundle = fs.readFileSync(`${certsfolder}/ca_bundle.crt`);
+                        options.ca.push(cabundle);
+                    }
+                    logger.info("https started with custom certificates")
+                    this.httpsServer = https.createServer(options, this.app);
+
+                }
+                else {
+                    logger.info("https started with our certificates")
+                    this.httpsServer = https.createServer({ cert: web.publicCrt, key: web.privateKey }, this.app);
+                }
+
                 this.httpsServer.listen(this.ports, () => {
                     logger.info('service ssl started on ', this.ports);
                 })

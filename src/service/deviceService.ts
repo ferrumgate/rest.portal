@@ -15,7 +15,7 @@ export class DeviceService {
 
 
     trimInterval: any;
-    constructor(private config: ConfigService, private redisService: RedisService, private esService: ESService) {
+    constructor(private config: ConfigService, private redisService: RedisService, private redisLocalService: RedisService, private esService: ESService) {
         this.trimInterval = setIntervalAsync(async () => {
             await this.trimStream();
         }, 1 * 60 * 60 * 1000)
@@ -59,14 +59,14 @@ export class DeviceService {
     }
     async save(act: DeviceLog) {
         const base64 = Util.jencode(act).toString('base64url');// Buffer.from(JSON.stringify(act)).toString('base64url')
-        await this.redisService.xadd('/logs/device', { val: base64, type: 'b64' });
+        await this.redisLocalService.xadd('/logs/device', { val: base64, type: 'b64' });
     }
 
 
 
     async trimStream(min?: string) {
         try {
-            await this.redisService.xtrim('/logs/device', min || (new Date().getTime() - 1 * 60 * 60 * 1000).toString());
+            await this.redisLocalService.xtrim('/logs/device', min || (new Date().getTime() - 1 * 60 * 60 * 1000).toString());
 
         } catch (err) {
             logger.error(err);
