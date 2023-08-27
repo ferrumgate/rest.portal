@@ -14,6 +14,7 @@ import { AuthSession } from "../model/authSession";
 import { resetWebCertificate } from "./pkiApi";
 import { getNotJoinedGateways } from "./gatewayApi";
 import { authorizeAsAdmin } from "./commonApi";
+import { saveDefaultDnsServiceAuthorizationForEverybody } from "./ networkApi";
 
 
 
@@ -122,6 +123,8 @@ routerConfigureAuthenticated.post('/',
 
         //save default dns
         await saveSystemDnsService(defaultNetwork, configService, auditService, currentSession, user);
+        //save dns authorization rule
+        await saveDefaultDnsServiceAuthorizationForEverybody(defaultNetwork, configService, auditService, currentSession, user);
         //reset default web cert
         await resetWebCertificate(configService, auditService, currentSession, user);
 
