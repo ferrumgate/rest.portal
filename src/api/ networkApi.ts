@@ -15,6 +15,9 @@ import { AuthSession } from "../model/authSession";
 import { Service } from "../model/service";
 import { getEmptyServiceIp, saveSystemDnsService } from "./serviceApi";
 import { config } from "process";
+import { AuditService } from "../service/auditService";
+import { AuthorizationRule } from "../model/authorizationPolicy";
+import { cloneAuthorizationRule } from "../model/authorizationPolicy";
 
 
 /////////////////////////////////  network //////////////////////////////////
@@ -203,12 +206,45 @@ routerNetworkAuthenticated.post('/',
         //create default dns service
         await saveSystemDnsService(safe, configService, auditService, currentSession, currentUser);
 
-
+        //create access rule to dns service for everyone
+        await saveDefaultDnsServiceAuthorizationForEverybody(safe, configService, auditService, currentSession, currentUser);
 
 
         return res.status(200).json(safe);
 
     }))
+
+/**
+* @summary give permission to everybody
+*/
+export async function saveDefaultDnsServiceAuthorizationForEverybody(network: Network, configService: ConfigService,
+    auditService: AuditService, currentSession: AuthSession, currentUser: User) {
+    //create default dns service
+    const services = await configService.getServicesByNetworkId(network.id);
+    const dnsService = services.find(x => x.isSystem && x.protocol == 'dns');
+    if (!dnsService) {
+        logger.warn("system dns service not found");
+        return;
+    }
+    const authorizationRule: AuthorizationRule = {
+        id: Util.randomNumberString(16),
+        name: "everybody-can-access",
+        insertDate: new Date().toISOString(),
+        isEnabled: true,
+        networkId: network.id,
+        serviceId: dnsService.id,
+        profile: { is2FA: false },
+        updateDate: new Date().toISOString(),
+        userOrgroupIds: []
+
+    }
+    const safe = cloneAuthorizationRule(authorizationRule);
+    //copy original one
+    const { before, after } = await configService.saveAuthorizationPolicyRule(safe);
+    //await configService.updateAuthorizationPolicyUpdateTime();
+    await auditService.saveAuthorizationPolicyRule(currentSession, currentUser, before, after);
+
+}
 
 
 

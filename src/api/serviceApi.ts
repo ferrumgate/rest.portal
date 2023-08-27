@@ -14,6 +14,7 @@ import { cloneService, Service } from "../model/service";
 import { Network } from "../model/network";
 import { AuditService } from "../service/auditService";
 import { AuthSession } from "../model/authSession";
+import { AuthorizationRule, cloneAuthorizationRule } from "../model/authorizationPolicy";
 
 
 
@@ -233,6 +234,8 @@ export async function saveSystemDnsService(network: Network, configService: Conf
     const { before, after } = await configService.saveService(dnsService);
     await auditService.logSaveService(currentSession, currentUser, before, after);
 }
+
+
 
 
 

@@ -1,6 +1,6 @@
 {
   "name": "rest.portal",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "restfull service for management ui",
   "main": "index.js",
   "typings": "lib.d.ts",
