@@ -22,7 +22,8 @@ export function samlAzureInit(saml: BaseSaml, url: string) {
         issuer: saml.issuer,
         cert: prepareCert(saml.cert),
         passReqToCallback: true,
-        callbackUrl: `${url}/api/auth/saml/azure/callback`
+        callbackUrl: `${url}/api/auth/saml/azure/callback`,
+        disableRequestedAuthnContext: true
 
 
     },
