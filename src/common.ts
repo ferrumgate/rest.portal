@@ -73,7 +73,7 @@ export function globalErrorHandler(err: any, req: any, res: any, nex: any) {
  */
 export const checkLimitedMode = async (req: any, res: any, next: any, ...args: any) => {
 
-    if (process.env.LIMITED_MODE == 'true') {
+    /* if (process.env.LIMITED_MODE == 'true') {
         if (!args[0] || !args[0].length)
             throw new RestfullException(400, ErrorCodes.ErrLimitedModeIsWorking, ErrorCodes.ErrLimitedModeIsWorking, 'limited mode is working');
         const list = args[0] as string[]
@@ -84,8 +84,8 @@ export const checkLimitedMode = async (req: any, res: any, next: any, ...args: a
             throw new RestfullException(400, ErrorCodes.ErrLimitedModeIsWorking, ErrorCodes.ErrLimitedModeIsWorking, 'read only mode is working');
         else next();
 
-    } else
-        next();
+    } else */
+    next();
 
 };
 

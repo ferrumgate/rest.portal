@@ -34,6 +34,7 @@ import { BrandSetting } from "../model/brandSetting";
 
 
 
+
 /**
  * @summary system config implementation base class
  */
@@ -76,7 +77,7 @@ export class ConfigService {
         // end point for delete
         this.config.lastUpdateTime = new Date().toISOString();
         this.loadConfigFromFile();
-        if (process.env.LIMITED_MODE == 'true') {
+        /* if (process.env.LIMITED_MODE == 'true') {
             if (!this.config.groups.find(x => x.id == 'hb16ldst577l9mkf'))
                 this.config.groups.push({
                     id: 'hb16ldst577l9mkf',
@@ -89,7 +90,9 @@ export class ConfigService {
                     name: 'remote',
                     isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
                 })
-        }
+        } */
+
+
 
 
 
@@ -167,6 +170,8 @@ export class ConfigService {
             brand: {}
 
         }
+
+
     }
     async checkModel() {
 
