@@ -663,11 +663,11 @@ routerUserAuthenticated.get('/',
                 } as any
             })
 
-        if (process.env.LIMITED_MODE == 'true') {//limited mode only current user
-            const user = req.currentUser as User;
-            items.items = items.items.filter(x => x.id == user.id);
-            items.total = items.items.length;
-        }
+        /*  if (process.env.LIMITED_MODE == 'true') {//limited mode only current user
+             const user = req.currentUser as User;
+             items.items = items.items.filter(x => x.id == user.id);
+             items.total = items.items.length;
+         } */
 
         return res.status(200).json({ items: items.items, total: items.total });
 
@@ -729,12 +729,12 @@ routerUserAuthenticated.put('/',
         const userDb = await configService.getUserById(input.id);
         if (!userDb) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
 
-        if (process.env.LIMITED_MODE == 'true') {//limited mode only current user update itself
+        /* if (process.env.LIMITED_MODE == 'true') {//limited mode only current user update itself
             const user = req.currentUser as User;
             if (user.id != userDb.id) {
                 throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
             }
-        }
+        } */
 
         //await inputService.checkNotEmpty(input.name);
         //only set name. isLocked, is2FA, roleIds, groupIds, apikey and certificate
@@ -821,12 +821,12 @@ routerUserAuthenticated.put('/pass',
         const userDb = await configService.getUserById(input.id);
         if (!userDb) throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
 
-        if (process.env.LIMITED_MODE == 'true') {//limited mode only current user update itself
-            const user = req.currentUser as User;
-            if (user.id != userDb.id) {
-                throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
-            }
-        }
+        /*  if (process.env.LIMITED_MODE == 'true') {//limited mode only current user update itself
+             const user = req.currentUser as User;
+             if (user.id != userDb.id) {
+                 throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrUserNotFound, 'no user');
+             }
+         } */
 
         userDb.password = Util.bcryptHash(input.pass);
         await configService.saveUser(userDb);

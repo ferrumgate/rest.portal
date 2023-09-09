@@ -15,7 +15,7 @@ import { Network } from "../model/network";
 import { AuditService } from "../service/auditService";
 import { AuthSession } from "../model/authSession";
 import { AuthorizationRule, cloneAuthorizationRule } from "../model/authorizationPolicy";
-
+import ip from 'ip-cidr'
 
 
 /////////////////////////////////  service //////////////////////////////////
@@ -90,6 +90,29 @@ routerServiceAuthenticated.delete('/:id',
     }))
 
 
+async function checkServiceValidRanges(input: Service) {
+    if (process.env.SERVICE_VALID_RANGES) {
+        try {
+            const inputAddresses = input.hosts.map(x => ip.createAddress(x.host));
+        } catch (err) {
+            throw new RestfullException(400, ErrorCodes.ErrLimitedModeIsWorking, ErrorCodes.ErrLimitedModeIsWorking, "service ip is not in service range");
+        }
+        const inputAddresses = input.hosts.map(x => ip.createAddress(x.host));
+        const ranges = process.env.SERVICE_VALID_RANGES.split(/[\s,]/).filter(x => x);
+        let founded = false;
+        ranges.forEach(x => {
+            const rAddress = ip.createAddress(x);
+            for (const addr of inputAddresses) {
+                if (addr.isInSubnet(rAddress))
+                    founded = true;
+            }
+        })
+        if (!founded) {
+            throw new RestfullException(400, ErrorCodes.ErrLimitedModeIsWorking, ErrorCodes.ErrLimitedModeIsWorking, "service ip is not in service range");
+        }
+    }
+
+}
 
 routerServiceAuthenticated.put('/',
     asyncHandler(passportInit),
@@ -127,6 +150,7 @@ routerServiceAuthenticated.put('/',
         await inputService.checkDomain(input.name);
         await inputService.checkIfExists(input.protocol);
 
+        await checkServiceValidRanges(input);
 
         const safe = cloneService(input);
         //reassign allready assigned ip, system will manage it
@@ -200,6 +224,10 @@ routerServiceAuthenticated.post('/',
         await inputService.checkIfExists(input.protocol);
 
         await inputService.checkDomain(input.name);
+
+
+        await checkServiceValidRanges(input);
+
         const safe = cloneService(input);
         const allServicesFromThisNetwork = await configService.getServicesByNetworkId(network.id);
         safe.assignedIp = getEmptyServiceIp(network, allServicesFromThisNetwork.map(x => x.assignedIp));

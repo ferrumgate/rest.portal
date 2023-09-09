@@ -31,7 +31,13 @@
                 "JENCODE": "json",
                 "ENCRYPT_KEY": "bwe7ecxv6pgsc1vbzwh507ey6bftxc41",
                 "UI_HOST": "localhost:4200",
-                "LETS_ENCRYPT_SERVER": "https://localhost:14000/dir"
+                "LETS_ENCRYPT_SERVER": "https://localhost:14000/dir",
+                "TRY_MODE2": "true",
+                "FERRUM_TRY_URL": "https://hamza.com",
+                "FERRUM_TRY_TUNNEL_SERVER": "tunnelserver.com:1234",
+                "FERRUM_TRY_ADMIN_PASS": "123456",
+                "FERRUM_TRY_USER1_PASS": "123456",
+                "SERVICE_VALID_RANGES": "10.10.10.0/24 192.168.88.0/24"
             },
             "outputCapture": "console",
             "console": "integratedTerminal",

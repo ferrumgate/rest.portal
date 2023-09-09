@@ -625,7 +625,7 @@ export class ExpressApp {
                 //fs.writeFileSync('/tmp/web.cert', web.publicCrt || '');
                 //fs.writeFileSync('/tmp/in.cert', int?.publicCrt || '');
                 //fs.writeFileSync('/tmp/ca.cert', ca.publicCrt || '');
-                const certsfolder = '/var/lib/ferrumgate/certs'
+                const certsfolder = process.env.NODE_ENV == 'development' ? '/tmp/ferrumgate/certs' : '/var/lib/ferrumgate/certs'
                 const privFile = `${certsfolder}/private.key`;
                 const pubFile = `${certsfolder}/public.crt`;
                 fs.mkdirSync(certsfolder, { recursive: true });

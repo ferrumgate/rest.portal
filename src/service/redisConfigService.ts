@@ -37,7 +37,8 @@ import { DevicePosture } from "../model/authenticationProfile";
 import { FqdnIntelligenceSource } from "../model/fqdnIntelligence";
 import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
 import { BrandSetting } from "../model/brandSetting";
-
+import fsp from 'fs/promises';
+import path from 'path';
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -376,6 +377,7 @@ export class RedisConfigService extends ConfigService {
             clearIntervalAsync(this.timerInterval);
             this.timerInterval = null;
             this.isInitCompleted = true;
+            await this.init_trymode();
             await this.logWatcherStart()
             await this.afterInit();
             this.events.emit('ready');
@@ -387,6 +389,139 @@ export class RedisConfigService extends ConfigService {
         }
     }
     protected async afterInit() {
+
+    }
+    protected async init_trymode() {
+        await this.getConfig();
+        logger.info(`try_mode:${process.env.TRY_MODE} && isConfigured:${this.config.isConfigured}`);
+        if (process.env.TRY_MODE == 'true' && this.config.isConfigured) {
+            let trymode = await this.redis.get('/ext/trymode', false);
+            if (trymode) {
+                logger.info("allready try mode configured");
+                return;
+            }
+
+            //const folder = process.env.NODE_ENV == 'development' ? '/tmp/ferrumgate' : '/etc/ferrumgate';
+            //const filetmp = path.join(folder, 'trymodein');
+            logger.info(`ferrum try mode started ${process.env.FERRUM_TRY_URL}`);
+            if (process.env.FERRUM_TRY_URL)
+                await this.setUrl(process.env.FERRUM_TRY_URL);
+
+            const defaultNetwork = this.config.networks[0];
+            defaultNetwork.name = 'mynet';
+            if (process.env.FERRUM_TRY_TUNNEL_SERVER)
+                defaultNetwork.sshHost = process.env.FERRUM_TRY_TUNNEL_SERVER;
+            await this.saveNetwork(defaultNetwork);
+
+            const adminUser = this.config.users[0];
+            if (process.env.FERRUM_TRY_ADMIN_PASS)
+                adminUser.password = Util.bcryptHash(process.env.FERRUM_TRY_ADMIN_PASS);
+            await this.saveUser(adminUser);
+
+
+            const userPass = Util.randomNumberString(16);
+            const user = this.createAdminUser();
+            user.roleIds = ['User'];
+            user.username = 'user1@ferrumgate.com';
+            user.name = 'user1@ferrumgate.com';
+            user.password = Util.bcryptHash(userPass);
+            if (process.env.FERRUM_TRY_USER1_PASS)
+                user.password = Util.bcryptHash(process.env.FERRUM_TRY_USER1_PASS);
+            await this.saveUser(user);
+
+
+            const service1: Service = {
+                id: Util.randomNumberString(16),
+                name: 'webserver1',
+                labels: [],
+                ports: [{ port: 80, isTcp: true, isUdp: false }],
+                hosts: [{ host: '10.10.10.10' }],
+                count: 1,
+                insertDate: new Date().toISOString(),
+                isEnabled: true,
+                networkId: defaultNetwork.id,
+                updateDate: new Date().toISOString(),
+                isSystem: false,
+                protocol: 'raw',
+                assignedIp: '172.28.28.2'
+            }
+
+            const service2 = JSON.parse(JSON.stringify(service1)) as Service;
+            service2.id = Util.randomNumberString(16);
+            service2.name = 'webserver2';
+            service2.hosts = [{ host: '10.10.10.11' }];
+            service2.assignedIp = '172.28.28.3';
+
+
+            const service3 = JSON.parse(JSON.stringify(service1)) as Service;
+            service3.id = Util.randomNumberString(16);
+            service3.name = 'webserver3';
+            service3.hosts = [{ host: '10.10.10.12' }];
+            service3.assignedIp = '172.28.28.4';
+
+            await this.saveService(service1);
+            await this.saveService(service2);
+            await this.saveService(service3);
+
+            const authRule1: AuthenticationRule = {
+                id: Util.randomNumberString(16),
+                name: "admin-and-user-can-access",
+                insertDate: new Date().toISOString(),
+                isEnabled: true,
+                networkId: defaultNetwork.id,
+                profile: { is2FA: false },
+                updateDate: new Date().toISOString(),
+                userOrgroupIds: [adminUser.id, user.id]
+
+            }
+            await this.saveAuthenticationPolicyRule(authRule1);
+
+            const authzRule1: AuthorizationRule = {
+                id: Util.randomNumberString(16),
+                name: "admin-and-user-can-access-webserver1",
+                insertDate: new Date().toISOString(),
+                isEnabled: true,
+                networkId: defaultNetwork.id,
+                serviceId: service1.id,
+                profile: { is2FA: false },
+                updateDate: new Date().toISOString(),
+                userOrgroupIds: [adminUser.id, user.id]
+
+            }
+
+            const authzRule2: AuthorizationRule = {
+                id: Util.randomNumberString(16),
+                name: "only-admin-can-access-webserver2",
+                insertDate: new Date().toISOString(),
+                isEnabled: true,
+                networkId: defaultNetwork.id,
+                serviceId: service2.id,
+                profile: { is2FA: false },
+                updateDate: new Date().toISOString(),
+                userOrgroupIds: [adminUser.id]
+
+            }
+
+            await this.saveAuthorizationPolicyRule(authzRule1);
+            await this.saveAuthorizationPolicyRule(authzRule2);
+
+            await this.redis.set('/ext/trymode', "ok");
+
+            //await fsp.mkdir(folder, { recursive: true });
+            /*await fsp.writeFile(path.join(folder, 'trymode'),
+                `
+            adminUser= ${adminUser.username}
+            adminPass= ${adminPass}
+            user1= ${user.username}
+            user1Pass= ${userPass}
+            `)
+            */
+
+
+
+        }
+
+
 
     }
 
