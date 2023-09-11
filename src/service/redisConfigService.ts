@@ -414,8 +414,9 @@ export class RedisConfigService extends ConfigService {
             await this.saveNetwork(defaultNetwork);
 
             const adminUser = this.config.users[0];
-            if (process.env.FERRUM_TRY_ADMIN_PASS)
+            if (process.env.FERRUM_TRY_ADMIN_PASS) {
                 adminUser.password = Util.bcryptHash(process.env.FERRUM_TRY_ADMIN_PASS);
+            }
             await this.saveUser(adminUser);
 
 
@@ -425,8 +426,9 @@ export class RedisConfigService extends ConfigService {
             user.username = 'user1@ferrumgate.com';
             user.name = 'user1@ferrumgate.com';
             user.password = Util.bcryptHash(userPass);
-            if (process.env.FERRUM_TRY_USER1_PASS)
+            if (process.env.FERRUM_TRY_USER1_PASS) {
                 user.password = Util.bcryptHash(process.env.FERRUM_TRY_USER1_PASS);
+            }
             await this.saveUser(user);
 
 
