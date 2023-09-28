@@ -175,7 +175,7 @@ export class ExpressApp {
         };
 
         const redirectHttpToHttps = async (req: any, res: any, next: any) => {
-            if (!req.secure && this.httpToHttpsRedirect) {
+            if (!req.secure && this.httpToHttpsRedirect && !(req.originalUrl.startsWith("/share/") || req.originalUrl == "/share")) {
                 let hostname = req.headers.host as string;
                 hostname = hostname.split(':')[0];
                 if (this.ports != 443 && process.env.NODE_ENV == 'development')
@@ -544,7 +544,10 @@ export class ExpressApp {
         });
 
         fs.mkdirSync('/tmp/acme-challenge', { recursive: true });
-        this.app.use('/.well-known/acme-challenge', express.static(process.env.ACME_CHALLENGE || '/tmp/acme-challenge', { dotfiles: 'allow' }))
+        this.app.use('/.well-known/acme-challenge', express.static(process.env.ACME_CHALLENGE || '/tmp/acme-challenge', { dotfiles: 'allow' }));
+
+        fs.mkdirSync('/tmp/share', { recursive: true });
+        this.app.use('/share', express.static(process.env.SHARE_FOLDER || '/tmp/share', { dotfiles: 'deny' }));
 
         /*
         this.app.use('*', function (req: any, res: any) {
