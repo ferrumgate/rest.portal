@@ -36,6 +36,7 @@ import path from "path";
 import proxy from 'express-http-proxy';
 import { routerDeviceAuthenticated, routerInsightsDeviceAuthenticated } from "./api/deviceApi";
 import { routerFqdnIntelligenceAuthenticated } from "./api/fqdnIntelligenceApi";
+import { authorizePrivateNetwork } from "./api/commonApi";
 
 
 const bodyParser = require('body-parser');
@@ -547,7 +548,14 @@ export class ExpressApp {
         this.app.use('/.well-known/acme-challenge', express.static(process.env.ACME_CHALLENGE || '/tmp/acme-challenge', { dotfiles: 'allow' }));
 
         fs.mkdirSync('/tmp/share', { recursive: true });
-        this.app.use('/share', express.static(process.env.SHARE_FOLDER || '/tmp/share', { dotfiles: 'deny' }));
+        this.app.use('/share/private',
+            asyncHandler(findClientIp),
+            asyncHandler(authorizePrivateNetwork),
+            express.static(process.env.SHARE_PRIVATE_FOLDER || '/tmp/share', { dotfiles: 'deny' }));
+
+        this.app.use('/share/public',
+            asyncHandler(findClientIp),
+            express.static(process.env.SHARE_PUBLIC_FOLDER || '/tmp/share', { dotfiles: 'deny' }));
 
         /*
         this.app.use('*', function (req: any, res: any) {

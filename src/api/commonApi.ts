@@ -5,6 +5,7 @@ import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullEx
 import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
 import { saveActivityError } from "./auth/commonAuth";
+import { Util } from "../util";
 
 /**
  * @summary get network by gateway id and also check is it is joined and active
@@ -93,4 +94,13 @@ export async function authorizeAsAdminOrReporter(req: any, res: any, next: any) 
 
 export async function authorizeAsAdminOrDevOps(req: any, res: any, next: any) {
     await authorize(req, res, next, [RBACDefault.rightAdmin.id, RBACDefault.rightDevOps.id]);
+}
+
+export const authorizePrivateNetwork = async (req: any, res: any, next: any, ...args: any) => {
+    if (req.clientIp && Util.isLocalNetwork(req.clientIp))
+        next()
+    else {
+        logger.warn(`ip is not in local network ${req.clientIp}`);
+        throw new RestfullException(404, ErrorCodes.ErrNotFound, ErrorCodes.ErrNotFound, "not found");
+    }
 }
