@@ -46,12 +46,14 @@ async function getPublicConfig(configService: ConfigService) {
     const saml = await configService.getAuthSettingSaml();
     const ldap = await configService.getAuthSettingLdap();
     const local = await configService.getAuthSettingLocal();
+    const openId = await configService.getAuthSettingOpenId();
     const brand = await configService.getBrand();
 
     const googleOAuth = oauth?.providers.find(x => x.type == 'google');
     const linkedOAuth = oauth?.providers.find(x => x.type == 'linkedin');
     const auth0 = saml?.providers.find(x => x.type == 'auth0');
     const azure = saml?.providers.find(x => x.type == 'azure');
+    const openIds = openId.providers.filter(x => x.isEnabled);
     return {
         captchaSiteKey: captcha.client,
         isConfigured: isConfigured,
@@ -64,6 +66,10 @@ async function getPublicConfig(configService: ConfigService) {
             oAuthLinkedin: linkedOAuth?.isEnabled ? {} : undefined,
             samlAuth0: auth0?.isEnabled ? {} : undefined,
             samlAzure: azure?.isEnabled ? {} : undefined,
+            //dont sent objects directly
+            openId: openIds.map(x => {
+                return { name: x.name, authName: x.authName, icon: x.icon }
+            })
         },
         brand: {
             ...brand

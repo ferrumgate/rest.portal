@@ -6,8 +6,10 @@ export interface BaseAuthId {
 export interface BaseAuth {
 
     name: string;
-    baseType: 'local' | 'oauth' | 'saml' | 'ldap';
-    type: 'local' | 'google' | 'linkedin' | 'activedirectory' | 'auth0' | 'azure';
+    authName?: string;
+    icon?: string;
+    baseType: 'local' | 'oauth' | 'saml' | 'ldap' | 'openId' | 'radius';
+    type: 'local' | 'google' | 'linkedin' | 'activedirectory' | 'auth0' | 'azure' | 'generic';
     tags?: string[];
 
     isEnabled: boolean;
@@ -45,9 +47,21 @@ export interface BaseSaml extends BaseAuthId, BaseAuth {
     //this is a security flag, be carefull
     saveNewUser?: boolean;
 }
+
+export interface BaseOpenId extends BaseAuthId, BaseAuth {
+    discoveryUrl: string;
+    clientId: string;
+    clientSecret: string;
+    //this is a security flag, be carefull
+    saveNewUser?: boolean;
+}
 export interface BaseLocal extends BaseAuth {
     isForgotPassword?: boolean;
     isRegister?: boolean;
+}
+
+export interface BaseRadius extends BaseAuthId, BaseAuth {
+
 }
 
 
@@ -67,6 +81,14 @@ export interface AuthLdap {
 export interface AuthSaml {
     providers: BaseSaml[];
 }
+
+export interface AuthOpenId {
+    providers: BaseOpenId[];
+}
+
+export interface AuthRadius {
+    providers: BaseRadius[];
+}
 export interface AuthCommon {
 
 }
@@ -77,4 +99,6 @@ export interface AuthSettings {
     oauth: AuthOAuth;
     ldap: AuthLdap;
     saml: AuthSaml;
+    openId: AuthOpenId
+    radius: AuthRadius
 }

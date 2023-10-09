@@ -9,7 +9,7 @@ import { LogoSetting } from "../model/logoSetting";
 import { Captcha } from "../model/captcha";
 import { SSLCertificate, SSLCertificateBase, SSLCertificateCategory, SSLCertificateEx } from "../model/cert";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthSaml, AuthSettings, BaseLdap, BaseOAuth, BaseSaml } from "../model/authSettings";
+import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthOpenId, AuthSaml, AuthSettings, BaseLdap, BaseOAuth, BaseOpenId, BaseRadius, BaseSaml } from "../model/authSettings";
 import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
 import { Gateway, Network } from "../model/network";
@@ -137,7 +137,9 @@ export class ConfigService {
                 local: this.createAuthLocal(),
                 ldap: { providers: [] },
                 oauth: { providers: [] },
-                saml: { providers: [] }
+                saml: { providers: [] },
+                openId: { providers: [] },
+                radius: { providers: [] }
 
             },
             rbac: {
@@ -1095,6 +1097,98 @@ export class ConfigService {
             this.config.auth.saml?.providers.splice(Number(index), 1);
             const trc = this.createTrackEvent(provider);
             this.emitEvent({ type: 'del', path: 'auth/saml/providers', val: trc.after, before: trc.before })
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(provider);
+    }
+
+
+    async getAuthSettingOpenId() {
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.auth.openId || {}) as AuthOpenId
+    }
+
+
+    async addAuthSettingOpenId(provider: BaseOpenId) {
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(provider);
+        if (!this.config.auth.openId)
+            this.config.auth.openId = { providers: [] };
+        let index = this.config.auth.openId.providers.findIndex(x => x.id == cloned.id);
+        const previous = this.config.auth.openId.providers[index];
+        if (index < 0) {
+            this.config.auth.openId.providers.push(cloned);
+            index = this.config.auth.openId.providers.length - 1;
+            const trc = this.createTrackEvent(this.config.auth.openId.providers[index])
+            this.emitEvent({ type: 'put', path: 'auth/openId/providers', val: trc.after, before: trc.before })
+        }
+        else {
+            this.config.auth.openId.providers[index] = {
+                ...cloned
+            }
+            const trc = this.createTrackEvent(previous, this.config.auth.openId.providers[index])
+            this.emitEvent({ type: 'put', path: 'auth/openId/providers', val: trc.after, before: trc.before })
+        }
+
+        await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.auth.openId.providers[index]);
+    }
+
+
+    async deleteAuthSettingOpenId(id: string) {
+        this.isReady(); this.isWritable();
+        const index = this.config.auth?.openId?.providers.findIndex(x => x.id == id);
+        const provider = this.config.auth?.openId?.providers.find(x => x.id == id);
+        if (Number(index) >= 0 && provider) {
+            this.config.auth.openId?.providers.splice(Number(index), 1);
+            const trc = this.createTrackEvent(provider);
+            this.emitEvent({ type: 'del', path: 'auth/openId/providers', val: trc.after, before: trc.before })
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(provider);
+    }
+
+
+    async getAuthSettingRadius() {
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.auth.radius || {}) as AuthOpenId
+    }
+
+
+    async addAuthSettingRadius(provider: BaseRadius) {
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(provider);
+        if (!this.config.auth.radius)
+            this.config.auth.radius = { providers: [] };
+        let index = this.config.auth.radius.providers.findIndex(x => x.id == cloned.id);
+        const previous = this.config.auth.radius.providers[index];
+        if (index < 0) {
+            this.config.auth.radius.providers.push(cloned);
+            index = this.config.auth.radius.providers.length - 1;
+            const trc = this.createTrackEvent(this.config.auth.radius.providers[index])
+            this.emitEvent({ type: 'put', path: 'auth/radius/providers', val: trc.after, before: trc.before })
+        }
+        else {
+            this.config.auth.radius.providers[index] = {
+                ...cloned
+            }
+            const trc = this.createTrackEvent(previous, this.config.auth.radius.providers[index])
+            this.emitEvent({ type: 'put', path: 'auth/radius/providers', val: trc.after, before: trc.before })
+        }
+
+        await this.saveConfigToFile();
+        return this.createTrackEvent(previous, this.config.auth.radius.providers[index]);
+    }
+
+
+    async deleteAuthSettingRadius(id: string) {
+        this.isReady(); this.isWritable();
+        const index = this.config.auth?.radius?.providers.findIndex(x => x.id == id);
+        const provider = this.config.auth?.radius?.providers.find(x => x.id == id);
+        if (Number(index) >= 0 && provider) {
+            this.config.auth.radius?.providers.splice(Number(index), 1);
+            const trc = this.createTrackEvent(provider);
+            this.emitEvent({ type: 'del', path: 'auth/radius/providers', val: trc.after, before: trc.before })
             await this.saveConfigToFile();
         }
         return this.createTrackEvent(provider);

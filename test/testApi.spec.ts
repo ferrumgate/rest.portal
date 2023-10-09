@@ -66,7 +66,7 @@ describe('testApi ', async () => {
 
 
     it('check ratelimit ', async () => {
-        for (let i = 0; i < 21; ++i) {
+        for (let i = 0; i < 100; ++i) {
             let response: any = await new Promise((resolve: any, reject: any) => {
                 chai.request(app)
                     .get('/api/test')
@@ -78,7 +78,7 @@ describe('testApi ', async () => {
 
                     });
             })
-            if (i < 20)
+            if (i < 100)
                 expect(response.status).to.equal(200);
             else
                 expect(response.status).to.equal(429);

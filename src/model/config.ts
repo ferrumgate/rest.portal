@@ -35,6 +35,8 @@ export type RPath =
     'auth/oauth/providers' |
     'auth/ldap/providers' |
     'auth/saml/providers' |
+    'auth/openId/providers' |
+    'auth/radius/providers' |
     'jwtSSLCertificate' |
     'webSSLCertificate' |
     'caSSLCertificate' |

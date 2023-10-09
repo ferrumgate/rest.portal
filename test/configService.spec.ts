@@ -580,7 +580,10 @@ describe('configService', async () => {
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         configService.config.auth = {
-            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
+            common: {}, local: {} as any, saml: { providers: [] } as any,
+            ldap: { providers: [] } as any, oauth: { providers: [] } as any,
+            openId: {} as any, radius: {} as any
+
         }
         let oauth: BaseOAuth = {
             name: 'google',
@@ -618,7 +621,8 @@ describe('configService', async () => {
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
         configService.config.auth = {
-            common: {}, local: {} as any, oauth: {} as any, saml: {} as any, ldap: {} as any
+            common: {}, local: {} as any, oauth: {} as any, saml: {} as any, ldap: {} as any,
+            openId: {} as any, radius: {} as any
         }
         let local: BaseLocal = {
             name: 'google',

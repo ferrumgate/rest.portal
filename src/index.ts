@@ -41,7 +41,8 @@ import { authorizePrivateNetwork } from "./api/commonApi";
 
 const bodyParser = require('body-parser');
 const express = require('express');
-
+const session = require('express-session');
+const MemoryStore = require('memorystore')(session)
 
 
 
@@ -107,6 +108,19 @@ export class ExpressApp {
             hsts: false,
         }));
         this.app.enable('trust proxy');
+        const session_secret = Util.randomNumberString(32);
+        this.app.use(session({
+            secret: session_secret,
+            resave: true,
+            saveUninitialized: true,
+            cookie: {
+                maxAge: 1000 * 60 * 60 * 24//one day
+            },
+            store: new MemoryStore({
+                checkPeriod: 86400000 // prune expired entries every 24h
+            }),
+        }))
+
 
 
 
@@ -164,6 +178,7 @@ export class ExpressApp {
                 throw err;
             }
         };
+
         const findClientIp = async (req: any, res: any, next: any) => {
             req.clientIp = Util.findClientIpAddress(req);
             req.baseHost = Util.findHttpProtocol(req) + '://' + Util.findHttpHost(req);

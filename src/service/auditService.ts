@@ -219,6 +219,20 @@ export class AuditService {
             `${before?.name || after?.name}`)
 
     }
+
+    async logAddAuthSettingOpenId(currentSession: AuthSession, currentUser: User, before?: BaseAuth, after?: BaseAuth) {
+        await this.executeSave(currentSession, currentUser, before, after,
+            `auth openid ${before ? 'updated' : 'created'}`,
+            `${before?.name || after?.name}`)
+
+    }
+    async logDeleteAuthSettingOpenId(currentSession: AuthSession, currentUser: User, before?: BaseAuth) {
+        await this.executeDelete(currentSession, currentUser, before,
+            `auth openid deleted`,
+            `${before?.name || ''}`)
+
+    }
+
     async logDeleteAuthSettingLdap(currentSession: AuthSession, currentUser: User, before?: BaseAuth) {
         await this.executeDelete(currentSession, currentUser, before,
             `auth ldap deleted`,

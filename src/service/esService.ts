@@ -15,7 +15,6 @@ import { ConfigWatch } from '../model/config';
 import { IpIntelligenceList, IpIntelligenceListItem } from '../model/ipIntelligence';
 import { BroadcastService } from './broadcastService';
 import { DeviceLog } from '../model/device';
-import { MAP } from 'yaml/dist/nodes/Node';
 import { FqdnIntelligenceListItem } from '../model/fqdnIntelligence';
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');

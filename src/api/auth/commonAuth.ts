@@ -246,3 +246,7 @@ export async function saveActivity(req: any, type: string, extFunc?: (log: Activ
 }
 
 
+export function makePassportName(name: string) {
+    return name.toLocaleLowerCase().replace(/[^a-z0-9]/g, '');
+}
+

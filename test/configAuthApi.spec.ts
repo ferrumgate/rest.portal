@@ -6,7 +6,7 @@ import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
-import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth, BaseSaml } from '../src/model/authSettings';
+import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth, BaseOpenId, BaseSaml } from '../src/model/authSettings';
 
 import chaiExclude from 'chai-exclude';
 
@@ -115,6 +115,25 @@ function createSampleLocal(): AuthLocal {
     }
 }
 
+
+function createSampleOpenId1(): BaseOpenId {
+    return {
+        baseType: 'openId',
+        type: 'generic',
+        authName: 'auth0',
+        id: Util.randomNumberString(),
+        name: 'OpenId/Auth0',
+        tags: [],
+        discoveryUrl: "https://dev-24wm8m7g.us.auth0.com/",
+        clientId: "asdfas",
+        clientSecret: "232sds",
+        isEnabled: true,
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString(),
+        saveNewUser: true
+    }
+}
+
 describe('configAuthApi ', async () => {
 
 
@@ -150,7 +169,10 @@ describe('configAuthApi ', async () => {
             local: {} as any,
             saml: { providers: [] },
             ldap: { providers: [] },
-            oauth: { providers: [] }
+            oauth: { providers: [] },
+            openId: { providers: [] },
+            radius: { providers: [] }
+
 
         }
         auth.oauth = {
@@ -185,20 +207,12 @@ describe('configAuthApi ', async () => {
             local: {} as any,
             saml: { providers: [] },
             ldap: { providers: [] },
-            oauth: { providers: [] }
+            oauth: { providers: [] },
+            openId: { providers: [] },
+            radius: { providers: [] }
 
         }
-        auth.oauth = {
-            providers: [
 
-            ]
-        },
-            auth.ldap = {
-                providers: []
-            },
-            auth.saml = {
-                providers: []
-            }
 
         await configService.setAuthSettingCommon(auth.common);
         await configService.setAuthSettingLocal(auth.local);
@@ -214,6 +228,16 @@ describe('configAuthApi ', async () => {
         const tmp3 = await configService.getAuthSettingSaml();
         for (const it of tmp3.providers) {
             await configService.deleteAuthSettingSaml(it.id);
+        }
+
+        const tmp4 = await configService.getAuthSettingOpenId();
+        for (const it of tmp4.providers) {
+            await configService.deleteAuthSettingOpenId(it.id);
+        }
+
+        const tmp5 = await configService.getAuthSettingRadius();
+        for (const it of tmp5.providers) {
+            await configService.deleteAuthSettingRadius(it.id);
         }
 
 
@@ -983,6 +1007,222 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         const samlRet = await configService.getAuthSettingSaml();
         expect(samlRet.providers.length).to.equal(0);
+    }).timeout(50000);
+
+
+
+    ///////////// open id tests  /////////////////////////////////
+
+
+
+
+    it('GET /config/auth/openid/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const openid = createSampleOpenId1();
+        await configService.addAuthSettingOpenId(openid);
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/api/config/auth/openid/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.items).exist;
+
+        expectToDeepEqual(response.body.items[0], openid);
+
+
+    }).timeout(50000);
+
+    it('POST /config/auth/openid/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+        const openid = createSampleOpenId1();
+        delete (openid as any).id;
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/api/config/auth/openid/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(openid)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+
+        openid.id = response.body.id;
+        response.body.insertDate = openid.insertDate;
+        response.body.updateDate = openid.updateDate;
+
+        expectToDeepEqual(response.body, openid);
+
+
+    }).timeout(50000);
+
+    it('POST /config/auth/openid/providers will return 400', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+        const saml1 = createSampleOpenId1();
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/api/config/auth/openid/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(saml1)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+
+
+    }).timeout(50000);
+
+
+    it('PUT /config/auth/openid/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const openid = createSampleOpenId1();
+        await configService.addAuthSettingOpenId(openid);
+        const openIdAny = openid as any;
+        openIdAny.name = 'xxxx';
+        //check this property will not be saved
+        openIdAny.fakeProperty = 'fakevalue';
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/api/config/auth/openid/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(openid)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.fakeProperty).not.exist;
+        delete openIdAny.fakeProperty;
+        response.body.insertDate = openid.insertDate;
+        response.body.updateDate = openid.updateDate;
+
+        expectToDeepEqual(response.body, openid);
+
+
+    }).timeout(50000);
+
+
+    it('PUT /config/auth/openid/providers will return 400', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const openid = createSampleOpenId1();
+        await configService.addAuthSettingOpenId(openid);
+        const openIdAny = openid as any;
+        openid.id = 'notabsentid';
+        openid.name = 'xxxx';
+        //check this property will not be saved
+        openIdAny.fakeProperty = 'fakevalue';
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/api/config/auth/saml/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(openid)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+        delete openIdAny.id;
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/api/config/auth/oauth/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(openIdAny)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+
+
+    }).timeout(50000);
+
+
+    it('DELETE /config/auth/openid/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const openid = createSampleOpenId1();
+        await configService.addAuthSettingOpenId(openid);
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .delete('/api/config/auth/openid/providers/' + openid.id)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        const openIdRet = await configService.getAuthSettingOpenId();
+        expect(openIdRet.providers.length).to.equal(0);
     }).timeout(50000);
 
 

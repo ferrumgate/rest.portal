@@ -14,6 +14,7 @@ import { samlAuth0Init, samlAuth0Unuse } from "./auth0Saml";
 import { exchangeKeyInit, exchangeKeyUnuse } from "./exchangeKey";
 import { certInit, certUnuse } from "./certificate";
 import { samlAzureInit, samlAzureUnuse } from "./azureSaml";
+import { openIdInit, openIdUnuse } from "./openId";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -28,6 +29,7 @@ export async function passportInit(req: any, res: any, next: any) {
         const oauth = await configService.getAuthSettingOAuth();
         const ldap = await configService.getAuthSettingLdap();
         const saml = await configService.getAuthSettingSaml();
+        const openId = await configService.getAuthSettingOpenId();
         const domain = await configService.getDomain();
         let url = await configService.getUrl();
         const configUrl = new URL(url);
@@ -104,6 +106,23 @@ export async function passportInit(req: any, res: any, next: any) {
             const saml = samlAzureInit(azure, url);
             activeStrategies.push(saml);
         }
+
+
+        // openId generic 
+        const openIds = openId?.providers.filter(x => x.type == 'generic');
+        if (openIds) {
+            for (const item of openIds) {
+                if (item.authName) {
+                    openIdUnuse(item.authName);
+                    if (item.isEnabled) {
+                        const openId = await openIdInit(item, url);
+                        activeStrategies.push(openId);
+                    }
+                }
+            }
+
+        }
+
         passportConf.activeStrategies = activeStrategies;
         lastConfigServiceUpdateTime = await configService.getLastUpdateTime();
 
@@ -113,6 +132,14 @@ export async function passportInit(req: any, res: any, next: any) {
 export function passportFilterActiveStrategies(methods: string[]) {
     //check according to initted methods;
     return (methods as string[]).filter(x => passportConf.activeStrategies.includes(x));
+}
+
+
+
+export async function passportAuthenticateFromReqProviderName(req: any, res: any, next: any) {
+    if (!req.params.providerName)
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthenticated, ErrorCodesInternal.ErrAuthMethodNotFound, 'no method')
+    await passportAuthenticate(req, res, next, [req.params.providerName])
 }
 
 
