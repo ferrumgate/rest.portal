@@ -15,6 +15,7 @@ import { exchangeKeyInit, exchangeKeyUnuse } from "./exchangeKey";
 import { certInit, certUnuse } from "./certificate";
 import { samlAzureInit, samlAzureUnuse } from "./azureSaml";
 import { openIdInit, openIdUnuse } from "./openId";
+import { radiusInit, radiusUnuse } from "./radius";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';
@@ -30,6 +31,7 @@ export async function passportInit(req: any, res: any, next: any) {
         const ldap = await configService.getAuthSettingLdap();
         const saml = await configService.getAuthSettingSaml();
         const openId = await configService.getAuthSettingOpenId();
+        const radius = await configService.getAuthSettingRadius();
         const domain = await configService.getDomain();
         let url = await configService.getUrl();
         const configUrl = new URL(url);
@@ -107,6 +109,15 @@ export async function passportInit(req: any, res: any, next: any) {
             activeStrategies.push(saml);
         }
 
+        // init  radius
+        radiusUnuse();
+        const radiusProvider = radius?.providers.find(x => x.baseType == 'radius');
+        if (radiusProvider && radiusProvider.isEnabled) {
+
+            const radiusStrategy = radiusInit(radiusProvider);
+            activeStrategies.push(radiusStrategy);
+        }
+
 
         // openId generic 
         const openIds = openId?.providers.filter(x => x.type == 'generic');
@@ -122,6 +133,8 @@ export async function passportInit(req: any, res: any, next: any) {
             }
 
         }
+
+
 
         passportConf.activeStrategies = activeStrategies;
         lastConfigServiceUpdateTime = await configService.getLastUpdateTime();

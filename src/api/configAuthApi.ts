@@ -13,7 +13,7 @@ import { RedisService } from "../service/redisService";
 import { Captcha } from "../model/captcha";
 import * as diff from 'deep-object-diff';
 import { EmailSetting } from "../model/emailSetting";
-import { AuthCommon, AuthLocal, BaseLdap, BaseLocal, BaseOAuth, BaseOpenId, BaseSaml } from "../model/authSettings";
+import { AuthCommon, AuthLocal, BaseLdap, BaseLocal, BaseOAuth, BaseOpenId, BaseRadius, BaseSaml } from "../model/authSettings";
 import { util } from "chai";
 import { config } from "process";
 import { AuthSession } from "../model/authSession";
@@ -739,4 +739,146 @@ routerConfigAuthAuthenticated.delete('/openid/providers/:id',
 
 
 
+////////////// radius
+
+function copyAuthRadius(auth: BaseRadius): BaseRadius {
+    if (auth.baseType == 'radius')
+        return {
+            id: auth.id,
+            baseType: auth.baseType,
+            name: auth.name,
+            type: auth.type,
+            tags: auth.tags,
+            isEnabled: auth.isEnabled,
+            authName: auth.authName,
+
+            secret: auth.secret,
+            host: auth.host,
+            icon: auth.icon,
+            insertDate: auth.insertDate,// no problem about copy these client unsafe variables we will override in api calls
+            updateDate: auth.updateDate, // no problem about copy these client unsafe variables, we will override in api calls
+            saveNewUser: auth.saveNewUser,
+
+        }
+    throw new Error('not implemented copyAuthRadius');
+}
+
+routerConfigAuthAuthenticated.get('/radius/providers',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const ids = req.query.ids as string;
+        logger.info(`getting config auth radius providers`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+
+        const radius = await configService.getAuthSettingRadius();
+        let providers = radius?.providers || [];
+        if (ids) {
+            let idList = ids.split(',');
+            providers = providers.filter(x => idList.includes(x.id));
+        }
+        return res.status(200).json({ items: providers });
+
+    }))
+
+routerConfigAuthAuthenticated.post('/radius/providers',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const provider = req.body as BaseRadius;
+        logger.info(`saving config auth radius providers`);
+
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        //check input data 
+        await inputService.checkIfExists(provider);
+        await inputService.checkIfNotExits(provider.id);
+        await inputService.checkIfExists(provider.name);
+        await inputService.checkIfExists(provider.type);
+        await inputService.checkIfExists(provider.baseType);
+        await inputService.checkIfExists(provider.host);
+
+
+        // check if same provider exists
+        const radius = await configService.getAuthSettingRadius();
+        const indexA = radius?.providers?.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);
+
+        if (Number(indexA) >= 0) {
+            throw new RestfullException(400, ErrorCodes.ErrAllreadyExits, ErrorCodes.ErrAllreadyExits, "input data is problem");
+        }
+        provider.id = Util.randomNumberString(16);
+        const safe = copyAuthRadius(provider);
+        safe.insertDate = new Date().toISOString();
+        safe.updateDate = new Date().toISOString();
+        await configService.addAuthSettingRadius(safe);
+        return res.status(200).json(safe);
+
+    }))
+
+routerConfigAuthAuthenticated.put('/radius/providers',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        logger.info(`update config auth radius provider`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const input = req.body as BaseRadius;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const inputService = appService.inputService;
+        const auditService = appService.auditService;
+
+        //check input
+        await inputService.checkIfExists(input);
+        await inputService.checkIfExists(input.id);
+        await inputService.checkIfExists(input.name);
+        await inputService.checkIfExists(input.type);
+        await inputService.checkIfExists(input.baseType);
+        await inputService.checkIfExists(input.host);
+
+
+        const item = (await configService.getAuthSettingRadius()).providers.find(x => x.id == input.id);
+        await inputService.checkIfExists(item);
+        if (item?.type != input.type && item?.baseType != input.baseType)
+            throw new RestfullException(400, ErrorCodes.ErrDataVerifyFailed, ErrorCodes.ErrDataVerifyFailed, 'item type or basetype not valid');
+        const safe = copyAuthRadius(input);
+        safe.insertDate = item.insertDate;
+        safe.updateDate = new Date().toISOString();
+
+        const { before, after } = await configService.addAuthSettingRadius(safe)
+        await auditService.logAddAuthSettingRadius(currentSession, currentUser, before, after);
+
+        return res.status(200).json(safe);
+
+    }))
+
+routerConfigAuthAuthenticated.delete('/radius/providers/:id',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(authorizeAsAdmin),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        logger.info(`delete config auth radius provider`);
+        const currentUser = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+
+        const { id } = req.params;
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const auditService = appService.auditService;
+
+        const item = (await configService.getAuthSettingRadius()).providers.find(x => x.id == id);
+        if (item) {
+            const { before } = await configService.deleteAuthSettingRadius(id);
+            await auditService.logDeleteAuthSettingRadius(currentSession, currentUser, before);
+        }
+
+        return res.status(200).json({});
+
+    }))
 

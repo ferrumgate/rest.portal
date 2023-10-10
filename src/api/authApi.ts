@@ -57,7 +57,7 @@ async function execute2FA(req: any) {
 
 routerAuth.post('/',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['local', 'headerapikey', 'activedirectory', 'headercert']),
+    asyncHandlerWithArgs(passportAuthenticate, ['local', 'headerapikey', 'activedirectory', 'headercert', 'radius']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;

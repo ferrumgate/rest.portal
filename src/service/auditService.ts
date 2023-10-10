@@ -233,6 +233,20 @@ export class AuditService {
 
     }
 
+    async logAddAuthSettingRadius(currentSession: AuthSession, currentUser: User, before?: BaseAuth, after?: BaseAuth) {
+        await this.executeSave(currentSession, currentUser, before, after,
+            `auth radis ${before ? 'updated' : 'created'}`,
+            `${before?.name || after?.name}`)
+
+    }
+    async logDeleteAuthSettingRadius(currentSession: AuthSession, currentUser: User, before?: BaseAuth) {
+        await this.executeDelete(currentSession, currentUser, before,
+            `auth radius deleted`,
+            `${before?.name || ''}`)
+
+    }
+
+
     async logDeleteAuthSettingLdap(currentSession: AuthSession, currentUser: User, before?: BaseAuth) {
         await this.executeDelete(currentSession, currentUser, before,
             `auth ldap deleted`,

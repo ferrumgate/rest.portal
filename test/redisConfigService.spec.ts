@@ -905,7 +905,7 @@ describe('redisConfigService', async () => {
             baseType: 'radius',
             type: 'generic',
             id: 'oneid',
-
+            host: 'hostname',
 
             tags: [],
             isEnabled: true,

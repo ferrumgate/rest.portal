@@ -18,7 +18,7 @@ const name = 'local';
 
 export function localInit() {
 
-    passport.use(new passportlocal.Strategy(
+    passport.use(name, new passportlocal.Strategy(
         { session: false, passReqToCallback: true },
         async (req: any, username: any, password: any, done: any) => {
             let tryUsername = username;

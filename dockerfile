@@ -22,6 +22,7 @@ RUN npm install
 # RUN npm ci --only=production
 
 ADD build/src /usr/src/app/build/src
+###  !!!!!!!!!!!!! change this probably break radius authenticatoin
 WORKDIR /usr/src/app
 #RUN chown -R  node /usr/src/app
 ### delete sensitive test data

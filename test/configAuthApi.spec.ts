@@ -6,7 +6,7 @@ import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
-import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth, BaseOpenId, BaseSaml } from '../src/model/authSettings';
+import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth, BaseOpenId, BaseRadius, BaseSaml } from '../src/model/authSettings';
 
 import chaiExclude from 'chai-exclude';
 
@@ -127,6 +127,22 @@ function createSampleOpenId1(): BaseOpenId {
         discoveryUrl: "https://dev-24wm8m7g.us.auth0.com/",
         clientId: "asdfas",
         clientSecret: "232sds",
+        isEnabled: true,
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString(),
+        saveNewUser: true
+    }
+}
+
+function createSampleRadius1(): BaseRadius {
+    return {
+        baseType: 'radius',
+        type: 'generic',
+        id: Util.randomNumberString(),
+        name: 'FreeRadius',
+        tags: [],
+        host: "dev-24wm8m7g.us.auth0.com",
+        secret: "232sds",
         isEnabled: true,
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
@@ -743,7 +759,7 @@ describe('configAuthApi ', async () => {
         delete ldapAny.id;
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/api/config/auth/oauth/providers')
+                .put('/api/config/auth/ldap/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(ldapAny)
                 .end((err, res) => {
@@ -964,7 +980,7 @@ describe('configAuthApi ', async () => {
         delete samlAny.id;
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/api/config/auth/oauth/providers')
+                .put('/api/config/auth/saml/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(samlAny)
                 .end((err, res) => {
@@ -1164,7 +1180,7 @@ describe('configAuthApi ', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/api/config/auth/saml/providers')
+                .put('/api/config/auth/openid/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(openid)
                 .end((err, res) => {
@@ -1180,7 +1196,7 @@ describe('configAuthApi ', async () => {
         delete openIdAny.id;
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
-                .put('/api/config/auth/oauth/providers')
+                .put('/api/config/auth/openid/providers')
                 .set(`Authorization`, `Bearer ${token}`)
                 .send(openIdAny)
                 .end((err, res) => {
@@ -1223,6 +1239,223 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         const openIdRet = await configService.getAuthSettingOpenId();
         expect(openIdRet.providers.length).to.equal(0);
+    }).timeout(50000);
+
+
+
+
+    ///////////// radius tests  /////////////////////////////////
+
+
+
+
+    it('GET /config/auth/radius/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const radius = createSampleRadius1();
+        await configService.addAuthSettingRadius(radius);
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get('/api/config/auth/radius/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.items).exist;
+
+        expectToDeepEqual(response.body.items[0], radius);
+
+
+    }).timeout(50000);
+
+    it('POST /config/auth/radius/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+        const radius = createSampleRadius1();
+        delete (radius as any).id;
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/api/config/auth/radius/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(radius)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+
+        radius.id = response.body.id;
+        response.body.insertDate = radius.insertDate;
+        response.body.updateDate = radius.updateDate;
+
+        expectToDeepEqual(response.body, radius);
+
+
+    }).timeout(50000);
+
+    it('POST /config/auth/radius/providers will return 400', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+
+        const saml1 = createSampleRadius1();
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/api/config/auth/radius/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(saml1)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+
+
+    }).timeout(50000);
+
+
+    it('PUT /config/auth/radius/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const radius = createSampleRadius1();
+        await configService.addAuthSettingRadius(radius);
+        const radiusAny = radius as any;
+        radiusAny.name = 'xxxx';
+        //check this property will not be saved
+        radiusAny.fakeProperty = 'fakevalue';
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/api/config/auth/radius/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(radius)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.fakeProperty).not.exist;
+        delete radiusAny.fakeProperty;
+        response.body.insertDate = radius.insertDate;
+        response.body.updateDate = radius.updateDate;
+
+        expectToDeepEqual(response.body, radius);
+
+
+    }).timeout(50000);
+
+
+    it('PUT /config/auth/radius/providers will return 400', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const radius = createSampleRadius1();
+        await configService.addAuthSettingRadius(radius);
+        const radiusAny = radius as any;
+        radius.id = 'notabsentid';
+        radius.name = 'xxxx';
+        //check this property will not be saved
+        radiusAny.fakeProperty = 'fakevalue';
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/api/config/auth/radius/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(radius)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+        delete radiusAny.id;
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .put('/api/config/auth/radius/providers')
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(radiusAny)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(400);
+
+
+
+    }).timeout(50000);
+
+
+    it('DELETE /config/auth/radius/providers will return 200', async () => {
+
+        await appService.configService.saveUser(user);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+        const radius = createSampleRadius1();
+        await configService.addAuthSettingRadius(radius);
+
+
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .delete('/api/config/auth/radius/providers/' + radius.id)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        const radiusRet = await configService.getAuthSettingRadius();
+        expect(radiusRet.providers.length).to.equal(0);
     }).timeout(50000);
 
 

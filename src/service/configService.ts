@@ -9,7 +9,7 @@ import { LogoSetting } from "../model/logoSetting";
 import { Captcha } from "../model/captcha";
 import { SSLCertificate, SSLCertificateBase, SSLCertificateCategory, SSLCertificateEx } from "../model/cert";
 import { ErrorCodes, RestfullException } from "../restfullException";
-import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthOpenId, AuthSaml, AuthSettings, BaseLdap, BaseOAuth, BaseOpenId, BaseRadius, BaseSaml } from "../model/authSettings";
+import { AuthCommon, AuthLdap, AuthLocal, AuthOAuth, AuthOpenId, AuthRadius, AuthSaml, AuthSettings, BaseLdap, BaseOAuth, BaseOpenId, BaseRadius, BaseSaml } from "../model/authSettings";
 import { RBAC, RBACDefault, Role } from "../model/rbac";
 import { HelperService } from "./helperService";
 import { Gateway, Network } from "../model/network";
@@ -1151,7 +1151,7 @@ export class ConfigService {
 
     async getAuthSettingRadius() {
         this.isReady(); this.isReadable();
-        return this.clone(this.config.auth.radius || {}) as AuthOpenId
+        return this.clone(this.config.auth.radius || {}) as AuthRadius
     }
 
 

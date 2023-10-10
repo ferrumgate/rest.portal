@@ -1,6 +1,6 @@
-docker run - ti --network=host \
-    -e PORT='9080' \
-    -e REDIS_HOST='redis:6379' \
+docker run -ti --network=host \
+    -e PORT=8181 \
+    -e REDIS_HOST="localhost:6379" \
     -e BASE_RATE_LIMIT=10 \
     -v /tmp/ferrumgate:/etc/ferrumgate \
-    -p 9080:9080 rest.portal
+    -p 8181:8181 rest.portal

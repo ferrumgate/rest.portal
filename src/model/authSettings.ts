@@ -61,7 +61,10 @@ export interface BaseLocal extends BaseAuth {
 }
 
 export interface BaseRadius extends BaseAuthId, BaseAuth {
-
+    host: string;
+    secret?: string;
+    //this is a security flag, be carefull
+    saveNewUser?: boolean;
 }
 
 
