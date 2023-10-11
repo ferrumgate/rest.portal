@@ -82,7 +82,7 @@ export function radiusInit(radius: BaseRadius) {
                 return done(null, user);
 
             } catch (err) {
-                //TOO delete in next versions
+                //we need to show this error
                 logger.error(err);
                 await saveActivityError(req, 'login try', err);
                 return done(null, null, err);

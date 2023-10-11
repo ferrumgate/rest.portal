@@ -20,6 +20,8 @@ export interface BaseAuth {
 export interface BaseOAuth extends BaseAuthId, BaseAuth {
     clientId: string,
     clientSecret: string,
+    authorizationUrl?: string;
+    tokenUrl?: string;
     //this is a security flag, be carefull
     saveNewUser?: boolean;
 }

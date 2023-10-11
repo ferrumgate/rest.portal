@@ -159,6 +159,24 @@ function copyAuthOAuth(auth: BaseOAuth): BaseOAuth {
             saveNewUser: auth.saveNewUser
 
         }
+    if (auth.baseType == 'oauth' && (auth.type == 'generic'))
+        return {
+            id: auth.id,
+            baseType: auth.baseType,
+            clientId: auth.clientId,
+            clientSecret: auth.clientSecret,
+            name: auth.name,
+            type: auth.type,
+            tags: auth.tags,
+            authName: auth.authName,
+            authorizationUrl: auth.authorizationUrl,
+            tokenUrl: auth.tokenUrl,
+            isEnabled: auth.isEnabled,
+            insertDate: auth.insertDate,
+            updateDate: auth.updateDate,
+            saveNewUser: auth.saveNewUser
+
+        }
     throw new Error('not implemented copyAuthOAuth');
 }
 
@@ -199,6 +217,10 @@ routerConfigAuthAuthenticated.post('/oauth/providers',
         await inputService.checkIfExists(provider.name);
         await inputService.checkIfExists(provider.type);
         await inputService.checkIfExists(provider.baseType);
+        if (provider.type == 'generic') {
+            await inputService.checkIfExists(provider.authorizationUrl);
+            await inputService.checkIfExists(provider.tokenUrl)
+        }
 
         const oauth = await configService.getAuthSettingOAuth();
         const indexA = oauth?.providers?.findIndex(x => x.type == provider.type && x.baseType == provider.baseType);

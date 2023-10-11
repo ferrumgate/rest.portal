@@ -206,6 +206,31 @@ routerAuth.get('/openid/:providerName',
 
 
 
+/////////////////////////// /auth/oauth2 //////////////////////////
+
+/* 
+routerAuth.use('/oauth/:providerName/callback',
+    asyncHandler(passportInit),
+    asyncHandler(passportAuthenticateFromReqProviderName),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const currentUser: User = req.currentUser as User;
+        logger.info(`authenticated user: ${currentUser.username}`);
+        const two2FA = await execute2FA(req);
+        return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false });
+    })
+);
+
+
+routerAuth.get('/oauth/:providerName',
+    asyncHandler(passportInit),
+    asyncHandler(passportAuthenticateFromReqProviderName),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        return res.status(200).json({});
+    })
+); */
+
 
 
 

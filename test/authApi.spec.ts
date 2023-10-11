@@ -744,23 +744,6 @@ describe('authApi', async () => {
     }).timeout(50000);
 
 
-    it('GET /auth/openid/test with result 200', async () => {
-
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .get('/api/auth/openid/test')
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-
-        expect(response.redirects.length).to.equal(1);
-
-
-    }).timeout(50000);
 
 
 

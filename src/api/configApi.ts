@@ -69,7 +69,13 @@ async function getPublicConfig(configService: ConfigService) {
             //dont sent objects directly
             openId: openIds.map(x => {
                 return { name: x.name, authName: x.authName, icon: x.icon }
-            })
+            }),
+            oauth: oauth.providers.filter(x => x.type == 'generic').map(x => {
+                return { name: x.name, authName: x.authName, icon: x.icon }
+            }),
+            saml: saml.providers.filter(x => x.type == 'generic').map(x => {
+                return { name: x.name, authName: x.authName, icon: x.icon }
+            }),
         },
         brand: {
             ...brand
