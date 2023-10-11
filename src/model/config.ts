@@ -22,7 +22,7 @@ type Nullable<T> = T | null | undefined;
 // adding new paths here
 // also effects redisConfigWatchService
 // processExecuteList
-// also redisConfigService getAll, setAll
+// also redisConfigService getConfig, setConfig
 export type RPath =
     'lastUpdateTime' |
     'revision' |

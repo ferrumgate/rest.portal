@@ -1158,7 +1158,7 @@ export class RedisConfigService extends ConfigService {
         this.config.auth.oauth.providers = await this.rGetAll<BaseOAuth>('auth/oauth/providers');
         this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
         this.config.auth.openId.providers = await this.rGetAll<BaseOpenId>('auth/openId/providers');
-        this.config.auth.radius.providers = await this.rGetAll<BaseRadius>('auth/openId/providers');
+        this.config.auth.radius.providers = await this.rGetAll<BaseRadius>('auth/radius/providers');
     }
 
 
