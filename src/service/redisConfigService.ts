@@ -12,7 +12,7 @@ import { Captcha } from "../model/captcha";
 import { SSLCertificate, SSLCertificateCategory, SSLCertificateEx } from "../model/cert";
 import { EmailSetting } from "../model/emailSetting";
 import { LogoSetting } from "../model/logoSetting";
-import { AuthSettings, BaseOAuth, BaseSaml } from "../model/authSettings";
+import { AuthSettings, BaseOAuth, BaseOpenId, BaseRadius, BaseSaml } from "../model/authSettings";
 import { AuthCommon } from "../model/authSettings";
 import { AuthLocal } from "../model/authSettings";
 import { BaseLdap } from "../model/authSettings";
@@ -373,6 +373,13 @@ export class RedisConfigService extends ConfigService {
                 version = 2;
             }
 
+            if (version < 3) {//if not saved before, first installing system
+                logger.info("config service version upgrade to 3");
+                logger.info("create default values");
+                await this.saveV3();
+                version = 3;
+            }
+
 
             clearIntervalAsync(this.timerInterval);
             this.timerInterval = null;
@@ -575,6 +582,8 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('auth/ldap/providers', this.config.auth.ldap.providers || [], pipeline);
         await this.rSaveArray('auth/oauth/providers', this.config.auth.oauth.providers || [], pipeline);
         await this.rSaveArray('auth/saml/providers', this.config.auth.saml.providers || [], pipeline);
+        await this.rSaveArray('auth/openId/providers', this.config.auth.openId.providers || [], pipeline);
+        await this.rSaveArray('auth/radius/providers', this.config.auth.radius.providers || [], pipeline);
         await this.rSaveArray('networks', this.config.networks, pipeline);
         await this.rSaveArray('gateways', this.config.gateways, pipeline);
         await this.rSaveArray('authenticationPolicy/rules', this.config.authenticationPolicy.rules, pipeline);
@@ -676,8 +685,17 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('version', undefined, 2, pipeline);
         await this.rSaveArray('fqdnIntelligence/lists', this.config.fqdnIntelligence.lists || [], pipeline);
         await this.rSaveArray('fqdnIntelligence/sources', this.config.fqdnIntelligence.sources || [], pipeline);
-        await this.rSave('httpToHttpsRedirect', undefined, this.config.domain, pipeline);
+        await this.rSave('httpToHttpsRedirect', undefined, this.config.httpToHttpsRedirect, pipeline);
         await this.rSave('brand', undefined, this.config.brand, pipeline);
+        await pipeline.exec();
+    }
+
+    async saveV3() {
+
+        const pipeline = await this.redis.multi();
+        await this.rSave('version', undefined, 3, pipeline);
+        await this.rSaveArray('auth/openId/providers', this.config.auth.openId.providers || [], pipeline);
+        await this.rSaveArray('auth/radius/providers', this.config.auth.radius.providers || [], pipeline);
         await pipeline.exec();
     }
 
@@ -1134,9 +1152,13 @@ export class RedisConfigService extends ConfigService {
         this.config.auth.local = await this.rGet<AuthLocal>('auth/local') || this.createAuthLocal();
         this.config.auth.oauth = { providers: [] };
         this.config.auth.saml = { providers: [] };
+        this.config.auth.openId = { providers: [] };
+        this.config.auth.radius = { providers: [] };
         this.config.auth.ldap.providers = await this.rGetAll<BaseLdap>('auth/ldap/providers');
         this.config.auth.oauth.providers = await this.rGetAll<BaseOAuth>('auth/oauth/providers');
         this.config.auth.saml.providers = await this.rGetAll<BaseSaml>('auth/saml/providers');
+        this.config.auth.openId.providers = await this.rGetAll<BaseOpenId>('auth/openId/providers');
+        this.config.auth.radius.providers = await this.rGetAll<BaseRadius>('auth/radius/providers');
     }
 
 
@@ -1272,6 +1294,72 @@ export class RedisConfigService extends ConfigService {
         if (ret.before) {//means deleted something
             const pipeline = await this.redis.multi();
             await this.rDel('auth/saml/providers', ret.before, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return ret;
+    }
+
+    override async getAuthSettingOpenId() {
+        this.isReady();
+        this.config.auth.openId = { providers: [] };
+        this.config.auth.openId.providers = await this.rGetAll<BaseOpenId>('auth/openId/providers');
+        return await super.getAuthSettingOpenId();
+    }
+
+    override async addAuthSettingOpenId(provider: BaseOpenId) {
+        this.isReady();
+        this.config.auth.openId = { providers: [] };
+        this.config.auth.openId.providers = await this.rGetAll<BaseOpenId>('auth/openId/providers');
+        let ret = await super.addAuthSettingOpenId(provider);
+        const pipeline = await this.redis.multi();
+        await this.rSave('auth/openId/providers', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    override async deleteAuthSettingOpenId(id: string) {
+        this.isReady();
+        this.config.auth.openId = { providers: [] };
+        this.config.auth.openId.providers = await this.rGetAll<BaseOpenId>('auth/openId/providers');
+        let ret = await super.deleteAuthSettingOpenId(id);
+        if (ret.before) {//means deleted something
+            const pipeline = await this.redis.multi();
+            await this.rDel('auth/openId/providers', ret.before, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return ret;
+    }
+
+    override async getAuthSettingRadius() {
+        this.isReady();
+        this.config.auth.radius = { providers: [] };
+        this.config.auth.radius.providers = await this.rGetAll<BaseRadius>('auth/radius/providers');
+        return await super.getAuthSettingRadius();
+    }
+
+    override async addAuthSettingRadius(provider: BaseRadius) {
+        this.isReady();
+        this.config.auth.radius = { providers: [] };
+        this.config.auth.radius.providers = await this.rGetAll<BaseRadius>('auth/radius/providers');
+        let ret = await super.addAuthSettingRadius(provider);
+        const pipeline = await this.redis.multi();
+        await this.rSave('auth/radius/providers', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+    override async deleteAuthSettingRadius(id: string) {
+        this.isReady();
+        this.config.auth.radius = { providers: [] };
+        this.config.auth.radius.providers = await this.rGetAll<BaseRadius>('auth/radius/providers');
+        let ret = await super.deleteAuthSettingRadius(id);
+        if (ret.before) {//means deleted something
+            const pipeline = await this.redis.multi();
+            await this.rDel('auth/radius/providers', ret.before, pipeline);
             await this.saveLastUpdateTime(pipeline);
             await pipeline.exec();
         }
@@ -1963,6 +2051,12 @@ export class RedisConfigService extends ConfigService {
         this.config.auth.saml = {
             providers: await this.rGetAll('auth/saml/providers')
         }
+        this.config.auth.openId = {
+            providers: await this.rGetAll('auth/openId/providers')
+        }
+        this.config.auth.radius = {
+            providers: await this.rGetAll('auth/radius/providers')
+        }
         cfg.jwtSSLCertificate = await this.rGet('jwtSSLCertificate') || {
             idEx: Util.randomNumberString(16),
             name: 'JWT',
@@ -2045,6 +2139,8 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('auth/ldap/providers', cfg.auth.ldap?.providers || [], pipeline);
         await this.rSaveArray('auth/oauth/providers', cfg.auth.oauth?.providers || [], pipeline);
         await this.rSaveArray('auth/saml/providers', cfg.auth.saml?.providers || [], pipeline);
+        await this.rSaveArray('auth/openId/providers', cfg.auth.openId?.providers || [], pipeline);
+        await this.rSaveArray('auth/radius/providers', cfg.auth.radius?.providers || [], pipeline);
         await this.rSaveArray('networks', cfg.networks, pipeline);
         await this.rSaveArray('gateways', cfg.gateways, pipeline);
         await this.rSaveArray('authenticationPolicy/rules', cfg.authenticationPolicy.rules, pipeline);

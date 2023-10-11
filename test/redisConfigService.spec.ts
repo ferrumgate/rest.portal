@@ -6,7 +6,7 @@ import { ConfigService } from '../src/service/configService';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Gateway, Network } from '../src/model/network';
-import { AuthCommon, BaseOAuth, BaseLocal, AuthLocal, BaseLdap, BaseSaml } from '../src/model/authSettings';
+import { AuthCommon, BaseOAuth, BaseLocal, AuthLocal, BaseLdap, BaseSaml, BaseOpenId, BaseRadius } from '../src/model/authSettings';
 import { Group } from '../src/model/group';
 import { Service } from '../src/model/service';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
@@ -676,7 +676,11 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
-            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
+            common: {}, local: {} as any, saml: { providers: [] } as any,
+            ldap: { providers: [] } as any, oauth: { providers: [] } as any,
+            openId: { providers: [] },
+            radius: { providers: [] }
+
         }
         await configService.init();
         let oauth: BaseOAuth = {
@@ -717,7 +721,11 @@ describe('redisConfigService', async () => {
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
         configService.config.auth = {
-            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
+            common: {}, local: {} as any, saml: { providers: [] } as any,
+            ldap: { providers: [] } as any, oauth: { providers: [] } as any,
+            openId: { providers: [] },
+            radius: { providers: [] }
+
         }
         await configService.init();
         let local: BaseLocal = {
@@ -748,7 +756,11 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
-            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
+            common: {}, local: {} as any, saml: { providers: [] } as any,
+            ldap: { providers: [] } as any, oauth: { providers: [] } as any,
+            openId: { providers: [] },
+            radius: { providers: [] }
+
         }
         await configService.init();
         let ldap: BaseLdap = {
@@ -789,7 +801,10 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         configService.config.auth = {
-            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any,
+            openId: { providers: [] },
+            radius: { providers: [] }
+
         }
         await configService.init();
         let saml: BaseSaml = {
@@ -823,6 +838,101 @@ describe('redisConfigService', async () => {
 
 
     });
+
+
+
+    it('authSettingsOpenId', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.auth = {
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any,
+            openId: { providers: [] },
+            radius: { providers: [] }
+
+        }
+        await configService.init();
+        let openId: BaseOpenId = {
+            name: 'openidtest',
+            baseType: 'openId',
+            type: 'generic',
+            id: 'oneid',
+
+
+            tags: [],
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            discoveryUrl: '',
+            clientId: '',
+            clientSecret: '',
+
+
+        }
+
+        //add
+        await configService.addAuthSettingOpenId(openId);
+
+        const returned = await configService.getAuthSettingOpenId();
+        expectToDeepEqual(returned.providers[0], openId);
+        //delete
+        await configService.deleteAuthSettingOpenId(openId.id);
+        const returned2 = await configService.getAuthSettingOpenId();
+        expect(returned2.providers.length).to.equal(0);
+        // adding same id
+        await configService.addAuthSettingOpenId(openId);
+        const cloned = Util.clone(openId);
+        await configService.addAuthSettingOpenId(openId);
+        const returned3 = await configService.getAuthSettingOpenId();
+        expect(returned3.providers.length).to.equal(1);
+
+
+    });
+
+    it('authSettingsRadius', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.auth = {
+            common: {}, local: {} as any, saml: { providers: [] } as any, ldap: { providers: [] } as any, oauth: { providers: [] } as any,
+            openId: { providers: [] },
+            radius: { providers: [] }
+
+        }
+        await configService.init();
+        let radius: BaseRadius = {
+            name: 'radiustest',
+            baseType: 'radius',
+            type: 'generic',
+            id: 'oneid',
+            host: 'hostname',
+
+            tags: [],
+            isEnabled: true,
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+
+        }
+
+        //add
+        await configService.addAuthSettingRadius(radius);
+
+        const returned = await configService.getAuthSettingRadius();
+        expectToDeepEqual(returned.providers[0], radius);
+        //delete
+        await configService.deleteAuthSettingRadius(radius.id);
+        const returned2 = await configService.getAuthSettingRadius();
+        expect(returned2.providers.length).to.equal(0);
+        // adding same id
+        await configService.addAuthSettingRadius(radius);
+        const cloned = Util.clone(radius);
+        await configService.addAuthSettingRadius(radius);
+        const returned3 = await configService.getAuthSettingRadius();
+        expect(returned3.providers.length).to.equal(1);
+
+
+    });
+
 
     it('saveNetwork getNetwork getNetworkByName', async () => {
 

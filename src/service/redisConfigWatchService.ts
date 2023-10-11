@@ -214,6 +214,12 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'auth/saml/providers':
                             await this.processArray(this.config.auth.saml.providers, path, item, val.id);
                             break;
+                        case 'auth/openId/providers':
+                            await this.processArray(this.config.auth.openId.providers, path, item, val.id);
+                            break;
+                        case 'auth/radius/providers':
+                            await this.processArray(this.config.auth.radius.providers, path, item, val.id);
+                            break;
                         case 'jwtSSLCertificate':
                             this.config.jwtSSLCertificate = await this.redisConfig.rGet(path) || this.defaultCertificate('JWT', 'jwt');
                             break;

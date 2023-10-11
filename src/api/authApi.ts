@@ -13,7 +13,7 @@ import { oauthLinkedinInit } from "./auth/linkedin";
 import { HelperService } from "../service/helperService";
 import { apiKeyInit } from "./auth/apikey";
 import { jwtInit } from "./auth/jwt";
-import { passportAuthenticate, passportInit } from "./auth/passportInit";
+import { passportAuthenticate, passportAuthenticateFromReqProviderName, passportInit } from "./auth/passportInit";
 import cors from 'cors';
 import { corsOptionsDelegate } from "./cors";
 import { stringify } from "querystring";
@@ -57,7 +57,7 @@ async function execute2FA(req: any) {
 
 routerAuth.post('/',
     asyncHandler(passportInit),
-    asyncHandlerWithArgs(passportAuthenticate, ['local', 'headerapikey', 'activedirectory', 'headercert']),
+    asyncHandlerWithArgs(passportAuthenticate, ['local', 'headerapikey', 'activedirectory', 'headercert', 'radius']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
         const currentUser: User = req.currentUser as User;
@@ -176,6 +176,60 @@ routerAuth.get('/saml/azure',
     })
 );
 
+
+/////////////////////////// /auth/openid //////////////////////////
+
+
+routerAuth.use('/openid/:providerName/callback',
+    asyncHandler(passportInit),
+    asyncHandler(passportAuthenticateFromReqProviderName),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const currentUser: User = req.currentUser as User;
+        logger.info(`authenticated user: ${currentUser.username}`);
+        const two2FA = await execute2FA(req);
+        const obj = { key: two2FA.key, is2FA: currentUser.is2FA ? 'true' : 'false' };
+        //const query = new URLSearchParams(obj);
+
+        return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false });
+    })
+);
+
+routerAuth.get('/openid/:providerName',
+    asyncHandler(passportInit),
+    asyncHandler(passportAuthenticateFromReqProviderName),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        return res.status(200).json({});
+    })
+);
+
+
+
+/////////////////////////// /auth/oauth2 //////////////////////////
+
+/* 
+routerAuth.use('/oauth/:providerName/callback',
+    asyncHandler(passportInit),
+    asyncHandler(passportAuthenticateFromReqProviderName),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        const currentUser: User = req.currentUser as User;
+        logger.info(`authenticated user: ${currentUser.username}`);
+        const two2FA = await execute2FA(req);
+        return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false });
+    })
+);
+
+
+routerAuth.get('/oauth/:providerName',
+    asyncHandler(passportInit),
+    asyncHandler(passportAuthenticateFromReqProviderName),
+    asyncHandler(async (req: any, res: any, next: any) => {
+
+        return res.status(200).json({});
+    })
+); */
 
 
 

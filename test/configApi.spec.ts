@@ -64,7 +64,9 @@ describe('configApi ', async () => {
             },
             saml: { providers: [] },
             ldap: { providers: [] },
-            oauth: { providers: [] }
+            oauth: { providers: [] },
+            openId: { providers: [] },
+            radius: { providers: [] }
 
         }
         auth.oauth = {

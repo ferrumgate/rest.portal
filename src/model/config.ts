@@ -22,7 +22,7 @@ type Nullable<T> = T | null | undefined;
 // adding new paths here
 // also effects redisConfigWatchService
 // processExecuteList
-// also redisConfigService getAll, setAll
+// also redisConfigService getConfig, setConfig
 export type RPath =
     'lastUpdateTime' |
     'revision' |
@@ -35,6 +35,8 @@ export type RPath =
     'auth/oauth/providers' |
     'auth/ldap/providers' |
     'auth/saml/providers' |
+    'auth/openId/providers' |
+    'auth/radius/providers' |
     'jwtSSLCertificate' |
     'webSSLCertificate' |
     'caSSLCertificate' |
