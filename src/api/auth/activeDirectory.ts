@@ -15,9 +15,19 @@ import { stringify } from 'querystring';
 import { ActivityStatus } from '../../model/activityLog';
 
 
-function findGroups(groups: string[]) {
-    let items = [];
-    for (const group of groups) {
+function findGroups(groups: string[] | string | undefined) {
+
+    let items: string[] = [];
+    if (!groups) return items;
+    let groupsArray = [];
+    if (Array.isArray(groups))
+        groupsArray = groups;
+    else
+        if (typeof (groups) != 'string') {
+            return items;
+        } else
+            groupsArray.push(groups);
+    for (const group of groupsArray) {
         const tmp = group.split(',');
         if (tmp.length) {
             const gr = tmp[0].replace('cn=', '').replace('CN=', '');
