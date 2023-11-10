@@ -67,6 +67,21 @@ function createSampleData() {
         count: 1
 
     }
+    let service3: Service = {
+        id: Util.randomNumberString(),
+        name: 'dns',
+        isEnabled: true,
+        labels: ['test'],
+        hosts: [{ host: '192.168.10.10' }],
+        networkId: 'network1',
+        ports: [{ port: 53, isUdp: true }],
+        protocol: 'dns',
+        assignedIp: '10.0.0.1',
+        insertDate: new Date().toISOString(),
+        updateDate: new Date().toISOString(),
+        count: 1
+
+    }
     const user1: User = {
         username: 'hamza@ferrumgate.com',
         id: 'someid',
@@ -81,7 +96,7 @@ function createSampleData() {
 
     }
 
-    return { service1, service2, user1, network };
+    return { service1, service2, service3, user1, network };
 }
 /**
  * authenticated service api
@@ -113,7 +128,7 @@ describe('serviceApi', async () => {
 
     it('check authorazion as admin role', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
+        const { service1, service2, service3, user1, network } = createSampleData();
         await appService.configService.saveNetwork(network);
         const clonedUser = Util.clone(user1);
         clonedUser.roleIds = ['User'];
@@ -140,7 +155,7 @@ describe('serviceApi', async () => {
 
     it('GET /service/:id returns 200', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
+        const { service1, service2, service3, user1, network } = createSampleData();
         await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -170,7 +185,7 @@ describe('serviceApi', async () => {
 
     it('GET /service/:id returns 401', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
+        const { service1, service2, service3, user1, network } = createSampleData();
         await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -200,7 +215,7 @@ describe('serviceApi', async () => {
 
     it('GET /service?search=bla returns 200', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
+        const { service1, service2, service3, user1, network } = createSampleData();
         await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -230,7 +245,7 @@ describe('serviceApi', async () => {
 
     it('DELETE /service/:id returns 200', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
+        const { service1, service2, service3, user1, network } = createSampleData();
         await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -260,7 +275,7 @@ describe('serviceApi', async () => {
 
     it('PUT /service returns 200', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
+        const { service1, service2, service3, user1, network } = createSampleData();
         await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
@@ -296,7 +311,7 @@ describe('serviceApi', async () => {
 
     it('POST /service returns 200', async () => {
         //prepare data
-        const { service1, service2, user1, network } = createSampleData();
+        const { service1, service2, service3, user1, network } = createSampleData();
         await appService.configService.saveNetwork(network);
         await appService.configService.saveUser(user1);
 
@@ -327,6 +342,45 @@ describe('serviceApi', async () => {
         service2.updateDate = response.body.updateDate;
 
         expectToDeepEqual(response.body, service2);
+
+    }).timeout(50000);
+
+
+
+    it('POST-PUT /service returns 200', async () => {
+        //prepare data
+        const { service1, service2, service3, user1, network } = createSampleData();
+        await appService.configService.saveNetwork(network);
+        await appService.configService.saveUser(user1);
+
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+
+        await appService.configService.saveService(service1);
+
+        service3.id = '';
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post(`/api/service`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .send(service3)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+
+        service3.id = response.body.id;
+        service3.assignedIp = response.body.assignedIp;
+        service3.insertDate = response.body.insertDate;
+        service3.updateDate = response.body.updateDate;
+
+        expectToDeepEqual(response.body, service3);
+
 
     }).timeout(50000);
 

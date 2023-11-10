@@ -23,6 +23,7 @@ import { DevicePosture } from "../model/authenticationProfile";
 import { FqdnIntelligenceSource } from "../model/fqdnIntelligence";
 import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
 import { BrandSetting } from "../model/brandSetting";
+import { DnsRecord } from "../model/dns";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
@@ -489,6 +490,21 @@ export class AuditService {
         await this.executeSave(currentSession, currentUser, before, before,
             `fqdn intelligence list reseted`,
             `${before?.name}`,)
+
+    }
+
+    async logSaveDnsRecord(currentSession: AuthSession, currentUser: User, before?: DnsRecord, after?: DnsRecord) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `dns record ${before ? 'updated' : 'created'}`,
+            `${before?.fqdn || after?.fqdn}`,)
+
+    }
+    async logDeleteDnsRecord(currentSession: AuthSession, currentUser: User, before?: DnsRecord, after?: DnsRecord) {
+
+        await this.executeSave(currentSession, currentUser, before, after,
+            `dns record deleted`,
+            `${before?.fqdn}`,)
 
     }
 

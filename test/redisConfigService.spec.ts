@@ -26,6 +26,7 @@ import * as ipaddr from 'ip-address';
 import { calculateCountryId } from '../src/model/country';
 import { SSLCertificate, SSLCertificateEx } from '../src/model/cert';
 import { DevicePosture } from '../src/model/authenticationProfile';
+import { DnsRecord } from '../src/model/dns';
 
 
 
@@ -3009,6 +3010,35 @@ describe('redisConfigService', async () => {
 
 
     });
+
+
+
+    it('getDnsRecord/saveDnsRecord/deleteDnsRecord', async () => {
+
+        //first create a config and save to redis
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.dns.records = [];
+        await configService.init();
+
+        const lists = await configService.getDnsRecords();
+        expect(lists.length).to.equal(0);
+
+        const item: DnsRecord = { id: Util.randomNumberString(), isEnabled: true, insertDate: '', updateDate: '', fqdn: '', ip: '' };
+        await configService.saveDnsRecord(item);
+
+        const source2 = await configService.getDnsRecords();
+        expect(source2.length).to.equal(1);
+
+        const source3 = await configService.getDnsRecord(source2[0].id);
+        expect(source3).exist;
+
+        await configService.deleteDnsRecord(item.id);
+        const source4 = await configService.getDnsRecords();
+        expect(source4.length).to.equal(0);
+
+
+    });
+
 
 
 

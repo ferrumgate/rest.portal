@@ -26,6 +26,7 @@ import { UtilPKI } from "../utilPKI";
 import { DevicePosture } from "../model/authenticationProfile";
 import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
 import { BrandSetting } from "../model/brandSetting";
+import { DnsRecord } from "../model/dns";
 
 
 
@@ -63,7 +64,7 @@ export class ConfigService {
         //for testing start
         //dont delete aboveline
         try {
-            if (process.env.LOAD_TEST_DATA) {
+            if (process.env.LOAD_TEST_DATA == 'true') {
                 var m = require('../../test/configServiceTestData');
                 m.loadTestData(this.config);
             }
@@ -77,20 +78,7 @@ export class ConfigService {
         // end point for delete
         this.config.lastUpdateTime = new Date().toISOString();
         this.loadConfigFromFile();
-        /* if (process.env.LIMITED_MODE == 'true') {
-            if (!this.config.groups.find(x => x.id == 'hb16ldst577l9mkf'))
-                this.config.groups.push({
-                    id: 'hb16ldst577l9mkf',
-                    name: 'admin',
-                    isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
-                })
-            if (!this.config.groups.find(x => x.id == 'pl0m0xh6az722y0t'))
-                this.config.groups.push({
-                    id: `pl0m0xh6az722y0t`,
-                    name: 'remote',
-                    isEnabled: true, insertDate: new Date().toISOString(), updateDate: new Date().toISOString(), labels: []
-                })
-        } */
+
 
 
 
@@ -169,7 +157,8 @@ export class ConfigService {
                 lists: []
             },
             httpToHttpsRedirect: true,
-            brand: {}
+            brand: {},
+            dns: { records: [] }
 
         }
 
@@ -2250,6 +2239,7 @@ export class ConfigService {
         return this.createTrackEvent(source)
 
     }
+    // http2http2 redirect
     async getHttpToHttpsRedirect(): Promise<boolean> {
         this.isReady(); this.isReadable();
         return this.config.httpToHttpsRedirect ? true : false;
@@ -2283,6 +2273,56 @@ export class ConfigService {
         return this.createTrackEvent(prev, this.config.brand);
     }
 
+    //dns records
+
+    async getDnsRecords() {
+        this.isReady(); this.isReadable();
+        const config = this.clone(this.config.dns.records);
+        return config;
+    }
+    async getDnsRecord(id: string) {
+        this.isReady(); this.isReadable();
+        const source = this.config.dns.records.find(x => x.id == id);
+        if (!source) {
+            return source;
+        }
+        return this.clone(source);
+    }
+    async saveDnsRecord(item: DnsRecord) {
+        this.isReady(); this.isReadable();
+        let findedIndex = this.config.dns.records.findIndex(x => x.id == item.id);
+        let finded = this.config.dns.records[findedIndex];
+        const cloned = this.clone(item);
+        if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
+            this.config.dns.records.push(cloned);
+            findedIndex = this.config.dns.records.length - 1;
+            const trc = this.createTrackEvent(finded, this.config.dns.records[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'dns/records', val: trc.after, before: trc.before });
+        } else {
+            this.config.dns.records[findedIndex] = {
+                ...finded,
+                ...cloned,
+                updateDate: new Date().toISOString()
+            }
+            const trc = this.createTrackEvent(finded, this.config.dns.records[findedIndex])
+            this.emitEvent({ type: 'put', path: 'dns/records', val: trc.after, before: trc.before });
+        }
+        await this.saveConfigToFile();
+        return this.createTrackEvent(finded, this.config.dns.records[findedIndex]);
+    }
+    async deleteDnsRecord(id: string) {
+        this.isReady(); this.isWritable();
+        const indexId = this.config.dns.records.findIndex(x => x.id == id);
+        const source = this.config.dns.records.find(x => x.id == id);
+        if (indexId >= 0 && source) {
+            this.config.dns.records.splice(indexId, 1);
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(source)
+
+    }
 
 
 

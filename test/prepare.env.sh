@@ -1,12 +1,12 @@
 #!/bin/bash
 set +e
-docker stop redis
-set -e
+docker stop redis || true
+docker rm redis || true
 docker run --net=host --name redis --rm -d redis
 
-set +e
-docker stop pebble
-set -e
+docker stop pebble || true
+docker rm pebble || true
+
 echo '
 {
   "pebble": {
@@ -26,6 +26,7 @@ echo '
   }
 }
 ' >/tmp/my-pebble-config.json
+
 docker run --net=host --name pebble -e "PEBBLE_VA_NOSLEEP=1" --mount src=/tmp/my-pebble-config.json,target=/test/my-pebble-config.json,type=bind --rm -d letsencrypt/pebble pebble -config /test/my-pebble-config.json
 
 #set +e

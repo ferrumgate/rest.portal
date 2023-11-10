@@ -1,3 +1,4 @@
+import { DnsRecord } from "./dns";
 
 export interface ServicePort {
     port: number;
@@ -12,6 +13,8 @@ export interface ServiceHost {
     [key: string]: any;
 
 }
+
+
 /**
  * private network service definition like
  * mysql on a machine
@@ -33,6 +36,7 @@ export interface Service {
     updateDate: string;
     isSystem?: boolean;
 
+
 }
 
 export function cloneService(service: Service): Service {
@@ -49,6 +53,7 @@ export function cloneService(service: Service): Service {
         insertDate: service.insertDate,
         updateDate: service.updateDate,
         isSystem: service.isSystem,
-        count: service.count
+        count: service.count,
+
     }
 }

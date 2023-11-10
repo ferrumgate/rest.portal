@@ -47,7 +47,7 @@ routerClientTunnelAuthenticated.get('/ip',
         return res.status(200).json(
             {
                 assignedIp: tunnel.assignedClientIp, serviceNetwork: network.serviceNetwork,
-                resolvIp: dnsService?.assignedIp, resolvSearch: `${network.name}.${rootFqdn}`
+                resolvIp: dnsService?.assignedIp, resolvSearch: `${network.name}.${rootFqdn}`.toLowerCase()
             }
         );
     })

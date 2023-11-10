@@ -147,6 +147,7 @@ routerServiceAuthenticated.put('/',
         if (!network) {
             throw new RestfullException(400, ErrorCodes.ErrNetworkNotFound, ErrorCodesInternal.ErrNetworkNotFound, 'no network found');
         }
+
         await inputService.checkDomain(input.name);
         await inputService.checkIfExists(input.protocol);
 
@@ -216,6 +217,8 @@ routerServiceAuthenticated.post('/',
         if (!input.hosts.some(x => x.host)) {
             throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'input host is invalid');
         }
+
+
         await inputService.checkIfExists(input.networkId);
         const network = await configService.getNetwork(input.networkId);
         if (!network) {
@@ -262,7 +265,6 @@ export async function saveSystemDnsService(network: Network, configService: Conf
     const { before, after } = await configService.saveService(dnsService);
     await auditService.logSaveService(currentSession, currentUser, before, after);
 }
-
 
 
 
