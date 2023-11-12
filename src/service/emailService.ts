@@ -3,7 +3,8 @@ import SMTPPool from 'nodemailer/lib/smtp-pool';
 import { EmailSetting } from '../model/emailSetting';
 import { logger } from '../common';
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../restfullException';
-
+let aws = require("@aws-sdk/client-ses");
+let { defaultProvider } = require("@aws-sdk/credential-provider-node");
 
 
 import { ConfigService } from "./configService";
@@ -120,6 +121,34 @@ class SmtpAccount extends EmailSender {
     }
 }
 
+
+class AWSAccount extends EmailSender {
+
+
+    constructor(private name: string, private fromName: string,
+        private accessKey: string, private secretKey: string, private region?: string) {
+        super();
+
+
+        const ses = new aws.SES({
+            apiVersion: "2010-12-01",
+            region: this.region,
+            credentials: {
+                accessKeyId: this.accessKey,
+                secretAccessKey: this.secretKey
+            }
+        });
+
+        // create Nodemailer SES transporter
+        this.transporter = nodemailer.createTransport({
+            SES: { ses, aws },
+        });
+
+    }
+
+}
+
+
 /**
  * @summary email sending business
  */
@@ -147,6 +176,9 @@ export class EmailService {
                     break;
                 case 'smtp':
                     this.sender = new SmtpAccount('smtp', EmailSetting.fromname, EmailSetting.host || 'localhost', EmailSetting.port || 25, EmailSetting.isSecure || false, EmailSetting.user, EmailSetting.pass);
+                    break;
+                case 'aws':
+                    this.sender = new AWSAccount('aws', EmailSetting.fromname, EmailSetting.accessKey, EmailSetting.secretKey, EmailSetting.region);
                     break;
                 default:
                     logger.fatal(`unknown email type`);
@@ -194,6 +226,9 @@ export class EmailService {
                 break;
             case 'smtp':
                 sender = new SmtpAccount('smtp', EmailSetting.fromname, EmailSetting.host || 'localhost', EmailSetting.port || 25, EmailSetting.isSecure || false, EmailSetting.user, EmailSetting.pass);
+                break;
+            case 'aws':
+                sender = new AWSAccount('aws', EmailSetting.fromname, EmailSetting.accessKey, EmailSetting.secretKey, EmailSetting.region);
                 break;
             default:
                 logger.fatal(`unknown email type`);

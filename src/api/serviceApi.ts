@@ -152,6 +152,11 @@ routerServiceAuthenticated.put('/',
         await inputService.checkIfExists(input.protocol);
 
         await checkServiceValidRanges(input);
+        if (input.aliases) {
+            for (const alias of input.aliases) {
+                await inputService.checkDomain(alias.host);
+            }
+        }
 
         const safe = cloneService(input);
         //reassign allready assigned ip, system will manage it
@@ -217,6 +222,12 @@ routerServiceAuthenticated.post('/',
         if (!input.hosts.some(x => x.host)) {
             throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, 'input host is invalid');
         }
+        if (input.aliases) {
+            for (const alias of input.aliases) {
+                await inputService.checkDomain(alias.host);
+            }
+        }
+
 
 
         await inputService.checkIfExists(input.networkId);

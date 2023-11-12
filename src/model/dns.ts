@@ -14,6 +14,7 @@ export interface DnsRecord {
     isEnabled: boolean;
 }
 
+
 export function cloneDnsRecord(obj: DnsRecord): DnsRecord {
     let item: DnsRecord = {
         id: obj.id, insertDate: obj.insertDate, updateDate: obj.updateDate,
@@ -24,3 +25,4 @@ export function cloneDnsRecord(obj: DnsRecord): DnsRecord {
 
     return item;
 }
+

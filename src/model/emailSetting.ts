@@ -3,7 +3,7 @@
  * @summary email configuration option, by google or office365 or smtp
  */
 export interface EmailSetting {
-    type: 'google' | 'office365' | 'smtp' | 'empty',
+    type: 'google' | 'office365' | 'smtp' | 'aws' | 'empty',
     fromname: string,
     user: string,
     pass: string,

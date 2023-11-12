@@ -36,7 +36,9 @@
                 "FERRUM_TRY_TUNNEL_SERVER": "tunnelserver.com:1234",
                 "FERRUM_TRY_ADMIN_PASS": "123456",
                 "FERRUM_TRY_USER1_PASS": "123456",
-                "SERVICE_VALID_RANGES": "10.10.10.0/24 192.168.88.0/24"
+                "SERVICE_VALID_RANGES2": "10.10.10.0/24 192.168.88.0/24",
+                "AWS_ACCESS_KEY_SES": "AKIAUKD576YHOBCJYNX5",
+                "AWS_": "fIxCZ0bgrjP2+Ql32T41dxKtizj0j87yM/ytxCXS"
             },
             "outputCapture": "console",
             "console": "integratedTerminal",

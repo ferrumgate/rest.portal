@@ -13,6 +13,9 @@ export interface ServiceHost {
     [key: string]: any;
 
 }
+export interface ServiceAlias {
+    host: string;
+}
 
 
 /**
@@ -35,9 +38,11 @@ export interface Service {
     insertDate: string;
     updateDate: string;
     isSystem?: boolean;
+    aliases?: ServiceAlias[];
 
 
 }
+
 
 export function cloneService(service: Service): Service {
     return {
@@ -54,6 +59,7 @@ export function cloneService(service: Service): Service {
         updateDate: service.updateDate,
         isSystem: service.isSystem,
         count: service.count,
+        aliases: Array.from(JSON.parse(JSON.stringify(service.aliases || []))),
 
     }
 }
