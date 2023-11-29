@@ -719,6 +719,25 @@ describe('util ', () => {
 
     });
 
+    it('parseIpPort', async () => {
+        let ip = "[::ffff:192.168.88.10]:34430"
+
+        let val = Util.parseIpPort(ip);
+        expect(val.ip).to.equal('::ffff:192.168.88.10');
+        expect(val.port).to.equal(34430);
+
+        let val2 = Util.parseIpPort('1.2.3.4#345');
+        expect(val2.ip).to.equal('1.2.3.4');
+        expect(val2.port).to.equal(345);
+
+        let val3 = Util.parseIpPort('1.2.3.4');
+        expect(val3.ip).to.equal('1.2.3.4');
+        expect(val3.port).not.exist;
+
+
+
+    });
+
 
 
 

@@ -26,6 +26,7 @@ export function cloneLetsEncrypt(val: LetsEncrypt): LetsEncrypt {
         privateKey: val.privateKey,
         publicCrt: val.publicCrt,
         fullChainCrt: val.fullChainCrt,
+        chainCrt: val.chainCrt,
         challenge: val.challenge ? { ...val.challenge } : undefined,
         isEnabled: val.isEnabled
 

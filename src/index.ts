@@ -591,6 +591,31 @@ export class ExpressApp {
 
 
     }
+    splitCertFile(file: string): string[] {
+
+        let finalList: string[] = [];
+        if (!file) return finalList;
+        const lines = file.split('\n')
+        let tmp: string[] = [];
+        let findedStartPoint = false;
+        for (const l of lines) {
+            if (l.startsWith('-----BEGIN CERTIFICATE-----')) {
+                findedStartPoint = true;
+                tmp.push(l);
+            } else
+                if (findedStartPoint && l.startsWith('-----END CERTIFICATE-----')) {
+                    findedStartPoint = false;
+                    tmp.push(l + '\n');
+
+                    finalList.push(tmp.join('\n'));
+                    tmp = [];
+                } else if (findedStartPoint) {
+                    tmp.push(l);
+                }
+        }
+        return finalList
+
+    }
     async start() {
         await this.init();
 
@@ -628,7 +653,7 @@ export class ExpressApp {
     httpsHash = '';
     async startHttps() {
         const ca = await this.appService.configService.getCASSLCertificate();
-        const int = (await this.appService.configService.getInSSLCertificateAll()).find(x => x.category == 'tls');
+        const int = (await this.appService.configService.getInSSLCertificateAll()).filter(x => x.category == 'tls').find(x => x.usages.includes("for web"));
         const web = await this.appService.configService.getWebSSLCertificateSensitive();
         if (web.publicCrt && web.privateKey) {
             let hash = Util.sha256(web.publicCrt + web.privateKey);
@@ -652,11 +677,23 @@ export class ExpressApp {
 
                     if (fs.existsSync(`${certsfolder}/ca_root.crt`)) {
                         const caroot = fs.readFileSync(`${certsfolder}/ca_root.crt`);
-                        options.ca.push(caroot);
+                        let carootCerts = this.splitCertFile(caroot.toString());
+                        carootCerts.forEach(x => {
+                            options.ca.push(Buffer.from(x))
+                            logger.info("adding certificate from ca_root.crt")
+                            logger.info(`${x}`)
+                        });
+
                     }
                     if (fs.existsSync(`${certsfolder}/ca_bundle.crt`)) {
                         const cabundle = fs.readFileSync(`${certsfolder}/ca_bundle.crt`);
-                        options.ca.push(cabundle);
+                        let cabundleCerts = this.splitCertFile(cabundle.toString());
+                        cabundleCerts.forEach(x => {
+
+                            options.ca.push(Buffer.from(x))
+                            logger.info("adding certificate from ca_bundle.crt")
+                            logger.info(`${x}`)
+                        });
                     }
                     logger.info("https started with custom certificates")
                     this.httpsServer = https.createServer(options, this.app);
@@ -664,7 +701,27 @@ export class ExpressApp {
                 }
                 else {
                     logger.info("https started with our certificates")
-                    this.httpsServer = https.createServer({ cert: web.publicCrt, key: web.privateKey }, this.app);
+                    const options: { key: Buffer | string, cert: Buffer | string, ca: Buffer[] | string[] } = {
+                        key: web.privateKey,
+                        cert: web.publicCrt,
+                        ca: []
+                    }
+                    if (web.chainCrt) {
+                        let chainCerts = this.splitCertFile(web.chainCrt || '');
+                        chainCerts.forEach(x => {
+                            options.ca.push(x as any)
+                            logger.info("adding certificate from chain")
+                            logger.info(`${x}`)
+                        });
+                    } else {
+                        logger.info("adding certificate from chain")
+                        if (ca.publicCrt)
+                            options.ca.push(ca.publicCrt as any);
+                        if (int?.publicCrt)
+                            options.ca.push(int.publicCrt as any)
+                    }
+
+                    this.httpsServer = https.createServer(options, this.app);
                 }
 
                 this.httpsServer.listen(this.ports, () => {

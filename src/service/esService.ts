@@ -933,7 +933,7 @@ export class ESService {
 
 
         }
-        this.auditIndexes.set(index, new Date().getTime() + ThreeMinutes);
+        this.activityIndexes.set(index, new Date().getTime() + ThreeMinutes);
         return [esitem, index];
     }
 

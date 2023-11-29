@@ -32,7 +32,8 @@ function createSampleData() {
         labels: [],
         name: 'network',
         insertDate: new Date().toISOString(),
-        updateDate: new Date().toISOString()
+        updateDate: new Date().toISOString(),
+
 
     }
     let service1: Service = {
@@ -47,7 +48,8 @@ function createSampleData() {
         assignedIp: '10.0.0.1',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
-        count: 1
+        count: 1,
+        aliases: []
 
 
 
@@ -64,7 +66,8 @@ function createSampleData() {
         assignedIp: '10.0.0.1',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
-        count: 1
+        count: 1,
+        aliases: []
 
     }
     let service3: Service = {
@@ -79,7 +82,8 @@ function createSampleData() {
         assignedIp: '10.0.0.1',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
-        count: 1
+        count: 1,
+        aliases: []
 
     }
     const user1: User = {

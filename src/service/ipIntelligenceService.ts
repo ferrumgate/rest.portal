@@ -260,6 +260,7 @@ export class IpIntelligenceService {
     }
 
     async query(ip: string) {
+        logger.info(`query ip from intelligence ${ip}`);
         await this.createApi();
         if (Util.isLocalNetwork(ip)) return null;
 
@@ -519,6 +520,8 @@ export class IpIntelligenceListService {
      * @returns first founded list id
      */
     async getByIpAll(ip: string) {
+        logger.info(`searching ip intelligence ip: ${ip}`);
+        ip = Util.parseIpPort(ip).ip || ip;
         return await this.esService.searchIpIntelligenceList({ searchIp: ip });
 
     }

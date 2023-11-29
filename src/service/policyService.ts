@@ -237,7 +237,7 @@ export class PolicyService {
     }
 
     async isIpIntelligenceAllowed(rule: AuthenticationRule, session: AuthSession, clientIp: string) {
-        let ip = clientIp.split('#')[0];//ip can be like 1.2.3.4#34233 ip#port
+        let ip = Util.parseIpPort(clientIp).ip || '0.1.0.1';//ip can be like 1.2.3.4#34233 ip#port or [:::]:123
         //check white lists
         if (await this.isCustomWhiteListContains(rule, ip))
             return { result: true };
