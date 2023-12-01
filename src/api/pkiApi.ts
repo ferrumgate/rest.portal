@@ -353,6 +353,9 @@ routerPKIAuthenticated.post('/cert/web/letsencrypt',
             cert.privateKey = cert.letsEncrypt.privateKey;
             cert.publicCrt = cert.letsEncrypt.publicCrt;
         }
+        if (cert.letsEncrypt.chainCrt) {
+            cert.chainCrt = cert.chainCrt;
+        }
 
         cert.updateDate = new Date().toISOString();
 
@@ -401,6 +404,9 @@ routerPKIAuthenticated.put('/cert/web',
             safe.privateKey = input.privateKey;
             safe.parentId = '';
             safe.publicCrt = input.publicCrt;
+        }
+        if (input.chainCrt) {
+            safe.chainCrt = input.chainCrt
         }
         safe.updateDate = new Date().toISOString();
 

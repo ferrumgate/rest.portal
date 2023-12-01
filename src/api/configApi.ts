@@ -262,6 +262,15 @@ function getEmailSettingFrom(input: EmailSetting): EmailSetting {
         isSecure: input.isSecure
 
     }
+    if (input.type == 'aws') return {
+        type: 'aws',
+        user: input.user,
+        fromname: input.user,
+        pass: input.pass,
+        region: input.region,
+        accessKey: input.accessKey,
+        secretKey: input.secretKey
+    }
     throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "no way to convert email settings")
 }
 routerConfigAuthenticated.put('/email',

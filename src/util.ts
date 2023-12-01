@@ -3,7 +3,7 @@ import fs from 'fs';
 import * as ipAddress from 'ip-address';
 import { BigInteger } from 'jsbn';
 import * as JWT from 'jsonwebtoken';
-import { isIPv4 } from 'net';
+import { isIPv4, isIPv6 } from 'net';
 import { ZipAFolder } from 'zip-a-folder';
 import { logger } from './common';
 import { ErrorCodes, RestfullException } from './restfullException';
@@ -242,12 +242,43 @@ export const Util = {
             ip = req.ip;
         if (!ip || ip == 'unknown')
             ip = req.connection.remoteAddress;
+        let parsed = Util.parseIpPort(ip);
+        ip = parsed.ip || '0.1.0.1';
 
         if (ip && ip.substr(0, 7) == "::ffff:") {
             //logger.info(`ip is ipv4 mapped ipv6 ${ip}`);
             ip = ip.substr(7)
         }
+        logger.info(`client ip address is ${ip}`);
         return ip;
+
+    },
+    parseIpPort(val: string): { ip?: string, port?: number } {
+        if (val.includes(']')) {
+            let ipTmp = val.substring(0, val.indexOf(']'));
+            let portTmp = val.substring(val.indexOf(']') + 1).replace(/[^0-9]/g, '');
+            return {
+                ip: ipTmp.substring(1),
+                port: Number(portTmp) || 1
+            }
+
+        }
+        if (val.includes('#')) {
+            let ipTmp = val.substring(0, val.indexOf('#'));
+            let portTmp = val.substring(val.indexOf('#') + 1).replace(/[^0-9]/g, '');
+            return {
+                ip: ipTmp,
+                port: Number(portTmp) || 1
+            }
+        }
+        if (isIPv4(val) || isIPv6(val))
+            return {
+                ip: val
+            }
+        return {
+
+        }
+
 
     },
     /**

@@ -17,6 +17,8 @@ import chaiExclude from 'chai-exclude';
 import { ConfigWatch } from '../src/model/config';
 import { SSLCertificate } from '../src/model/cert';
 import { DevicePosture } from '../src/model/authenticationProfile';
+import { config } from 'process';
+import { DnsRecord } from '../src/model/dns';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -2323,8 +2325,44 @@ describe('configService', async () => {
     });
 
 
+    it('getDnsRecord/saveDnsRecord/deleteDnsRecord', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        configService.config.networks = [];
+        configService.config.gateways = [];
+        configService.config.services = [];
+        configService.config.authenticationPolicy.rules = [];
+        configService.config.authorizationPolicy.rules = [];
+        configService.config.ipIntelligence = {
+
+            sources: [],
+            lists: []
+        }
+        configService.config.fqdnIntelligence = {
+
+            sources: [],
+            lists: []
+        }
+        configService.config.dns = {
+            records: []
+        }
+
+        const filter = await configService.getDnsRecords();
+        expect(filter.length).to.equal(0);
+        const item: DnsRecord = { id: Util.randomNumberString(), insertDate: '', updateDate: '', isEnabled: true, fqdn: 'www.ferrumgate.com', ip: '1.2.3.4' };
+        await configService.saveDnsRecord(
+            item
+        );
+        const filter2 = await configService.getDnsRecords();
+        expect(filter2.length).to.equal(1);
+
+        await configService.deleteDnsRecord(item.id);
+        const filter3 = await configService.getDnsRecords();
+        expect(filter3.length).to.equal(0);
 
 
+    });
 
 
 });

@@ -1,11 +1,11 @@
 {
   "name": "rest.portal",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "restfull service for management ui",
   "main": "index.js",
   "typings": "lib.d.ts",
   "scripts": {
-    "test": "JENCODE=json CONFIGSERVICE_TYPE=CONFIG  NODE_ENV=development NODE_TEST=true DEBUG2=nock.*  ES_HOST=https://192.168.43.238:9200   ES_USER=elastic ES_PASS=123456 node   ./node_modules/mocha/bin/mocha --exit --timeout 120000 --require ts-node/register  test/**/**.spec.ts",
+    "test": "JENCODE=json CONFIGSERVICE_TYPE=CONFIG  NODE_ENV=development NODE_TEST=true DEBUG2=nock.*  ES_HOST=https://192.168.88.250:9200   ES_USER=elastic ES_PASS=123456 node   ./node_modules/mocha/bin/mocha --exit --timeout 120000 --require ts-node/register  test/**/serviceApi.spec.ts",
     "testintegration": "DEBUG=nock.* node ./node_modules/mocha/bin/mocha --exit  --require ts-node/register test/**/*.spec.integration.ts",
     "build": "tsc && cp -R src/service/templates build/src/service/  && cp package.json ./build/src/ && sed -i  s/index.js/lib.js/g ./build/src/package.json",
     "start": "tsc && NODE_ENV=development node ./build/src/index.js",
@@ -22,6 +22,8 @@
   },
   "homepage": "https://gitlab.com/ferrumgate/rest.portal#readme",
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.449.0",
+    "@aws-sdk/credential-provider-node": "^3.449.0",
     "@elastic/elasticsearch": "^8.5.0",
     "@msgpack/msgpack": "^2.8.0",
     "@peculiar/webcrypto": "^1.4.3",

@@ -37,3 +37,4 @@ export { LetsEncryptService } from './service/letsEncryptService';
 export { LetsEncrypt, LetsEncryptChallenge } from './model/letsEncrypt';
 export { FqdnIntelligence, FqdnIntelligenceList, fqdnCategories, fqdnCategoriesMap } from './model/fqdnIntelligence'
 export { FqdnIntelligenceService, FqdnIntelligenceListService } from './service/fqdnIntelligenceService';
+export { Dns, DnsRecord } from './model/dns'

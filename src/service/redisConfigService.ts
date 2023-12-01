@@ -39,6 +39,7 @@ import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
 import { BrandSetting } from "../model/brandSetting";
 import fsp from 'fs/promises';
 import path from 'path';
+import { DnsRecord } from "../model/dns";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -379,6 +380,12 @@ export class RedisConfigService extends ConfigService {
                 await this.saveV3();
                 version = 3;
             }
+            if (version < 4) {//if not saved before, first installing system
+                logger.info("config service version upgrade to 4");
+                logger.info("create default values");
+                await this.saveV4();
+                version = 4;
+            }
 
 
             clearIntervalAsync(this.timerInterval);
@@ -582,8 +589,6 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('auth/ldap/providers', this.config.auth.ldap.providers || [], pipeline);
         await this.rSaveArray('auth/oauth/providers', this.config.auth.oauth.providers || [], pipeline);
         await this.rSaveArray('auth/saml/providers', this.config.auth.saml.providers || [], pipeline);
-        await this.rSaveArray('auth/openId/providers', this.config.auth.openId.providers || [], pipeline);
-        await this.rSaveArray('auth/radius/providers', this.config.auth.radius.providers || [], pipeline);
         await this.rSaveArray('networks', this.config.networks, pipeline);
         await this.rSaveArray('gateways', this.config.gateways, pipeline);
         await this.rSaveArray('authenticationPolicy/rules', this.config.authenticationPolicy.rules, pipeline);
@@ -696,6 +701,13 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('version', undefined, 3, pipeline);
         await this.rSaveArray('auth/openId/providers', this.config.auth.openId.providers || [], pipeline);
         await this.rSaveArray('auth/radius/providers', this.config.auth.radius.providers || [], pipeline);
+        await pipeline.exec();
+    }
+    async saveV4() {
+
+        const pipeline = await this.redis.multi();
+        await this.rSave('version', undefined, 4, pipeline);
+        await this.rSaveArray('dns/records', this.config.dns.records || [], pipeline);
         await pipeline.exec();
     }
 
@@ -2106,6 +2118,9 @@ export class RedisConfigService extends ConfigService {
         cfg.fqdnIntelligence.lists = await this.rGetAll('fqdnIntelligence/lists');
         cfg.httpToHttpsRedirect = await this.rGet('httpToHttpsRedirect') || false;
         cfg.brand = await this.rGet('brand') || {};
+        cfg.dns = {
+            records: await this.rGetAll('dns/records')
+        }
     }
 
     /**
@@ -2162,7 +2177,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('fqdnIntelligence/lists', cfg.fqdnIntelligence?.lists || [], pipeline);
         await this.rSave('httpToHttpsRedirect', undefined, cfg.httpToHttpsRedirect || false, pipeline);
         await this.rSave('brand', undefined, cfg.brand || {}, pipeline);
-
+        await this.rSaveArray('dns/records', cfg.dns.records || [], pipeline);
         await pipeline.exec();
         this.config = this.createConfig();
 
@@ -2523,6 +2538,53 @@ export class RedisConfigService extends ConfigService {
         return ret;
     }
 
+    // dns records
+
+    override async getDnsRecords(): Promise<DnsRecord[]> {
+        this.isReady();
+        this.config.dns.records = await this.rGetAll('dns/records');
+        return await super.getDnsRecords();
+    }
+    override async getDnsRecord(id: string) {
+        this.isReady();
+        this.config.dns.records = [];
+        const src = await this.rGetWith<DnsRecord>(`dns/records`, id);
+        if (src) {
+            this.config.dns.records.push(src);
+        }
+        return await super.getDnsRecord(id);
+    }
+
+    async saveDnsRecord(item: DnsRecord) {
+        this.isReady();
+        this.config.dns.records = [];
+        const src = await this.rGetWith<DnsRecord>('dns/records', item.id);
+        if (src) this.config.dns.records.push(src);
+        let ret = await super.saveDnsRecord(item);
+        const pipeline = await this.redis.multi();
+        await this.rSave('dns/records', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
+
+    async deleteDnsRecord(id: string) {
+        this.isReady();
+
+        this.config.dns.records = [];
+
+        const list = await this.rGetWith<DnsRecord>('dns/records', id);
+        if (list) {
+            this.config.dns.records.push(list);
+            const pipeline = await this.redis.multi();
+            await this.rDel('dns/records', list, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return this.createTrackEvent(list);
+    }
+
 
 
 }
@@ -2712,6 +2774,9 @@ export class RedisCachedConfigService extends RedisConfigService {
         this.nodeCache.set('httpToHttpsRedirect', ret.after);
         return ret;
     }
+
+
+
 
 
 }

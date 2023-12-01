@@ -15,6 +15,7 @@ import { IpIntelligence } from "./ipIntelligence";
 import { DevicePosture, DeviceProfile } from "./authenticationProfile";
 import { FqdnIntelligence } from "./fqdnIntelligence";
 import { BrandSetting } from "./brandSetting";
+import { Dns } from "./dns";
 
 
 type Nullable<T> = T | null | undefined;
@@ -60,7 +61,8 @@ export type RPath =
     'fqdnIntelligence/sources' |
     'fqdnIntelligence/lists' |
     'httpToHttpsRedirect' |
-    'brand';
+    'brand' |
+    'dns/records';
 
 
 
@@ -138,4 +140,7 @@ export interface Config {
 
     //redirect http requests to https
     httpToHttpsRedirect: boolean;
+
+    //dns
+    dns: Dns
 }

@@ -37,6 +37,7 @@ import proxy from 'express-http-proxy';
 import { routerDeviceAuthenticated, routerInsightsDeviceAuthenticated } from "./api/deviceApi";
 import { routerFqdnIntelligenceAuthenticated } from "./api/fqdnIntelligenceApi";
 import { authorizePrivateNetwork } from "./api/commonApi";
+import { routerDnsAuthenticated } from "./api/dnsApi";
 
 
 const bodyParser = require('body-parser');
@@ -254,7 +255,6 @@ export class ExpressApp {
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'test', 100),
-            asyncHandlerWithArgs(checkLimitedMode, 'DELETE', 'PUT'),
             asyncHandler(async (req: any, res: any, next: any) => {
                 assert(req.appService);
                 res.status(200).json({ result: "ok", clientIp: req.clientIp });
@@ -265,7 +265,6 @@ export class ExpressApp {
             asyncHandler(setAppService),
             asyncHandler(findClientIp),
             asyncHandlerWithArgs(rateLimit, 'test', 2),
-            asyncHandlerWithArgs(checkLimitedMode, 'DELETE', 'PUT'),
             asyncHandler(async (req: any, res: any, next: any) => {
                 assert(req.appService);
                 throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "test bad argument");
@@ -279,7 +278,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'registerHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'registerDaily', 10000),
             asyncHandlerWithArgs(checkCaptcha, 'registerCaptcha', 5),
-            asyncHandlerWithArgs(checkLimitedMode),
             asyncHandler(noAuthentication),
             routerRegister);
 
@@ -291,7 +289,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'userConfirmHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'userConfirmDaily', 10000),
             asyncHandlerWithArgs(checkCaptcha, 'userConfirmCaptcha', 5),
-            asyncHandlerWithArgs(checkLimitedMode),
             asyncHandler(noAuthentication),
             routerUserEmailConfirm);
 
@@ -303,7 +300,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'userForgotPassHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'userForgotPassDaily', 10000),
             asyncHandlerWithArgs(checkCaptcha, 'userForgotPassCaptcha', 5),
-            asyncHandlerWithArgs(checkLimitedMode),
             asyncHandler(noAuthentication),
             routerUserForgotPassword);
 
@@ -314,7 +310,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'userResetPassHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'userResetPassDaily', 10000),
             asyncHandlerWithArgs(checkCaptcha, 'userResetPassCaptcha', 5),
-            asyncHandlerWithArgs(checkLimitedMode),
             asyncHandler(noAuthentication),
             routerUserResetPassword);
 
@@ -326,7 +321,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'userHourly', 10000),
             asyncHandlerWithArgs(rateLimit, 'userDaily', 50000),
             asyncHandlerWithArgs(checkCaptcha, 'userCaptcha', 500),
-            asyncHandlerWithArgs(checkLimitedMode, 'DELETE', 'POST'),
             routerUserAuthenticated);
 
 
@@ -358,7 +352,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'configHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'configDaily', 10000),
             asyncHandlerWithArgs(checkCaptcha, 'config', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'GET', 'POST', 'PUT', 'DELETE'),
             asyncHandler(noAuthentication),
             routerConfigAuthAuthenticated);
 
@@ -370,7 +363,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'configHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'configDaily', 10000),
             asyncHandlerWithArgs(checkCaptcha, 'config', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'GET', 'POST', 'PUT', 'DELETE'),
             asyncHandler(noAuthentication),
             routerConfigAuthenticated);
 
@@ -406,7 +398,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'networkHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'networkDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'networkCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerNetworkAuthenticated);
 
 
@@ -417,7 +408,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'gatewayHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'gatewayDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'gatewayCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerGatewayAuthenticated);
 
         this.app.use('/api/group',
@@ -427,7 +417,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'groupHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'groupDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'groupCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerGroupAuthenticated);
 
 
@@ -438,7 +427,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'serviceHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'serviceDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'serviceCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerServiceAuthenticated);
 
 
@@ -449,7 +437,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'policyAuthnHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'policyAuthnDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'policyAuthnCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerAuthenticationPolicyAuthenticated);
 
 
@@ -460,7 +447,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'policyAuthzHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'policyAuthzDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'policyAuthzCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerAuthorizationPolicyAuthenticated);
 
         this.app.use('/api/log/audit',
@@ -470,7 +456,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'logsAuditHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'logsAuditDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'logsAuditCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode),
             routerAuditAuthenticated);
 
         this.app.use('/api/insight/activity',
@@ -480,7 +465,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'insightActivityHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'insightActivityDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'insightActivityCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode),
             routerActivityAuthenticated);
 
         this.app.use('/api/insight/device',
@@ -490,7 +474,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'insightDeviceHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'insightDeviceDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'insightDeviceCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode),
             routerInsightsDeviceAuthenticated);
 
 
@@ -501,7 +484,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'summaryHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'summaryDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'summaryCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode),
             routerSummaryAuthenticated);
 
 
@@ -521,7 +503,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'ipIntelligenceHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'ipIntelligenceDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'ipIntelligenceCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerIpIntelligenceAuthenticated);
 
         this.app.use('/api/pki',
@@ -531,7 +512,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'pkiHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'pkiDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'pkiCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerPKIAuthenticated);
 
         this.app.use('/api/device',
@@ -541,7 +521,6 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'deviceHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'deviceDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'deviceCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerDeviceAuthenticated);
 
         this.app.use('/api/fqdn/intelligence',
@@ -551,8 +530,17 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'fqdnIntelligenceHourly', 1000),
             asyncHandlerWithArgs(rateLimit, 'fqdnIntelligenceDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'fqdnIntelligenceCaptcha', 50),
-            asyncHandlerWithArgs(checkLimitedMode, 'POST', 'PUT', 'DELETE'),
             routerFqdnIntelligenceAuthenticated);
+
+
+        this.app.use('/api/dns',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'dns', 1000),
+            asyncHandlerWithArgs(rateLimit, 'dnsHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'dnsDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'dnsCaptcha', 50),
+            routerDnsAuthenticated);
 
 
         this.app.use('/api/*', function (req: any, res: any) {
@@ -603,6 +591,31 @@ export class ExpressApp {
 
 
     }
+    splitCertFile(file: string): string[] {
+
+        let finalList: string[] = [];
+        if (!file) return finalList;
+        const lines = file.split('\n')
+        let tmp: string[] = [];
+        let findedStartPoint = false;
+        for (const l of lines) {
+            if (l.startsWith('-----BEGIN CERTIFICATE-----')) {
+                findedStartPoint = true;
+                tmp.push(l);
+            } else
+                if (findedStartPoint && l.startsWith('-----END CERTIFICATE-----')) {
+                    findedStartPoint = false;
+                    tmp.push(l + '\n');
+
+                    finalList.push(tmp.join('\n'));
+                    tmp = [];
+                } else if (findedStartPoint) {
+                    tmp.push(l);
+                }
+        }
+        return finalList
+
+    }
     async start() {
         await this.init();
 
@@ -640,7 +653,7 @@ export class ExpressApp {
     httpsHash = '';
     async startHttps() {
         const ca = await this.appService.configService.getCASSLCertificate();
-        const int = (await this.appService.configService.getInSSLCertificateAll()).find(x => x.category == 'tls');
+        const int = (await this.appService.configService.getInSSLCertificateAll()).filter(x => x.category == 'tls').find(x => x.usages.includes("for web"));
         const web = await this.appService.configService.getWebSSLCertificateSensitive();
         if (web.publicCrt && web.privateKey) {
             let hash = Util.sha256(web.publicCrt + web.privateKey);
@@ -664,11 +677,23 @@ export class ExpressApp {
 
                     if (fs.existsSync(`${certsfolder}/ca_root.crt`)) {
                         const caroot = fs.readFileSync(`${certsfolder}/ca_root.crt`);
-                        options.ca.push(caroot);
+                        let carootCerts = this.splitCertFile(caroot.toString());
+                        carootCerts.forEach(x => {
+                            options.ca.push(Buffer.from(x))
+                            logger.info("adding certificate from ca_root.crt")
+                            logger.info(`${x}`)
+                        });
+
                     }
                     if (fs.existsSync(`${certsfolder}/ca_bundle.crt`)) {
                         const cabundle = fs.readFileSync(`${certsfolder}/ca_bundle.crt`);
-                        options.ca.push(cabundle);
+                        let cabundleCerts = this.splitCertFile(cabundle.toString());
+                        cabundleCerts.forEach(x => {
+
+                            options.ca.push(Buffer.from(x))
+                            logger.info("adding certificate from ca_bundle.crt")
+                            logger.info(`${x}`)
+                        });
                     }
                     logger.info("https started with custom certificates")
                     this.httpsServer = https.createServer(options, this.app);
@@ -676,7 +701,27 @@ export class ExpressApp {
                 }
                 else {
                     logger.info("https started with our certificates")
-                    this.httpsServer = https.createServer({ cert: web.publicCrt, key: web.privateKey }, this.app);
+                    const options: { key: Buffer | string, cert: Buffer | string, ca: Buffer[] | string[] } = {
+                        key: web.privateKey,
+                        cert: web.publicCrt,
+                        ca: []
+                    }
+                    if (web.chainCrt) {
+                        let chainCerts = this.splitCertFile(web.chainCrt || '');
+                        chainCerts.forEach(x => {
+                            options.ca.push(x as any)
+                            logger.info("adding certificate from chain")
+                            logger.info(`${x}`)
+                        });
+                    } else {
+                        logger.info("adding certificate from chain")
+                        if (ca.publicCrt)
+                            options.ca.push(ca.publicCrt as any);
+                        if (int?.publicCrt)
+                            options.ca.push(int.publicCrt as any)
+                    }
+
+                    this.httpsServer = https.createServer(options, this.app);
                 }
 
                 this.httpsServer.listen(this.ports, () => {

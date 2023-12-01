@@ -26,8 +26,7 @@
                 "ES_USER": "elastic",
                 "ES_PASS": "123456",
                 "GATEWAY_ID": "12edf",
-                "LIMITED_MODE": "true22",
-                "LOAD_TEST_DATA": "true",
+                "LOAD_TEST_DATA": "true2",
                 "JENCODE": "json",
                 "ENCRYPT_KEY": "bwe7ecxv6pgsc1vbzwh507ey6bftxc41",
                 "UI_HOST": "localhost:4200",
@@ -37,7 +36,7 @@
                 "FERRUM_TRY_TUNNEL_SERVER": "tunnelserver.com:1234",
                 "FERRUM_TRY_ADMIN_PASS": "123456",
                 "FERRUM_TRY_USER1_PASS": "123456",
-                "SERVICE_VALID_RANGES": "10.10.10.0/24 192.168.88.0/24"
+                "SERVICE_VALID_RANGES2": "10.10.10.0/24 192.168.88.0/24",
             },
             "outputCapture": "console",
             "console": "integratedTerminal",
