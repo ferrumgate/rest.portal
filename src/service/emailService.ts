@@ -96,13 +96,15 @@ class SmtpAccount extends EmailSender {
             port: 25,     // secure SMTP
             secure: isSecure || false, // false for TLS - as a boolean not string - but the default is false so just remove this completely
             pool: true,
-            ignoreTLS: true,
+            ignoreTLS: false,
             requireTLS: false,
             tls: {
                 //ciphers: 'SSLv3',
                 minVersion: 'TLSv1',
+                //enableTrace: true,
                 rejectUnauthorized: false,
             },
+            //debug: true
 
 
         }

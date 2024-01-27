@@ -14,12 +14,12 @@ const expect = chai.expect;
 
 
 
-describe.skip('emailService ', async () => {
+describe('emailService ', async () => {
 
     beforeEach(async () => {
 
     })
-    it('send email through gmail', async () => {
+    it.skip('send email through gmail', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         let config = new ConfigService('wt99Z3MDQgdTSQKU1gfzZkBLkUN2PBMLFtR0vjCSjlYvSq9U', filename)
         config.setEmailSetting({ fromname: 'ferrumgate', type: 'google', user: 'ferrumgates@gmail.com', pass: 'nqquxankumksakon' });
@@ -34,7 +34,7 @@ describe.skip('emailService ', async () => {
 
     }).timeout(5000);
 
-    it('send email with gmail', async () => {
+    it.skip('send email with gmail', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         let config = new ConfigService('wt99Z3MDQgdTSQKU1gfzZkBLkUN2PBMLFtR0vjCSjlYvSq9U', filename)
         const settings: EmailSetting = {
@@ -55,7 +55,7 @@ describe.skip('emailService ', async () => {
 
     }).timeout(5000);
 
-    it('send email with aws', async () => {
+    it.skip('send email with aws', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         let config = new ConfigService('wt99Z3MDQgdTSQKU1gfzZkBLkUN2PBMLFtR0vjCSjlYvSq9U', filename)
         const settings: EmailSetting = {
@@ -66,6 +66,32 @@ describe.skip('emailService ', async () => {
             accessKey: 'AKIAUKD576YHOBCJYNX5',
             secretKey: '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',
             region: 'eu-north-1'
+
+        };
+        config.setEmailSetting(settings);
+
+        const emailService = new EmailService(config);
+        const email: Email = {
+            subject: `test sendWith ${new Date().toISOString()}`, to: 'admin@ferrumote.com', text: `test ${new Date().toISOString()}`
+        }
+
+        await emailService.sendWith(email, settings);
+
+
+    }).timeout(5000);
+
+
+    it('send email with smtp', async () => {
+        const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+        let config = new ConfigService('wt99Z3MDQgdTSQKU1gfzZkBLkUN2PBMLFtR0vjCSjlYvSq9U', filename)
+        const settings: EmailSetting = {
+            fromname: 'no-reply ferrumote',
+            type: 'smtp',
+            user: 'no-reply@ferrumote.com',
+            pass: '',
+            host: 'localhost',
+            port: '2525',
+            isSecure: true,
 
         };
         config.setEmailSetting(settings);

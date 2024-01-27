@@ -47,3 +47,38 @@ set -e
 ##docker exec -ti $ES /bin/bash
 ## elasticsearch-reset-password -i -u elastic
 ## enter password 123456 for tests
+
+# run docker zimbra
+
+mkdir -p /tmp/smtp4dev
+echo '
+{
+    "ServerOptions": {
+        "Port": 25,
+        "AllowRemoteConnections": true,
+        "Database": "database.db",
+        "NumberOfMessagesToKeep": 100,
+        "NumberOfSessionsToKeep": 100,
+        "BasePath": "/",
+        "TlsMode": "ImplicitTls",
+        "TlsCertificate": "",
+        "TlsCertificatePrivateKey": null,
+        "HostName": "18563ad86c65",
+        "ImapPort": 143,
+        "RecreateDb": true
+    },
+    "RelayOptions": {
+        "IsEnabled": false,
+        "SmtpServer": "",
+        "SmtpPort": 25,
+        "TlsMode": 1,
+        "AutomaticEmails": [],
+        "SenderAddress": "",
+        "Login": "",
+        "Password": ""
+    }
+}
+' >/tmp/smtp4dev/appsettings.json
+docker stop smtp4dev || true
+docker rm smtp4dev || true
+docker run -d --rm --name smtp4dev -it -p 3000:80 -p 2525:25 -v /tmp/smtp4dev:/smtp4dev rnwood/smtp4dev
