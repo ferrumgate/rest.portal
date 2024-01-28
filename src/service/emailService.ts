@@ -118,7 +118,12 @@ class SmtpAccount extends EmailSender {
                 pass: this.pass
             }
         }
-        logger.info(options);
+
+        //for making clone
+        let cloned = JSON.parse(JSON.stringify(options));
+        if (cloned?.auth?.pass)
+            cloned.auth.pass = 'somepassword';
+        logger.info(cloned);
         this.transporter = nodemailer.createTransport(options);
     }
 }
