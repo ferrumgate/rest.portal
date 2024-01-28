@@ -104,7 +104,8 @@ class SmtpAccount extends EmailSender {
                 //enableTrace: true,
                 rejectUnauthorized: false,
             },
-            //debug: true
+            debug: true
+
 
 
         }
@@ -115,7 +116,8 @@ class SmtpAccount extends EmailSender {
         if (this.user && this.pass) {
             options.auth = {
                 user: this.user,
-                pass: this.pass
+                pass: this.pass,
+                //method: 'LOGIN'
             }
         }
 
