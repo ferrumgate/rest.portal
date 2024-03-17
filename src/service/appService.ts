@@ -95,7 +95,7 @@ export class AppService {
         pkiService?: PKIService,
         deviceService?: DeviceService,
         letsEncryptService?: LetsEncryptService,
-        fqdnIntelligenceService?: FqdnIntelligenceService
+        fqdnIntelligenceService?: FqdnIntelligenceService,
 
     ) {
         //create self signed certificates for JWT

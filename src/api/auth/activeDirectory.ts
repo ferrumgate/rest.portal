@@ -13,7 +13,7 @@ import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restful
 import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
 import { stringify } from 'querystring';
 import { ActivityStatus } from '../../model/activityLog';
-
+import { LogicService } from '../../service/logicService';
 
 function findGroups(groups: string[] | string | undefined) {
 
@@ -71,6 +71,7 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
                 const redisService = appService.redisService;
                 const inputService = appService.inputService;
                 const activityService = appService.activityService;
+                const auditService = appService.auditService;
 
                 if (!ldap.isEnabled)// check extra
                 {
@@ -80,15 +81,15 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
 
                 await inputService.checkIfExists(username);
                 await inputService.checkIfExists(groups);
-                const groupList = findGroups(groups);
+                const adGroupList = findGroups(groups);
 
                 //check group filtering
                 if (ldap.allowedGroups?.length) {
 
-                    let foundedGroups = ldap.allowedGroups.filter(y => groupList.find(z => z == y));
+                    let foundedGroups = ldap.allowedGroups.filter(y => adGroupList.find(z => z == y));
                     if (!foundedGroups.length) {
                         {
-                            logger.error(`user group ${groupList.join(',')} not in ${ldap.allowedGroups.join(',')}`);
+                            logger.error(`user group ${adGroupList.join(',')} not in ${ldap.allowedGroups.join(',')}`);
                             throw new RestfullException(401, ErrorCodes.ErrNotInLdapGroups, ErrorCodes.ErrNotInLdapGroups, "user invalid");
                         }
                     }
@@ -110,7 +111,57 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
                     attachActivityUser(req, user);
                     await checkUser(user, ldap);
                 }
+                //check user group
 
+                if (ldap.syncGroups) {
+                    let allOurGroups = await configService.getGroupsAll();
+                    adGroupList.forEach(async (adGroupName) => {
+                        var ourGroup = allOurGroups.find(x => x.name.toLowerCase() == adGroupName.toLowerCase());
+                        //save new group
+                        if (!ourGroup) {
+                            ourGroup = {
+                                id: Util.randomNumberString(16),
+                                insertDate: new Date().toISOString(),
+                                updateDate: new Date().toISOString(),
+                                isEnabled: true,
+                                labels: [],
+                                name: adGroupName,
+                                source: "ldap"
+                            }
+                            await configService.saveGroup(ourGroup);
+                        }
+                        if (user) {
+                            var userHasGroup = user.groupIds.find(x => x == ourGroup?.id);
+                            if (!userHasGroup && ourGroup) {
+                                if (!user.groupIds)
+                                    user.groupIds = [];
+                                user.groupIds.push(ourGroup.id);
+                            }
+
+                        }
+                    });
+
+                    //check user groups
+                    if (user) {
+                        var removeGroupIds: string[] = [];
+                        user.groupIds.forEach((groupId) => {
+                            var ourGroup = allOurGroups.find(x => x.id == groupId && x.source == 'ldap');
+                            if (ourGroup) {
+                                var adGroupName = adGroupList.find(y => y.toLowerCase() == ourGroup?.name.toLowerCase());
+                                if (!adGroupName) {
+                                    removeGroupIds.push(groupId);
+                                }
+                            }
+
+                        });
+                        user.groupIds = user.groupIds.filter(x => !removeGroupIds.includes(x));
+                    }
+                    if (user) {
+                        const { isChanged, userDb } = await LogicService.checkUserToUpdate(user.id, user, configService);
+                        const { before, after } = await configService.saveUser(userDb);
+                        //no audit, auto process
+                    }
+                }
                 //set user to request object
                 req.currentUser = user;
 

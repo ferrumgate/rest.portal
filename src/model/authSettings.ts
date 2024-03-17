@@ -36,6 +36,7 @@ export interface BaseLdap extends BaseAuthId, BaseAuth {
     allowedGroups?: [];
     //this is a security flag, be carefull
     saveNewUser?: boolean;
+    syncGroups?: boolean;
 
 
 }

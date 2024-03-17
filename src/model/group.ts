@@ -8,7 +8,8 @@ export interface Group {
     isEnabled: boolean;
     insertDate: string;
     updateDate: string;
-
+    //for example sync from active directory
+    source?: string;
 
 }
 
