@@ -10,11 +10,11 @@ import { Service } from '../src/model/service';
 import { Network } from '../src/model/network';
 import { getEmptyServiceIp } from '../src/api/serviceApi';
 
-import chaiExclude from 'chai-exclude';
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;

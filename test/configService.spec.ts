@@ -13,7 +13,7 @@ import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
 
 
-import chaiExclude from 'chai-exclude';
+
 import { ConfigWatch } from '../src/model/config';
 import { SSLCertificate } from '../src/model/cert';
 import { DevicePosture } from '../src/model/authenticationProfile';
@@ -22,7 +22,7 @@ import { DnsRecord } from '../src/model/dns';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 
 function exclude(a: any) {

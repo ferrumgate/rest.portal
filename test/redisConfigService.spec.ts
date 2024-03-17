@@ -13,7 +13,7 @@ import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
 
 
-import chaiExclude from 'chai-exclude';
+
 import { RedisConfigService } from '../src/service/redisConfigService';
 import { RedisService } from '../src/service/redisService';
 import { config } from 'process';
@@ -32,7 +32,7 @@ import { DnsRecord } from '../src/model/dns';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;

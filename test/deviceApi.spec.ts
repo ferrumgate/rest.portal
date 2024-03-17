@@ -8,7 +8,7 @@ import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Group } from '../src/model/group';
 
-import chaiExclude from 'chai-exclude';
+
 import { DevicePosture } from '../src/model/authenticationProfile';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { ESService } from '../src/service/esService';
@@ -17,7 +17,7 @@ import { esHost, esPass, esUser } from './common.spec';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 
 

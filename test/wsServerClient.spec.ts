@@ -29,7 +29,7 @@ describe('ws server client ', () => {
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.write('Hello World!');
             res.end();
-        }).listen(3000);
+        }).listen(3005);
         const server = new WebSocketServer(httpServer, rateLimit, (remoteAddress: string, socket: ws) => {
             return new WebSocketClient(remoteAddress, socket);
         });
@@ -46,7 +46,7 @@ describe('ws server client ', () => {
             }
         });
 
-        wclient = new ws('ws://localhost:3000/', {
+        wclient = new ws('ws://localhost:3005/', {
             origin: 'https://websocket.org'
         });
 

@@ -9,7 +9,7 @@ import { RedisService } from '../src/service/redisService';
 import { GatewayDetail } from '../src/model/network';
 import os from 'os';
 import { GatewayService } from '../src/service/gatewayService';
-import chaiExclude from 'chai-exclude';
+
 import { IpIntelligenceSource } from '../src/model/ipIntelligence';
 import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
 import { InputService } from '../src/service/inputService';
@@ -20,7 +20,7 @@ import { FqdnIntelligenceService } from '../src/service/fqdnIntelligenceService'
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;

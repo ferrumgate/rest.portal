@@ -9,7 +9,7 @@ import { RedisService } from '../src/service/redisService';
 import { GatewayDetail } from '../src/model/network';
 import os from 'os';
 import { GatewayService } from '../src/service/gatewayService';
-import chaiExclude from 'chai-exclude';
+
 import crypto from 'node:crypto';
 import { InputService } from '../src/service/inputService';
 import { ESService } from '../src/service/esService';
@@ -23,7 +23,7 @@ import { esHost, esPass, esUser } from './common.spec';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;

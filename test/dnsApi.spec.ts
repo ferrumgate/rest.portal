@@ -7,7 +7,7 @@ import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { Network } from '../src/model/network';
 
-import chaiExclude from 'chai-exclude';
+
 import { IpIntelligence, IpIntelligenceList, IpIntelligenceListStatus, IpIntelligenceSource } from '../src/model/ipIntelligence';
 import { ESService } from '../src/service/esService';
 import { ExpressApp } from '../src';
@@ -17,7 +17,7 @@ import { DnsRecord } from '../src/model/dns';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;

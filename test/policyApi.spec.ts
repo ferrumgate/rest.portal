@@ -9,11 +9,11 @@ import { Util } from '../src/util';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
 
-import chaiExclude from 'chai-exclude';
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 
 function expectToDeepEqual(a: any, b: any) {

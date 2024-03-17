@@ -216,7 +216,7 @@ export async function passportAuthenticate(req: any, res: any, next: any, strate
         strategyNames = passportFilterActiveStrategies(strategyNames);
         //becarefull about changing this function
         // this gives authentication to the system
-        const auth = passport.authenticate(strategyNames, { session: false, passReqToCallback: true }, async (err, user, info, status) => {
+        const auth = passport.authenticate(strategyNames, { session: false, passReqToCallback: true }, async (err: any, user: any, info: any, status: any) => {
 
             if (err)
                 reject(err);

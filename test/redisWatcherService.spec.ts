@@ -9,12 +9,12 @@ import { Gateway } from '../src/model/network';
 import { ConfigPublicRoom, ConfigPublicListener, ConfigRequest, ConfigResponse } from '../src/service/system/configPublicListener';
 import { Service } from '../src/model/service';
 
-import chaiExclude from 'chai-exclude';
+
 import { RedisWatcherService } from '../src/service/redisWatcherService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 
 describe('redisWatcherService ', async () => {

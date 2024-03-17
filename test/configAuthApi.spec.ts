@@ -8,11 +8,11 @@ import { User } from '../src/model/user';
 import { Util } from '../src/util';
 import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth, BaseOpenId, BaseRadius, BaseSaml } from '../src/model/authSettings';
 
-import chaiExclude from 'chai-exclude';
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;

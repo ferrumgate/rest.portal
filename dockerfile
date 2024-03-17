@@ -1,4 +1,4 @@
-FROM node:18.13.0-bullseye-slim
+FROM node:20.11.1-bullseye-slim
 RUN apt update &&\
     apt install --assume-yes --no-install-recommends openssl \
     ca-certificates gnupg certbot

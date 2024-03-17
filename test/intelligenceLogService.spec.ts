@@ -31,7 +31,7 @@ describe('intelligenceLogService', async () => {
         await log.startWatch();
         await log.start();
         await log.write({ 'path': '/test', type: 'put', 'val': { id: 1 } });
-        await Util.sleep(2000);
+        await Util.sleep(5000);
         expect(readedData).exist;
         console.log(readedData);
         expect((readedData as any).val.type).to.equal('put');

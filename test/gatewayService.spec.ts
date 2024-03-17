@@ -9,11 +9,11 @@ import { RedisService } from '../src/service/redisService';
 import { GatewayDetail } from '../src/model/network';
 import os from 'os';
 import { GatewayService } from '../src/service/gatewayService';
-import chaiExclude from 'chai-exclude';
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-chai.use(chaiExclude);
+
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
