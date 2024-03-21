@@ -1,25 +1,20 @@
 import express from "express";
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
-import { AppService } from "../service/appService";
-import { User } from "../model/user";
-import { Util } from "../util";
-import fs from 'fs';
-import { passportAuthenticate, passportInit } from "./auth/passportInit";
-import passport from "passport";
-import { RBACDefault } from "../model/rbac";
-import { config } from "process";
-import { authorizeAsAdmin, authorizeAsAdminOrDevOps } from "./commonApi";
 import { AuthSession } from "../model/authSession";
-import { UserNetworkListResponse } from "../service/policyService";
-import { HelperService } from "../service/helperService";
-import { attachActivity, attachActivitySession, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
-import { UtilPKI } from "../utilPKI";
-import { cursorTo } from "readline";
 import { SSLCertificate, SSLCertificateBase } from "../model/cert";
-import { ConfigService } from "../service/configService";
 import { ClientDevicePosture, DeviceLog } from "../model/device";
+import { RBACDefault } from "../model/rbac";
+import { User } from "../model/user";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
+import { AppService } from "../service/appService";
+import { ConfigService } from "../service/configService";
+import { HelperService } from "../service/helperService";
 import { LogicService } from "../service/logicService";
+import { Util } from "../util";
+import { UtilPKI } from "../utilPKI";
+import { attachActivity, attachActivitySession, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
+import { authorizeAsAdmin, authorizeAsAdminOrDevOps } from "./commonApi";
 
 
 

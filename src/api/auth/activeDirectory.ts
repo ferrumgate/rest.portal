@@ -1,19 +1,14 @@
-
 import passport from 'passport';
-import passportlocal from 'passport-local';
 import * as ldapAuth from 'passport-ldapauth';
-import { AuthOAuth, AuthSettings, BaseLdap, BaseOAuth } from '../../model/authSettings';
 import { logger } from '../../common';
-import { AppService } from '../../service/appService';
+import { BaseLdap } from '../../model/authSettings';
 import { User } from '../../model/user';
-import { Util } from '../../util';
-import { HelperService } from '../../service/helperService';
-import { group } from 'console';
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
-import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
-import { stringify } from 'querystring';
-import { ActivityStatus } from '../../model/activityLog';
+import { AppService } from '../../service/appService';
+import { HelperService } from '../../service/helperService';
 import { LogicService } from '../../service/logicService';
+import { Util } from '../../util';
+import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
 
 function findGroups(groups: string[] | string | undefined) {
 

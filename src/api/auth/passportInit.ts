@@ -1,22 +1,20 @@
-
-import { localInit, localUnuse } from "./local";
-import { apiKeyInit, apiKeyUnuse } from "./apikey";
-import { jwtInit, jwtUnuse } from "./jwt";
-import { oauthGoogleInit, oauthGoogleUnuse } from "./google";
-import { oauthLinkedinInit, oauthLinkedinUnuse } from "./linkedin";
-import { AppService } from "../../service/appService";
-import { tunnelKeyInit, tunnelKeyUnuse } from "./tunnelKey";
-import { activeDirectoryInit, activeDirectoryUnuse } from "./activeDirectory";
 import passport from "passport";
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../../restfullException";
 import { logger } from "../../common";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../../restfullException";
+import { AppService } from "../../service/appService";
+import { activeDirectoryInit, activeDirectoryUnuse } from "./activeDirectory";
+import { apiKeyInit, apiKeyUnuse } from "./apikey";
 import { samlAuth0Init, samlAuth0Unuse } from "./auth0Saml";
-import { exchangeKeyInit, exchangeKeyUnuse } from "./exchangeKey";
-import { certInit, certUnuse } from "./certificate";
 import { samlAzureInit, samlAzureUnuse } from "./azureSaml";
+import { certInit, certUnuse } from "./certificate";
+import { exchangeKeyInit, exchangeKeyUnuse } from "./exchangeKey";
+import { oauthGoogleInit, oauthGoogleUnuse } from "./google";
+import { jwtInit, jwtUnuse } from "./jwt";
+import { oauthLinkedinInit, oauthLinkedinUnuse } from "./linkedin";
+import { localInit, localUnuse } from "./local";
 import { openIdInit, openIdUnuse } from "./openId";
 import { radiusInit, radiusUnuse } from "./radius";
-//import { oauth2Init, oauth2Unuse } from "./oauth2";
+import { tunnelKeyInit, tunnelKeyUnuse } from "./tunnelKey";
 
 // check if config changed
 let lastConfigServiceUpdateTime = '';

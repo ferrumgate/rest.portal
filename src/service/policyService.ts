@@ -1,25 +1,19 @@
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
-import { User } from "../model/user";
-import { ConfigService } from "./configService";
-import { TunnelService } from "./tunnelService";
-import { AuditService } from "./auditService";
-import { RedisService } from "../service/redisService";
-import { Tunnel } from "../model/tunnel";
-import { AuthenticationRule } from "../model/authenticationPolicy";
-import { AuthorizationRule } from "../model/authorizationPolicy";
 import ip from 'ip-cidr';
-import { HelperService } from "./helperService";
-import { logger } from "../common";
-import { Gateway, Network } from "../model/network";
-import { Service } from "../model/service";
-import { AuthSession } from "../model/authSession";
-import { Util } from "../util";
-import { IpIntelligence } from "../model/ipIntelligence";
-import { IpIntelligenceService } from "./ipIntelligenceService";
-import { OSType } from "../model/authenticationProfile";
-import { ClientDevicePosture } from "../model/device";
-import { DevicePosture } from "../model/authenticationProfile";
 import semvr from 'semver';
+import { logger } from "../common";
+import { AuthSession } from "../model/authSession";
+import { AuthenticationRule } from "../model/authenticationPolicy";
+import { DevicePosture, OSType } from "../model/authenticationProfile";
+import { AuthorizationRule } from "../model/authorizationPolicy";
+import { ClientDevicePosture } from "../model/device";
+import { Network } from "../model/network";
+import { Tunnel } from "../model/tunnel";
+import { User } from "../model/user";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
+import { Util } from "../util";
+import { ConfigService } from "./configService";
+import { HelperService } from "./helperService";
+import { IpIntelligenceService } from "./ipIntelligenceService";
 
 
 export interface UserNetworkListResponse {

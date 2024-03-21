@@ -1,16 +1,12 @@
-
 import passport from 'passport';
 import passportlocal from 'passport-local';
-import passportgoogle from 'passport-google-oauth2';
-import { AuthSettings, BaseRadius } from '../../model/authSettings';
 import { logger } from '../../common';
-import { AppService } from '../../service/appService';
+import { BaseRadius } from '../../model/authSettings';
 import { User } from '../../model/user';
-import { Util } from '../../util';
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
+import { AppService } from '../../service/appService';
 import { HelperService } from '../../service/helperService';
-import { RBACDefault } from '../../model/rbac';
-import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, makePassportName, saveActivity, saveActivityError } from './commonAuth';
+import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
 const radius = require('radius');
 const Client = require('node-radius-client');
 const {

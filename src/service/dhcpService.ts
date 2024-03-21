@@ -1,9 +1,9 @@
-import { logger } from "../common";
 import { getNetworkByGatewayId } from "../api/commonApi";
-import { ConfigService } from "./configService";
-import { RedisService } from "./redisService";
+import { logger } from "../common";
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { Util } from "../util";
+import { ConfigService } from "./configService";
+import { RedisService } from "./redisService";
 
 /**
  * @summary a dhcp implementation

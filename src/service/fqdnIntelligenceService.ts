@@ -1,33 +1,19 @@
-import Axios, { AxiosRequestConfig } from "axios";
-import { Util } from "../util";
-import { Countries } from "../model/country";
+import * as fs from 'fs';
+import fsp from 'fs/promises';
+import md5 from 'md5-file';
+import TextFileDiff from "text-file-diff";
+import isFQDN from "validator/lib/isFQDN";
+import { logger } from "../common";
 import {
     FqdnIntelligenceItem, FqdnIntelligenceList,
     FqdnIntelligenceListFiles,
-    FqdnIntelligenceListItem,
     FqdnIntelligenceListStatus, FqdnIntelligenceSource
 } from "../model/fqdnIntelligence";
+import { Util } from "../util";
 import { ConfigService } from "./configService";
-import { RedisPipelineService, RedisService } from "./redisService";
-import fsp from 'fs/promises'
-import axios from "axios";
-import * as fs from 'fs';
-import * as stream from 'stream';
-import { promisify } from 'util';
-import { tmpdir } from "os";
-import { createHash } from 'node:crypto'
-import md5 from 'md5-file';
-import { logger } from "../common";
-import events from "events";
-import isCidr from 'ip-cidr';
-import { InputService } from "./inputService";
-import IPCIDR from "ip-cidr";
-import { contentSecurityPolicy } from "helmet";
 import { ESService } from "./esService";
-import isFQDN from "validator/lib/isFQDN";
-import diff from 'diff';
-import filediff from 'text-file-diff';
-import TextFileDiff from "text-file-diff";
+import { InputService } from "./inputService";
+import { RedisPipelineService, RedisService } from "./redisService";
 
 export abstract class FqdnIntelligenceSourceService {
 

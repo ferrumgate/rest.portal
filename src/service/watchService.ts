@@ -1,9 +1,8 @@
 import { logger } from "../common";
-
-import { RedisPipelineService, RedisService } from "./redisService";
-import { Util } from "../util";
 import { EncodingOption } from "fs";
 import EventEmitter from "node:events";
+import { Util } from "../util";
+import { RedisPipelineService, RedisService } from "./redisService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 export interface WatchItem<T> {

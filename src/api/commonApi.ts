@@ -1,11 +1,11 @@
-import { User } from "../model/user";
-import { AppService } from "../service/appService";
 import { logger } from "../common";
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
-import { ConfigService } from "../service/configService";
 import { RBACDefault } from "../model/rbac";
-import { saveActivityError } from "./auth/commonAuth";
+import { User } from "../model/user";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
+import { AppService } from "../service/appService";
+import { ConfigService } from "../service/configService";
 import { Util } from "../util";
+import { saveActivityError } from "./auth/commonAuth";
 
 /**
  * @summary get network by gateway id and also check is it is joined and active

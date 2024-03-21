@@ -1,29 +1,27 @@
-import { Util } from "../util";
+import * as odiff from 'deep-object-diff';
+import { logger } from "../common";
 import { AuditLog } from "../model/auditLog";
 import { AuthSession } from "../model/authSession";
+import { AuthCommon, BaseAuth } from "../model/authSettings";
+import { AuthenticationRule } from "../model/authenticationPolicy";
+import { DevicePosture } from "../model/authenticationProfile";
+import { AuthorizationRule } from "../model/authorizationPolicy";
+import { BrandSetting } from "../model/brandSetting";
+import { Captcha } from "../model/captcha";
+import { SSLCertificate } from "../model/cert";
+import { DnsRecord } from "../model/dns";
+import { EmailSetting } from "../model/emailSetting";
+import { ESSetting } from "../model/esSetting";
+import { FqdnIntelligenceList, FqdnIntelligenceSource } from "../model/fqdnIntelligence";
+import { Group } from "../model/group";
+import { IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
+import { Gateway, Network } from "../model/network";
 import { Service } from "../model/service";
 import { User } from "../model/user";
-
+import { Util } from "../util";
 import { ConfigService } from "./configService";
 import { ESService, SearchAuditLogsRequest } from "./esService";
 import { RedisService } from "./redisService";
-import { logger } from "../common";
-import * as odiff from 'deep-object-diff';
-import { Gateway, Network } from "../model/network";
-import { EmailSetting } from "../model/emailSetting";
-import { Captcha } from "../model/captcha";
-import { AuthenticationRule } from "../model/authenticationPolicy";
-import { AuthCommon, BaseAuth } from "../model/authSettings";
-import { AuthorizationRule } from "../model/authorizationPolicy";
-import { Group } from "../model/group";
-import { ESSetting } from "../model/esSetting";
-import { IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
-import { SSLCertificate } from "../model/cert";
-import { DevicePosture } from "../model/authenticationProfile";
-import { FqdnIntelligenceSource } from "../model/fqdnIntelligence";
-import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
-import { BrandSetting } from "../model/brandSetting";
-import { DnsRecord } from "../model/dns";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**

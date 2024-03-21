@@ -1,16 +1,13 @@
 import NodeCache from "node-cache";
-import { ConfigWatch } from "../model/config";
-import { RPath } from "../model/config";
 import { AuthenticationRule, AuthorizationRule, IpIntelligenceList, WatchItem } from "../lib";
+import { DevicePosture } from "../model/authenticationProfile";
+import { ConfigWatch, RPath } from "../model/config";
 import { Group } from "../model/group";
-import { Gateway } from "../model/network";
-import { Network } from "../model/network";
+import { IpIntelligenceSource } from "../model/ipIntelligence";
+import { Gateway, Network } from "../model/network";
 import { Service } from "../model/service";
 import { User } from "../model/user";
 import { ItemWithId, RedisConfigWatchService } from "./redisConfigWatchService";
-import { SSLCertificate } from "../model/cert";
-import { IpIntelligenceSource } from "../model/ipIntelligence";
-import { DevicePosture } from "../model/authenticationProfile";
 
 class NodeCacheForThis extends NodeCache {
     override get<T>(key: string): T | undefined {

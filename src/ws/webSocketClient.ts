@@ -1,7 +1,7 @@
 import events from 'events';
+import ws from 'ws';
 import { logger } from '../common';
 import { Util } from '../util';
-import ws from 'ws';
 
 
 

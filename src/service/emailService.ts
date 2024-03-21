@@ -1,7 +1,7 @@
-import * as nodemailer from 'nodemailer'
+import * as nodemailer from 'nodemailer';
 import SMTPPool from 'nodemailer/lib/smtp-pool';
-import { EmailSetting } from '../model/emailSetting';
 import { logger } from '../common';
+import { EmailSetting } from '../model/emailSetting';
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../restfullException';
 let aws = require("@aws-sdk/client-ses");
 let { defaultProvider } = require("@aws-sdk/credential-provider-node");

@@ -1,14 +1,11 @@
-
 import passport from 'passport';
-import * as passportapikey from 'passport-headerapikey';
-import { logger } from '../../common';
-import { AppService } from '../../service/appService';
-import { ErrorCodes, RestfullException } from '../../restfullException';
-import { HelperService } from '../../service/helperService';
-import { Tunnel } from '../../model/tunnel';
 import passportCustom from 'passport-custom';
-import { attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
+import { logger } from '../../common';
 import { ActivityLog } from '../../model/activityLog';
+import { ErrorCodes, RestfullException } from '../../restfullException';
+import { AppService } from '../../service/appService';
+import { HelperService } from '../../service/helperService';
+import { attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
 
 const name = 'tunnelKey';
 export function tunnelKeyInit() {

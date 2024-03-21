@@ -1,26 +1,13 @@
 import express from "express";
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
-import { AppService } from "../service/appService";
-import { User } from "../model/user";
-import { Util } from "../util";
-import fs from 'fs';
-import passport from 'passport';
-
-import { localInit } from "./auth/local";
-import { oauthGoogleInit } from "./auth/google";
-import { oauthLinkedinInit } from "./auth/linkedin";
-import { HelperService } from "../service/helperService";
-import { apiKeyInit } from "./auth/apikey";
-import { jwtInit } from "./auth/jwt";
-import { passportAuthenticate, passportAuthenticateFromReqProviderName, passportInit } from "./auth/passportInit";
-import cors from 'cors';
-import { corsOptionsDelegate } from "./cors";
-import { stringify } from "querystring";
-import { userInfo } from "os";
 import { AuthSession } from "../model/authSession";
-import { attachActivity, attachActivitySession, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
-import { Countries } from "../model/country";
+import { User } from "../model/user";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
+import { AppService } from "../service/appService";
+import { HelperService } from "../service/helperService";
+import { Util } from "../util";
+import { attachActivity, attachActivitySession, attachActivityUser, saveActivity, saveActivityError } from "./auth/commonAuth";
+import { passportAuthenticate, passportAuthenticateFromReqProviderName, passportInit } from "./auth/passportInit";
 
 
 

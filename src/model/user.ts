@@ -1,5 +1,4 @@
-import { SSLCertificate, SSLCertificateBase, SSLCertificateEx } from "./cert";
-import { Role } from "./rbac";
+import { SSLCertificateBase } from "./cert";
 
 
 export interface User {

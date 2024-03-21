@@ -1,5 +1,3 @@
-import Redis from "ioredis";
-import { saveActivityError } from "../api/auth/commonAuth";
 import { logger } from "../common";
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { ConfigService } from "./configService";

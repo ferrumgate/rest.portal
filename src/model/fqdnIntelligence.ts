@@ -1,4 +1,3 @@
-import { Country } from "./country";
 
 export interface FqdnIntelligenceSource {
     id: string;

@@ -1,5 +1,3 @@
-
-import { Redis } from "ioredis";
 import EventEmitter from "node:events";
 import { logger } from "../common";
 import { Util } from "../util";

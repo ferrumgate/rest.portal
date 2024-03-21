@@ -1,15 +1,11 @@
-
 import passport from 'passport';
-import * as passportapikey from 'passport-headerapikey';
-import { logger } from '../../common';
-import { AppService } from '../../service/appService';
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
-import { HelperService } from '../../service/helperService';
-import { Tunnel } from '../../model/tunnel';
 import passportCustom from 'passport-custom';
-import { attachActivitySession, attachActivitySessionId, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
-import { ActivityLog } from '../../model/activityLog';
+import { logger } from '../../common';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
+import { AppService } from '../../service/appService';
+import { HelperService } from '../../service/helperService';
 import { Util } from '../../util';
+import { attachActivitySession, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
 
 
 const name = 'exchangeKey';

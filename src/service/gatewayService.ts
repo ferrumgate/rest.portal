@@ -1,6 +1,5 @@
-
-import { Util } from "../util";
 import { Gateway, GatewayDetail } from "../model/network";
+import { Util } from "../util";
 import { ConfigService } from "./configService";
 import { RedisService } from "./redisService";
 

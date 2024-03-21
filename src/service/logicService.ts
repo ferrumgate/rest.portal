@@ -1,8 +1,8 @@
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
-import { User } from "../model/user";
-import { ConfigService } from "./configService";
-import { Util } from "../util";
 import { RBACDefault } from "../model/rbac";
+import { User } from "../model/user";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
+import { Util } from "../util";
+import { ConfigService } from "./configService";
 
 export class LogicService {
 

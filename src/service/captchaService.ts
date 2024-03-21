@@ -1,6 +1,5 @@
 import Axios, { AxiosRequestConfig } from "axios";
-import { ErrorCodes } from "../restfullException";
-import { RestfullException } from "../restfullException";
+import { ErrorCodes, RestfullException } from "../restfullException";
 import { ConfigService } from "./configService";
 
 /**

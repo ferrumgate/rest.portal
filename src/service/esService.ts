@@ -1,21 +1,14 @@
-import * as ES from '@elastic/elasticsearch'
-import { json } from 'body-parser';
-import { query, response } from 'express';
-import { Util } from '../util';
+import * as ES from '@elastic/elasticsearch';
 import { ActivityLog } from '../model/activityLog';
-//import dateformat from 'dateformat'
-import { AuditLog } from '../model/auditLog';
-import { ConfigService } from './configService';
+import { Util } from '../util';
 import fsp from 'fs/promises';
-import { ESSetting } from '../model/esSetting';
 import { logger } from '../common';
-import { RedisConfigWatchCachedService } from './redisConfigWatchCachedService';
-import { RedisConfigService } from './redisConfigService';
+import { AuditLog } from '../model/auditLog';
 import { ConfigWatch } from '../model/config';
-import { IpIntelligenceList, IpIntelligenceListItem } from '../model/ipIntelligence';
-import { BroadcastService } from './broadcastService';
 import { DeviceLog } from '../model/device';
 import { FqdnIntelligenceListItem } from '../model/fqdnIntelligence';
+import { IpIntelligenceListItem } from '../model/ipIntelligence';
+import { ConfigService } from './configService';
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 const ThreeMinutes = 3 * 60 * 1000;

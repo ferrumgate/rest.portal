@@ -1,18 +1,15 @@
 import express from "express";
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
-import { AppService } from "../service/appService";
-import { User } from "../model/user";
-import { Util } from "../util";
-import fs from 'fs';
-import { passportAuthenticate, passportInit } from "./auth/passportInit";
-import passport from "passport";
-import { ConfigService } from "../service/configService";
-import { RBACDefault } from "../model/rbac";
-import { authorizeAsAdmin } from "./commonApi";
-import { cloneGateway, Gateway, GatewayDetail, Network } from "../model/network";
 import { AuthSession } from "../model/authSession";
+import { Gateway, GatewayDetail, cloneGateway } from "../model/network";
+import { User } from "../model/user";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
+import { AppService } from "../service/appService";
+import { ConfigService } from "../service/configService";
 import { GatewayService } from "../service/gatewayService";
+import { Util } from "../util";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
+import { authorizeAsAdmin } from "./commonApi";
 
 
 /////////////////////////////////  gateway //////////////////////////////////

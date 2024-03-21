@@ -1,4 +1,3 @@
-import { ConfigService } from "./configService";
 import { RedisPipelineService, RedisService } from "./redisService";
 import { WatchService } from "./watchService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');

@@ -1,4 +1,3 @@
-import { DnsRecord } from "./dns";
 
 export interface ServicePort {
     port: number;

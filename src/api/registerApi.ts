@@ -1,13 +1,10 @@
 import express from "express";
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, logger } from "../common";
-import { AppService } from "../service/appService";
 import { User } from "../model/user";
-import { Util } from "../util";
-import fs from 'fs';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
+import { AppService } from "../service/appService";
 import { HelperService } from "../service/helperService";
-import { restore } from "nock/types";
-import { AuthSession } from "../model/authSession";
+import { Util } from "../util";
 import { attachActivity, attachActivityUser, saveActivity, saveActivityError } from "./auth/commonAuth";
 
 

@@ -1,11 +1,11 @@
-import { Util } from "../util";
+import { logger } from "../common";
 import { ClientDevicePosture, DeviceLog } from "../model/device";
+import { Network } from "../model/network";
+import { User } from "../model/user";
+import { Util } from "../util";
 import { ConfigService } from "./configService";
 import { ESService, SearchDeviceLogsRequest } from "./esService";
 import { RedisService } from "./redisService";
-import { logger } from "../common";
-import { User } from "../model/user";
-import { Network } from "../model/network";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /**

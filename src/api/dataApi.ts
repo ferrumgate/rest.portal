@@ -1,18 +1,9 @@
 import express from "express";
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
-import { AppService } from "../service/appService";
-import { User } from "../model/user";
-import { Util } from "../util";
-import fs from 'fs';
-import { passportAuthenticate, passportInit } from "./auth/passportInit";
-import passport from "passport";
-import { ConfigService } from "../service/configService";
-import { RBACDefault } from "../model/rbac";
-import { authorizeAsAdmin, authorizeAsAdminOrReporter } from "./commonApi";
-import { cloneNetwork, Network } from "../model/network";
-import { AuthSession } from "../model/authSession";
 import { Countries } from "../model/country";
+import { AppService } from "../service/appService";
+import { Util } from "../util";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
 
 
 /////////////////////////////////  data //////////////////////////////////

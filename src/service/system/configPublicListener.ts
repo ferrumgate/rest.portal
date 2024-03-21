@@ -1,12 +1,8 @@
+import NodeCache from "node-cache";
 import { logger } from "../../common";
 import { Util } from "../../util";
-import { Gateway } from "../../model/network";
 import { ConfigService } from "../configService";
 import { RedisService } from "../redisService";
-import { GatewayService } from "../gatewayService";
-import NodeCache from "node-cache";
-import { pipeline } from "stream";
-import { timeStamp } from "console";
 import { RedisWatcherService } from "../redisWatcherService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 

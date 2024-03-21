@@ -1,15 +1,9 @@
-
-
-
-
-import { logger } from '../common';
 import ws from 'ws';
-
-
+import { logger } from '../common';
+import { ConfigService } from '../service/configService';
+import { RedisService } from '../service/redisService';
 import { Util } from "../util";
 import { WebSocketClient } from "./webSocketClient";
-import { RedisService } from '../service/redisService';
-import { ConfigService } from '../service/configService';
 
 
 export class WebSocketClientCommand extends WebSocketClient {

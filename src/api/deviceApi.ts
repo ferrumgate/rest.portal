@@ -1,24 +1,15 @@
 import express from "express";
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
-import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
-import { AppService } from "../service/appService";
-import { User } from "../model/user";
-import { Util } from "../util";
-import fs from 'fs';
-import { passportAuthenticate, passportInit } from "./auth/passportInit";
-import passport from "passport";
-import { ConfigService } from "../service/configService";
-import { RBACDefault } from "../model/rbac";
-import { authorizeAsAdmin, authorizeAsAdminOrReporter } from "./commonApi";
-import { cloneNetwork, Network } from "../model/network";
-import { AuthSession } from "../model/authSession";
-import { cloneIpIntelligenceList, cloneIpIntelligenceSource, IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
-import IPCIDR from "ip-cidr";
-import fsp from 'fs/promises'
 import multer from 'multer';
-import { once } from "events";
+import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
+import { AuthSession } from "../model/authSession";
 import { DevicePosture, cloneDevicePosture } from "../model/authenticationProfile";
+import { User } from "../model/user";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
+import { AppService } from "../service/appService";
 import { SearchDeviceLogsRequest } from "../service/esService";
+import { Util } from "../util";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
+import { authorizeAsAdmin, authorizeAsAdminOrReporter } from "./commonApi";
 const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: process.env.NODE == 'development' ? 2 * 1024 * 1024 * 1024 : 100 * 1024 * 1024 } });
 
 /////////////////////////////////  device posture //////////////////////////////////

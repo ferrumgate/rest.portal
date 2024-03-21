@@ -1,18 +1,10 @@
 import express from "express";
-import { ErrorCodes, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
-import { AppService } from "../service/appService";
 import { User } from "../model/user";
-import { Util } from "../util";
-import fs from 'fs';
-import { passportAuthenticate, passportInit } from "./auth/passportInit";
-import passport from "passport";
-import { ConfigService } from "../service/configService";
-import { RBACDefault } from "../model/rbac";
-import { authorizeAsAdmin, authorizeAsAdminOrReporter } from "./commonApi";
-import { cloneNetwork, Network } from "../model/network";
-import { AuthSession } from "../model/authSession";
+import { AppService } from "../service/appService";
 import { SearchActivityLogsRequest, SearchSummaryRequest, SearchSummaryUserRequest } from "../service/esService";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
+import { authorizeAsAdminOrReporter } from "./commonApi";
 
 
 /////////////////////////////////  summary //////////////////////////////////

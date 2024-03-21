@@ -1,11 +1,10 @@
-import OAuth2Server from 'oauth2-server';
-import { ConfigService } from './configService';
 import JWT from 'jsonwebtoken';
+import OAuth2Server from 'oauth2-server';
 import { logger } from '../common';
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../restfullException';
+import { ConfigService } from './configService';
 import { HelperService } from './helperService';
 import { SessionService } from './sessionService';
-import fs from 'fs';
 
 
 //documentation

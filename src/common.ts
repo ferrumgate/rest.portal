@@ -1,8 +1,5 @@
-
-import { request } from 'http';
 import log4js from 'log4js';
-import { ErrorCodes, RestfullException } from './restfullException';
-import { RedisService } from './service/redisService';
+import { ErrorCodes } from './restfullException';
 import { Util } from './util';
 
 

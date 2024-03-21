@@ -1,4 +1,4 @@
-import { PingResponse, promise } from 'ping';
+import { promise } from 'ping';
 
 /**
  * @summary ping functionality

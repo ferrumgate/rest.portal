@@ -1,20 +1,16 @@
 import express from "express";
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
-import { AppService } from "../service/appService";
-import { User } from "../model/user";
-import { Util } from "../util";
-import fs from 'fs';
-import { passportAuthenticate, passportInit } from "./auth/passportInit";
-import passport from "passport";
-import { ConfigService } from "../service/configService";
-import { RBACDefault } from "../model/rbac";
-import { saveSystemDnsService } from "./serviceApi";
 import { AuthSession } from "../model/authSession";
-import { resetWebCertificate } from "./pkiApi";
-import { getNotJoinedGateways } from "./gatewayApi";
-import { authorizeAsAdmin } from "./commonApi";
+import { RBACDefault } from "../model/rbac";
+import { User } from "../model/user";
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from "../restfullException";
+import { AppService } from "../service/appService";
 import { saveDefaultDnsServiceAuthorizationForEverybody } from "./ networkApi";
+import { passportAuthenticate, passportInit } from "./auth/passportInit";
+import { authorizeAsAdmin } from "./commonApi";
+import { getNotJoinedGateways } from "./gatewayApi";
+import { resetWebCertificate } from "./pkiApi";
+import { saveSystemDnsService } from "./serviceApi";
 
 
 

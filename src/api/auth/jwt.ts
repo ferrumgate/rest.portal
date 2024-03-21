@@ -1,15 +1,9 @@
-import passportCustom from 'passport-custom';
 import passport from 'passport';
-import passportlocal from 'passport-local';
-import passportgoogle from 'passport-google-oauth2';
-import { AuthSettings } from '../../model/authSettings';
-import { logger } from '../../common';
-import { AppService } from '../../service/appService';
-import { User } from '../../model/user';
-import { Util } from '../../util';
+import passportCustom from 'passport-custom';
 import { ErrorCodes, RestfullException } from '../../restfullException';
+import { AppService } from '../../service/appService';
 import { HelperService } from '../../service/helperService';
-import { attachActivitySession, attachActivitySessionId, attachActivitySource, attachActivityUser, saveActivity, saveActivityError } from './commonAuth';
+import { attachActivitySession, attachActivitySource, attachActivityUser, saveActivityError } from './commonAuth';
 
 const name = 'jwt';
 export function jwtInit() {

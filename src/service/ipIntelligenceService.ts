@@ -1,5 +1,8 @@
 import Axios, { AxiosRequestConfig } from "axios";
-import { Util } from "../util";
+import fsp from 'fs/promises';
+import IPCIDR from "ip-cidr";
+import md5 from 'md5-file';
+import { logger } from "../common";
 import { Countries } from "../model/country";
 import {
     IpIntelligenceItem, IpIntelligenceList,
@@ -7,23 +10,11 @@ import {
     IpIntelligenceListItem,
     IpIntelligenceListStatus, IpIntelligenceSource
 } from "../model/ipIntelligence";
+import { Util } from "../util";
 import { ConfigService } from "./configService";
-import { RedisPipelineService, RedisService } from "./redisService";
-import fsp from 'fs/promises'
-import axios from "axios";
-import * as fs from 'fs';
-import * as stream from 'stream';
-import { promisify } from 'util';
-import { tmpdir } from "os";
-import { createHash } from 'node:crypto'
-import md5 from 'md5-file';
-import { logger } from "../common";
-import events from "events";
-import isCidr from 'ip-cidr';
-import { InputService } from "./inputService";
-import IPCIDR from "ip-cidr";
-import { contentSecurityPolicy } from "helmet";
 import { ESService } from "./esService";
+import { InputService } from "./inputService";
+import { RedisPipelineService, RedisService } from "./redisService";
 
 export abstract class IpIntelligenceSourceApi {
 

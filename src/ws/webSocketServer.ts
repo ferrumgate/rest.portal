@@ -1,15 +1,10 @@
-
 import events from 'events';
 import http from 'http';
-import https from 'https';
-import { logger } from '../common';
-import url from 'url';
 import { promisify } from 'util';
 import ws from 'ws';
-import { Util } from '../util';
-import { WebSocketClient } from './webSocketClient';
-import { Http2SecureServer } from 'http2';
+import { logger } from '../common';
 import { RateLimitService } from '../service/rateLimitService';
+import { WebSocketClient } from './webSocketClient';
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 

@@ -1,6 +1,7 @@
 export interface FqdnProfile {
     fqdn: string;
 }
+
 export function cloneFqdnProfile(p: FqdnProfile): FqdnProfile {
     return {
         fqdn: p.fqdn
@@ -18,6 +19,7 @@ export interface FqdnIntelligenceProfile {
 
 
 }
+
 export function cloneFqdnIntelligenceProfile(p: FqdnIntelligenceProfile): FqdnIntelligenceProfile {
     return {
         ignoreFqdns: p.ignoreFqdns ? Array.from(p.ignoreFqdns.map(x => cloneFqdnProfile(x))) : [],

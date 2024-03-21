@@ -1,4 +1,3 @@
-import { ConfigService } from "./configService";
 import { RedisPipelineService, RedisService } from "./redisService";
 import { SystemLog } from "./systemLogService";
 import { WatchService } from "./watchService";

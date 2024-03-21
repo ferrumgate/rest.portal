@@ -1,7 +1,7 @@
 
 import * as twofactor from 'node-2fa';
-import { Util } from '../util';
 import { ErrorCodes, RestfullException } from '../restfullException';
+import { Util } from '../util';
 
 /**
  * @summary 2FA releated functions

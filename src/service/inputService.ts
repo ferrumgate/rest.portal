@@ -1,11 +1,10 @@
-
-import { passwordStrength } from 'check-password-strength'
+import { passwordStrength } from 'check-password-strength';
 import emailValidator from 'email-validator';
+import isCidr from 'ip-cidr';
+import { isIPv4, isIPv6 } from 'node:net';
+import validator from 'validator';
 import { logger } from '../common';
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../restfullException';
-import isCidr from 'ip-cidr';
-import validator from 'validator';
-import { isIPv4, isIPv6 } from 'node:net';
 
 /**
  * @summary checks input data

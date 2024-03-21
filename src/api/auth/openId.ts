@@ -1,17 +1,12 @@
-
-import passport from 'passport';
-
-//import * as openIdAuth from 'passport-openidconnect';
-import { BaseOpenId } from '../../model/authSettings';
-import { logger } from '../../common';
-import { AppService } from '../../service/appService';
-import { User } from '../../model/user';
-import { Util } from '../../util';
-import { HelperService } from '../../service/helperService';
-import { group } from 'console';
-import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
-import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, makePassportName, saveActivity, saveActivityError } from './commonAuth';
 import * as openid from 'openid-client';
+import passport from 'passport';
+import { logger } from '../../common';
+import { BaseOpenId } from '../../model/authSettings';
+import { User } from '../../model/user';
+import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
+import { AppService } from '../../service/appService';
+import { HelperService } from '../../service/helperService';
+import { attachActivitySource, attachActivityUser, attachActivityUsername, checkUser, saveActivity, saveActivityError } from './commonAuth';
 
 
 export async function openIdInit(openId: BaseOpenId, url: string) {

@@ -1,17 +1,15 @@
-import { stdout } from "process";
-import { LetsEncrypt, LetsEncryptChallenge } from "../model/letsEncrypt";
 import childprocess from "child_process";
-import { EventEmitter } from "node:events";
-import fsp from 'fs/promises';
-import { logger } from "../common";
-import path from 'path';
-import { ConfigService } from "./configService";
-import { ConfigWatch } from "../model/config";
-import { SystemLogService } from "./systemLogService";
-import { Util } from "../util";
 import fs from 'fs';
+import fsp from 'fs/promises';
+import path from 'path';
+import { logger } from "../common";
+import { ConfigWatch } from "../model/config";
+import { LetsEncrypt, LetsEncryptChallenge } from "../model/letsEncrypt";
+import { Util } from "../util";
+import { ConfigService } from "./configService";
 import { RedLockService } from "./redLockService";
 import { RedisService } from "./redisService";
+import { SystemLogService } from "./systemLogService";
 
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
