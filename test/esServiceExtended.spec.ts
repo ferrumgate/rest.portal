@@ -1,17 +1,11 @@
-
 import chai from 'chai';
 import { ConfigService } from '../src/service/configService';
-import { ESService, ESServiceExtended } from '../src/service/esService';
-import { Util } from '../src/util';
+import { ESServiceExtended } from '../src/service/esService';
 import { RedisService } from '../src/service/redisService';
+import { Util } from '../src/util';
 import { esHost, esPass, esUser } from './common.spec';
 
-
-
-
-
 const expect = chai.expect;
-
 
 describe('esServiceExtended ', async () => {
     const redis = new RedisService();
@@ -29,11 +23,6 @@ describe('esServiceExtended ', async () => {
         await Util.sleep(1000);
         const indexes = await es.getAllIndexes();
 
-
-
-
     }).timeout(20000);
-
-
 
 })

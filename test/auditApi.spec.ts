@@ -1,20 +1,15 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-
-import { Util } from '../src/util';
-import { Network } from '../src/model/network';
-import { Gateway } from '../src/model/network';
+import { ExpressApp } from '../src';
 import { AuditLog } from '../src/model/auditLog';
 import { ESService } from '../src/service/esService';
-import { ExpressApp } from '../src';
+import { Util } from '../src/util';
 import { esHost, esPass, esUser } from './common.spec';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 describe('auditApi ', async () => {
     const expressApp = new ExpressApp();
@@ -24,14 +19,12 @@ describe('auditApi ', async () => {
     const configService = appService.configService;
     const sessionService = appService.sessionService;
 
-
     before(async () => {
         await expressApp.start();
         if (fs.existsSync('/tmp/config.yaml'))
             fs.rmSync('/tmp/config.yaml')
         await configService.setConfigPath('/tmp/config.yaml');
         await configService.init();
-
 
     })
 
@@ -84,9 +77,7 @@ describe('auditApi ', async () => {
         })
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
 
     function createSampleData2() {
         let audit1: AuditLog = {
@@ -166,12 +157,7 @@ describe('auditApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.total).to.equal(1);
 
-
     }).timeout(120000);
 
-
-
-
 })
-
 

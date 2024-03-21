@@ -1,24 +1,14 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import * as odiff from 'deep-object-diff'
-import { RedisService } from '../src/service/redisService';
-import { AuditService, ObjectDiffer } from '../src/service/auditService';
-import { AuditLog } from '../src/model/auditLog';
-import { Util } from '../src/util';
-import { ESService } from '../src/service/esService';
 import { ActivityService } from '../src/service/activityService';
 import { ConfigService } from '../src/service/configService';
+import { ESService } from '../src/service/esService';
+import { RedisService } from '../src/service/redisService';
+import { Util } from '../src/util';
 import { esHost, esPass, esUser } from './common.spec';
-
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('activityService', async () => {
     const streamKey = '/logs/activity';
@@ -28,8 +18,6 @@ describe('activityService', async () => {
         await config.setES({ host: esHost, user: esUser, pass: esPass })
 
     })
-
-
 
     it('save', async () => {
 
@@ -51,7 +39,6 @@ describe('activityService', async () => {
         expect(obj).deep.equal(log);
         await service.stop();
 
-
     }).timeout(20000);
 
     it('trimStream', async () => {
@@ -72,12 +59,7 @@ describe('activityService', async () => {
         expect(items2.length).to.equal(0);
         await service.stop();
 
-
     }).timeout(20000);
 
-
-
-
 })
-
 

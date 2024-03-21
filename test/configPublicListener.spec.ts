@@ -1,20 +1,16 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { RedisService } from '../src/service/redisService';
-import { ConfigService } from '../src/service/configService';
-import { Util } from '../src/util';
-import { Network } from '../src/model/network';
-import { Gateway } from '../src/model/network';
-import { ConfigPublicRoom, ConfigPublicListener, ConfigRequest, ConfigResponse } from '../src/service/system/configPublicListener';
+import { Gateway, Network } from '../src/model/network';
 import { Service } from '../src/model/service';
-
+import { ConfigService } from '../src/service/configService';
+import { RedisService } from '../src/service/redisService';
+import { ConfigPublicListener, ConfigPublicRoom, ConfigRequest, ConfigResponse } from '../src/service/system/configPublicListener';
+import { Util } from '../src/util';
 
 import { RedisWatcherService } from '../src/service/redisWatcherService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -23,8 +19,6 @@ function expectToDeepEqual(a: any, b: any) {
     delete b.updateDate;
     expect(a).to.deep.equal(b);
 }
-
-
 
 async function createSampleData(): Promise<any> {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -52,7 +46,6 @@ async function createSampleData(): Promise<any> {
     }
     await configService.saveGateway(gateway);
 
-
     let gateway2: Gateway = {
         id: 'aaa231a0932',
         name: 'myserver',
@@ -71,7 +64,6 @@ async function createSampleData(): Promise<any> {
         labels: [],
 
         networkId: network.id,
-
 
         hosts: [{ host: '1.2.3.4' }],
         ports: [{ port: 3306, isTcp: true }],
@@ -93,7 +85,6 @@ describe('configPublicRoom ', async () => {
         await simpleRedis.flushAll();
     })
 
-
     it('getGatewayById', async () => {
         const { gateway, gateway2, network, service, configService } = await createSampleData();
         const room = new ConfigPublicRoom('231a0932', configService);
@@ -102,11 +93,9 @@ describe('configPublicRoom ', async () => {
         expect(resp.error).to.be.undefined;
         expect(resp.result).to.be.undefined;
 
-
         resp = await room.getGatewayById('someid', 'theotherid');
         expect(resp.result).to.be.undefined;
         expect(resp.isError).to.be.undefined;
-
 
         resp = await room.getGatewayById('someid', 'baaa231a0932')
         expect(resp.result).to.be.undefined;
@@ -127,11 +116,9 @@ describe('configPublicRoom ', async () => {
         expect(resp.error).to.be.undefined;
         expect(resp.result).to.be.undefined;
 
-
         resp = await room.getNetworkByGatewayId('someid', 'theotherid');
         expect(resp.result).to.be.undefined;
         expect(resp.isError).to.be.undefined;
-
 
         const result = await room.getNetworkByGatewayId('someid', '231a0932')
         expect(result.id).to.equal('someid');
@@ -139,7 +126,6 @@ describe('configPublicRoom ', async () => {
         expectToDeepEqual(result.result, network);
 
     }).timeout(5000);
-
 
     it('getService', async () => {
         const { gateway, gateway2, network, service, configService } = await createSampleData();
@@ -149,11 +135,9 @@ describe('configPublicRoom ', async () => {
         expect(resp.error).to.be.undefined;
         expect(resp.result).to.be.undefined;
 
-
         resp = await room.getService('someid', 'theotherid');
         expect(resp.result).to.be.undefined;
         expect(resp.isError).to.be.undefined;
-
 
         const result = await room.getService('someid', service.id)
         expect(result.id).to.equal('someid');
@@ -170,11 +154,9 @@ describe('configPublicRoom ', async () => {
         expect(resp.error).to.be.undefined;
         expect(resp.result.length).to.equal(0);
 
-
         resp = await room.getServicesByGatewayId('someid', 'theotherid');
         expect(resp.error).to.be.undefined;
         expect(resp.result.length).to.equal(0);
-
 
         const result = await room.getServicesByGatewayId('someid', gateway.id);
         expect(result.id).to.equal('someid');
@@ -182,9 +164,6 @@ describe('configPublicRoom ', async () => {
         expectToDeepEqual(result.result[0], service);
 
     }).timeout(5000);
-
-
-
 
     it('executeRequest', async () => {
         const { gateway, gateway2, network, service, configService } = await createSampleData();
@@ -203,7 +182,6 @@ describe('configPublicRoom ', async () => {
 
     }).timeout(5000);
 
-
     it('processWaitList', async () => {
         const simpleRedis = new RedisService('localhost:6379');
         const { gateway, gateway2, network, service, configService } = await createSampleData();
@@ -221,11 +199,9 @@ describe('configPublicRoom ', async () => {
         expect(response.isError).to.undefined;
         expect(response.result.serviceNetwork).to.equal('172.16.0.0/24');
 
-
     }).timeout(5000);
 
 })
-
 
 describe('configPublicListener ', async () => {
 
@@ -233,7 +209,6 @@ describe('configPublicListener ', async () => {
         const simpleRedis = new RedisService('localhost:6379');
         await simpleRedis.flushAll();
     })
-
 
     it('executeMessage', async () => {
 
@@ -252,5 +227,4 @@ describe('configPublicListener ', async () => {
 
     })
 })
-
 

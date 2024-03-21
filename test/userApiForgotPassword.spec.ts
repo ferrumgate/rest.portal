@@ -1,18 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { User } from '../src/model/user';
-import { Email, EmailService } from '../src/service/emailService';
 import { ExpressApp } from '../src';
-
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Email, EmailService } from '../src/service/emailService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('userApiForgotPassword', async () => {
     const expressApp = new ExpressApp();
@@ -106,8 +101,6 @@ describe('userApiForgotPassword', async () => {
 
     }).timeout(50000);
 
-
-
     it('POST /user/forgotpass will return 200 with found user', async () => {
         class MockEmail extends EmailService {
             override  async send(email: Email): Promise<void> {
@@ -132,7 +125,6 @@ describe('userApiForgotPassword', async () => {
         expect(response.status).to.equal(200);
 
     }).timeout(50000);
-
 
     it('POST /user/forgotpass will return 415 because of not configured system', async () => {
         class MockEmail extends EmailService {
@@ -186,9 +178,5 @@ describe('userApiForgotPassword', async () => {
 
     }).timeout(50000);
 
-
-
-
 })
-
 

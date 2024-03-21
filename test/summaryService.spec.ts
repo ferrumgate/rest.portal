@@ -1,28 +1,17 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { TunnelService } from '../src/service/tunnelService';
 import { ConfigService } from '../src/service/configService';
+import { DhcpService } from '../src/service/dhcpService';
+import { ESService } from '../src/service/esService';
 import { RedisService } from '../src/service/redisService';
-import { Util } from '../src/util';
-import { User } from '../src/model/user';
-import { Tunnel } from '../src/model/tunnel';
-import { Gateway, Network } from '../src/model/network';
 import { SessionService } from '../src/service/sessionService';
 import { SummaryService } from '../src/service/summaryService';
-import { ESService } from '../src/service/esService';
-import { DhcpService } from '../src/service/dhcpService';
+import { TunnelService } from '../src/service/tunnelService';
+import { Util } from '../src/util';
 import { esHost, esPass, esUser } from './common.spec';
-
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 describe('summaryService', () => {
 
@@ -45,7 +34,6 @@ describe('summaryService', () => {
         configService.config.authorizationPolicy.rules = [];
         configService.config.authenticationPolicy.rules = [];
 
-
         await configService.saveUser({ id: 'test2' } as any);
         await configService.saveNetwork({ id: 'test4' } as any);
         await configService.saveGateway({ id: 'test4' } as any);
@@ -66,9 +54,6 @@ describe('summaryService', () => {
         expect(sum.userCount).to.equal(1);
         expect(sum.groupCount).to.equal(1);
 
-
-
     }).timeout(10000)
-
 
 })

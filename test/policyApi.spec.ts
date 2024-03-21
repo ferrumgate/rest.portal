@@ -1,20 +1,14 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
-
-
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -26,7 +20,6 @@ function expectToDeepEqual(a: any, b: any) {
 
 function createSampleDataAuthenticaton() {
 
-
     let rule1: AuthenticationRule = {
         id: '1',
         name: "zero trust1",
@@ -36,7 +29,6 @@ function createSampleDataAuthenticaton() {
         isEnabled: true,
         updateDate: new Date().toISOString(),
         insertDate: new Date().toISOString()
-
 
     }
 
@@ -63,9 +55,6 @@ function createSampleDataAuthenticaton() {
         insertDate: new Date().toISOString()
 
     }
-
-
-
 
     const user1: User = {
         username: 'hamza@ferrumgate.com',
@@ -112,7 +101,6 @@ describe('policy', async () => {
         await redisService.flushAll();
     })
 
-
     it('check authorazion as admin role', async () => {
         //prepare data
         const { rule1, rule2, rule3, user1 } = createSampleDataAuthenticaton();
@@ -121,7 +109,6 @@ describe('policy', async () => {
         await appService.configService.saveUser(clonedUser);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -138,14 +125,12 @@ describe('policy', async () => {
 
     }).timeout(50000);
 
-
     it('GET /policy/authn returns 200', async () => {
         //prepare data
         const { rule1, rule2, rule3, user1 } = createSampleDataAuthenticaton();
         await appService.configService.saveUser(user1);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveAuthenticationPolicyRule(rule1);
         await appService.configService.saveAuthenticationPolicyRule(rule2);
@@ -177,7 +162,6 @@ describe('policy', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-
         await appService.configService.saveAuthenticationPolicyRule(rule1);
         await appService.configService.saveAuthenticationPolicyRule(rule2);
         await appService.configService.saveAuthenticationPolicyRule(rule3);
@@ -196,7 +180,6 @@ describe('policy', async () => {
         expect(response.status).to.equal(200);
         expectToDeepEqual(response.body, rule2);
 
-
     }).timeout(50000);
 
     it('GET /policy/authn/rule/:id returns 401', async () => {
@@ -207,7 +190,6 @@ describe('policy', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveAuthenticationPolicyRule(rule1);
         await appService.configService.saveAuthenticationPolicyRule(rule2);
@@ -228,10 +210,7 @@ describe('policy', async () => {
         //specific return, why one gets an unknown 
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
-
 
     it('DELETE /policy/auth/rule/:id returns 200', async () => {
         //prepare data
@@ -240,7 +219,6 @@ describe('policy', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveAuthenticationPolicyRule(rule1);
         await appService.configService.saveAuthenticationPolicyRule(rule2);
@@ -263,7 +241,6 @@ describe('policy', async () => {
 
     }).timeout(50000);
 
-
     it('PUT /policy/authn/rule returns 200', async () => {
         //prepare data
         const { rule1, rule2, rule3, user1 } = createSampleDataAuthenticaton();
@@ -271,7 +248,6 @@ describe('policy', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveAuthenticationPolicyRule(rule1);
         await appService.configService.saveAuthenticationPolicyRule(rule2);
@@ -300,8 +276,6 @@ describe('policy', async () => {
 
     }).timeout(50000);
 
-
-
     it('POST /policy/authn/rule returns 200', async () => {
         //prepare data
         //prepare data
@@ -312,7 +286,6 @@ describe('policy', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         //for saving 
         delete (rule1 as any).id;
-
 
         rule2.name = 'test';
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -332,11 +305,7 @@ describe('policy', async () => {
 
         expectToDeepEqual(response.body, rule1);
 
-
-
     }).timeout(50000);
-
-
 
     it('PUT /policy/authn/rule/pos/:id returns 200', async () => {
         //prepare data
@@ -345,7 +314,6 @@ describe('policy', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveAuthenticationPolicyRule(rule1);
         await appService.configService.saveAuthenticationPolicyRule(rule2);
@@ -365,7 +333,6 @@ describe('policy', async () => {
         })
         expect(response.status).to.equal(200);
 
-
         //
         const policy = await appService.configService.getAuthenticationPolicy();
 
@@ -373,16 +340,11 @@ describe('policy', async () => {
         expectToDeepEqual(policy.rules[1], rule3);
         expectToDeepEqual(policy.rules[2], rule1);
 
-
     }).timeout(50000);
-
 
     //////////////////////////////////////////////// authorization tests ////////////////////////////////
 
-
-
     function createSampleDataAuthorization() {
-
 
         let rule1: AuthorizationRule = {
             id: '1',
@@ -397,7 +359,6 @@ describe('policy', async () => {
             isEnabled: true,
             updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString()
-
 
         }
 
@@ -432,9 +393,6 @@ describe('policy', async () => {
 
         }
 
-
-
-
         const user1: User = {
             username: 'hamza@ferrumgate.com',
             id: 'someid',
@@ -451,8 +409,6 @@ describe('policy', async () => {
         return { rule1, rule2, rule3, user1 };
     }
 
-
-
     it('check authorization as admin role', async () => {
         //prepare data
         const { rule1, rule2, rule3, user1 } = createSampleDataAuthorization();
@@ -462,7 +418,6 @@ describe('policy', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -479,7 +434,6 @@ describe('policy', async () => {
 
     }).timeout(50000);
 
-
     it('GET /policy/authz returns 200', async () => {
         //prepare data
         const { rule1, rule2, rule3, user1 } = createSampleDataAuthorization();
@@ -487,7 +441,6 @@ describe('policy', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveAuthorizationPolicyRule(rule1);
         await appService.configService.saveAuthorizationPolicyRule(rule2);
@@ -520,7 +473,6 @@ describe('policy', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-
         await appService.configService.saveAuthorizationPolicyRule(rule1);
         await appService.configService.saveAuthorizationPolicyRule(rule2);
         await appService.configService.saveAuthorizationPolicyRule(rule3);
@@ -540,7 +492,6 @@ describe('policy', async () => {
 
         expectToDeepEqual(response.body, rule2);
 
-
     }).timeout(50000);
 
     it('GET /policy/authz/rule/:id returns 401', async () => {
@@ -551,7 +502,6 @@ describe('policy', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveAuthorizationPolicyRule(rule1);
         await appService.configService.saveAuthorizationPolicyRule(rule2);
@@ -572,10 +522,7 @@ describe('policy', async () => {
         //specific return, why one gets an unknown 
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
-
 
     it('DELETE /policy/authz/rule/:id returns 200', async () => {
         //prepare data
@@ -584,7 +531,6 @@ describe('policy', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveAuthorizationPolicyRule(rule1);
         await appService.configService.saveAuthorizationPolicyRule(rule2);
@@ -607,7 +553,6 @@ describe('policy', async () => {
 
     }).timeout(50000);
 
-
     it('PUT /policy/authz/rule returns 200', async () => {
         //prepare data
         const { rule1, rule2, rule3, user1 } = createSampleDataAuthorization();
@@ -615,7 +560,6 @@ describe('policy', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveAuthorizationPolicyRule(rule1);
         await appService.configService.saveAuthorizationPolicyRule(rule2);
@@ -644,8 +588,6 @@ describe('policy', async () => {
 
     }).timeout(50000);
 
-
-
     it('POST /policy/authz/rule returns 200', async () => {
         //prepare data
         //prepare data
@@ -656,7 +598,6 @@ describe('policy', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         //for saving 
         delete (rule1 as any).id;
-
 
         rule2.name = 'test';
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -678,11 +619,5 @@ describe('policy', async () => {
 
     }).timeout(50000);
 
-
-
-
-
 })
-
-
 

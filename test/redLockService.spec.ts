@@ -1,22 +1,11 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import * as odiff from 'deep-object-diff'
-import { RedisService } from '../src/service/redisService';
-import { AuditService, ObjectDiffer } from '../src/service/auditService';
-import { AuditLog } from '../src/model/auditLog';
-import { Util } from '../src/util';
-import { ESService } from '../src/service/esService';
-import { ConfigService } from '../src/service/configService';
 import { RedLockService } from '../src/service/redLockService';
-
-
+import { RedisService } from '../src/service/redisService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('redLockService ', async () => {
     const redis = new RedisService();
@@ -36,9 +25,7 @@ describe('redLockService ', async () => {
         expect(isReleased).to.be.true;
         expect(await redis.get('/lock/test', false)).to.be.null;
 
-
     }).timeout(15000);
-
 
     it('lock/release multi check', async () => {
         let isLocked = false;
@@ -48,7 +35,6 @@ describe('redLockService ', async () => {
         locker.events.on('released', () => isReleased = true);
         await locker.lock('/lock/test', 2000, 1000);
         expect(isLocked).to.be.true;
-
 
         let isLocked2 = false;
         let isReleased2 = false;
@@ -62,10 +48,7 @@ describe('redLockService ', async () => {
         expect(isReleased).to.be.true;
         expect(isReleased2).to.be.false;
 
-
-
     }).timeout(15000);
-
 
     it('tryLock multi check', async () => {
         let isLocked = false;
@@ -93,8 +76,6 @@ describe('redLockService ', async () => {
         expect(isError).to.be.true;
         await locker.release();
         await locker2.release();
-
-
 
     }).timeout(105000);
 })

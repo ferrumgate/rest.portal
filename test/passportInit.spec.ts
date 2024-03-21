@@ -1,4 +1,3 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import passport from 'passport';
@@ -8,9 +7,6 @@ import { asyncHandlerWithArgs } from '../src/common';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('passportInit', async () => {
 
@@ -25,9 +21,7 @@ describe('passportInit', async () => {
 
     })
 
-
     it('passportAuthenticate empty strategy', (done) => {
-
 
         let req = {};
         let res = {};
@@ -40,12 +34,10 @@ describe('passportInit', async () => {
 
         passportAuthenticate(req, res, next, []);
 
-
         let next2 = (val: any) => {
             expect(val).exist;
             expect(val instanceof Error).to.be.true;
             expect(val.message).to.be.equal('no method');
-
 
         };
         asyncHandlerWithArgs(passportAuthenticate, [])(req, res, next2);
@@ -53,7 +45,6 @@ describe('passportInit', async () => {
             expect(val).exist;
             expect(val instanceof Error).to.be.true;
             expect(val.message).to.be.equal('no method');
-
 
         };
 
@@ -71,7 +62,6 @@ describe('passportInit', async () => {
     }).timeout(50000);
 
     it('passportAuthenticate 1 strategy with success', (done) => {
-
 
         passport.use('test', new passportCustom.Strategy(
             async (req: any, done: any) => {
@@ -91,9 +81,7 @@ describe('passportInit', async () => {
 
     }).timeout(50000);
 
-
     it('passportAuthenticate 1 known strategy  and 1 unknown', (done) => {
-
 
         passport.use('test', new passportCustom.Strategy(
             async (req: any, done: any) => {
@@ -133,7 +121,6 @@ describe('passportInit', async () => {
         asyncHandlerWithArgs(passportAuthenticate, ['test', 'test2'])(req, res, next);
 
     }).timeout(50000);
-
 
     it('passportAuthenticate 2 known strategy and authenticates', (done) => {
 

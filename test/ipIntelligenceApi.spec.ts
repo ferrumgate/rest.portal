@@ -1,22 +1,15 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
-import { Network } from '../src/model/network';
-
-
-import { IpIntelligence, IpIntelligenceList, IpIntelligenceListStatus, IpIntelligenceSource } from '../src/model/ipIntelligence';
-import { ESService } from '../src/service/esService';
 import { ExpressApp } from '../src';
+import { IpIntelligenceList, IpIntelligenceListStatus, IpIntelligenceSource } from '../src/model/ipIntelligence';
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
 import { esHost, esPass, esUser } from './common.spec';
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -27,8 +20,6 @@ function expectToDeepEqual(a: any, b: any) {
     delete b.id;
     expect(a).to.deep.equal(b);
 }
-
-
 
 /**
  * authenticated user api tests
@@ -63,7 +54,6 @@ describe('ipIntelligenceApi', async () => {
 
     })
 
-
     beforeEach(async () => {
         appService.configService.config.users = [];
         appService.configService.config.networks = [];
@@ -76,7 +66,6 @@ describe('ipIntelligenceApi', async () => {
     after(async () => {
         await expressApp.stop();
     })
-
 
     it('check authoration as admin role', async () => {
         //prepare data
@@ -112,9 +101,6 @@ describe('ipIntelligenceApi', async () => {
 
     }).timeout(50000);
 
-
-
-
     //// ip intelligence source 
 
     it('GET /ip/intelligence/source will return items', async () => {
@@ -122,8 +108,6 @@ describe('ipIntelligenceApi', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
 
         const item: IpIntelligenceSource = {
             id: Util.randomNumberString(),
@@ -148,10 +132,7 @@ describe('ipIntelligenceApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.items).exist;
 
-
         expectToDeepEqual(response.body.items[0], item);
-
-
 
     }).timeout(50000);
 
@@ -160,8 +141,6 @@ describe('ipIntelligenceApi', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
 
         const item: IpIntelligenceSource = {
             id: Util.randomNumberString(),
@@ -188,7 +167,6 @@ describe('ipIntelligenceApi', async () => {
         const items = await appService.configService.getIpIntelligenceSources();
         expect(items.length).to.equal(0);
 
-
     }).timeout(50000);
 
     it('POST /ip/intelligence/source', async () => {
@@ -196,8 +174,6 @@ describe('ipIntelligenceApi', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
 
         const item: IpIntelligenceSource = {
             id: Util.randomNumberString(), apiKey: 'abc',
@@ -226,7 +202,6 @@ describe('ipIntelligenceApi', async () => {
         const items = await appService.configService.getIpIntelligenceSources();
         expect(items.length).to.equal(1);
 
-
     }).timeout(50000);
 
     it('PUT /ip/intelligence/source', async () => {
@@ -234,8 +209,6 @@ describe('ipIntelligenceApi', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
 
         const item: IpIntelligenceSource = {
             id: Util.randomNumberString(), apiKey: 'abc',
@@ -266,8 +239,6 @@ describe('ipIntelligenceApi', async () => {
         expect(items[0].apiKey).to.equal('def');
 
     }).timeout(50000);
-
-
 
     it('GET /ip/intelligence/list will return items', async () => {
         //prepare data
@@ -306,7 +277,6 @@ describe('ipIntelligenceApi', async () => {
 
         expectToDeepEqual(response.body.items[0], item);
         expectToDeepEqual(response.body.itemsStatus[0], status);
-
 
         // test search 
         response = await new Promise((resolve: any, reject: any) => {
@@ -359,13 +329,7 @@ describe('ipIntelligenceApi', async () => {
         expect(response.body.itemsStatus[0].hash).exist;
         console.log(response.body.itemsStatus);
 
-
-
-
-
-
     }).timeout(50000);
-
 
     it('PUT /ip/intelligence/list/id/reset will reset items', async () => {
         //prepare data
@@ -385,7 +349,6 @@ describe('ipIntelligenceApi', async () => {
 
         await appService.configService.saveIpIntelligenceList(item);
         await appService.ipIntelligenceService.listService.saveListStatus(item, status);
-
 
         // test search ip
         //prepare ips
@@ -418,7 +381,6 @@ describe('ipIntelligenceApi', async () => {
         expectToDeepEqual(response.body.items[0], item);
         expect(response.body.itemsStatus[0].hash).exist;
 
-
         //reset 
         item.id = id;//set it back
         response = await new Promise((resolve: any, reject: any) => {
@@ -442,10 +404,7 @@ describe('ipIntelligenceApi', async () => {
         const result3 = await appService.ipIntelligenceService.listService.getDbFileList(item);
         expect(Object.keys(result3 || {}).length == 0).to.be.true;
 
-
     }).timeout(50000);
-
-
 
     it('DELETE /ip/intelligence/list', async () => {
         //prepare data
@@ -465,7 +424,6 @@ describe('ipIntelligenceApi', async () => {
 
         await appService.configService.saveIpIntelligenceList(item);
         await appService.ipIntelligenceService.listService.saveListStatus(item, status);
-
 
         //prepare ips
         item.id = id;//set it back
@@ -501,10 +459,7 @@ describe('ipIntelligenceApi', async () => {
         const listId = await appService.ipIntelligenceService.listService.getByIp(item.id, '1.1.1.1')
         expect(listId).not.exist;
 
-
-
     }).timeout(50000);
-
 
     it('POST /ip/intelligence/list', async () => {
         //prepare data
@@ -547,12 +502,7 @@ describe('ipIntelligenceApi', async () => {
         const result2 = await redisService.exists(`/intelligence/ip/list/${savedItem.id}/file`)
         expect(result2).to.be.true;
 
-
-
-
     }).timeout(50000);
-
-
 
     it('PUT /ip/intelligence/list', async () => {
         //prepare data
@@ -605,11 +555,7 @@ describe('ipIntelligenceApi', async () => {
         const result2 = await redisService.exists(`/intelligence/ip/list/${savedItem.id}/file`)
         expect(result2).to.be.true;
 
-
-
-
     }).timeout(50000);
-
 
     it('POST /ip/intelligence/list/file', async () => {
         //prepare data
@@ -641,18 +587,13 @@ describe('ipIntelligenceApi', async () => {
         expect(savedItem).exist;
         expect(fs.existsSync('/tmp/uploads/' + savedItem)).to.be.true;
 
-
-
-
     }).timeout(50000);
-
 
     it('GET /ip/intelligence/list/:id/file', async () => {
         //prepare data
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         let id = Util.randomNumberString();
         const item: IpIntelligenceList = {
@@ -666,7 +607,6 @@ describe('ipIntelligenceApi', async () => {
 
         await appService.configService.saveIpIntelligenceList(item);
         await appService.ipIntelligenceService.listService.saveListStatus(item, status);
-
 
         //prepare ips
         item.id = id;//set it back
@@ -693,20 +633,7 @@ describe('ipIntelligenceApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.type).to.equal('application/octet-stream');
 
-
-
     }).timeout(50000);
 
-
-
-
-
-
-
-
-
-
-
 })
-
 

@@ -1,19 +1,11 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs, { read } from 'fs';
-import { AppService } from '../src/service/appService';
-import { SystemLogService } from '../src/service/systemLogService';
 import { RedisService } from '../src/service/redisService';
+import { SystemLogService } from '../src/service/systemLogService';
 import { Util } from '../src/util';
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('systemLogService', async () => {
 
@@ -64,5 +56,4 @@ describe('systemLogService', async () => {
     }).timeout(50000);
 
 })
-
 

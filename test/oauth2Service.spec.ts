@@ -1,22 +1,15 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
+import OAuth2Server from 'oauth2-server';
+import { User } from '../src/model/user';
 import { ConfigService } from '../src/service/configService';
 import { config, OAuth2Service } from '../src/service/oauth2Service';
-import { User } from '../src/model/user';
-import OAuth2Server from 'oauth2-server';
-import { Util } from '../src/util';
 import { RedisService } from '../src/service/redisService';
 import { SessionService } from '../src/service/sessionService';
-
-
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('oauth2Service ', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -35,7 +28,6 @@ describe('oauth2Service ', async () => {
     before(async () => {
         await configService.setConfigPath('/tmp/rest.portal.config.yaml');
         await configService.init();
-
 
     })
     beforeEach(async () => {
@@ -99,8 +91,6 @@ describe('oauth2Service ', async () => {
         //reset
         aUser.isLocked = false;
 
-
-
     }).timeout(5000);
 
     it('generateAccessToken, getAccessToken will throw error because of time', async () => {
@@ -121,9 +111,7 @@ describe('oauth2Service ', async () => {
         //set backup again
         config.JWT_TOKEN_EXPIRY_SECONDS = backup;
 
-
     }).timeout(5000);
-
 
     it('generateAccessToken, getAccessToken will throw error because of session', async () => {
 
@@ -141,13 +129,7 @@ describe('oauth2Service ', async () => {
         }
         expect(isError).to.be.true;
 
-
-
     }).timeout(5000);
-
-
-
-
 
     it('generateRefreshToken, getRefreshToken returns a refresh token', async () => {
 
@@ -162,8 +144,6 @@ describe('oauth2Service ', async () => {
         expect(tokenRefresh.user.sid).to.equal(session.id);
 
     }).timeout(5000);
-
-
 
     it('generateRefreshToken, getRefreshToken throws error because of session', async () => {
 
@@ -195,5 +175,4 @@ describe('oauth2Service ', async () => {
     }).timeout(5000);
 
 })
-
 

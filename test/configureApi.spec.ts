@@ -1,19 +1,14 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
-import { Util } from '../src/util';
-import { Network } from '../src/model/network';
-import { Gateway } from '../src/model/network';
+import { Gateway, Network } from '../src/model/network';
 import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('configureApi ', async () => {
     const expressApp = new ExpressApp();
@@ -53,7 +48,6 @@ describe('configureApi ', async () => {
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
 
-
     })
     after(async () => {
         await expressApp.stop();
@@ -88,8 +82,6 @@ describe('configureApi ', async () => {
             }
         ];
 
-
-
     })
     it('only admin user can callit', async () => {
         const session = await sessionService.createSession({ id: 'admin2' } as User, false, '1.1.1.1', 'local');
@@ -108,9 +100,7 @@ describe('configureApi ', async () => {
         })
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
 
     it('configure must no be configured before', async () => {
         await configService.setIsConfigured(1);
@@ -130,9 +120,7 @@ describe('configureApi ', async () => {
         })
         expect(response.status).to.equal(405);
 
-
     }).timeout(50000);
-
 
     it('sended data must be checked', async () => {
         await configService.setIsConfigured(0);
@@ -152,9 +140,7 @@ describe('configureApi ', async () => {
         })
         expect(response.status).to.equal(400);
 
-
     }).timeout(50000);
-
 
     it('email is not email', async () => {
         await configService.setIsConfigured(0);
@@ -177,7 +163,6 @@ describe('configureApi ', async () => {
                 });
         })
         expect(response.status).to.equal(400);
-
 
     }).timeout(50000);
 
@@ -216,14 +201,5 @@ describe('configureApi ', async () => {
 
     }).timeout(50000);
 
-
-
-
-
-
-
-
-
 })
-
 

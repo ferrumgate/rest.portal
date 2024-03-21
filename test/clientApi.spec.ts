@@ -1,22 +1,16 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { AppService } from '../src/service/appService';
-import { ExpressApp } from '../src/index';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
-import { Tunnel } from '../src/model/tunnel';
 import * as twofactor from 'node-2fa';
-import { Network } from '../src/model/network';
-import { Gateway } from '../src/model/network';
-import fs from 'fs';
-import { config } from 'process';
+import { ExpressApp } from '../src/index';
+import { Gateway, Network } from '../src/model/network';
 import { Service } from '../src/model/service';
+import { Tunnel } from '../src/model/tunnel';
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
+
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('clientApi ', async () => {
     const expressApp = new ExpressApp();
@@ -77,7 +71,6 @@ describe('clientApi ', async () => {
         updateDate: new Date().toISOString(),
         count: 1
 
-
     }
 
     before(async () => {
@@ -87,7 +80,6 @@ describe('clientApi ', async () => {
     after(async () => {
         await expressApp.stop();
     })
-
 
     beforeEach(async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -100,7 +92,6 @@ describe('clientApi ', async () => {
         configService.config.users = [];
         await configService.saveUser(user);
         configService.config.authenticationPolicy.rules = [];
-
 
     })
     it('GET /client/tunnel/ip', async () => {
@@ -133,7 +124,6 @@ describe('clientApi ', async () => {
 
     }).timeout(50000);
 
-
     it('POST /client/tunnel/confirm', async () => {
         const tunnel: Tunnel = {
             id: 'akey', assignedClientIp: '10.0.0.1',
@@ -163,7 +153,6 @@ describe('clientApi ', async () => {
         //expect(result == 1).to.be.true;
 
     }).timeout(50000);
-
 
     it('POST /client/tunnel', async () => {
         await appService.configService.saveAuthenticationPolicyRule({
@@ -195,16 +184,5 @@ describe('clientApi ', async () => {
 
     }).timeout(50000);
 
-
-
-
-
-
-
-
-
-
-
 })
-
 

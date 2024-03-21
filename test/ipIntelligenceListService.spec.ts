@@ -1,30 +1,21 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ConfigService } from '../src/service/configService';
-import { Util } from '../src/util';
 import { RedisService } from '../src/service/redisService';
-import { GatewayDetail } from '../src/model/network';
-import os from 'os';
-import { GatewayService } from '../src/service/gatewayService';
+import { Util } from '../src/util';
 
-import {
-    IpIntelligenceList, IpIntelligenceListFiles, IpIntelligenceListStatus,
-    IpIntelligenceSource
-} from '../src/model/ipIntelligence';
-import { IpIntelligenceListService, IpIntelligenceService } from '../src/service/ipIntelligenceService';
 import crypto from 'node:crypto';
-import { InputService } from '../src/service/inputService';
+import {
+    IpIntelligenceList, IpIntelligenceListFiles, IpIntelligenceListStatus
+} from '../src/model/ipIntelligence';
 import { ESService } from '../src/service/esService';
+import { InputService } from '../src/service/inputService';
+import { IpIntelligenceListService } from '../src/service/ipIntelligenceService';
 import { esHost, esPass, esUser } from './common.spec';
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -33,8 +24,6 @@ function expectToDeepEqual(a: any, b: any) {
     delete b.updateDate;
     expect(a).to.deep.equal(b);
 }
-
-
 
 describe('ipIntelligenceListService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -63,8 +52,6 @@ describe('ipIntelligenceListService', async () => {
         await intel.downloadFileFromRedis("/test", tmpFile);
         expect(fs.existsSync(tmpFile)).to.be.true;
 
-
-
     }).timeout(500000); */
     it('downloadFileFromRedis', async () => {
         const data = crypto.randomBytes(4 * 1024 * 1024);
@@ -89,12 +76,9 @@ describe('ipIntelligenceListService', async () => {
         expect(files[0].hash).exist;
         expect(files[0].filename).exist;
 
-
     }).timeout(500000);
 
-
     it('getListStatus/saveListStatus/deleteListStatus', async () => {
-
 
         const item: IpIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '', labels: [],
@@ -115,8 +99,6 @@ describe('ipIntelligenceListService', async () => {
         const data2 = await intel.getListStatus(item);
         expect(data2).not.exist;
 
-
-
     }).timeout(500000);
 
     it('getDbFileList/saveDbFileList/deleteDbFileList/deleteDbFileList2', async () => {
@@ -136,9 +118,7 @@ describe('ipIntelligenceListService', async () => {
         const files2 = await intel.getDbFileList(item);
         expectToDeepEqual(files, files2);
 
-
         await intel.deleteDbFileList2(item, 0);
-
 
         const files3 = await intel.getDbFileList(item);
         expect(files3).exist;
@@ -153,7 +133,6 @@ describe('ipIntelligenceListService', async () => {
             expect(Object.keys(files4).length == 0).to.be.true;
 
     })
-
 
     it('saveToStore/delStore', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -177,14 +156,10 @@ describe('ipIntelligenceListService', async () => {
         const listId = await intel.getByIp(item.id, '1.1.1.1')
         expect(listId).exist;
 
-
-
         await intel.deleteFromStore(item, 0);
         await Util.sleep(1000);
         const listId2 = await intel.getByIp(item.id, '1.1.1.1')
         expect(listId2).not.exist;
-
-
 
     })
 
@@ -222,7 +197,6 @@ describe('ipIntelligenceListService', async () => {
         expect(status3?.lastCheck).not.equal(status2?.lastCheck);
         expect(status3?.isChanged).to.be.false;
 
-
         fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n8.8.8.8\n3.3.3.3");
         await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
@@ -232,18 +206,12 @@ describe('ipIntelligenceListService', async () => {
         expect(status4?.lastCheck).not.equal(status3?.lastCheck);
         expect(status4?.isChanged).to.be.true;
 
-
-
         fs.writeFileSync(tmpFolderFile, "1.1.1.1\n192.168.0.0/24\n9.8.8.8\n8.8.8.8\n3.3.3.3");
         await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
         await intel.process(item);
 
-
-
-
     }).timeout(50000);
-
 
     it.skip('process http version', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -260,7 +228,6 @@ describe('ipIntelligenceListService', async () => {
         }
 
         const intel = new IpIntelligenceListService(redisService, inputService, esService);
-
 
         const status = await intel.getListStatus(item);
         expect(status).not.exist;
@@ -279,10 +246,7 @@ describe('ipIntelligenceListService', async () => {
         expect(status3?.lastCheck).not.equal(status2?.lastCheck);
         expect(status3?.isChanged).to.be.false;
 
-
     }).timeout(50000);
-
-
 
     it('deleteList', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -316,11 +280,7 @@ describe('ipIntelligenceListService', async () => {
         const keys = await redisService.getAllKeys('*');
         expect(keys.length).to.equal(0);
 
-
-
-
     }).timeout(50000);
-
 
     it('getAllListItems', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -350,10 +310,7 @@ describe('ipIntelligenceListService', async () => {
         expect(items.includes('192.168.0.0/24')).to.be.true;
         console.log(items);
 
-
-
     }).timeout(120000);
-
 
     it('getByIp', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -386,14 +343,11 @@ describe('ipIntelligenceListService', async () => {
         const id3 = await intel.getByIp(item.id, '192.168.0.1')
         expect(id3).exist;
 
-
-
         const id5 = await intel.getByIp(item.id, '192.168.1.10')
         expect(id5).not.exist;
 
         const id6 = await intel.getByIp(item.id, '192.168.9.10')
         expect(id6).exist;
-
 
         const id7 = await intel.getByIp(item.id, '192.168.10.15')
         expect(id7).exist;
@@ -402,8 +356,6 @@ describe('ipIntelligenceListService', async () => {
         expect(id8).not.exist;
 
     }).timeout(50000);
-
-
 
     it('getByIp intersection', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -436,14 +388,10 @@ describe('ipIntelligenceListService', async () => {
         const id3 = await intel.getByIp(item.id, '192.168.3.10')
         expect(id3).exist;
 
-
-
         const id5 = await intel.getByIp(item.id, '192.167.1.10')
         expect(id5).not.exist;
 
-
     }).timeout(50000);
-
 
     it('getByIpAll', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -480,8 +428,6 @@ describe('ipIntelligenceListService', async () => {
             }
         }
 
-
-
         fs.writeFileSync(tmpFolderFile2, "192.168.10.0/24\n192.168.0.0/16");
         await intel.saveListFile(item2, tmpFolderFile2);
         //process again ischanged false
@@ -494,11 +440,7 @@ describe('ipIntelligenceListService', async () => {
         expect(id.items.find(x => x == item.id)).exist
         expect(id.items.find(y => y == item2.id)).exist;
 
-
-
-
     }).timeout(50000);
-
 
     it('compareSystemHealth', async () => {
 
@@ -509,8 +451,6 @@ describe('ipIntelligenceListService', async () => {
         await intel.compareSystemHealth([{ id: '2' } as any]);
         const item = await redisService.get('/intelligence/ip/list/1/file', false);
         expect(item).not.exist;
-
-
 
     }).timeout(50000);
 
@@ -526,14 +466,11 @@ describe('ipIntelligenceListService', async () => {
         const contentZip = fs.readFileSync(filenameZip).toString();
         expect(contentZip).to.equal('something');
 
-
-
         const filenameTarGz = `${baseFolder}/${Util.randomNumberString()}`
         fs.copyFileSync('./test/data/test.tar.gz', filenameTarGz);
         await intel.prepareFile('test.tar.gz', filenameTarGz, baseFolder);
         const contentTarGz = fs.readFileSync(filenameTarGz).toString();
         expect(contentTarGz).to.equal('something');
-
 
     }).timeout(50000);
 
@@ -553,14 +490,7 @@ describe('ipIntelligenceListService', async () => {
             await intel.process(item2)
             console.log(intel);
     
-    
         }).timeout(50000); */
 
-
-
-
-
-
 })
-
 

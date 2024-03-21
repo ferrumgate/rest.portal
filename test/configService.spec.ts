@@ -1,29 +1,21 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { ConfigService } from '../src/service/configService';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
-import { Gateway, Network } from '../src/model/network';
-import { AuthCommon, BaseOAuth, BaseLocal } from '../src/model/authSettings';
-import { Group } from '../src/model/group';
-import { Service } from '../src/model/service';
+import { AuthCommon, BaseLocal, BaseOAuth } from '../src/model/authSettings';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
-
-
-
-import { ConfigWatch } from '../src/model/config';
-import { SSLCertificate } from '../src/model/cert';
+import { Group } from '../src/model/group';
+import { Gateway, Network } from '../src/model/network';
+import { Service } from '../src/model/service';
+import { User } from '../src/model/user';
+import { ConfigService } from '../src/service/configService';
+import { Util } from '../src/util';
 import { DevicePosture } from '../src/model/authenticationProfile';
-import { config } from 'process';
+import { ConfigWatch } from '../src/model/config';
 import { DnsRecord } from '../src/model/dns';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
 
 function exclude(a: any) {
     delete a.insertDate;
@@ -64,7 +56,6 @@ describe('configService', async () => {
         configService.config.users.push(aUser);
         await configService.saveConfigToFile();
         expect(fs.existsSync(filename));
-
 
     });
     it('loadConfigFromFile', async () => {
@@ -111,7 +102,6 @@ describe('configService', async () => {
         const str = await configService.saveConfigToString()
         const readed = fs.readFileSync(filename).toString();
 
-
     });
 
     it('createConfig', async () => {
@@ -131,8 +121,6 @@ describe('configService', async () => {
         expect(config.captcha.server).not.exist;
 
     });
-
-
 
     it('getUserByUsername', async () => {
 
@@ -203,9 +191,6 @@ describe('configService', async () => {
 
     });
 
-
-
-
     it('getUsersBy', async () => {
 
         //first create a config and save to a file
@@ -257,7 +242,6 @@ describe('configService', async () => {
             isLocked: true,
             is2FA: true,
             isEmailVerified: true,
-
 
         };
 
@@ -325,9 +309,7 @@ describe('configService', async () => {
         const list12 = await configService.getUsersBy(0, 0, '', [], [], [], [], undefined, undefined, undefined, true);
         expect(list12.items.length).to.be.equal(1);
 
-
     });
-
 
     it('getUserByRoleIds', async () => {
 
@@ -427,7 +409,6 @@ describe('configService', async () => {
  
      }); */
 
-
     it('saveNetwork getNetwork getNetworkByName', async () => {
 
         //first create a config and save to a file
@@ -482,7 +463,6 @@ describe('configService', async () => {
 
     });
 
-
     it('deleteNetwork', async () => {
 
         //first create a config and save to a file
@@ -533,7 +513,6 @@ describe('configService', async () => {
             updateDate: new Date().toISOString()
         }
 
-
         await configService.saveGateway(gateway);
         const gatewayDb = await configService.getGateway(gateway.id);
         expect(exclude(gatewayDb)).to.deep.equal(exclude(gateway));
@@ -554,7 +533,6 @@ describe('configService', async () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
         }
-
 
         await configService.saveGateway(gateway);
         await configService.deleteGateway(gateway.id);
@@ -615,7 +593,6 @@ describe('configService', async () => {
         const returned3 = await configService.getAuthSettingOAuth();
         expect(returned3.providers.length).to.equal(1);
 
-
     });
 
     it('authSettingsLocal', async () => {
@@ -644,9 +621,7 @@ describe('configService', async () => {
         const returned = await configService.getAuthSettingLocal();
         expect(exclude(returned)).to.deep.equal(exclude(local));
 
-
     });
-
 
     it('getGroup', async () => {
 
@@ -667,7 +642,6 @@ describe('configService', async () => {
 
         const returned = await configService.getGroup(group.id);
         expect(exclude(returned)).to.deep.equal(exclude(group));
-
 
     });
 
@@ -706,9 +680,7 @@ describe('configService', async () => {
         const returned2 = await configService.getGroupsBySearch('abo');
         expect(returned2.length).to.be.equal(0);
 
-
     });
-
 
     it('getGroupsAll', async () => {
 
@@ -814,7 +786,6 @@ describe('configService', async () => {
 
     });
 
-
     ///// service 
 
     it('getService', async () => {
@@ -843,7 +814,6 @@ describe('configService', async () => {
 
         const returned = await configService.getService(service.id);
         expect(exclude(returned)).to.deep.equal(exclude(service));
-
 
     });
 
@@ -902,14 +872,11 @@ describe('configService', async () => {
         const returned4 = await configService.getServicesBy('192.168');
         expect(returned4.length).to.be.equal(1);
 
-
         const returned5 = await configService.getServicesBy('', ['abcd']);
         expect(returned5.length).to.be.equal(2);
 
         const returned6 = await configService.getServicesBy('', [], [service2.id]);
         expect(returned6.length).to.be.equal(1);
-
-
 
     });
 
@@ -957,9 +924,7 @@ describe('configService', async () => {
         const returned = await configService.getServicesByNetworkId('dabc');
         expect(returned.length).to.equal(1);
 
-
     });
-
 
     it('getServicesAll', async () => {
 
@@ -1061,13 +1026,11 @@ describe('configService', async () => {
         //add
         await configService.saveService(service1);
 
-
         await configService.deleteService(service1.id);
 
         const returned = await configService.getService(service1.id)
 
         expect(returned).not.exist;
-
 
     });
 
@@ -1096,7 +1059,6 @@ describe('configService', async () => {
         const policy = await configService.getAuthenticationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
 
-
     });
     it('getAuthenticationPolicy', async () => {
 
@@ -1116,7 +1078,6 @@ describe('configService', async () => {
 
         }
         configService.config.authenticationPolicy.rules.push(rule);
-
 
         const policy = await configService.getAuthenticationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
@@ -1143,7 +1104,6 @@ describe('configService', async () => {
         }
         configService.config.authenticationPolicy.rules.push(rule);
 
-
         const policy = await configService.getAuthenticationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
         expect(policy.rules.length).to.equal(1);
@@ -1169,13 +1129,11 @@ describe('configService', async () => {
         }
         configService.config.authenticationPolicy.rules.push(rule);
 
-
         await configService.deleteAuthenticationPolicyRule(rule.id);
         expect(configService.config.authenticationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
         expect(configService.config.authenticationPolicy.rules.length).to.equal(0);
 
     });
-
 
     it('updateAuthenticationRulePos', async () => {
 
@@ -1213,7 +1171,6 @@ describe('configService', async () => {
         configService.config.authenticationPolicy.rules.push(rule2);
         configService.config.authenticationPolicy.rulesOrder.push(rule2.id);
 
-
         let rule3: AuthenticationRule = {
             id: '3',
             name: "zero trust3",
@@ -1228,7 +1185,6 @@ describe('configService', async () => {
         configService.config.authenticationPolicy.rules.push(rule3);
         configService.config.authenticationPolicy.rulesOrder.push(rule3.id);
 
-
         const policy = configService.config.authenticationPolicy;
 
         expect(policy.rules[0].id).to.be.equal(rule1.id);
@@ -1238,8 +1194,6 @@ describe('configService', async () => {
         expect(policy.rulesOrder[0]).to.be.equal(rule1.id);
         expect(policy.rulesOrder[1]).to.be.equal(rule2.id);
         expect(policy.rulesOrder[2]).to.be.equal(rule3.id);
-
-
 
         await configService.updateAuthenticationRulePos(rule1.id, 0, rule3.id, 2);
         expect(policy.rules[0].id).to.be.equal('2');
@@ -1273,14 +1227,7 @@ describe('configService', async () => {
         }
         expect(errrored).to.be.true;
 
-
-
-
-
     });
-
-
-
 
     //authorizationPolicy
 
@@ -1306,7 +1253,6 @@ describe('configService', async () => {
 
         const policy = await configService.getAuthorizationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
-
 
     });
     it('getAuthorizationPolicy', async () => {
@@ -1374,7 +1320,6 @@ describe('configService', async () => {
         configService.config.authorizationPolicy.rules.push(rule2);
         configService.config.authorizationPolicy.rulesOrder.push(rule2.id);
 
-
         let rule3: AuthorizationRule = {
             id: '3',
             name: "zero trust3",
@@ -1392,7 +1337,6 @@ describe('configService', async () => {
         configService.config.authorizationPolicy.rules.push(rule3);
         configService.config.authorizationPolicy.rulesOrder.push(rule3.id);
 
-
         const policy = configService.config.authorizationPolicy;
 
         expect(policy.rules[0].id).to.be.equal(rule1.id);
@@ -1402,8 +1346,6 @@ describe('configService', async () => {
         expect(policy.rulesOrder[0]).to.be.equal(rule1.id);
         expect(policy.rulesOrder[1]).to.be.equal(rule2.id);
         expect(policy.rulesOrder[2]).to.be.equal(rule3.id);
-
-
 
         await configService.updateAuthorizationRulePos(rule1.id, 0, rule3.id, 2);
         expect(policy.rules[0].id).to.be.equal('2');
@@ -1437,12 +1379,7 @@ describe('configService', async () => {
         }
         expect(errrored).to.be.true;
 
-
-
-
-
     });
-
 
     it('getAuthorizationPolicyUnsafe', async () => {
 
@@ -1463,7 +1400,6 @@ describe('configService', async () => {
         }
         //add
         await configService.saveAuthorizationPolicyRule(rule);
-
 
         const policy = await configService.getAuthorizationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
@@ -1493,13 +1429,11 @@ describe('configService', async () => {
 
         configService.config.authorizationPolicy.rules.push(rule);
 
-
         await configService.deleteAuthorizationPolicyRule(rule.id);
         expect(configService.config.authorizationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
         expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
 
     });
-
 
     it('triggerUserDeleted', async () => {
 
@@ -1540,7 +1474,6 @@ describe('configService', async () => {
 
         configService.config.authorizationPolicy.rules.push(rule);
 
-
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
@@ -1563,7 +1496,6 @@ describe('configService', async () => {
         expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
         expect(configService.config.authenticationPolicy.rules.length).to.equal(0);
 
-
         expect(eventDatas.length).to.equal(3);
 
         expect(eventDatas[0].type).to.equal('del')
@@ -1571,23 +1503,17 @@ describe('configService', async () => {
         expect(eventDatas[0].before.id).exist;
         expect(eventDatas[0].val).not.exist;
 
-
         expect(eventDatas[1].type).to.equal('del')
         expect(eventDatas[1].path).to.equal('authorizationPolicy/rules');
         expect(eventDatas[1].before.id).exist;
         expect(eventDatas[1].val).not.exist;
-
 
         expect(eventDatas[2].type).to.equal('del');
         expect(eventDatas[2].path).to.equal('users');
         expect(eventDatas[2].before.id).exist;
         expect(eventDatas[2].val).not.exist;
 
-
-
-
     });
-
 
     it('triggerUserSavedOrUpdated', async () => {
 
@@ -1609,11 +1535,9 @@ describe('configService', async () => {
 
         await configService.saveUser(aUser);
 
-
         aUser.name = 'changed';
 
         await configService.saveUser(aUser);
-
 
         expect(eventDatas.length).to.equal(2);
         expect(eventDatas[0].type).to.equal('put')
@@ -1621,14 +1545,12 @@ describe('configService', async () => {
         expect(eventDatas[0].before).not.exist
         expect(eventDatas[0].val.id).to.equal(aUser.id);
 
-
         expect(eventDatas[1].type).to.equal('put')
         expect(eventDatas[1].path).to.equal('users')
         expect(eventDatas[1].before.id).to.equal(aUser.id);
         expect(eventDatas[1].val.id).to.equal(aUser.id);
 
     });
-
 
     it('triggerNetworkDeleted', async () => {
 
@@ -1639,8 +1561,6 @@ describe('configService', async () => {
         configService.config.services = [];
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
-
-
 
         let eventDatas: ConfigWatch<any>[] = [];
         configService.events.on('configChanged', (data: ConfigWatch<any>) => {
@@ -1697,8 +1617,6 @@ describe('configService', async () => {
 
         configService.config.users.push(aUser);
 
-
-
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
         let rule: AuthorizationRule = {
@@ -1717,7 +1635,6 @@ describe('configService', async () => {
         //add
 
         configService.config.authorizationPolicy.rules.push(rule);
-
 
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
@@ -1759,26 +1676,15 @@ describe('configService', async () => {
         expect(eventDatas[2].before.id).exist;
         expect(eventDatas[2].val).not.exist;
 
-
-
-
-
         expect(eventDatas[3].type).to.equal('del')
         expect(eventDatas[3].path).to.equal('authenticationPolicy/rules');
         expect(eventDatas[3].before.id).exist;
         expect(eventDatas[3].val).not.exist;
 
-
-
-
         expect(eventDatas[4].type).to.equal('del')
         expect(eventDatas[4].path).to.equal('networks');
         expect(eventDatas[4].before.id).exist;
         expect(eventDatas[4].val).not.exist;
-
-
-
-
 
     });
 
@@ -1792,11 +1698,7 @@ describe('configService', async () => {
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
 
-
-
         let eventDatas: ConfigWatch<any>[] = [];
-
-
 
         let gateway: Gateway = {
             id: Util.randomNumberString(),
@@ -1814,18 +1716,13 @@ describe('configService', async () => {
         })
         await configService.deleteGateway(gateway.id);
 
-
-
         expect(eventDatas.length).to.equal(1);
         expect(eventDatas[0].type).to.equal('del')
         expect(eventDatas[0].path).to.equal('gateways')
         expect(eventDatas[0].before.id).exist;
         expect(eventDatas[0].val).not.exist;
 
-
     });
-
-
 
     it('triggerGroupDeleted', async () => {
 
@@ -1875,7 +1772,6 @@ describe('configService', async () => {
 
         configService.config.authorizationPolicy.rules.push(rule);
 
-
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
@@ -1899,29 +1795,22 @@ describe('configService', async () => {
 
         expect(eventDatas.length).to.equal(4);
 
-
         expect(eventDatas[1].type).to.equal('del')
         expect(eventDatas[1].path).to.equal('authenticationPolicy/rules');
         expect(eventDatas[1].before.id).exist;
         expect(eventDatas[1].val).not.exist;
-
 
         expect(eventDatas[2].type).to.equal('del')
         expect(eventDatas[2].path).to.equal('authorizationPolicy/rules');
         expect(eventDatas[2].before.id).exist;
         expect(eventDatas[2].val).not.exist;
 
-
         expect(eventDatas[3].type).to.equal('del');
         expect(eventDatas[3].path).to.equal('groups');
         expect(eventDatas[3].before.id).exist;
         expect(eventDatas[3].val).not.exist;
 
-
-
-
     });
-
 
     it('triggerServiceDeleted', async () => {
 
@@ -1933,13 +1822,10 @@ describe('configService', async () => {
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
 
-
-
         let eventDatas: ConfigWatch<any>[] = [];
         configService.events.on('configChanged', (data: ConfigWatch<any>) => {
             eventDatas.push(data)
         })
-
 
         let service1: Service = {
             id: Util.randomNumberString(),
@@ -1959,7 +1845,6 @@ describe('configService', async () => {
 
         await configService.config.services.push(service1);
 
-
         let aUser: User = {
             id: Util.randomNumberString(),
             username: 'hamza.kilic@ferrumgate.com',
@@ -1970,8 +1855,6 @@ describe('configService', async () => {
         };
 
         configService.config.users.push(aUser);
-
-
 
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
@@ -1996,7 +1879,6 @@ describe('configService', async () => {
 
         expect(configService.config.authorizationPolicy.rules.find(x => x.serviceId == service1.id)).to.not.exist;
 
-
         expect(eventDatas.length).to.equal(2);
 
         expect(eventDatas[0].type).to.equal('del')
@@ -2009,10 +1891,7 @@ describe('configService', async () => {
         expect(eventDatas[1].before.id).exist;
         expect(eventDatas[1].val).not.exist;
 
-
     });
-
-
 
     it('getIpIntelligenceSources/saveIpIntelligenceSource/deleteIpIntelligence', async () => {
 
@@ -2042,9 +1921,7 @@ describe('configService', async () => {
         const filter3 = await configService.getIpIntelligenceSources();
         expect(filter3.length).to.equal(0);
 
-
     });
-
 
     it('getIpIntelligenceList/saveIpIntelligenceList/deleteIpIntelligenceList', async () => {
 
@@ -2074,7 +1951,6 @@ describe('configService', async () => {
         const filter3 = await configService.getIpIntelligenceLists();
         expect(filter3.length).to.equal(0);
 
-
     });
 
     //// device posture
@@ -2099,7 +1975,6 @@ describe('configService', async () => {
 
         const returned = await configService.getDevicePosture(posture.id);
         expect(exclude(returned)).to.deep.equal(exclude(posture));
-
 
     });
 
@@ -2140,9 +2015,7 @@ describe('configService', async () => {
         const returned2 = await configService.getDevicePosturesBySearch('abo');
         expect(returned2.length).to.be.equal(0);
 
-
     });
-
 
     it('getDevicePosturesAll', async () => {
 
@@ -2255,7 +2128,6 @@ describe('configService', async () => {
 
     });
 
-
     it('getIpIntelligenceSources/saveIpIntelligenceSource/deleteIpIntelligence', async () => {
 
         //first create a config and save to a file
@@ -2284,9 +2156,7 @@ describe('configService', async () => {
         const filter3 = await configService.getIpIntelligenceSources();
         expect(filter3.length).to.equal(0);
 
-
     });
-
 
     it('getFqdnIntelligenceList/saveFqdnIntelligenceList/deleteFqdnIntelligenceList', async () => {
 
@@ -2321,9 +2191,7 @@ describe('configService', async () => {
         const filter3 = await configService.getFqdnIntelligenceLists();
         expect(filter3.length).to.equal(0);
 
-
     });
-
 
     it('getDnsRecord/saveDnsRecord/deleteDnsRecord', async () => {
 
@@ -2361,8 +2229,6 @@ describe('configService', async () => {
         const filter3 = await configService.getDnsRecords();
         expect(filter3.length).to.equal(0);
 
-
     });
-
 
 });

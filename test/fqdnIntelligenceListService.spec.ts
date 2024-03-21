@@ -1,29 +1,18 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ConfigService } from '../src/service/configService';
-import { Util } from '../src/util';
 import { RedisService } from '../src/service/redisService';
-import { GatewayDetail } from '../src/model/network';
-import os from 'os';
-import { GatewayService } from '../src/service/gatewayService';
-
+import { Util } from '../src/util';
 import crypto from 'node:crypto';
-import { InputService } from '../src/service/inputService';
+import { FqdnIntelligenceList, FqdnIntelligenceListFiles, FqdnIntelligenceListStatus } from '../src/model/fqdnIntelligence';
 import { ESService } from '../src/service/esService';
 import { FqdnIntelligenceListService } from '../src/service/fqdnIntelligenceService';
-import { FqdnIntelligenceList } from '../src/model/fqdnIntelligence';
-import { FqdnIntelligenceListStatus } from '../src/model/fqdnIntelligence';
-import { FqdnIntelligenceListFiles } from '../src/model/fqdnIntelligence';
+import { InputService } from '../src/service/inputService';
 import { esHost, esPass, esUser } from './common.spec';
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -32,7 +21,6 @@ function expectToDeepEqual(a: any, b: any) {
     delete b.updateDate;
     expect(a).to.deep.equal(b);
 }
-
 
 describe('fqdnIntelligenceListService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -78,12 +66,9 @@ describe('fqdnIntelligenceListService', async () => {
         expect(files[0].hash).exist;
         expect(files[0].filename).exist;
 
-
     }).timeout(500000);
 
-
     it('getListStatus/saveListStatus/deleteListStatus', async () => {
-
 
         const item: FqdnIntelligenceList = {
             id: Util.randomNumberString(), name: 'test', insertDate: '', updateDate: '', labels: [],
@@ -104,8 +89,6 @@ describe('fqdnIntelligenceListService', async () => {
         const data2 = await intel.getListStatus(item);
         expect(data2).not.exist;
 
-
-
     }).timeout(500000);
 
     it('getDbFileList/saveDbFileList/deleteDbFileList/deleteDbFileList2', async () => {
@@ -125,9 +108,7 @@ describe('fqdnIntelligenceListService', async () => {
         const files2 = await intel.getDbFileList(item);
         expectToDeepEqual(files, files2);
 
-
         await intel.deleteDbFileList2(item, 0);
-
 
         const files3 = await intel.getDbFileList(item);
         expect(files3).exist;
@@ -142,7 +123,6 @@ describe('fqdnIntelligenceListService', async () => {
             expect(Object.keys(files4).length == 0).to.be.true;
 
     })
-
 
     it('saveDbFilePage/getDbFilePage/deleteDbFilePage', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -194,11 +174,7 @@ describe('fqdnIntelligenceListService', async () => {
             expect(fs.existsSync(tmpFile)).to.be.false;
         }
 
-
-
     })
-
-
 
     it('process file version', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -258,7 +234,6 @@ describe('fqdnIntelligenceListService', async () => {
             expect(pages.length).to.equal(3);
         }
 
-
         fs.writeFileSync(tmpFolderFile, "www.google.com\ncom\nferrumgate.com\nco.uk");
         await intel.saveListFile(item, tmpFolderFile);
         //process again ischanged false
@@ -284,12 +259,9 @@ describe('fqdnIntelligenceListService', async () => {
             expect(fqdn4[0]).exist;
         }
 
-
-
         //process again ischanged false
         {
             await intel.process(item);
-
 
             fs.writeFileSync(tmpFolderFile, "ferrumgate.com\nco.uk");
             await intel.saveListFile(item, tmpFolderFile);
@@ -310,11 +282,7 @@ describe('fqdnIntelligenceListService', async () => {
             expect(fqdn4[0]).exist;
         }
 
-
-
-
     }).timeout(150000);
-
 
     it('process file version', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -385,12 +353,6 @@ describe('fqdnIntelligenceListService', async () => {
         }
     })
 
-
-
-
-
-
-
     it('process http version', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
 
@@ -406,7 +368,6 @@ describe('fqdnIntelligenceListService', async () => {
         }
 
         const intel = new FqdnIntelligenceListService(redisService, inputService, esService);
-
 
         const status = await intel.getListStatus(item);
         expect(status).not.exist;
@@ -425,10 +386,7 @@ describe('fqdnIntelligenceListService', async () => {
         expect(status3?.lastCheck).not.equal(status2?.lastCheck);
         expect(status3?.isChanged).to.be.false;
 
-
     }).timeout(50000);
-
-
 
     it('deleteList', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -465,11 +423,7 @@ describe('fqdnIntelligenceListService', async () => {
         const status5 = await intel.getListFile(item, tmpFile);
         expect(status5).not.exist;
 
-
-
-
     }).timeout(50000);
-
 
     it('getAllListItems', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -499,10 +453,7 @@ describe('fqdnIntelligenceListService', async () => {
         expect(items?.includes('co.uk')).to.be.true;
         console.log(items);
 
-
-
     }).timeout(120000);
-
 
     it('getByFqdn', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -535,17 +486,10 @@ describe('fqdnIntelligenceListService', async () => {
         const id3 = await intel.getByFqdn(item.id, 'ferrumgate.com')
         expect(id3).exist;
 
-
-
         const id8 = await intel.getByFqdn(item.id, 'www.amazon.com')
         expect(id8).not.exist;
 
     }).timeout(50000);
-
-
-
-
-
 
     it('getByFqdnAll', async () => {
         const tmpFolder = `/tmp/${Util.randomNumberString()}`;
@@ -582,8 +526,6 @@ describe('fqdnIntelligenceListService', async () => {
             }
         }
 
-
-
         fs.writeFileSync(tmpFolderFile2, "www.google.com\ncom\nferrumgate.com");
         await intel.saveListFile(item2, tmpFolderFile2);
         //process again ischanged false
@@ -596,11 +538,7 @@ describe('fqdnIntelligenceListService', async () => {
         expect(id.find(x => x == item.id)).exist
         expect(id.find(y => y == item2.id)).exist;
 
-
-
-
     }).timeout(50000);
-
 
     it('compareSystemHealth', async () => {
 
@@ -611,8 +549,6 @@ describe('fqdnIntelligenceListService', async () => {
         await intel.compareSystemHealth([{ id: '2' } as any]);
         const item = await redisService.get('/intelligence/fqdn/list/1/file', false);
         expect(item).not.exist;
-
-
 
     }).timeout(50000);
 
@@ -628,14 +564,11 @@ describe('fqdnIntelligenceListService', async () => {
         const contentZip = fs.readFileSync(filenameZip).toString();
         expect(contentZip).to.equal('something');
 
-
-
         const filenameTarGz = `${baseFolder}/${Util.randomNumberString()}`
         fs.copyFileSync('./test/data/test.tar.gz', filenameTarGz);
         await intel.prepareFile('test.tar.gz', filenameTarGz, baseFolder);
         const contentTarGz = fs.readFileSync(filenameTarGz).toString();
         expect(contentTarGz).to.equal('something');
-
 
     }).timeout(50000);
 
@@ -655,14 +588,7 @@ describe('fqdnIntelligenceListService', async () => {
             await intel.process(item2)
             console.log(intel);
     
-    
         }).timeout(50000); */
 
-
-
-
-
-
 })
-
 

@@ -1,23 +1,17 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import { AppService } from '../src/service/appService';
-
+import * as twofactor from 'node-2fa';
+import { ExpressApp } from '../src';
+import { AuthSettings } from '../src/model/authSettings';
+import { Gateway, Network } from '../src/model/network';
 import { User } from '../src/model/user';
 import { Util } from '../src/util';
-import { AuthSettings } from '../src/model/authSettings';
-import * as twofactor from 'node-2fa';
-import { Gateway } from '../src/model/network';
-import { Network } from '../src/model/network';
-import { ExpressApp } from '../src';
 import { UtilPKI } from '../src/utilPKI';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('authApi', async () => {
 
@@ -56,7 +50,6 @@ describe('authApi', async () => {
         updateDate: new Date().toISOString(),
         roleIds: []
     }
-
 
     const net: Network = {
         id: '1ksfasdfasf',
@@ -107,7 +100,6 @@ describe('authApi', async () => {
             saml: { providers: [] },
             openId: { providers: [] },
             radius: { providers: [] }
-
 
         }
         auth.oauth = {
@@ -198,8 +190,6 @@ describe('authApi', async () => {
             }]
         }
 
-
-
         await configService.saveNetwork(net);
         await configService.saveGateway(gateway);
         await configService.setAuthSettingCommon(auth.common);
@@ -214,7 +204,6 @@ describe('authApi', async () => {
             await configService.addAuthSettingOAuth(it)
         }
 
-
         await configService.setUrl('http://local.ferrumgate.com:8080')
         await configService.init();
         await configService.saveNetwork(net);
@@ -226,7 +215,6 @@ describe('authApi', async () => {
         configService.config.authenticationPolicy.rules = [];
 
     })
-
 
     it('POST /auth with 2FA result', async () => {
 
@@ -246,7 +234,6 @@ describe('authApi', async () => {
         expect(response.body.key).exist;
         expect(response.body.key.length).to.equal(48);
         expect(response.body.is2FA).to.be.true;
-
 
     }).timeout(50000);
 
@@ -270,7 +257,6 @@ describe('authApi', async () => {
         expect(response.body.is2FA).to.be.false;
 
     }).timeout(50000);
-
 
     it('POST /auth with result 401', async () => {
 
@@ -305,7 +291,6 @@ describe('authApi', async () => {
 
         expect(response).exist;
         expect(response.status).to.equal(401);
-
 
     }).timeout(50000);
 
@@ -343,9 +328,7 @@ describe('authApi', async () => {
 
         expect(response.status).to.equal(200);
 
-
     }).timeout(50000);
-
 
     it('POST /auth with result 200 and certificate', async () => {
 
@@ -391,8 +374,6 @@ describe('authApi', async () => {
             privateKey: fs.readFileSync(privateKey3).toString()
         }
 
-
-
         await configService.saveUser(user5);
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -408,7 +389,6 @@ describe('authApi', async () => {
         })
 
         expect(response.status).to.equal(200);
-
 
     }).timeout(50000);
 
@@ -446,7 +426,6 @@ describe('authApi', async () => {
 
         expect(response.status).to.equal(200);
 
-
     }).timeout(50000);
 
     it('POST /auth with result 200 source is different but not problem', async () => {
@@ -482,7 +461,6 @@ describe('authApi', async () => {
         })
 
         expect(response.status).to.equal(200);
-
 
     }).timeout(50000);
 
@@ -525,10 +503,7 @@ describe('authApi', async () => {
 
         expect(response.status).to.equal(200);
 
-
-
     }).timeout(50000);
-
 
     it('POST /auth with result 401 because source isEnabled false and user is not admin', async () => {
         //
@@ -569,15 +544,9 @@ describe('authApi', async () => {
 
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
 
-
-
-
     it('POST /auth with result 401 with empty username', async () => {
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -607,10 +576,7 @@ describe('authApi', async () => {
 
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
-
 
     it('POST /auth with result 401', async () => {
 
@@ -645,11 +611,7 @@ describe('authApi', async () => {
 
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
-
-
 
     it('POST /auth with result 401', async () => {
 
@@ -667,9 +629,7 @@ describe('authApi', async () => {
 
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
 
     it('GET /auth/oauth/google with result 200', async () => {
 
@@ -685,7 +645,6 @@ describe('authApi', async () => {
         })
 
         expect(response.status).to.equal(200);
-
 
     }).timeout(50000);
 
@@ -704,7 +663,6 @@ describe('authApi', async () => {
 
         expect(response.status).to.equal(200);
 
-
     }).timeout(50000);
 
     it('GET /auth/saml/auth0 with result 200', async () => {
@@ -721,7 +679,6 @@ describe('authApi', async () => {
         })
 
         expect(response.redirects.length).to.equal(1);
-
 
     }).timeout(50000);
 
@@ -740,13 +697,7 @@ describe('authApi', async () => {
 
         expect(response.redirects.length).to.equal(1);
 
-
     }).timeout(50000);
-
-
-
-
-
 
     it('POST /auth/2fa with result 200', async () => {
 
@@ -783,7 +734,6 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-
     it('POST /auth/accesstoken with result 200', async () => {
 
         await redisService.set(`/auth/access/test`, { userId: 'someid' });
@@ -803,9 +753,7 @@ describe('authApi', async () => {
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
 
-
     }).timeout(50000);
-
 
     /* it('POST /auth/accesstoken with tunnel parameter with result 200', async () => {
 
@@ -836,9 +784,7 @@ describe('authApi', async () => {
         const retVAl = await redisService.hgetAll('/tunnel/id/testsession');
         expect(retVAl.assignedClientIp).exist;
 
-
     }).timeout(50000); */
-
 
     it('POST /auth/refreshtoken with result 200', async () => {
 
@@ -879,7 +825,6 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-
     it('POST /auth/exchangetoken with result 200', async () => {
         await redisService.hset('/session/id/abc', { userId: 'someid', id: 'abc' })
         await redisService.set(`/exchange/id/12`, 'abc');
@@ -900,10 +845,7 @@ describe('authApi', async () => {
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
 
-
     }).timeout(50000);
-
-
 
     it('POST /auth/token/test with result 200', async () => {
 
@@ -943,7 +885,5 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-
 })
-
 

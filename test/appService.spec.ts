@@ -1,9 +1,7 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { EventBufferedExecutor } from '../src/service/appService';
 import { Util } from '../src/util';
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -29,6 +27,5 @@ describe('appService', async () => {
         expect(a > 0).to.be.true;
 
     }).timeout(50000);
-
 
 });

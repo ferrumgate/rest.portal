@@ -1,18 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
 import { Network } from '../src/model/network';
-
-
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -63,7 +58,6 @@ describe('networkApi', async () => {
         await redisService.flushAll();
     })
 
-
     it('check authoration as admin role', async () => {
         //prepare data
         const clonedUser = Util.clone(user);
@@ -98,7 +92,6 @@ describe('networkApi', async () => {
         expect(response.status).to.equal(401);
 
     }).timeout(50000);
-
 
     it('GET /network/:id will return 200', async () => {
         //prepare data
@@ -142,8 +135,6 @@ describe('networkApi', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .get(`/api/network/someid`)
@@ -157,10 +148,7 @@ describe('networkApi', async () => {
         })
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
-
 
     it('GET /network/search will return 200', async () => {
         //prepare data
@@ -179,9 +167,6 @@ describe('networkApi', async () => {
         }
         await appService.configService.saveNetwork(network);
 
-
-
-
         const network2: Network = {
             id: Util.randomNumberString(),
             name: 'mest2',
@@ -192,8 +177,6 @@ describe('networkApi', async () => {
             updateDate: new Date().toISOString()
         }
         await appService.configService.saveNetwork(network2);
-
-
 
         const network3: Network = {
             id: Util.randomNumberString(),
@@ -245,7 +228,6 @@ describe('networkApi', async () => {
 
     }).timeout(50000);
 
-
     it('DELETE /network/id will return 200', async () => {
         //prepare data
         await appService.configService.saveUser(user);
@@ -263,8 +245,6 @@ describe('networkApi', async () => {
         }
         await appService.configService.saveNetwork(network);
 
-
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .delete(`/api/network/${network.id}`)
@@ -281,7 +261,6 @@ describe('networkApi', async () => {
         expect(netdb).not.exist;
 
     }).timeout(50000);
-
 
     it('PUT /network will return 200', async () => {
         //prepare data
@@ -322,13 +301,11 @@ describe('networkApi', async () => {
 
         expectToDeepEqual(response.body, network);
 
-
         const netdb = await appService.configService.getNetwork(network.id);
 
         expectToDeepEqual(netdb, network);
 
     }).timeout(50000);
-
 
     it('POST /network will return 200', async () => {
         //prepare data
@@ -346,7 +323,6 @@ describe('networkApi', async () => {
             updateDate: new Date().toISOString()
         }
         await appService.configService.saveNetwork(network);
-
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -371,14 +347,7 @@ describe('networkApi', async () => {
         expectToDeepEqual(response.body, network);
         expect(response.body.id).exist;
 
-
-
     }).timeout(50000);
 
-
-
-
-
 })
-
 

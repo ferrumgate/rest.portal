@@ -1,18 +1,12 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { Util } from '../src/util';
-import { RedisService, RedisServiceManuel } from '../src/service/redisService';
 import crypto from 'crypto';
-import fsp from 'fs/promises'
-
+import fsp from 'fs/promises';
+import { RedisService, RedisServiceManuel } from '../src/service/redisService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 describe('redisService', () => {
     beforeEach(async () => {
@@ -26,7 +20,6 @@ describe('redisService', () => {
         await simpleRedis.set('deneme', 'deneme', { ttl: '15000' });
         let data = await simpleRedis.get<string>('deneme', false);
         expect(data).to.equal('deneme');
-
 
         let contains = await simpleRedis.containsKey('deneme');
         expect(contains).to.be.true;
@@ -46,8 +39,6 @@ describe('redisService', () => {
 
         }
 
-
-
     }).timeout(10000)
 
     it('test setnx', async () => {
@@ -59,8 +50,6 @@ describe('redisService', () => {
         await Util.sleep(5000);
         await simpleRedis.setnx('deneme', 'deneme', 15000);
 
-
-
     }).timeout(10000);
 
     it('test hincr', async () => {
@@ -71,11 +60,7 @@ describe('redisService', () => {
         expect(data).to.equal('1');
         expect(typeof (data) == 'string').to.be.true;
 
-
-
-
     }).timeout(10000);
-
 
     it('test transaction', async () => {
         const simpleRedis = new RedisService('localhost:6379');
@@ -88,10 +73,7 @@ describe('redisService', () => {
 
         expect(as).to.equal('deneme2');
 
-
-
     }).timeout(10000)
-
 
     it('test transaction with error', async () => {
         const simpleRedis = new RedisService('localhost:6379');
@@ -107,13 +89,10 @@ describe('redisService', () => {
 
         const result = await simpleRedis.get('deneme2', false);
 
-
-
     }).timeout(10000)
 
     it('test transaction that will be null and set other', async () => {
         const simpleRedis = new RedisService('localhost:6379');
-
 
         let pipe = await simpleRedis.multi()
         await pipe.set('deneme3', 'deneme3', { ttl: '60000' });
@@ -128,8 +107,6 @@ describe('redisService', () => {
         let results = await pipe.exec();
         as = await simpleRedis.get('deneme4', false)
         expect(as).to.equal('deneme4');
-
-
 
     }).timeout(10000);
 
@@ -147,11 +124,7 @@ describe('redisService', () => {
         let as2 = await simpleRedis.get('deneme3', false)
         expect(as2).to.equal('deneme3')
 
-
-
     }).timeout(10000)
-
-
 
     it('test transaction that will terminate transaction', async () => {
         const simpleRedis = new RedisService('localhost:6379');
@@ -166,11 +139,7 @@ describe('redisService', () => {
             expect(as).to.be.null
         }
 
-
-
-
     }).timeout(10000)
-
 
     it('redis set object', async () => {
 
@@ -200,10 +169,6 @@ describe('redisService', () => {
         expect(retObj).not.null;
         expect(retObj.ttl).to.equal(10);
 
-
-
-
-
     }).timeout(10000)
 
     it('redis set number', async () => {
@@ -215,13 +180,7 @@ describe('redisService', () => {
         expect(retObj).not.null;
         expect(retObj).to.equal(10);
 
-
-
-
     }).timeout(10000)
-
-
-
 
     it('redis hget hset hgetAll', async () => {
 
@@ -236,9 +195,6 @@ describe('redisService', () => {
         expect(retVal).not.null;
         expect(retVal.ttl).exist;
         expect(retVal.ttl).to.equal('10');
-
-
-
 
     }).timeout(10000)
 
@@ -259,9 +215,6 @@ describe('redisService', () => {
         fieldValue = await simpleRedis.hgetBuffer('test', 'content2') as any;
         expect(fieldValue.length).to.equal(1024);
 
-
-
-
     }).timeout(100000)
 
     it('redis publish', async () => {
@@ -271,7 +224,6 @@ describe('redisService', () => {
         await simpleRedis.publish('test.channel', obj);
 
     }).timeout(10000)
-
 
     it('redis sadd sget sismember', async () => {
 
@@ -286,7 +238,6 @@ describe('redisService', () => {
         expect(result == 1).to.be.false;
 
     }).timeout(10000)
-
 
     it('redis publish/subscribe', async () => {
 
@@ -303,7 +254,6 @@ describe('redisService', () => {
         expect(isDataReceived).to.be.true;
 
     }).timeout(10000)
-
 
     it('redis publish/subscribe on close disabled', async () => {
 
@@ -327,9 +277,7 @@ describe('redisService', () => {
         await Util.sleep(2000);
         expect(isDataReceived).to.be.false;
 
-
     }).timeout(10000)
-
 
     it('redis scan', async () => {
 
@@ -346,7 +294,6 @@ describe('redisService', () => {
         expect(cursor).to.equal('0');
         expect(results.length).to.equal(2);
 
-
     }).timeout(10000)
 
     it('redis xadd/xread', async () => {
@@ -361,8 +308,6 @@ describe('redisService', () => {
         expect(result.length).to.equal(1);
         expect(result[0].xreadPos).to.equal('1-1');
         expect(result[0].id).to.equal('2');
-
-
 
     }).timeout(10000)
 
@@ -384,11 +329,7 @@ describe('redisService', () => {
         expect(result[0].items[0].xreadPos).to.equal('1-1');
         expect(result[0].items[0].id).to.equal('2');
 
-
-
     }).timeout(10000)
-
-
 
     it('redis xadd/xread', async () => {
 
@@ -402,10 +343,7 @@ describe('redisService', () => {
         expect(result).exist;
         expect(result['last-generated-id']).exist;
 
-
-
     }).timeout(10000)
-
 
     it('test pipeline', async () => {
         const simpleRedis = new RedisService('localhost:6379');
@@ -424,7 +362,6 @@ describe('redisService', () => {
 
         expect(results).exist;
 
-
         pipe = await simpleRedis.multi()
         for (let i = 0; i < 100; ++i) {
             await pipe.set(`deneme${i}`, { id: i, name: `test${i}` });
@@ -438,8 +375,6 @@ describe('redisService', () => {
         results = await pipe.exec();
 
         expect(results).exist;
-
-
 
     }).timeout(10000);
 
@@ -464,9 +399,7 @@ describe('redisService', () => {
         const result = await simpleRedis.xread(key, 10, '0', 1000);
         expect(result.length).to.be.equal(0);
 
-
     }).timeout(20000);
-
 
     it('redis xinfoGroups', async () => {
 
@@ -480,10 +413,7 @@ describe('redisService', () => {
         expect(result.length).to.be.equal(3);
         expect(result[0].name).to.be.equal('test1');
 
-
-
     }).timeout(20000);
-
 
     it('redis xreadGroup', async () => {
 
@@ -495,10 +425,7 @@ describe('redisService', () => {
         const result = await simpleRedis.xreadGroup(key, 'test1', '12', 10, 1000);
         expect(result.length).to.be.equal(1);
 
-
     }).timeout(20000);
-
-
 
     it('redis onClose manuel stop', async () => {
         let called = false;
@@ -512,7 +439,6 @@ describe('redisService', () => {
 
             await simpleRedis.set('abc', 'defs');
             await Util.sleep(1000);
-
 
         } catch (err) {
             console.log(err);
@@ -566,12 +492,6 @@ describe('redisService', () => {
         const results3 = await simpleRedis.zrangebyscore('test', 0, '+inf', 0, 100);
         expect(results3.length).to.equal(0);
 
-
     }).timeout(20000);
-
-
-
-
-
 
 })

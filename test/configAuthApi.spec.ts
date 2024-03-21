@@ -1,18 +1,14 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
 import { AuthCommon, AuthLocal, AuthSettings, BaseLdap, BaseOAuth, BaseOpenId, BaseRadius, BaseSaml } from '../src/model/authSettings';
-
-
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -21,7 +17,6 @@ function expectToDeepEqual(a: any, b: any) {
     delete b.updateDate;
     expect(a).to.deep.equal(b);
 }
-
 
 function createSampleSaml1(): BaseSaml {
     return {
@@ -43,7 +38,6 @@ function createSampleSaml1(): BaseSaml {
         saveNewUser: true
     }
 }
-
 
 function createSampleLdap1(): BaseLdap {
     return {
@@ -115,7 +109,6 @@ function createSampleLocal(): AuthLocal {
     }
 }
 
-
 function createSampleOpenId1(): BaseOpenId {
     return {
         baseType: 'openId',
@@ -152,7 +145,6 @@ function createSampleRadius1(): BaseRadius {
 
 describe('configAuthApi ', async () => {
 
-
     const expressApp = new ExpressApp();
     const app = expressApp.app;
     const appService = (expressApp.appService) as AppService;
@@ -188,7 +180,6 @@ describe('configAuthApi ', async () => {
             oauth: { providers: [] },
             openId: { providers: [] },
             radius: { providers: [] }
-
 
         }
         auth.oauth = {
@@ -229,7 +220,6 @@ describe('configAuthApi ', async () => {
 
         }
 
-
         await configService.setAuthSettingCommon(auth.common);
         await configService.setAuthSettingLocal(auth.local);
 
@@ -256,9 +246,7 @@ describe('configAuthApi ', async () => {
             await configService.deleteAuthSettingRadius(it.id);
         }
 
-
     })
-
 
     it('GET /config/auth/common will return 200, with common auth settigns', async () => {
 
@@ -269,7 +257,6 @@ describe('configAuthApi ', async () => {
             test: ''
         }
         await configService.setAuthSettingCommon(common);
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -287,10 +274,6 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.test).exist;
 
-
-
-
-
     }).timeout(50000);
 
     it('PUT /config/auth/common will return 200', async () => {
@@ -302,7 +285,6 @@ describe('configAuthApi ', async () => {
             test: ''
         }
         //await configService.setAuthSettingCommon(common);
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -322,7 +304,6 @@ describe('configAuthApi ', async () => {
         const returned = await configService.getAuthSettingCommon() as any;
         expect(returned.test).not.exist;
 
-
     }).timeout(50000);
 
     it('GET /config/auth/local will return 200, with local auth settigns', async () => {
@@ -332,7 +313,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const local = createSampleLocal();
         await configService.setAuthSettingLocal(local);
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -349,7 +329,6 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(200);
         expectToDeepEqual(response.body, local);
-
 
     }).timeout(50000);
 
@@ -383,7 +362,6 @@ describe('configAuthApi ', async () => {
         response.body.updateDate = local.updateDate;
         expectToDeepEqual(response.body, local);
 
-
     }).timeout(50000);
 
     ////////////////// oauth2  tests ////////////////////////////////////////////////
@@ -395,8 +373,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const oauth = createSampleOauth1();
         await configService.addAuthSettingOAuth(oauth);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -414,7 +390,6 @@ describe('configAuthApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.items).exist;
         expectToDeepEqual(response.body.items[0], oauth);
-
 
     }).timeout(50000);
 
@@ -449,7 +424,6 @@ describe('configAuthApi ', async () => {
         response.body.updateDate = oauth2.updateDate;
         expectToDeepEqual(response.body, oauth2);
 
-
     }).timeout(50000);
 
     it('POST /config/auth/oauth/providers will return 400', async () => {
@@ -477,10 +451,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/auth/oauth/providers will return 200', async () => {
 
@@ -493,7 +464,6 @@ describe('configAuthApi ', async () => {
         oauth.name = 'xxxx';
         //check this property will not be saved
         oauthAny.fakeProperty = 'fakevalue';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -514,10 +484,7 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body, oauth);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/auth/oauth/providers will return 400', async () => {
 
@@ -531,7 +498,6 @@ describe('configAuthApi ', async () => {
         oauth.name = 'xxxx';
         //check this property will not be saved
         oauthAny.fakeProperty = 'fakevalue';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -564,10 +530,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
 
     it('DELETE /config/auth/oauth/providers will return 200', async () => {
 
@@ -576,8 +539,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const oauth = createSampleOauth1();
         await configService.addAuthSettingOAuth(oauth);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -596,9 +557,6 @@ describe('configAuthApi ', async () => {
         expect(oauthRet.providers.length).to.equal(0);
     }).timeout(50000);
 
-
-
-
     ////////////////// ldap  tests ////////////////////////////////////////////////
 
     it('GET /config/auth/ldap/providers will return 200', async () => {
@@ -608,8 +566,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const ldap = createSampleLdap1();
         await configService.addAuthSettingLdap(ldap);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -629,7 +585,6 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body.items[0], ldap);
 
-
     }).timeout(50000);
 
     it('POST /config/auth/ldap/providers will return 200', async () => {
@@ -637,7 +592,6 @@ describe('configAuthApi ', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         const ldap = createSampleLdap1();
         delete (ldap as any).id;
@@ -660,7 +614,6 @@ describe('configAuthApi ', async () => {
         ldap.id = response.body.id;
         expectToDeepEqual(response.body, ldap);
 
-
     }).timeout(50000);
 
     it('POST /config/auth/ldap/providers will return 400', async () => {
@@ -668,7 +621,6 @@ describe('configAuthApi ', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         const ldap1 = createSampleLdap1();
 
@@ -687,10 +639,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/auth/ldap/providers will return 200', async () => {
 
@@ -703,7 +652,6 @@ describe('configAuthApi ', async () => {
         ldapAny.name = 'xxxx';
         //check this property will not be saved
         ldapAny.fakeProperty = 'fakevalue';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -723,9 +671,7 @@ describe('configAuthApi ', async () => {
         delete ldapAny.fakeProperty;
         expectToDeepEqual(response.body, ldap);
 
-
     }).timeout(50000);
-
 
     it('PUT /config/auth/ldap/providers will return 400', async () => {
 
@@ -739,7 +685,6 @@ describe('configAuthApi ', async () => {
         ldap.name = 'xxxx';
         //check this property will not be saved
         ldapAny.fakeProperty = 'fakevalue';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -772,10 +717,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
 
     it('DELETE /config/auth/ldap/providers will return 200', async () => {
 
@@ -784,8 +726,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const ldap = createSampleLdap1();
         await configService.addAuthSettingLdap(ldap);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -804,16 +744,6 @@ describe('configAuthApi ', async () => {
         expect(ldapRet.providers.length).to.equal(0);
     }).timeout(50000);
 
-
-
-
-
-
-
-
-
-
-
     ////////////////// saml  tests ////////////////////////////////////////////////
 
     it('GET /config/auth/saml/providers will return 200', async () => {
@@ -823,8 +753,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const saml = createSampleSaml1();
         await configService.addAuthSettingSaml(saml);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -844,7 +772,6 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body.items[0], saml);
 
-
     }).timeout(50000);
 
     it('POST /config/auth/saml/providers will return 200', async () => {
@@ -852,7 +779,6 @@ describe('configAuthApi ', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         const saml = createSampleSaml1();
         delete (saml as any).id;
@@ -878,7 +804,6 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body, saml);
 
-
     }).timeout(50000);
 
     it('POST /config/auth/saml/providers will return 400', async () => {
@@ -886,7 +811,6 @@ describe('configAuthApi ', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         const saml1 = createSampleSaml1();
 
@@ -905,10 +829,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/auth/saml/providers will return 200', async () => {
 
@@ -921,7 +842,6 @@ describe('configAuthApi ', async () => {
         samlAny.name = 'xxxx';
         //check this property will not be saved
         samlAny.fakeProperty = 'fakevalue';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -944,9 +864,7 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body, saml);
 
-
     }).timeout(50000);
-
 
     it('PUT /config/auth/saml/providers will return 400', async () => {
 
@@ -960,7 +878,6 @@ describe('configAuthApi ', async () => {
         saml.name = 'xxxx';
         //check this property will not be saved
         samlAny.fakeProperty = 'fakevalue';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -993,10 +910,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
 
     it('DELETE /config/auth/saml/providers will return 200', async () => {
 
@@ -1005,8 +919,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const saml = createSampleSaml1();
         await configService.addAuthSettingSaml(saml);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -1025,12 +937,7 @@ describe('configAuthApi ', async () => {
         expect(samlRet.providers.length).to.equal(0);
     }).timeout(50000);
 
-
-
     ///////////// open id tests  /////////////////////////////////
-
-
-
 
     it('GET /config/auth/openid/providers will return 200', async () => {
 
@@ -1039,8 +946,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const openid = createSampleOpenId1();
         await configService.addAuthSettingOpenId(openid);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -1060,7 +965,6 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body.items[0], openid);
 
-
     }).timeout(50000);
 
     it('POST /config/auth/openid/providers will return 200', async () => {
@@ -1068,7 +972,6 @@ describe('configAuthApi ', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         const openid = createSampleOpenId1();
         delete (openid as any).id;
@@ -1094,7 +997,6 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body, openid);
 
-
     }).timeout(50000);
 
     it('POST /config/auth/openid/providers will return 400', async () => {
@@ -1102,7 +1004,6 @@ describe('configAuthApi ', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         const saml1 = createSampleOpenId1();
 
@@ -1121,10 +1022,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/auth/openid/providers will return 200', async () => {
 
@@ -1137,7 +1035,6 @@ describe('configAuthApi ', async () => {
         openIdAny.name = 'xxxx';
         //check this property will not be saved
         openIdAny.fakeProperty = 'fakevalue';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -1160,9 +1057,7 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body, openid);
 
-
     }).timeout(50000);
-
 
     it('PUT /config/auth/openid/providers will return 400', async () => {
 
@@ -1176,7 +1071,6 @@ describe('configAuthApi ', async () => {
         openid.name = 'xxxx';
         //check this property will not be saved
         openIdAny.fakeProperty = 'fakevalue';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -1209,10 +1103,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
 
     it('DELETE /config/auth/openid/providers will return 200', async () => {
 
@@ -1221,8 +1112,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const openid = createSampleOpenId1();
         await configService.addAuthSettingOpenId(openid);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -1241,13 +1130,7 @@ describe('configAuthApi ', async () => {
         expect(openIdRet.providers.length).to.equal(0);
     }).timeout(50000);
 
-
-
-
     ///////////// radius tests  /////////////////////////////////
-
-
-
 
     it('GET /config/auth/radius/providers will return 200', async () => {
 
@@ -1256,8 +1139,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const radius = createSampleRadius1();
         await configService.addAuthSettingRadius(radius);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -1277,7 +1158,6 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body.items[0], radius);
 
-
     }).timeout(50000);
 
     it('POST /config/auth/radius/providers will return 200', async () => {
@@ -1285,7 +1165,6 @@ describe('configAuthApi ', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         const radius = createSampleRadius1();
         delete (radius as any).id;
@@ -1311,7 +1190,6 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body, radius);
 
-
     }).timeout(50000);
 
     it('POST /config/auth/radius/providers will return 400', async () => {
@@ -1319,7 +1197,6 @@ describe('configAuthApi ', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         const saml1 = createSampleRadius1();
 
@@ -1338,10 +1215,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/auth/radius/providers will return 200', async () => {
 
@@ -1354,7 +1228,6 @@ describe('configAuthApi ', async () => {
         radiusAny.name = 'xxxx';
         //check this property will not be saved
         radiusAny.fakeProperty = 'fakevalue';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -1377,9 +1250,7 @@ describe('configAuthApi ', async () => {
 
         expectToDeepEqual(response.body, radius);
 
-
     }).timeout(50000);
-
 
     it('PUT /config/auth/radius/providers will return 400', async () => {
 
@@ -1393,7 +1264,6 @@ describe('configAuthApi ', async () => {
         radius.name = 'xxxx';
         //check this property will not be saved
         radiusAny.fakeProperty = 'fakevalue';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -1426,10 +1296,7 @@ describe('configAuthApi ', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
 
     it('DELETE /config/auth/radius/providers will return 200', async () => {
 
@@ -1438,8 +1305,6 @@ describe('configAuthApi ', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
         const radius = createSampleRadius1();
         await configService.addAuthSettingRadius(radius);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -1458,9 +1323,5 @@ describe('configAuthApi ', async () => {
         expect(radiusRet.providers.length).to.equal(0);
     }).timeout(50000);
 
-
-
-
 })
-
 

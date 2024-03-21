@@ -1,23 +1,14 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
-import { Network } from '../src/model/network';
-
-
-import { IpIntelligence, IpIntelligenceList, IpIntelligenceListStatus, IpIntelligenceSource } from '../src/model/ipIntelligence';
-import { ESService } from '../src/service/esService';
 import { ExpressApp } from '../src';
-import { esHost, esPass, esUser } from './common.spec';
 import { DnsRecord } from '../src/model/dns';
-
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
+import { esHost, esPass, esUser } from './common.spec';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -28,8 +19,6 @@ function expectToDeepEqual(a: any, b: any) {
     delete b.id;
     expect(a).to.deep.equal(b);
 }
-
-
 
 /**
  * authenticated user api tests
@@ -64,7 +53,6 @@ describe('dnsApi', async () => {
 
     })
 
-
     beforeEach(async () => {
         appService.configService.config.users = [];
         appService.configService.config.networks = [];
@@ -78,7 +66,6 @@ describe('dnsApi', async () => {
     after(async () => {
         await expressApp.stop();
     })
-
 
     it('check authoration as admin role', async () => {
         //prepare data
@@ -118,9 +105,6 @@ describe('dnsApi', async () => {
 
     }).timeout(50000);
 
-
-
-
     //// ip intelligence source 
 
     it('GET /ip/dns/records will return items', async () => {
@@ -128,8 +112,6 @@ describe('dnsApi', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
 
         const item: DnsRecord = {
             id: Util.randomNumberString(),
@@ -158,10 +140,7 @@ describe('dnsApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.items).exist;
 
-
         expectToDeepEqual(response.body.items[0], item);
-
-
 
     }).timeout(50000);
 
@@ -170,8 +149,6 @@ describe('dnsApi', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
 
         const item: DnsRecord = {
             id: Util.randomNumberString(),
@@ -202,7 +179,6 @@ describe('dnsApi', async () => {
         const items = await appService.configService.getDnsRecords();
         expect(items.length).to.equal(0);
 
-
     }).timeout(50000);
 
     it('POST /dns/record', async () => {
@@ -210,8 +186,6 @@ describe('dnsApi', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
 
         const item: DnsRecord = {
             id: Util.randomNumberString(),
@@ -244,7 +218,6 @@ describe('dnsApi', async () => {
         const items = await appService.configService.getDnsRecords();
         expect(items.length).to.equal(1);
 
-
     }).timeout(50000);
 
     it('PUT /dns/source', async () => {
@@ -252,8 +225,6 @@ describe('dnsApi', async () => {
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
 
         const item: DnsRecord = {
             id: Util.randomNumberString(),
@@ -289,7 +260,5 @@ describe('dnsApi', async () => {
 
     }).timeout(50000);
 
-
 })
-
 

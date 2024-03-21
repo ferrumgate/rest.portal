@@ -1,4 +1,8 @@
 {
     "mochaExplorer.logpanel": true,
-    "mochaExplorer.envPath": "mocha.env"
+    "mochaExplorer.envPath": "mocha.env",
+    "remove-empty-lines.allowedNumberOfEmptyLines": 1,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "never"
+    },
 }

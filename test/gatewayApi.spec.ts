@@ -1,18 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
 import { Gateway } from '../src/model/network';
-
-
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -21,7 +16,6 @@ function expectToDeepEqual(a: any, b: any) {
     delete b.updateDate;
     expect(a).to.deep.equal(b);
 }
-
 
 /**
  * authenticated user api tests
@@ -62,7 +56,6 @@ describe('gatewayApi', async () => {
         await redisService.flushAll();
     })
 
-
     it('check authoration as admin role', async () => {
         //prepare data
         const clonedUser = Util.clone(user);
@@ -95,7 +88,6 @@ describe('gatewayApi', async () => {
         expect(response.status).to.equal(401);
 
     }).timeout(50000);
-
 
     it('GET /gateway/:id returns 200', async () => {
         //prepare data
@@ -139,8 +131,6 @@ describe('gatewayApi', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .get(`/api/gateway/id`)
@@ -154,9 +144,7 @@ describe('gatewayApi', async () => {
         })
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
 
     it('GET /gateway?search=bla returns 200', async () => {
         //prepare data
@@ -235,7 +223,6 @@ describe('gatewayApi', async () => {
 
     }).timeout(50000);
 
-
     it('PUT /gateway returns 200', async () => {
         //prepare data
 
@@ -270,8 +257,6 @@ describe('gatewayApi', async () => {
         expectToDeepEqual(itemDb, gateway);
 
     }).timeout(50000);
-
-
 
     it('POST /gateway returns 200', async () => {
         //prepare data
@@ -308,9 +293,5 @@ describe('gatewayApi', async () => {
 
     }).timeout(50000);
 
-
-
-
 })
-
 

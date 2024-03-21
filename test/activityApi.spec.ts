@@ -1,24 +1,15 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { Util } from '../src/util';
-import { Network } from '../src/model/network';
-import { Gateway } from '../src/model/network';
-import { AuditLog } from '../src/model/auditLog';
-import { ESService } from '../src/service/esService';
-import { ActivityLog } from '../src/model/activityLog';
-import { ConfigService } from '../src/service/configService';
-import { config } from 'process';
 import { ExpressApp } from '../src';
+import { ActivityLog } from '../src/model/activityLog';
+import { AppService } from '../src/service/appService';
+import { ESService } from '../src/service/esService';
+import { Util } from '../src/util';
 import { esHost, esPass, esUser } from './common.spec';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('activityApi ', async () => {
     const expressApp = new ExpressApp();
@@ -28,8 +19,6 @@ describe('activityApi ', async () => {
     const redisService = appService.redisService;
     const configService = appService.configService;
     const sessionService = appService.sessionService;
-
-
 
     before(async () => {
 
@@ -105,10 +94,6 @@ describe('activityApi ', async () => {
 
     }).timeout(50000);
 
-
-
-
-
     function createSampleData2() {
         let activity1: ActivityLog = {
             insertDate: new Date().toISOString(),
@@ -158,7 +143,6 @@ describe('activityApi ', async () => {
         }
         await appService.reconfigureES();
 
-
         const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum');
 
@@ -195,12 +179,7 @@ describe('activityApi ', async () => {
         expect(response2.status).to.equal(200);
         expect(response2.body.total).to.equal(1);
 
-
     }).timeout(120000);
 
-
-
-
 })
-
 

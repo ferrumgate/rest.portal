@@ -1,25 +1,17 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
 import { Util } from '../src/util';
-import { Group } from '../src/model/group';
-
-
-import { DevicePosture } from '../src/model/authenticationProfile';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
-import { ESService } from '../src/service/esService';
+import { DevicePosture } from '../src/model/authenticationProfile';
 import { DeviceLog } from '../src/model/device';
+import { ESService } from '../src/service/esService';
 import { esHost, esPass, esUser } from './common.spec';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -129,11 +121,8 @@ describe('deviceApi', async () => {
         appService.configService.config.devicePostures = [];
         appService.configService.config.authenticationPolicy.rules = [];
 
-
-
         await redisService.flushAll();
     })
-
 
     it('check authorazion as admin role', async () => {
         await appService.configService.init();
@@ -145,7 +134,6 @@ describe('deviceApi', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -162,7 +150,6 @@ describe('deviceApi', async () => {
 
     }).timeout(50000);
 
-
     it('GET /device/posture/:id returns 200', async () => {
         await appService.configService.init();
         //prepare data
@@ -171,7 +158,6 @@ describe('deviceApi', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveDevicePosture(posture1);
         await appService.configService.saveDevicePosture(posture2);
@@ -223,9 +209,7 @@ describe('deviceApi', async () => {
         //specific return, why one gets an unknown 
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
 
     it('GET /device/posture?search=bla returns 200', async () => {
         await appService.configService.init();
@@ -241,8 +225,6 @@ describe('deviceApi', async () => {
         await appService.configService.saveDevicePosture(posture2);
         await appService.configService.saveDevicePosture(posture3);
         await appService.configService.saveAuthenticationPolicyRule(aRule);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -270,7 +252,6 @@ describe('deviceApi', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-
         await appService.configService.saveDevicePosture(posture1);
         await appService.configService.saveDevicePosture(posture2);
         await appService.configService.saveDevicePosture(posture3);
@@ -292,7 +273,6 @@ describe('deviceApi', async () => {
 
     }).timeout(50000);
 
-
     it('PUT /device/posture returns 200', async () => {
         await appService.configService.init();
         //prepare data
@@ -300,7 +280,6 @@ describe('deviceApi', async () => {
         await appService.configService.saveUser(user1);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveDevicePosture(posture1);
         await appService.configService.saveDevicePosture(posture2);
@@ -323,12 +302,9 @@ describe('deviceApi', async () => {
         expect(response.status).to.equal(200);
         const itemDb = await appService.configService.getDevicePosture(posture3.id);
 
-
         expectToDeepEqual(itemDb, posture3);
 
     }).timeout(50000);
-
-
 
     it('POST /device/posture returns 200', async () => {
         await appService.configService.init();
@@ -341,7 +317,6 @@ describe('deviceApi', async () => {
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
         posture1.id = '';
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -359,17 +334,12 @@ describe('deviceApi', async () => {
 
         posture1.id = response.body.id;
 
-
         expectToDeepEqual(response.body, posture1);
         const itemDb = await appService.configService.getDevicePosture(posture1.id);
 
-
         expectToDeepEqual(itemDb, posture1);
 
-
     }).timeout(50000);
-
-
 
     it('only admin or reporter user can callit', async () => {
         await appService.configService.init();
@@ -378,10 +348,8 @@ describe('deviceApi', async () => {
         clonedUser.roleIds = ['User'];
         await appService.configService.saveUser(clonedUser);
 
-
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -397,8 +365,6 @@ describe('deviceApi', async () => {
         expect(response.status).to.equal(401);
 
     }).timeout(50000);
-
-
 
     function createSampleData2() {
         let log1: DeviceLog = {
@@ -418,7 +384,6 @@ describe('deviceApi', async () => {
             serial: 'asdfaf',
             userId: 'asdfafa',
             username: 'adfasdfawe',
-
 
         }
         let log2: DeviceLog = {
@@ -464,7 +429,6 @@ describe('deviceApi', async () => {
         }
         await appService.reconfigureES();
 
-
         const { posture1, posture2, posture3, aRule, user1, user2 } = createSampleData();
         await appService.configService.saveUser(user1);
 
@@ -505,13 +469,7 @@ describe('deviceApi', async () => {
         expect(response2.status).to.equal(200);
         expect(response2.body.total).to.equal(2);
 
-
     }).timeout(120000);
 
-
-
-
-
 })
-
 

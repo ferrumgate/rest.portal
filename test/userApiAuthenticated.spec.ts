@@ -1,27 +1,19 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
-import { Group } from '../src/model/group';
-import { Network } from '../src/model/network';
-import { Gateway } from '../src/model/network';
-import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { ExpressApp } from '../src';
+import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { SSLCertificate } from '../src/model/cert';
-import { RBACDefault } from '../src/model/rbac';
-import { DevicePosture } from '../src/model/authenticationProfile';
 import { ClientDevicePosture } from '../src/model/device';
+import { Group } from '../src/model/group';
+import { Gateway, Network } from '../src/model/network';
+import { RBACDefault } from '../src/model/rbac';
+import { User } from '../src/model/user';
 import { ErrorCodes } from '../src/restfullException';
-
-
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
 
 /**
  * authenticated user api tests
@@ -33,7 +25,6 @@ describe('userApiAuthenticated', async () => {
     const redisService = appService.redisService;
     const sessionService = appService.sessionService;
     function getSampleUser() {
-
 
         const user: User = {
             username: 'hamza@ferrumgate.com',
@@ -53,7 +44,6 @@ describe('userApiAuthenticated', async () => {
     }
 
     function getSampleUser2() {
-
 
         const user: User = {
             username: 'hamza2@ferrumgate.com',
@@ -90,7 +80,6 @@ describe('userApiAuthenticated', async () => {
         await redisService.flushAll();
     })
 
-
     it('GET /user/current will return 200', async () => {
         await appService.configService.init();
         //prepare data
@@ -116,8 +105,6 @@ describe('userApiAuthenticated', async () => {
         expect(response.body.roles).exist;
         expect(response.body.roles.length).to.equal(1);
     }).timeout(50000);
-
-
 
     it('GET /user/:id will return 200', async () => {
         await appService.configService.init();
@@ -145,7 +132,6 @@ describe('userApiAuthenticated', async () => {
         expect(response.body.roles).not.exist;
         expect(response.body.roleIds.length).to.equal(1);
     }).timeout(50000);
-
 
     function createSampleData() {
         const user1: User = {
@@ -176,8 +162,6 @@ describe('userApiAuthenticated', async () => {
 
         }
 
-
-
         const user3: User = {
             username: 'hamza3@ferrumgate.com',
             id: 'someid3',
@@ -191,7 +175,6 @@ describe('userApiAuthenticated', async () => {
             updateDate: new Date().toISOString()
 
         }
-
 
         const user4: User = {
             username: 'hamza4@ferrumgate.com',
@@ -259,7 +242,6 @@ describe('userApiAuthenticated', async () => {
         expect(response.body.items[1].id).to.equal(user2.id);
     }).timeout(50000);
 
-
     it('GET /user will  isVerified is2FA isEmailVerified return 200', async () => {
         //prepare data
         await appService.configService.init();
@@ -270,7 +252,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveUser(user4);
         await appService.configService.saveUser(user5);
         const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
-
 
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
 
@@ -294,7 +275,6 @@ describe('userApiAuthenticated', async () => {
 
     }).timeout(50000);
 
-
     it('DELETE /user/:id will return 200', async () => {
         //prepare data
         await appService.configService.init();
@@ -305,7 +285,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveUser(user4);
         await appService.configService.saveUser(user5);
         const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
-
 
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
 
@@ -325,7 +304,6 @@ describe('userApiAuthenticated', async () => {
         expect(user).not.exist;
 
     }).timeout(50000);
-
 
     it('PUT /user will return 200', async () => {
         //prepare data
@@ -397,10 +375,7 @@ describe('userApiAuthenticated', async () => {
             expect(userret.groupIds[0]).to.equal('group1');
         }
 
-
-
     }).timeout(50000);
-
 
     it('PUT /user/current/network will return 200', async () => {
         //prepare data
@@ -415,12 +390,10 @@ describe('userApiAuthenticated', async () => {
         }
         await appService.configService.saveGroup(group);
 
-
         const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
 
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
             { id: user.id, sid: session.id }, 'ferrum')
-
 
         appService.configService.config.authenticationPolicy.rules = [];
 
@@ -443,8 +416,6 @@ describe('userApiAuthenticated', async () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
         }
-
-
 
         appService.configService.config.networks = [net];
         appService.configService.config.gateways = [gateway];
@@ -465,11 +436,8 @@ describe('userApiAuthenticated', async () => {
             updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString()
 
-
         }
         appService.configService.config.authenticationPolicy.rules = [rule];
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -486,11 +454,7 @@ describe('userApiAuthenticated', async () => {
         const result = response.body;
         expect(result.items.length).to.equal(1);
 
-
-
     }).timeout(50000);
-
-
 
     it('GET /user/current/device/posture/parameters will return 200', async () => {
         //prepare data
@@ -505,12 +469,10 @@ describe('userApiAuthenticated', async () => {
         }
         await appService.configService.saveGroup(group);
 
-
         const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
 
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
             { id: user.id, sid: session.id }, 'ferrum')
-
 
         appService.configService.config.authenticationPolicy.rules = [];
 
@@ -533,8 +495,6 @@ describe('userApiAuthenticated', async () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
         }
-
-
 
         appService.configService.config.networks = [net];
         appService.configService.config.gateways = [gateway];
@@ -576,11 +536,8 @@ describe('userApiAuthenticated', async () => {
             updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString()
 
-
         }
         appService.configService.config.authenticationPolicy.rules = [rule];
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -597,10 +554,7 @@ describe('userApiAuthenticated', async () => {
         const result = response.body;
         expect(result.items.length).to.equal(5);
 
-
-
     }).timeout(50000);
-
 
     it('POST /user/current/device/posture will return 200', async () => {
         //prepare data
@@ -615,13 +569,10 @@ describe('userApiAuthenticated', async () => {
         }
         await appService.configService.saveGroup(group);
 
-
         const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
 
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
             { id: user.id, sid: session.id }, 'ferrum')
-
-
 
         const posture: ClientDevicePosture = {
             clientId: Util.randomNumberString(16),
@@ -659,11 +610,7 @@ describe('userApiAuthenticated', async () => {
         const result = response.body;
         expect(result).exist;
 
-
-
     }).timeout(50000);
-
-
 
     function createSampleData22() {
 
@@ -685,7 +632,6 @@ describe('userApiAuthenticated', async () => {
         return { user1: user2fa }
     }
 
-
     it('GET /user/current/2fa/rekey will return 200', async () => {
         //prepare data
         await appService.configService.init();
@@ -693,7 +639,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveUser(user1);
 
         const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
-
 
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
 
@@ -711,7 +656,6 @@ describe('userApiAuthenticated', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.key).exist;
         expect(response.body.t2FAKey).exist;
-
 
     }).timeout(50000);
 
@@ -742,9 +686,7 @@ describe('userApiAuthenticated', async () => {
         expect(response.body.t2FAKey).exist;
         expect(response.body.t2FAKey).to.equal('somesecret');
 
-
     }).timeout(50000);
-
 
     it('PUT /user/current/2fa will return 200', async () => {
         //prepare data
@@ -753,7 +695,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveUser(user1);
 
         const session = await sessionService.createSession(user1, false, '1.2.3.4', 'local');
-
 
         let token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
         //dont change anything
@@ -770,7 +711,6 @@ describe('userApiAuthenticated', async () => {
                 });
         })
         expect(response.status).to.equal(200);
-
 
         //change is enabled
         token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: user1.id, sid: session.id }, 'ferrum')
@@ -807,8 +747,6 @@ describe('userApiAuthenticated', async () => {
 
     }).timeout(50000);
 
-
-
     it('PUT /user/current/pass will return 200', async () => {
         //prepare data
         await appService.configService.init();
@@ -837,10 +775,7 @@ describe('userApiAuthenticated', async () => {
         //check if password changed
         expect(appService.configService.config.users.find(x => x.id == user1.id)?.password).not.equal(firstpass);
 
-
-
     }).timeout(50000);
-
 
     it('GET /user/:id/sensitiveData will return 200', async () => {
         //prepare data
@@ -877,7 +812,6 @@ describe('userApiAuthenticated', async () => {
 
         /// get only api key
 
-
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .get(`/api/user/${user.id}/sensitiveData?apiKey=true`)
@@ -896,7 +830,6 @@ describe('userApiAuthenticated', async () => {
 
         /// get only cert
 
-
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .get(`/api/user/${user.id}/sensitiveData?cert=true`)
@@ -914,7 +847,6 @@ describe('userApiAuthenticated', async () => {
         expect(response.body.cert).exist;
 
     }).timeout(50000);
-
 
     it('PUT /user/:id/sensitiveData will return 200', async () => {
         //prepare data
@@ -968,10 +900,7 @@ describe('userApiAuthenticated', async () => {
         expect(response.body.apiKey).not.exist;
         expect(response.body.cert.publicCrt).exist;
 
-
     }).timeout(50000)
-
-
 
     it('DELETE /user/:id/sensitiveData will return 200', async () => {
         //prepare data
@@ -1011,11 +940,7 @@ describe('userApiAuthenticated', async () => {
         expect(data.apiKey?.key).to.equal('');
         expect(data.cert?.publicCrt).to.equal('');
 
-
-
     }).timeout(150000)
-
-
 
     it('POST /user will return 200', async () => {
         //prepare data
@@ -1028,7 +953,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveGroup(group);
         const inCerts = await appService.configService.getInSSLCertificateAll();
         const groups = await appService.configService.getGroupsAll();
-
 
         user.groupIds = [groups[0].id, '1514'];
         user.roleIds = [RBACDefault.roleAdmin.id]
@@ -1072,12 +996,7 @@ describe('userApiAuthenticated', async () => {
 
         expect(data.cert?.publicCrt?.includes('BEGIN CERTIFICATE')).to.be.true;
 
-
-
-
     }).timeout(150000)
-
-
 
     it('POST /user will return 200', async () => {
         //prepare data
@@ -1090,7 +1009,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveGroup(group);
         const inCerts = await appService.configService.getInSSLCertificateAll();
         const groups = await appService.configService.getGroupsAll();
-
 
         user.groupIds = [groups[0].id, '1514'];
         user.roleIds = [RBACDefault.roleAdmin.id]
@@ -1129,10 +1047,7 @@ describe('userApiAuthenticated', async () => {
         if (userDb?.roleIds)
             expect(userDb?.roleIds[0]).to.equal(RBACDefault.roleUser.id);
 
-
     }).timeout(150000)
-
-
 
     it('PUT /user/pass will return 401 no admin no access', async () => {
         //prepare data
@@ -1145,7 +1060,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveGroup(group);
         const inCerts = await appService.configService.getInSSLCertificateAll();
         const groups = await appService.configService.getGroupsAll();
-
 
         user.groupIds = [groups[0].id, '1514'];
         user.roleIds = [RBACDefault.roleDevOps.id]
@@ -1174,10 +1088,7 @@ describe('userApiAuthenticated', async () => {
         })
         expect(response.status).to.equal(401);
 
-
-
     }).timeout(150000)
-
 
     it('PUT /user/pass will return 400 no 2fa', async () => {
         //prepare data
@@ -1191,7 +1102,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveGroup(group);
         const inCerts = await appService.configService.getInSSLCertificateAll();
         const groups = await appService.configService.getGroupsAll();
-
 
         user.groupIds = [groups[0].id, '1514'];
         user.roleIds = [RBACDefault.roleAdmin.id]
@@ -1222,11 +1132,7 @@ describe('userApiAuthenticated', async () => {
         console.log(response.body);
         expect(response.body.code).to.equal(ErrorCodes.Err2FANeeds);
 
-
-
     }).timeout(150000)
-
-
 
     it('PUT /user/pass will return 500 password policy', async () => {
         //prepare data
@@ -1240,7 +1146,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveGroup(group);
         const inCerts = await appService.configService.getInSSLCertificateAll();
         const groups = await appService.configService.getGroupsAll();
-
 
         user.groupIds = [groups[0].id, '1514'];
         user.roleIds = [RBACDefault.roleAdmin.id]
@@ -1270,10 +1175,7 @@ describe('userApiAuthenticated', async () => {
         expect(response.status).to.equal(400);
         expect(response.body.code).to.equal(ErrorCodes.ErrPasswordPolicy);
 
-
-
     }).timeout(150000)
-
 
     it('PUT /user/pass will return 401 user not found', async () => {
         //prepare data
@@ -1287,7 +1189,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveGroup(group);
         const inCerts = await appService.configService.getInSSLCertificateAll();
         const groups = await appService.configService.getGroupsAll();
-
 
         user.groupIds = [groups[0].id, '1514'];
         user.roleIds = [RBACDefault.roleAdmin.id]
@@ -1316,11 +1217,7 @@ describe('userApiAuthenticated', async () => {
         })
         expect(response.status).to.equal(401);
 
-
-
-
     }).timeout(150000)
-
 
     it('PUT /user/pass will return 200 password changed', async () => {
         //prepare data
@@ -1334,7 +1231,6 @@ describe('userApiAuthenticated', async () => {
         await appService.configService.saveGroup(group);
         const inCerts = await appService.configService.getInSSLCertificateAll();
         const groups = await appService.configService.getGroupsAll();
-
 
         user.groupIds = [groups[0].id, '1514'];
         user.roleIds = [RBACDefault.roleAdmin.id]
@@ -1363,18 +1259,7 @@ describe('userApiAuthenticated', async () => {
         })
         expect(response.status).to.equal(200);
 
-
-
-
-
     }).timeout(150000)
 
-
-
-
-
-
-
 })
-
 

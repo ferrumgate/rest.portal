@@ -1,20 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { TemplateService } from '../src/service/templateService';
 import { ConfigService } from '../src/service/configService';
-import { Util } from '../src/util';
 import { RedisService } from '../src/service/redisService';
-
-
+import { TemplateService } from '../src/service/templateService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('templateService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -58,7 +51,5 @@ describe('templateService', async () => {
 
     }).timeout(5000);
 
-
 })
-
 

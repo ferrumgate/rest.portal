@@ -1,19 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { ConfigService } from '../src/service/configService';
-import { Gateway, Network } from '../src/model/network';
 import { authorize, getNetworkByGatewayId } from '../src/api/commonApi';
+import { Gateway, Network } from '../src/model/network';
+import { ConfigService } from '../src/service/configService';
 import { Util } from '../src/util';
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('commonApi', async () => {
 
@@ -34,7 +28,6 @@ describe('commonApi', async () => {
         }
         expect(exception).to.be.true;
 
-
     }).timeout(5000);
     it('getNetworkByGatewayId throws Error because of no gateway', async () => {
 
@@ -48,7 +41,6 @@ describe('commonApi', async () => {
         expect(exception).to.be.true;
 
     }).timeout(5000);
-
 
     it('getNetworkByGatewayId throws Error because of gateway is not joined or active', async () => {
 
@@ -118,7 +110,6 @@ describe('commonApi', async () => {
 
     }).timeout(5000);
 
-
     it('authorize test to Admin right', async () => {
 
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
@@ -182,7 +173,5 @@ describe('commonApi', async () => {
         expect(isNextCalled).to.be.false;
 
     }).timeout(5000);
-
-
 
 });

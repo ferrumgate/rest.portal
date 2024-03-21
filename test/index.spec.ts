@@ -1,16 +1,10 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
-
-
+import { AppService } from '../src/service/appService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('test', async () => {
 
@@ -48,5 +42,4 @@ describe('test', async () => {
     }).timeout(5000);
 
 })
-
 

@@ -1,14 +1,8 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { Util } from '../src/util';
 import fs from 'fs';
-
 import nock from 'nock';
-import IPCIDR from 'ip-cidr';
-import crypto from 'crypto';
-
-
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -60,7 +54,6 @@ describe('util ', () => {
             done();
         }
 
-
     }); */
 
     it('hash must create', (done) => {
@@ -72,10 +65,7 @@ describe('util ', () => {
         expect(hash8.length).to.equal(8);
         done();
 
-
-
     });
-
 
     it('random number string must be 6 or 7 length', (done) => {
         let save = process.env.NODE_ENV;
@@ -100,8 +90,6 @@ describe('util ', () => {
         done();
         process.env.NODE_ENV = save;
 
-
-
     });
 
     it('password hash must be true', (done) => {
@@ -113,7 +101,6 @@ describe('util ', () => {
         done();
     })
 
-
     it('password hash create', (done) => {
         let password = 'deneme';
 
@@ -123,12 +110,7 @@ describe('util ', () => {
         done();
     })
 
-
-
-
     it('downloadFile', async () => {
-
-
 
         let tmpFolder = `/tmp/${Util.randomNumberString()}`;
         if (fs.existsSync(tmpFolder))
@@ -138,13 +120,9 @@ describe('util ', () => {
         await Util.downloadFile('http://ferrumgate.com/test.zip', path);
         expect(fs.existsSync(path)).to.be.true;
 
-
-
     }).timeout(300000)
 
     it('extractZip', async () => {
-
-
 
         let tmpFolder = `/tmp/${Util.randomNumberString()}`;
         if (fs.existsSync(tmpFolder))
@@ -158,13 +136,9 @@ describe('util ', () => {
         await Util.extractZipFile(path, tmpFolder2);
         expect(fs.existsSync(`${tmpFolder2}/test.txt`)).to.be.true;
 
-
-
     }).timeout(300000)
 
     it('zipFolder', async () => {
-
-
 
         let tmpFolder = `/tmp/${Util.randomNumberString()}`;
         if (fs.existsSync(tmpFolder))
@@ -175,10 +149,7 @@ describe('util ', () => {
         await Util.zipFolder(tmpFolder, '/tmp/test.zip');
         expect(fs.existsSync('/tmp/test.zip')).to.be.true;
 
-
-
     }).timeout(300000)
-
 
     it('ipToBigInt', (done) => {
         let ip = "81.214.130.220";
@@ -209,7 +180,6 @@ describe('util ', () => {
         done();
 
     });
-
 
     it('ipRangeToCidr test mask 32', (done) => {
         let start = "95.10.150.157";
@@ -302,7 +272,6 @@ describe('util ', () => {
 
     });
 
-
     it('ipCidrToRange test mask 28', (done) => {
         let start = "91.93.178.16";
         let end = '91.93.178.31';
@@ -379,7 +348,6 @@ describe('util ', () => {
 
     });
 
-
     it('spawn error ', async () => {
         let isError = false;
         try {
@@ -390,7 +358,6 @@ describe('util ', () => {
         expect(isError).to.be.true;
 
     });
-
 
     it('isArrayElementExist ', async () => {
         expect(Util.isArrayElementExist(undefined, undefined)).to.be.false;
@@ -409,7 +376,6 @@ describe('util ', () => {
         expect(Util.isUndefinedOrNull(0)).to.be.false;
         expect(Util.isUndefinedOrNull('')).to.be.false;
 
-
     });
 
     it('isArrayEqual ', async () => {
@@ -420,9 +386,7 @@ describe('util ', () => {
         expect(Util.isArrayEqual([0], ['0'])).to.be.false;
         expect(Util.isArrayEqual([0, 1], [0, 1])).to.be.true;
 
-
     });
-
 
     it('createSelfSignedCrt ', async () => {
         const random = Util.randomNumberString();
@@ -440,7 +404,6 @@ describe('util ', () => {
         const cahostname = `${Util.randomNumberString(8)}.com`;
         const ca = await Util.createSelfSignedCrt(cahostname, '3650', `/tmp/${random}`);
 
-
         const domain = `${Util.randomNumberString(8)}.com`;
         const output = await Util.createCASignedCrt(domain, domain, ca, '3650', `/tmp/${random}`);
         expect(output.privateKey).exist;
@@ -453,22 +416,17 @@ describe('util ', () => {
         const cahostname = `cahost`;
         const ca = await Util.createSelfSignedCrt(cahostname);
 
-
         const domain = `test.com`;
         const output = await Util.createCASignedCrt(domain, domain, ca);
         const x = await Util.getCertificateInfo(output.publicCrt, ca.publicCrt);
         expect(x.isValid).to.be.true;
         expect(x.remainingMS > 0);
 
-
         const cahostname2 = `cahost2`;
         const ca2 = await Util.createSelfSignedCrt(cahostname2);
         const x2 = await Util.getCertificateInfo(output.publicCrt, ca2.publicCrt);
         expect(x2.isValid).to.be.false;
         expect(x2.remainingMS > 0);
-
-
-
 
     }).timeout(120000);
 
@@ -476,13 +434,11 @@ describe('util ', () => {
         const cahostname = `cahost`;
         const ca = await Util.createSelfSignedCrt(cahostname);
 
-
         const domain = `test.com`;
         const output = await Util.createCASignedCrt(domain, domain, ca);
         const x = await Util.getCertificateInfo(output.publicCrt, ca.publicCrt);
         expect(x.isValid).to.be.true;
         expect(x.remainingMS > 0);
-
 
         const cahostname2 = `cahost2`;
         const ca2 = await Util.createSelfSignedCrt(cahostname2);
@@ -490,11 +446,7 @@ describe('util ', () => {
         expect(x2.isValid).to.be.false;
         expect(x2.remainingMS > 0);
 
-
-
-
     }).timeout(120000);
-
 
     it('maskFileds ', async () => {
         const test = {
@@ -505,7 +457,6 @@ describe('util ', () => {
         const result = Util.maskFields({ ...test }, ['id']);
         expect(result.id).to.equal(test.id);
         expect(result.test).not.equal(test.test);
-
 
         const test2 = {
             ...test,
@@ -524,11 +475,7 @@ describe('util ', () => {
         expect(result2.bla.test).not.equal(test2.bla.test);
         expect(result2.bla.nu).to.equal(0);
 
-
-
-
     }).timeout(120000);
-
 
     it('jencrypt ', (done) => {
         const str = 'DENEME';
@@ -556,7 +503,6 @@ describe('util ', () => {
         expect(val2.name).to.equal('string');
         expect(val2.arr[0]).to.equal(1);
 
-
         done();
     });
 
@@ -567,10 +513,7 @@ describe('util ', () => {
         const hex2 = Util.ipToHex('2001:db8:3c4d::/48')
         expect(hex2).to.equal('0x20010db83c4d00000000000000000000');
 
-
-
     }).timeout(20000);
-
 
     it('cidrNormalize', async () => {
 
@@ -581,11 +524,7 @@ describe('util ', () => {
         const cidr6 = Util.cidrNormalize('2001:db8:85a3::8a2e:370:7336/64');
         expect(cidr6).to.equal('2001:db8:85a3::/64');
 
-
-
     }).timeout(20000);
-
-
 
     it('timeZoneList', () => {
 
@@ -595,7 +534,6 @@ describe('util ', () => {
         expect(AmericaNewyork).exist;
         expect(AmericaNewyork?.offset == 240 || AmericaNewyork?.offset == 300).to.be.true;
     }).timeout(10000);
-
 
     it('timeInZone', () => {
         const date = Util.timeInZone('America/New_York', new Date('2023-02-19 13:05:02.0Z').getTime());
@@ -611,7 +549,6 @@ describe('util ', () => {
         const result = Util.fastHashBuffer("test", key);
         const result2 = Util.fastHashBuffer("test", key);
         expect(result.toString()).to.equal(result2.toString());
-
 
     });
     it('downloadfile', () => {
@@ -655,7 +592,6 @@ describe('util ', () => {
         const ops = await Util.extractTarGz("./test/data/test.tar.gz", tmp);
         expect(fs.existsSync(`${tmp}/test/test.txt`)).to.be.true;
 
-
     });
 
     it('listAllFiles', async () => {
@@ -667,7 +603,6 @@ describe('util ', () => {
         fs.writeFileSync(`${tmp}/a.txt`, "test");
         fs.writeFileSync(`${tmp1}/b.txt`, "test");
         fs.writeFileSync(`${tmp2}/c.txt`, "test");
-
 
         const ops = await Util.listAllFiles(tmp);
         //console.log(ops);
@@ -683,7 +618,6 @@ describe('util ', () => {
         fs.writeFileSync(`${tmp}/a.txt`, "test");
         fs.writeFileSync(`${tmp1}/b.txt`, "test");
         fs.writeFileSync(`${tmp2}/c.txt`, "test");
-
 
         const ops = await Util.listAllFiles(tmp);
         ops.sort((a, b) => a.localeCompare(b));
@@ -734,14 +668,6 @@ describe('util ', () => {
         expect(val3.ip).to.equal('1.2.3.4');
         expect(val3.port).not.exist;
 
-
-
     });
-
-
-
-
-
-
 
 });

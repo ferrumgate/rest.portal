@@ -1,24 +1,17 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ConfigService } from '../src/service/configService';
-import { Util } from '../src/util';
 import { RedisService } from '../src/service/redisService';
-import { GatewayDetail } from '../src/model/network';
-import os from 'os';
-import { GatewayService } from '../src/service/gatewayService';
+import { Util } from '../src/util';
 
 import { IpIntelligenceSource } from '../src/model/ipIntelligence';
-import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
-import { InputService } from '../src/service/inputService';
 import { ESService } from '../src/service/esService';
-
+import { InputService } from '../src/service/inputService';
+import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -62,7 +55,6 @@ describe.skip('ipIntelligenceService', async () => {
         }
         expect(errorOccured).to.be.true;
 
-
     }).timeout(500000);
 
     it('IPApiCom', async () => {
@@ -79,9 +71,7 @@ describe.skip('ipIntelligenceService', async () => {
         expect(result?.countryCode).exist;
         expect(result?.countryName).exist;
 
-
     }).timeout(500000);
-
 
     it('IpDataCo will throw error', async () => {
         const source: IpIntelligenceSource = {
@@ -100,9 +90,7 @@ describe.skip('ipIntelligenceService', async () => {
         }
         expect(errorOccured).to.be.true;
 
-
     }).timeout(500000);
-
 
     it('IpDataCo', async () => {
         const source: IpIntelligenceSource = {
@@ -118,11 +106,7 @@ describe.skip('ipIntelligenceService', async () => {
         expect(result?.countryCode).exist;
         expect(result?.countryName).exist;
 
-
     }).timeout(500000);
-
-
-
 
     it('IpIfyOrg will throw error', async () => {
         const source: IpIntelligenceSource = {
@@ -141,9 +125,7 @@ describe.skip('ipIntelligenceService', async () => {
         }
         expect(errorOccured).to.be.true;
 
-
     }).timeout(500000);
-
 
     it('IpIfyOrg', async () => {
         const source: IpIntelligenceSource = {
@@ -160,7 +142,6 @@ describe.skip('ipIntelligenceService', async () => {
         expect(result?.countryName).exist;
 
     }).timeout(500000);
-
 
     it('reConfigure', async () => {
         const source: IpIntelligenceSource = {
@@ -187,7 +168,6 @@ describe.skip('ipIntelligenceService', async () => {
         const result = await intel.reConfigure();
         expect(intel.getClass()).exist;
 
-
     }).timeout(500000);
 
     it('query', async () => {
@@ -204,14 +184,7 @@ describe.skip('ipIntelligenceService', async () => {
         expect(result).exist;
         expect(result?.countryCode).exist;
 
-
     }).timeout(500000);
 
-
-
-
-
-
 })
-
 

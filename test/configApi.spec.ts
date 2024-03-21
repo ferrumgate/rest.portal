@@ -1,23 +1,18 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
+import yaml from 'yaml';
+import { ExpressApp } from '../src';
 import { AuthSettings } from '../src/model/authSettings';
 import { EmailSetting } from '../src/model/emailSetting';
-import yaml from 'yaml';
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
 import { Email, EmailService } from '../src/service/emailService';
-import { ExpressApp } from '../src';
+import { Util } from '../src/util';
 import { esHost, esPass, esUser } from './common.spec';
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('configApi ', async () => {
 
@@ -131,7 +126,6 @@ describe('configApi ', async () => {
         await redisService.flushAll();
         configService.config.users = [];
 
-
     })
 
     afterEach(async () => {
@@ -158,7 +152,6 @@ describe('configApi ', async () => {
         expect(response.body.captchaSiteKey).to.equal('6Lcw_scfAAAAABL_DeZVQNd-yNHp0CnNYE55rifH');
         expect(response.body.brand.name).to.equal('ferrumgate');
 
-
     }).timeout(50000);
 
     it('GET /config/common will return url and domain', async () => {
@@ -181,7 +174,6 @@ describe('configApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.url).exist;
         expect(response.body.domain).to.equal('ferrumgate.zero');
-
 
     }).timeout(50000);
 
@@ -206,10 +198,7 @@ describe('configApi ', async () => {
 
         expect(response.status).to.equal(401);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/common will return 200, with new fields', async () => {
 
@@ -237,12 +226,7 @@ describe('configApi ', async () => {
         expect(response.body.domain).to.equal('ferrumgate.com');
         expect(response.body.url).to.equal('http://local.ferrumgate.com:8080');
 
-
-
     }).timeout(50000);
-
-
-
 
     it('GET /config/captcha will return keys', async () => {
         await appService.configService.saveUser(user);
@@ -265,7 +249,6 @@ describe('configApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.server).exist;
         expect(response.body.client).exist;
-
 
     }).timeout(50000);
 
@@ -290,10 +273,7 @@ describe('configApi ', async () => {
 
         expect(response.status).to.equal(401);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/captcha will return 200, with new fields', async () => {
 
@@ -322,12 +302,9 @@ describe('configApi ', async () => {
         expect(response.body.server).to.equal('serverkey');
         expect(response.body.client).to.equal('clientkey');
 
-
-
     }).timeout(50000);
 
     /// email
-
 
     it('GET /config/email will return settings', async () => {
         await appService.configService.saveUser(user);
@@ -353,7 +330,6 @@ describe('configApi ', async () => {
         expect(response.body.fromname).to.equal(EmailSetting.fromname);
         expect(response.body.pass).exist;
 
-
     }).timeout(50000);
 
     it('GET /config/email will return 401, only admin users', async () => {
@@ -377,10 +353,7 @@ describe('configApi ', async () => {
 
         expect(response.status).to.equal(401);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/email will return 200, with new fields', async () => {
 
@@ -408,11 +381,7 @@ describe('configApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.user).to.equal('ferrumgate');
 
-
-
-
     }).timeout(50000);
-
 
     it('DELETE /config/email will return 200, with new fields', async () => {
 
@@ -440,9 +409,6 @@ describe('configApi ', async () => {
         expect(response.body.fromname).to.equal('');
         expect(response.body.type).to.equal('empty');
 
-
-
-
     }).timeout(50000);
 
     it('POST /config/email/check will return 200, with no error', async () => {
@@ -463,7 +429,6 @@ describe('configApi ', async () => {
             fromname: 'testferrum', pass: 'nqquxankumksakon', type: 'google', user: 'ferrumgates@gmail.com'
         }
 
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/api/config/email/check')
@@ -481,12 +446,7 @@ describe('configApi ', async () => {
         expect(response.body.isError).to.equal(false);
         expect(response.body.errorMessage).to.equal('');
 
-
-
-
     }).timeout(50000);
-
-
 
     it('GET /config/es will return empty object', async () => {
         await appService.configService.saveUser(user);
@@ -509,7 +469,6 @@ describe('configApi ', async () => {
 
         expect(response.status).to.equal(200);
         expect(response.body.host).not.exist;
-
 
     }).timeout(50000);
 
@@ -534,10 +493,7 @@ describe('configApi ', async () => {
 
         expect(response.status).to.equal(401);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/es will return 200, with new fields', async () => {
 
@@ -564,9 +520,7 @@ describe('configApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.host).to.equal('serverkey');
 
-
     }).timeout(50000);
-
 
     it('POST /config/es/check will return 200, with new fields', async () => {
 
@@ -595,9 +549,7 @@ describe('configApi ', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.error).to.equal('');
 
-
     }).timeout(50000);
-
 
     it('GET /config/export will return 200', async () => {
 
@@ -637,8 +589,6 @@ describe('configApi ', async () => {
         expect(response2.status).to.equal(200);
         expect(response2.body.key).exist;
 
-
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .get('/api/config/export/' + response2.body.key)
@@ -660,15 +610,11 @@ describe('configApi ', async () => {
         const tmp = `/tmp/${randomFilename}`;
         fs.writeFileSync(tmp, buffer);
 
-
-
         const fileContent = Util.decrypt(response2.body.key, fs.readFileSync(tmp).toString());
         const config = yaml.parse(fileContent);
         expect(config).exist;
 
-
     }).timeout(50000);
-
 
     it('POST /config/import/:key will return 200', async () => {
 
@@ -706,7 +652,6 @@ describe('configApi ', async () => {
 
     }).timeout(50000);
 
-
     it('GET /config/brand will return empty object', async () => {
         await appService.configService.saveUser(user);
         await appService.configService.setBrand({});
@@ -728,7 +673,6 @@ describe('configApi ', async () => {
 
         expect(response.status).to.equal(200);
         expect(response.body.name).not.exist;
-
 
     }).timeout(50000);
 
@@ -753,10 +697,7 @@ describe('configApi ', async () => {
 
         expect(response.status).to.equal(401);
 
-
-
     }).timeout(50000);
-
 
     it('PUT /config/brand will return 200, with new fields', async () => {
 
@@ -786,14 +727,7 @@ describe('configApi ', async () => {
         expect(response.body.logoWhite).to.equal('data:imageadfa');
         expect(response.body.name).to.equal('serverkey');
 
-
-
     }).timeout(50000);
 
-
-
-
-
 })
-
 

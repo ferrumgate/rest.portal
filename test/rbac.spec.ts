@@ -1,15 +1,9 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { RBAC, RBACDefault } from '../src/model/rbac';
 
-
-
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('rbac ', async () => {
 
@@ -29,7 +23,6 @@ describe('rbac ', async () => {
         expect(RBACDefault.rightReporter).exist;
         expect(RBACDefault.rightUser).exist;
 
-
     }).timeout(5000);
 
     it('convert2RightList', async () => {
@@ -46,11 +39,9 @@ describe('rbac ', async () => {
         expect(calculatedRights).exist;
         expect(calculatedRights.length).to.equal(1);
 
-
         const calculatedRights2 = RBACDefault.convert2RightList(rbac, ['Admin', 'Reporter']);
         expect(calculatedRights2.length).to.equal(2);
     })
-
 
     it('convert2RightList with new Roles', async () => {
         const rbac: RBAC = {
@@ -68,8 +59,6 @@ describe('rbac ', async () => {
         expect(calculatedRights).exist;
         expect(calculatedRights.length).to.equal(3);
         expect(calculatedRights.map(x => x.id)).to.have.members(['User', 'someid', 'someid2'])
-
-
 
     })
     it('convert2RoleList with new Roles', async () => {
@@ -89,12 +78,7 @@ describe('rbac ', async () => {
         expect(calculatedRoles.length).to.equal(2);
         expect(calculatedRoles.map(x => x.id)).to.have.members(['User', 'someroleid'])
 
-
-
     })
 
-
-
 })
-
 

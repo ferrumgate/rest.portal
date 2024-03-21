@@ -1,8 +1,6 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { PingService } from '../src/service/pingService';
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -21,6 +19,5 @@ describe('pingService', async () => {
         expect(response.alive).to.be.true;
 
     }).timeout(50000);
-
 
 });

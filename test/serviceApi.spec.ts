@@ -1,20 +1,15 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { ExpressApp } from '../src/index';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
-import { Service } from '../src/model/service';
-import { Network } from '../src/model/network';
 import { getEmptyServiceIp } from '../src/api/serviceApi';
-
-
+import { ExpressApp } from '../src/index';
+import { Network } from '../src/model/network';
+import { Service } from '../src/model/service';
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -34,7 +29,6 @@ function createSampleData() {
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
 
-
     }
     let service1: Service = {
         id: Util.randomNumberString(),
@@ -50,8 +44,6 @@ function createSampleData() {
         updateDate: new Date().toISOString(),
         count: 1,
         aliases: []
-
-
 
     }
     let service2: Service = {
@@ -129,7 +121,6 @@ describe('serviceApi', async () => {
         await redisService.flushAll();
     })
 
-
     it('check authorazion as admin role', async () => {
         //prepare data
         const { service1, service2, service3, user1, network } = createSampleData();
@@ -139,7 +130,6 @@ describe('serviceApi', async () => {
         await appService.configService.saveUser(clonedUser);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -156,7 +146,6 @@ describe('serviceApi', async () => {
 
     }).timeout(50000);
 
-
     it('GET /service/:id returns 200', async () => {
         //prepare data
         const { service1, service2, service3, user1, network } = createSampleData();
@@ -165,10 +154,8 @@ describe('serviceApi', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-
         await appService.configService.saveService(service1);
         await appService.configService.saveService(service2);
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -198,7 +185,6 @@ describe('serviceApi', async () => {
         await appService.configService.saveService(service1);
         await appService.configService.saveService(service2);
 
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .get(`/api/service/absentGroupId`)
@@ -213,9 +199,7 @@ describe('serviceApi', async () => {
         //specific return, why one gets an unknown 
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
 
     it('GET /service?search=bla returns 200', async () => {
         //prepare data
@@ -228,8 +212,6 @@ describe('serviceApi', async () => {
         service1.labels = ['bla'];
         await appService.configService.saveService(service1);
         await appService.configService.saveService(service2);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -258,7 +240,6 @@ describe('serviceApi', async () => {
         await appService.configService.saveService(service1);
         await appService.configService.saveService(service2);
 
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .delete(`/api/service/${service2.id}`)
@@ -275,7 +256,6 @@ describe('serviceApi', async () => {
         expect(itemDb).not.exist;
 
     }).timeout(50000);
-
 
     it('PUT /service returns 200', async () => {
         //prepare data
@@ -310,8 +290,6 @@ describe('serviceApi', async () => {
         expectToDeepEqual(itemDb, service2);
 
     }).timeout(50000);
-
-
 
     it('POST /service returns 200', async () => {
         //prepare data
@@ -349,8 +327,6 @@ describe('serviceApi', async () => {
 
     }).timeout(50000);
 
-
-
     it('POST-PUT /service returns 200', async () => {
         //prepare data
         const { service1, service2, service3, user1, network } = createSampleData();
@@ -385,9 +361,7 @@ describe('serviceApi', async () => {
 
         expectToDeepEqual(response.body, service3);
 
-
     }).timeout(50000);
-
 
     it('getEmptyServiceIp', async () => {
 
@@ -418,12 +392,7 @@ describe('serviceApi', async () => {
         }
         expect(errorOccured).to.be.true;
 
-
     }).timeout(50000);
 
-
-
-
 })
-
 

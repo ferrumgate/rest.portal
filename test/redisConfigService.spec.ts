@@ -1,38 +1,24 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { ConfigService } from '../src/service/configService';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
-import { Gateway, Network } from '../src/model/network';
-import { AuthCommon, BaseOAuth, BaseLocal, AuthLocal, BaseLdap, BaseSaml, BaseOpenId, BaseRadius } from '../src/model/authSettings';
-import { Group } from '../src/model/group';
-import { Service } from '../src/model/service';
+import { AuthCommon, BaseLdap, BaseLocal, BaseOAuth, BaseOpenId, BaseRadius, BaseSaml } from '../src/model/authSettings';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
+import { DevicePosture } from '../src/model/authenticationProfile';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
-
-
-
+import { SSLCertificateEx } from '../src/model/cert';
+import { ConfigWatch } from '../src/model/config';
+import { DnsRecord } from '../src/model/dns';
+import { Group } from '../src/model/group';
+import { Gateway, Network } from '../src/model/network';
+import { Service } from '../src/model/service';
+import { User } from '../src/model/user';
 import { RedisConfigService } from '../src/service/redisConfigService';
 import { RedisService } from '../src/service/redisService';
-import { config } from 'process';
-import { WatchItem } from '../src/service/watchService';
-import { authenticate } from 'passport';
 import { SystemLogService } from '../src/service/systemLogService';
-import { ConfigWatch } from '../src/model/config';
-import IPCIDR from 'ip-cidr';
-import * as ipaddr from 'ip-address';
-import { calculateCountryId } from '../src/model/country';
-import { SSLCertificate, SSLCertificateEx } from '../src/model/cert';
-import { DevicePosture } from '../src/model/authenticationProfile';
-import { DnsRecord } from '../src/model/dns';
-
-
+import { WatchItem } from '../src/service/watchService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -101,7 +87,6 @@ describe('redisConfigService', async () => {
 
     });
 
-
     it('rDel', async () => {
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
         let logs: ConfigWatch<User>[] = [];
@@ -146,7 +131,6 @@ describe('redisConfigService', async () => {
         expect(data[0].id).exist;
     });
 
-
     it('saveV1', async () => {
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
@@ -160,7 +144,6 @@ describe('redisConfigService', async () => {
         const id = await configService.rGetIndex('users/username', 'admin');
         expect(id).exist;
     }).timeout(60000);
-
 
     it('init', async () => {
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
@@ -213,7 +196,6 @@ describe('redisConfigService', async () => {
         expect(aUserDb).exist;
         expectToDeepEqual(aUserDb, aUser);
 
-
     });
 
     /*  it('getUserByApiKey', async () => {
@@ -258,9 +240,6 @@ describe('redisConfigService', async () => {
         expectToDeepEqual(user, aUser);
 
     });
-
-
-
 
     it('getUsersBy', async () => {
 
@@ -311,7 +290,6 @@ describe('redisConfigService', async () => {
             isLocked: true,
             is2FA: true,
             isEmailVerified: true,
-
 
         };
 
@@ -371,7 +349,6 @@ describe('redisConfigService', async () => {
         //search by isEmailVerified
         const list12 = await configService.getUsersBy(0, 0, '', [], [], [], [], undefined, undefined, undefined, true);
         expect(list12.items.length).to.be.equal(1);
-
 
     });
 
@@ -555,7 +532,6 @@ describe('redisConfigService', async () => {
 
     });
 
-
     it('setCaptcha/getCaptcha', async () => {
 
         //first create a config and save to redis
@@ -566,7 +542,6 @@ describe('redisConfigService', async () => {
         await configService.setCaptcha({ client: 'x', server: 'y' });
         const db = await configService.getCaptcha()
         expect(db.client).to.equal('x');
-
 
     });
 
@@ -590,7 +565,6 @@ describe('redisConfigService', async () => {
         const db2 = await configService.getJWTSSLCertificate()
         expect(db2.privateKey).not.exist;
 
-
     });
 
     it('setWebSSLCertificate/getWebSSLCertificate', async () => {
@@ -612,7 +586,6 @@ describe('redisConfigService', async () => {
 
         const db2 = await configService.getWebSSLCertificate()
         expect(db2.privateKey).not.exist;
-
 
     });
 
@@ -636,8 +609,6 @@ describe('redisConfigService', async () => {
         const db2 = await configService.getCASSLCertificate()
         expect(db2.privateKey).not.exist;
 
-
-
     }).timeout(60000);
 
     it('setLogo/getLogo', async () => {
@@ -651,11 +622,7 @@ describe('redisConfigService', async () => {
         const db = await configService.getLogo()
         expect(db.default).to.equal('a');
 
-
     });
-
-
-
 
     it('authSettingsCommon', async () => {
 
@@ -713,7 +680,6 @@ describe('redisConfigService', async () => {
         const returned3 = await configService.getAuthSettingOAuth();
         expect(returned3.providers.length).to.equal(1);
 
-
     }).timeout(60000);
 
     it('setAuthSettingLocal/getAuthSettingLocal', async () => {
@@ -748,9 +714,7 @@ describe('redisConfigService', async () => {
         const returned = await configService.getAuthSettingLocal();
         expectToDeepEqual(returned, local);
 
-
     });
-
 
     it('authSettingsLdap', async () => {
 
@@ -794,7 +758,6 @@ describe('redisConfigService', async () => {
         const returned3 = await configService.getAuthSettingLdap();
         expect(returned3.providers.length).to.equal(1);
 
-
     });
 
     it('authSettingsSaml', async () => {
@@ -837,10 +800,7 @@ describe('redisConfigService', async () => {
         const returned3 = await configService.getAuthSettingSaml();
         expect(returned3.providers.length).to.equal(1);
 
-
     });
-
-
 
     it('authSettingsOpenId', async () => {
 
@@ -859,7 +819,6 @@ describe('redisConfigService', async () => {
             type: 'generic',
             id: 'oneid',
 
-
             tags: [],
             isEnabled: true,
             insertDate: new Date().toISOString(),
@@ -867,7 +826,6 @@ describe('redisConfigService', async () => {
             discoveryUrl: '',
             clientId: '',
             clientSecret: '',
-
 
         }
 
@@ -886,7 +844,6 @@ describe('redisConfigService', async () => {
         await configService.addAuthSettingOpenId(openId);
         const returned3 = await configService.getAuthSettingOpenId();
         expect(returned3.providers.length).to.equal(1);
-
 
     });
 
@@ -931,9 +888,7 @@ describe('redisConfigService', async () => {
         const returned3 = await configService.getAuthSettingRadius();
         expect(returned3.providers.length).to.equal(1);
 
-
     });
-
 
     it('saveNetwork getNetwork getNetworkByName', async () => {
 
@@ -990,7 +945,6 @@ describe('redisConfigService', async () => {
 
     });
 
-
     it('deleteNetwork', async () => {
 
         //first create a config and save to redis
@@ -1042,7 +996,6 @@ describe('redisConfigService', async () => {
             updateDate: new Date().toISOString()
         }
 
-
         await configService.saveGateway(gateway);
         const gatewayDb = await configService.getGateway(gateway.id);
         expectToDeepEqual(gatewayDb, gateway);
@@ -1080,7 +1033,6 @@ describe('redisConfigService', async () => {
         expect(domain).to.equal('test.me');
 
     }).timeout(10000);
-
 
     it('getUrl/setUrl', async () => {
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
@@ -1126,7 +1078,6 @@ describe('redisConfigService', async () => {
 
         expectToDeepEqual(returned, group);
 
-
     });
 
     it('getGroupBySearch', async () => {
@@ -1166,9 +1117,7 @@ describe('redisConfigService', async () => {
         const returned2 = await configService.getGroupsBySearch('abo');
         expect(returned2.length).to.be.equal(0);
 
-
     });
-
 
     it('getGroupsAll', async () => {
 
@@ -1203,7 +1152,6 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getGroupsAll();
         expect(returned.length).to.be.equal(2);
-
 
     });
 
@@ -1240,7 +1188,6 @@ describe('redisConfigService', async () => {
 
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
-
 
         configService.config.groups = [];
         configService.config.users = [];
@@ -1313,7 +1260,6 @@ describe('redisConfigService', async () => {
 
         expectToDeepEqual(returned, service);
 
-
     });
 
     it('getServicesBy', async () => {
@@ -1372,14 +1318,11 @@ describe('redisConfigService', async () => {
         const returned4 = await configService.getServicesBy('192.168');
         expect(returned4.length).to.be.equal(1);
 
-
         const returned5 = await configService.getServicesBy('', ['abcd']);
         expect(returned5.length).to.be.equal(2);
 
         const returned6 = await configService.getServicesBy('', [], [service2.id]);
         expect(returned6.length).to.be.equal(1);
-
-
 
     });
 
@@ -1430,9 +1373,7 @@ describe('redisConfigService', async () => {
         const returned = await configService.getServicesByNetworkId('dabc');
         expect(returned.length).to.equal(1);
 
-
     });
-
 
     it('getServicesAll', async () => {
 
@@ -1548,13 +1489,11 @@ describe('redisConfigService', async () => {
         //add
         await configService.saveService(service1);
 
-
         await configService.deleteService(service1.id);
 
         const returned = await configService.getService(service1.id)
 
         expect(returned).not.exist;
-
 
     });
 
@@ -1582,7 +1521,6 @@ describe('redisConfigService', async () => {
 
         const policy = await configService.getAuthenticationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
-
 
     });
     it('getAuthenticationPolicy', async () => {
@@ -1656,13 +1594,11 @@ describe('redisConfigService', async () => {
         }
         configService.config.authenticationPolicy.rules.push(rule);
 
-
         await configService.deleteAuthenticationPolicyRule(rule.id);
         expect(configService.config.authenticationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
         expect(configService.config.authenticationPolicy.rules.length).to.equal(0);
 
     });
-
 
     it('updateAuthenticationRulePos', async () => {
 
@@ -1683,7 +1619,6 @@ describe('redisConfigService', async () => {
 
         }
 
-
         let rule2: AuthenticationRule = {
             id: '2',
             name: "zero trust2",
@@ -1695,8 +1630,6 @@ describe('redisConfigService', async () => {
             insertDate: new Date().toISOString()
 
         }
-
-
 
         let rule3: AuthenticationRule = {
             id: '3',
@@ -1717,8 +1650,6 @@ describe('redisConfigService', async () => {
         expect(policy.rulesOrder[0]).to.be.equal(rule1.id);
         expect(policy.rulesOrder[1]).to.be.equal(rule2.id);
         expect(policy.rulesOrder[2]).to.be.equal(rule3.id);
-
-
 
         await configService.updateAuthenticationRulePos(rule1.id, 0, rule3.id, 2);
         policy = await configService.getAuthenticationPolicy();
@@ -1747,13 +1678,7 @@ describe('redisConfigService', async () => {
         }
         expect(errrored).to.be.true;
 
-
-
-
-
     });
-
-
 
     //authorizationPolicy
 
@@ -1780,7 +1705,6 @@ describe('redisConfigService', async () => {
 
         const policy = await configService.getAuthorizationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
-
 
     });
     it('getAuthorizationPolicy', async () => {
@@ -1832,7 +1756,6 @@ describe('redisConfigService', async () => {
         //add
         await configService.saveAuthorizationPolicyRule(rule);
 
-
         const policy = await configService.getAuthorizationPolicy();
         expect(policy.rules.find(x => x.id == rule.id)).to.exist;
         expect(policy.rules.length).to.equal(1);
@@ -1862,13 +1785,11 @@ describe('redisConfigService', async () => {
 
         configService.config.authorizationPolicy.rules.push(rule);
 
-
         await configService.deleteAuthorizationPolicyRule(rule.id);
         expect(configService.config.authorizationPolicy.rules.find(x => x.id == rule.id)).to.not.exist;
         expect(configService.config.authorizationPolicy.rules.length).to.equal(0);
 
     });
-
 
     it('updateAuthorizationRulePos', async () => {
 
@@ -1890,7 +1811,6 @@ describe('redisConfigService', async () => {
 
         }
 
-
         let rule2: AuthorizationRule = {
             id: '2',
             name: "zero trust2",
@@ -1905,7 +1825,6 @@ describe('redisConfigService', async () => {
             insertDate: new Date().toISOString()
 
         }
-
 
         let rule3: AuthorizationRule = {
             id: '3',
@@ -1925,17 +1844,11 @@ describe('redisConfigService', async () => {
         await configService.saveAuthorizationPolicyRule(rule2);
         await configService.saveAuthorizationPolicyRule(rule1);
 
-
         let policy = await configService.getAuthorizationPolicy();
-
-
-
 
         expect(policy.rulesOrder[0]).to.be.equal(rule1.id);
         expect(policy.rulesOrder[1]).to.be.equal(rule2.id);
         expect(policy.rulesOrder[2]).to.be.equal(rule3.id);
-
-
 
         await configService.updateAuthorizationRulePos(rule1.id, 0, rule3.id, 2);
         policy = await configService.getAuthorizationPolicy();
@@ -1965,13 +1878,7 @@ describe('redisConfigService', async () => {
         }
         expect(errrored).to.be.true;
 
-
-
-
-
     });
-
-
 
     it('triggerUserDeleted', async () => {
 
@@ -2053,14 +1960,9 @@ describe('redisConfigService', async () => {
         await configService.logWatcher.watcher.read();
         await configService.logWatcher.watcher.read();
 
-
         expect(logs.length > 0).to.be.true;
 
-
-
-
     }).timeout(60000);
-
 
     it('triggerUserSavedOrUpdated', async () => {
 
@@ -2093,7 +1995,6 @@ describe('redisConfigService', async () => {
 
         await configService.saveUser(aUser);
 
-
         aUser.name = 'changed';
 
         await configService.saveUser(aUser);
@@ -2106,7 +2007,6 @@ describe('redisConfigService', async () => {
         expect(logs.length > 0).to.be.true;
 
     }).timeout(60000);
-
 
     it('triggerNetworkDeleted', async () => {
 
@@ -2127,7 +2027,6 @@ describe('redisConfigService', async () => {
 
             logs.push(data);
         })
-
 
         let network: Network = {
             id: Util.randomNumberString(),
@@ -2180,8 +2079,6 @@ describe('redisConfigService', async () => {
 
         configService.saveUser(aUser);
 
-
-
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
         let rule: AuthorizationRule = {
@@ -2201,7 +2098,6 @@ describe('redisConfigService', async () => {
 
         configService.config.authorizationPolicy.rules.push(rule);
         await configService.saveAuthorizationPolicyRule(rule);
-
 
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
@@ -2224,7 +2120,6 @@ describe('redisConfigService', async () => {
         const authenticationPolicy = await configService.getAuthenticationPolicy();
         const services = await configService.getServicesAll();
         const gateways = await configService.getGatewaysAll();
-
 
         expect(authorizationPolicy.rules.find(x => x.networkId == network.id)).to.not.exist;
         expect(authenticationPolicy.rules.find(x => x.networkId == network.id)).to.not.exist;
@@ -2259,7 +2154,6 @@ describe('redisConfigService', async () => {
             logs.push(data);
         })
 
-
         let gateway: Gateway = {
             id: Util.randomNumberString(),
             name: 'myserver',
@@ -2278,10 +2172,7 @@ describe('redisConfigService', async () => {
         await configService.logWatcher.watcher.read();
         expect(logs.length > 0).to.be.true;
 
-
     }).timeout(60000);
-
-
 
     it('triggerGroupDeleted', async () => {
 
@@ -2345,7 +2236,6 @@ describe('redisConfigService', async () => {
         configService.config.authorizationPolicy.rules.push(rule);
         await configService.saveAuthorizationPolicyRule(rule);
 
-
         let rule2: AuthenticationRule = {
             id: Util.randomNumberString(),
             name: "zero trust",
@@ -2375,9 +2265,7 @@ describe('redisConfigService', async () => {
 
         expect(logs.length > 0).to.be.true;
 
-
     }).timeout(60000);
-
 
     it('triggerServiceDeleted', async () => {
 
@@ -2399,7 +2287,6 @@ describe('redisConfigService', async () => {
             logs.push(data);
         })
 
-
         let service1: Service = {
             id: Util.randomNumberString(),
             name: 'mysql-dev',
@@ -2420,7 +2307,6 @@ describe('redisConfigService', async () => {
         await configService.config.services.push(service1);
         await configService.saveService(service1);
 
-
         let aUser: User = {
             id: Util.randomNumberString(),
             username: 'hamza.kilic@ferrumgate.com',
@@ -2432,8 +2318,6 @@ describe('redisConfigService', async () => {
 
         configService.config.users.push(aUser);
         await configService.saveUser(aUser);
-
-
 
         configService.config.authenticationPolicy.rules = [];
         configService.config.authorizationPolicy.rules = [];
@@ -2455,7 +2339,6 @@ describe('redisConfigService', async () => {
         configService.config.authorizationPolicy.rules.push(rule);
         await configService.saveAuthorizationPolicyRule(rule);
 
-
         await configService.deleteService(service1.id);
 
         const authorizationPolicy = await configService.getAuthorizationPolicy();
@@ -2466,10 +2349,7 @@ describe('redisConfigService', async () => {
 
         expect(logs.length > 0).to.be.true;
 
-
     }).timeout(60000);
-
-
 
     it('saveConfigToString', async () => {
 
@@ -2492,7 +2372,6 @@ describe('redisConfigService', async () => {
 
     });
 
-
     it('getES/setES', async () => {
 
         //first create a config and save to redis
@@ -2504,9 +2383,7 @@ describe('redisConfigService', async () => {
         const db = await configService.getES()
         expect(db?.host).to.equal('abc');
 
-
     });
-
 
     it('getAll', async () => {
 
@@ -2519,7 +2396,6 @@ describe('redisConfigService', async () => {
         await configService.getConfig(config);
         expect(config.captcha.client).to.equal('2');
         expect(config.captcha.server).to.equal('3');
-
 
     });
 
@@ -2541,9 +2417,7 @@ describe('redisConfigService', async () => {
         expect(catpcha.client).to.equal('4');
         expect(catpcha.server).to.equal('5');
 
-
     });
-
 
     it('getIpIntelligenceSources/saveIpIntelligenceSource/deleteIpIntelligenceSource', async () => {
 
@@ -2564,7 +2438,6 @@ describe('redisConfigService', async () => {
         await configService.deleteIpIntelligenceSource(item.id);
         const source3 = await configService.getIpIntelligenceSources();
         expect(source3.length).to.equal(0);
-
 
     });
 
@@ -2591,9 +2464,7 @@ describe('redisConfigService', async () => {
         const source4 = await configService.getIpIntelligenceSources();
         expect(source4.length).to.equal(0);
 
-
     });
-
 
     it('getInSSLCertificate', async () => {
 
@@ -2609,8 +2480,6 @@ describe('redisConfigService', async () => {
             updateDate: new Date().toISOString(),
             isEnabled: true, usages: []
 
-
-
         }
         //add
         await configService.saveInSSLCertificate(crt);
@@ -2623,12 +2492,7 @@ describe('redisConfigService', async () => {
         expect(returned2).exist;
         expect(returned2?.privateKey).not.exist;
 
-
-
     });
-
-
-
 
     it('getInSSLCertificateAll', async () => {
 
@@ -2667,7 +2531,6 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getInSSLCertificateAll();
         expect(returned.length).to.be.equal(4);//one more from default web intermediate
-
 
     });
 
@@ -2708,7 +2571,6 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
-
         configService.config.inSSLCertificates = [];
 
         await configService.init();
@@ -2722,19 +2584,15 @@ describe('redisConfigService', async () => {
             privateKey: 'adfa', publicCrt: 'asdfasdfsa',
             isEnabled: true, usages: []
 
-
         }
         //add
         await configService.saveInSSLCertificate(crt);
-
 
         await configService.deleteInSSLCertificate(crt.id);
 
         const returned = await configService.getInSSLCertificate(crt.id)
 
         expect(returned).not.exist;
-
-
 
     });
 
@@ -2762,7 +2620,6 @@ describe('redisConfigService', async () => {
         const returned = await configService.getDevicePosture(posture.id);
 
         expectToDeepEqual(returned, posture);
-
 
     });
 
@@ -2805,9 +2662,7 @@ describe('redisConfigService', async () => {
         const returned2 = await configService.getDevicePosturesBySearch('abo');
         expect(returned2.length).to.be.equal(0);
 
-
     });
-
 
     it('getDevicePosturesAll', async () => {
 
@@ -2844,7 +2699,6 @@ describe('redisConfigService', async () => {
 
         const returned = await configService.getDevicePosturesAll();
         expect(returned.length).to.be.equal(2);
-
 
     });
 
@@ -2883,7 +2737,6 @@ describe('redisConfigService', async () => {
         //first create a config and save to redis
         let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
 
-
         configService.config.devicePostures = [];
         configService.config.authenticationPolicy.rules = [];
         configService.config.authenticationPolicy.rulesOrder = [];
@@ -2917,7 +2770,6 @@ describe('redisConfigService', async () => {
 
         };
 
-
         configService.config.authenticationPolicy.rules.push(aRule);
         await configService.saveAuthenticationPolicyRule(aRule);
 
@@ -2930,7 +2782,6 @@ describe('redisConfigService', async () => {
         expect(rule?.profile.device?.postures?.length).to.equal(0);
 
     });
-
 
     it('getFqdnIntelligenceSources/saveFqdnIntelligenceSource/deleteFqdnIntelligenceSource', async () => {
 
@@ -2951,7 +2802,6 @@ describe('redisConfigService', async () => {
         await configService.deleteFqdnIntelligenceSource(item.id);
         const source3 = await configService.getFqdnIntelligenceSources();
         expect(source3.length).to.equal(0);
-
 
     });
 
@@ -2978,9 +2828,7 @@ describe('redisConfigService', async () => {
         const source4 = await configService.getFqdnIntelligenceSources();
         expect(source4.length).to.equal(0);
 
-
     });
-
 
     it('getHttpToHttpsRedirect/setHttpToHttpsRedirect', async () => {
 
@@ -2993,7 +2841,6 @@ describe('redisConfigService', async () => {
         await configService.setHttpToHttpsRedirect(false);
         const db = await configService.getHttpToHttpsRedirect()
         expect(db).to.be.false;
-
 
     });
     it('getBrand/setBrand', async () => {
@@ -3008,10 +2855,7 @@ describe('redisConfigService', async () => {
         const db = await configService.getBrand();
         expect(db.name).to.equal('test');
 
-
     });
-
-
 
     it('getDnsRecord/saveDnsRecord/deleteDnsRecord', async () => {
 
@@ -3036,15 +2880,7 @@ describe('redisConfigService', async () => {
         const source4 = await configService.getDnsRecords();
         expect(source4.length).to.equal(0);
 
-
     });
-
-
-
-
-
-
-
 
 });
 

@@ -1,21 +1,12 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { ConfigService } from '../src/service/configService';
-import { RedisService } from '../src/service/redisService';
-
-import { PKIService } from '../src/service/pkiService';
-import { RedisConfigService } from '../src/service/redisConfigService';
-import { SystemLogService } from '../src/service/systemLogService';
-import { Util } from '../src/util';
 import fs from 'fs';
-
+import { RedisConfigService } from '../src/service/redisConfigService';
+import { RedisService } from '../src/service/redisService';
+import { SystemLogService } from '../src/service/systemLogService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('PKIService ', async () => {
     const encKey = 'u88aapisbdvmufeptows0a5l53sa1r3v';
@@ -32,11 +23,5 @@ describe('PKIService ', async () => {
         return fs.readFileSync(path).toString();
     }
 
-
-
-
-
-
 })
-
 

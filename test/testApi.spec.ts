@@ -1,16 +1,10 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
-
+import { AppService } from '../src/service/appService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('testApi ', async () => {
 
@@ -44,7 +38,6 @@ describe('testApi ', async () => {
 
     }).timeout(5000);
 
-
     it('check clientip', async () => {
 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -63,7 +56,6 @@ describe('testApi ', async () => {
         expect(response.body.clientIp).exist;
 
     }).timeout(5000);
-
 
     it('check ratelimit ', async () => {
         for (let i = 0; i < 100; ++i) {
@@ -87,5 +79,4 @@ describe('testApi ', async () => {
     }).timeout(50000);
 
 })
-
 

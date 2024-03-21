@@ -1,17 +1,12 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { AppService } from '../src/service/appService';
-import { User } from '../src/model/user';
-import { Email, EmailService } from '../src/service/emailService';
 import { ExpressApp } from '../src';
-
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Email, EmailService } from '../src/service/emailService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('userApiConfirm', async () => {
     const expressApp = new ExpressApp();
@@ -48,7 +43,6 @@ describe('userApiConfirm', async () => {
     afterEach(async () => {
         appService.emailService = emailService;
     })
-
 
     it('POST /user/confirmemail will return 200', async () => {
         class MockEmail extends EmailService {
@@ -105,7 +99,6 @@ describe('userApiConfirm', async () => {
         expect(value).to.exist;
     }).timeout(50000);
 
-
     it('POST /user/confirm will return 401 not found user', async () => {
         class MockEmail extends EmailService {
             override  async send(email: Email): Promise<void> {
@@ -133,7 +126,5 @@ describe('userApiConfirm', async () => {
         expect(value).to.exist;
     }).timeout(50000);
 
-
 })
-
 

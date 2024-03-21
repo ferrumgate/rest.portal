@@ -1,16 +1,8 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { ConfigService } from '../src/service/configService';
-import { RedisService } from '../src/service/redisService';
-
-
-import { RedisConfigService } from '../src/service/redisConfigService';
-import { SystemLogService } from '../src/service/systemLogService';
-import { Util } from '../src/util';
 import fs from 'fs';
+import { Util } from '../src/util';
 import { UtilPKI } from '../src/utilPKI';
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -26,12 +18,10 @@ Date.prototype.addDays = function (days: number) {
     return date;
 }
 
-
 describe('UtilPKI ', async () => {
 
     UtilPKI.init();
     beforeEach(async () => {
-
 
     })
     function readFileSync(path: string) {
@@ -67,8 +57,6 @@ describe('UtilPKI ', async () => {
         expect(output.includes('CA:TRUE, pathlen:3')).to.be.true;
         expect(output.includes('DNS:test.ferrumgate.com, email:dev@ferrumgate.com, IP Address:192.168.1.0, IP Address:2001:4860:4860:0:0:0:0:8888')).to.be.true;
 
-
-
         const prv = await UtilPKI.parsePrivateKey(readFileSync(privateKey), 'SHA-512', 'RSASSA-PKCS1-v1_5');
         expect(prv).exist;
 
@@ -78,12 +66,7 @@ describe('UtilPKI ', async () => {
         const subject = await UtilPKI.parseSubject(certs[0]);
         expect(subject['CN']).to.equal('ferrumgate');
 
-
-
-
-
     }).timeout(5000);
-
 
     async function createCA(cn = 'ferrumgate', before = -10, after = 5) {
         const caResult = await UtilPKI.createCertificate(
@@ -128,9 +111,7 @@ describe('UtilPKI ', async () => {
         return { intermediate, inCrt: crt, inKey: key }
     }
 
-
     it('create CA and sign ', async () => {
-
 
         const tmpDir = `/tmp/${Util.randomNumberString()}`;
         fs.mkdirSync(tmpDir);
@@ -140,7 +121,6 @@ describe('UtilPKI ', async () => {
         const isVerified1 = await UtilPKI.verifyCertificate(inCrt, [], ca, []);
         console.log(isVerified1);
         expect(isVerified1.result).to.be.true;
-
 
         const userResult = await UtilPKI.createCertificate(
             {
@@ -160,16 +140,11 @@ describe('UtilPKI ', async () => {
         fs.writeFileSync(publicCrt3, UtilPKI.toPEM(userResult.certificateBuffer, 'CERTIFICATE'));
         const user = await UtilPKI.parseCertificate(readFileSync(publicCrt3));
 
-
         const isVerified2 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), intermediate, ca, []);
 
         expect(isVerified2.result).to.be.true;
 
-
-
     }).timeout(5000);
-
-
 
     it('create CA and sign with old date and verity', async () => {
 
@@ -197,15 +172,11 @@ describe('UtilPKI ', async () => {
         fs.writeFileSync(publicCrt3, UtilPKI.toPEM(userResult.certificateBuffer, 'CERTIFICATE'));
         const user = await UtilPKI.parseCertificate(readFileSync(publicCrt3));
 
-
         const isVerified2 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), intermediate, ca, []);
 
         expect(isVerified2.result).to.be.false;
 
-
-
     }).timeout(5000);
-
 
     it('create CA and verify empty version', async () => {
 
@@ -233,7 +204,6 @@ describe('UtilPKI ', async () => {
         fs.writeFileSync(publicCrt3, UtilPKI.toPEM(userResult.certificateBuffer, 'CERTIFICATE'));
         const user = await UtilPKI.parseCertificate(readFileSync(publicCrt3));
 
-
         const isVerified2 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), [], ca, []);
 
         expect(isVerified2.result).to.be.false;
@@ -246,11 +216,7 @@ describe('UtilPKI ', async () => {
 
         expect(isVerified4.result).to.be.false;
 
-
-
     }).timeout(5000);
-
-
 
     it('multiple CA  multiple intermediate check', async () => {
 
@@ -288,17 +254,11 @@ describe('UtilPKI ', async () => {
         const isVerified3 = await UtilPKI.verifyCertificate(readFileSync(publicCrt3), intermediate2, ca, []);
         expect(isVerified3.result).to.be.false;
 
-
-
     }).timeout(5000);
-
-
-
 
     it('create CA with openssl', async () => {
 
         const result = await Util.createSelfSignedCrt('ferrumgate.test', '10')
-
 
         const prv = await UtilPKI.parsePrivateKey(result.privateKey, 'SHA-512', 'RSASSA-PKCS1-v1_5');
         expect(prv).exist;
@@ -308,7 +268,6 @@ describe('UtilPKI ', async () => {
 
         const subject = await UtilPKI.parseSubject(certs[0]);
         expect(subject['CN']).to.equal('ferrumgate.test');
-
 
     }).timeout(5000);
 
@@ -334,11 +293,5 @@ describe('UtilPKI ', async () => {
         //fs.writeFileSync('/tmp/abo1.p12', fileBuffer);
     })
 
-
-
-
-
-
 })
-
 

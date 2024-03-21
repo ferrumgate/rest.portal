@@ -2,25 +2,13 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ConfigService } from '../src/service/configService';
-import { Util } from '../src/util';
-import { RedisService } from '../src/service/redisService';
-import { GatewayDetail } from '../src/model/network';
-import os from 'os';
-import { GatewayService } from '../src/service/gatewayService';
-
-import { IpIntelligenceSource } from '../src/model/ipIntelligence';
-import { IpIntelligenceService } from '../src/service/ipIntelligenceService';
 import { InputService } from '../src/service/inputService';
-import { ESService } from '../src/service/esService';
-import { FqdnIntelligenceSource } from '../src/model/fqdnIntelligence';
-import { FqdnIntelligenceService } from '../src/service/fqdnIntelligenceService';
-
+import { RedisService } from '../src/service/redisService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -46,8 +34,6 @@ describe('fqdnIntelligenceService', async () => {
         await redisService.flushAll();
     })
 
-
-
     /*  it('reConfigure', async () => {
          const source: FqdnIntelligenceSource = {
              id: Util.randomNumberString(),
@@ -71,17 +57,8 @@ describe('fqdnIntelligenceService', async () => {
     const result = await intel.reConfigure();
     expect(intel.getClass()).exist;
     
-    
     }).timeout(500000); 
     */
 
-
-
-
-
-
-
-
 })
-
 

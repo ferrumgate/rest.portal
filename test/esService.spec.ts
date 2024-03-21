@@ -1,4 +1,3 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import * as odiff from 'deep-object-diff'
@@ -14,12 +13,8 @@ import { DeviceLog } from '../src/model/device';
 import { FqdnIntelligenceList, FqdnIntelligenceListItem } from '../src/model/fqdnIntelligence';
 import { esHost, esPass, esUser } from './common.spec';
 
-
-
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
 
 const host = esHost;
 const user = esUser;
@@ -36,7 +31,6 @@ describe.skip('esService ', async () => {
 
         }
     })
-
 
     function createSampleData3() {
         let activity1: ActivityLog = {
@@ -87,7 +81,6 @@ describe.skip('esService ', async () => {
         const indexes2 = await es.getAllIndexes();
         expect(indexes2.length).to.equal(0);
 
-
     }).timeout(15000);
 
     it('activitySave', async () => {
@@ -97,7 +90,6 @@ describe.skip('esService ', async () => {
         await es.activitySave([data]);
 
     }).timeout(15000);
-
 
     it('activitySearch', async () => {
 
@@ -135,13 +127,7 @@ describe.skip('esService ', async () => {
         items = await es.searchActivityLogs({ startDate: new Date(2020, 1, 1).toISOString(), search: '123456' });
         expect(items.total).to.equal(1);
 
-
-
-
     }).timeout(120000);
-
-
-
 
     function createSampleData4() {
         let activity1: ActivityLog = {
@@ -230,12 +216,7 @@ describe.skip('esService ', async () => {
         expect(items.aggs.length).to.equal(7);
         expect(items.aggs[4].sub?.length).to.equal(1);
 
-
-
-
     }).timeout(120000);
-
-
 
     function createSampleData5() {
         let activity1: ActivityLog = {
@@ -261,8 +242,6 @@ describe.skip('esService ', async () => {
 
         return { activity1 };
     }
-
-
 
     it('getSummaryCreateTunnel', async () => {
 
@@ -290,8 +269,6 @@ describe.skip('esService ', async () => {
         expect(items.aggs[5].sub?.length).to.equal(1);
 
     }).timeout(120000);
-
-
 
     function createSampleData6() {
         let activity1: ActivityLog = {
@@ -338,8 +315,6 @@ describe.skip('esService ', async () => {
         return { activity1, activity2 };
     }
 
-
-
     it('getSummary2faCheck', async () => {
 
         const es = new ESService(config, host, user, pass, '1s');
@@ -347,7 +322,6 @@ describe.skip('esService ', async () => {
         const { activity1, activity2 } = createSampleData6();
         activity1.insertDate = dayBefore(24, new Date()).toISOString();
         activity2.insertDate = dayBefore(48, new Date()).toISOString();
-
 
         const data = await es.activityCreateIndexIfNotExits(activity1);
         await es.activitySave([data]);
@@ -371,9 +345,6 @@ describe.skip('esService ', async () => {
         expect(items.aggs[4].sub?.length).to.equal(1);
 
     }).timeout(120000);
-
-
-
 
     function createSampleData7() {
         let activity1: ActivityLog = {
@@ -420,7 +391,6 @@ describe.skip('esService ', async () => {
         return { activity1, activity2 };
     }
 
-
     it('getSummaryUserLoginSuccess', async () => {
 
         const es = new ESService(config, host, user, pass, '1s');
@@ -428,7 +398,6 @@ describe.skip('esService ', async () => {
         const { activity1, activity2 } = createSampleData7();
         activity1.insertDate = dayBefore(24, new Date()).toISOString();
         activity2.insertDate = dayBefore(48, new Date()).toISOString();
-
 
         const data = await es.activityCreateIndexIfNotExits(activity1);
         await es.activitySave([data]);
@@ -450,7 +419,6 @@ describe.skip('esService ', async () => {
         expect(items.total).to.equal(1);
         expect(items.aggs.length).to.equal(1);
 
-
     }).timeout(120000);
 
     it('getSummaryUserLoginFailed', async () => {
@@ -460,7 +428,6 @@ describe.skip('esService ', async () => {
         const { activity1, activity2 } = createSampleData7();
         activity1.insertDate = dayBefore(24, new Date()).toISOString();
         activity2.insertDate = dayBefore(48, new Date()).toISOString();
-
 
         const data = await es.activityCreateIndexIfNotExits(activity1);
         await es.activitySave([data]);
@@ -482,9 +449,7 @@ describe.skip('esService ', async () => {
         expect(items.total).to.equal(1);
         expect(items.aggs.length).to.equal(1);
 
-
     }).timeout(120000);
-
 
     it('getSummaryUserLoginTry', async () => {
 
@@ -521,7 +486,6 @@ describe.skip('esService ', async () => {
 
     }).timeout(120000);
 
-
     it('getSummaryUserLoginTryHours', async () => {
 
         const es = new ESService(config, host, user, pass, '1s');
@@ -554,7 +518,6 @@ describe.skip('esService ', async () => {
         expect(items.total).to.equal(2);
         expect(items.aggs.length > 6 * 24).to.be.true;
 
-
     }).timeout(120000);
     it('reConfigure', async () => {
         const host = 'https://localhost:9500';
@@ -583,7 +546,6 @@ describe.skip('esService ', async () => {
 
     }).timeout(130000);
 
-
     it('reConfigure2 reconnect to same host', async () => {
         const host = esHost;
         const user = esUser;
@@ -610,8 +572,6 @@ describe.skip('esService ', async () => {
         expect(isError).to.be.false;
 
     }).timeout(130000);
-
-
 
     // ip intelligence list 
 
@@ -680,7 +640,6 @@ describe.skip('esService ', async () => {
 
     }).timeout(15000);
 
-
     it('ipIntelligenceListSave', async () => {
         const es = new ESService(config, host, user, pass, '1s');
         const {
@@ -690,7 +649,6 @@ describe.skip('esService ', async () => {
         await es.ipIntelligenceListItemSave([data]);
 
     }).timeout(15000);
-
 
     it('ipIntelligenceListSearch', async () => {
 
@@ -711,8 +669,6 @@ describe.skip('esService ', async () => {
             await Util.sleep(1000);
         }
         expect(listIds?.items.length == 2).to.be.true;
-
-
 
     }).timeout(120000);
 
@@ -742,8 +698,6 @@ describe.skip('esService ', async () => {
         const indexes = await es.getAllIndexes();
         expect(indexes.includes(`ip-intelligence-list-${list.id.toLowerCase()}`)).to.be.false;
 
-
-
     }).timeout(120000);
 
     it('scrollIpIntelligenceList', async () => {
@@ -765,11 +719,7 @@ describe.skip('esService ', async () => {
 
         expect(items.length).to.equal(3);
 
-
     }).timeout(120000);
-
-
-
 
     function createSampleData30() {
         let device1: DeviceLog = {
@@ -790,7 +740,6 @@ describe.skip('esService ', async () => {
             userId: '12',
             username: 'auser'
 
-
         }
         let device2: DeviceLog = {
             insertDate: new Date(2020, 1, 2).toISOString(),
@@ -810,7 +759,6 @@ describe.skip('esService ', async () => {
             userId: '12',
             username: 'auser'
 
-
         }
         return { device1, device2 };
     }
@@ -825,7 +773,6 @@ describe.skip('esService ', async () => {
 
     }).timeout(15000);
 
-
     it('deviceSave', async () => {
         const es = new ESService(config, host, user, pass, '1s');
         const { device1, device2 } = createSampleData30();
@@ -833,7 +780,6 @@ describe.skip('esService ', async () => {
         await es.deviceSave([data]);
 
     }).timeout(15000);
-
 
     it('deviceSearch', async () => {
 
@@ -865,12 +811,7 @@ describe.skip('esService ', async () => {
         items = await es.searchDeviceLogs({ startDate: new Date(2020, 1, 1).toISOString(), search: device1.id });
         expect(items.total).to.equal(1);
 
-
-
-
     }).timeout(120000);
-
-
 
     // fqdn intelligence list 
 
@@ -939,7 +880,6 @@ describe.skip('esService ', async () => {
 
     }).timeout(15000);
 
-
     it('fqdnIntelligenceListSave', async () => {
         const es = new ESService(config, host, user, pass, '1s');
         const {
@@ -949,7 +889,6 @@ describe.skip('esService ', async () => {
         await es.fqdnIntelligenceListItemSave([data]);
 
     }).timeout(15000);
-
 
     it('fqdnIntelligenceListSearch', async () => {
 
@@ -970,8 +909,6 @@ describe.skip('esService ', async () => {
             await Util.sleep(1000);
         }
         expect(listIds?.items.length == 1).to.be.true;
-
-
 
     }).timeout(120000);
 
@@ -1001,8 +938,6 @@ describe.skip('esService ', async () => {
         const indexes = await es.getAllIndexes();
         expect(indexes.includes(`fqdn-intelligence-list-${list.id.toLowerCase()}`)).to.be.false;
 
-
-
     }).timeout(120000);
 
     it('scrollFqdnIntelligenceList', async () => {
@@ -1024,15 +959,7 @@ describe.skip('esService ', async () => {
 
         expect(items.length).to.equal(3);
 
-
     }).timeout(120000);
 
-
-
-
-
-
-
 })
-
 

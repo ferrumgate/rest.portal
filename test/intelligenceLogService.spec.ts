@@ -1,17 +1,11 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { IntelligenceLogService } from '../src/service/intelligenceLogService';
 import { RedisService } from '../src/service/redisService';
 import { Util } from '../src/util';
 
-
-
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('intelligenceLogService', async () => {
 
@@ -61,9 +55,5 @@ describe('intelligenceLogService', async () => {
 
     }).timeout(50000);
 
-
-
-
 })
-
 

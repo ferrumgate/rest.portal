@@ -1,18 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
 import { Email, EmailService } from '../src/service/emailService';
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('userApiResetPassword', async () => {
     const expressApp = new ExpressApp();
@@ -30,7 +25,6 @@ describe('userApiResetPassword', async () => {
         source: 'local',
         insertDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
-
 
     }
     before(async () => {
@@ -131,8 +125,6 @@ describe('userApiResetPassword', async () => {
 
     }).timeout(50000);
 
-
-
     it('POST /user/resetpass will return 401 with not found user', async () => {
         class MockEmail extends EmailService {
             override  async send(email: Email): Promise<void> {
@@ -185,10 +177,5 @@ describe('userApiResetPassword', async () => {
 
     }).timeout(50000);
 
-
-
-
-
 })
-
 

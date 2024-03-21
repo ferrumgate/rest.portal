@@ -1,17 +1,11 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { CaptchaService } from '../src/service/captchaService';
 import { ConfigService } from '../src/service/configService';
 import { Util } from '../src/util';
 
-
-
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('captchaService ', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -29,9 +23,7 @@ describe('captchaService ', async () => {
         }
         expect(isError).to.be.true;
 
-
     }).timeout(5000);
 
 })
-
 

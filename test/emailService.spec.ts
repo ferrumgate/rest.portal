@@ -1,4 +1,3 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { ConfigService } from '../src/service/configService';
@@ -6,13 +5,8 @@ import { Email, EmailService } from '../src/service/emailService';
 import { EmailSetting } from '../src/model/emailSetting';
 import { Util } from '../src/util';
 
-
-
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('emailService ', async () => {
 
@@ -29,8 +23,6 @@ describe('emailService ', async () => {
         }
 
         await emailService.send(email);
-
-
 
     }).timeout(5000);
 
@@ -50,8 +42,6 @@ describe('emailService ', async () => {
         }
 
         await emailService.sendWith(email, settings);
-
-
 
     }).timeout(5000);
 
@@ -77,9 +67,7 @@ describe('emailService ', async () => {
 
         await emailService.sendWith(email, settings);
 
-
     }).timeout(5000);
-
 
     it('send email with smtp', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -103,9 +91,7 @@ describe('emailService ', async () => {
 
         await emailService.sendWith(email, settings);
 
-
     }).timeout(5000);
 
 })
-
 

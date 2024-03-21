@@ -1,23 +1,13 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { TunnelService } from '../src/service/tunnelService';
+import { User } from '../src/model/user';
 import { ConfigService } from '../src/service/configService';
 import { RedisService } from '../src/service/redisService';
-import { Util } from '../src/util';
-import { User } from '../src/model/user';
-import { Tunnel } from '../src/model/tunnel';
-import { Gateway, Network } from '../src/model/network';
 import { SessionService } from '../src/service/sessionService';
-
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
 
 describe('sessionService', () => {
 
@@ -59,7 +49,6 @@ describe('sessionService', () => {
 
         expect(session).deep.equal(session2);
 
-
     }).timeout(10000)
 
     it('getSession', async () => {
@@ -74,7 +63,6 @@ describe('sessionService', () => {
         delete session2?.isHostingIp;
         expect(session).deep.equal(session2);
 
-
     }).timeout(10000)
 
     it('setSession', async () => {
@@ -88,7 +76,6 @@ describe('sessionService', () => {
 
         expect((session2 as any).test).to.equal('1');
 
-
     }).timeout(10000)
 
     it('setExpire', async () => {
@@ -97,7 +84,6 @@ describe('sessionService', () => {
         const sessionService = new SessionService(configService, simpleRedis);
         const { user } = createSampleData();
         const session = await sessionService.createSession(user, true, '1.2.3.4', 'local');
-
 
         const sidkey = `/session/id/${session.id}`;
         const sidtunkey = `/session/tunnel/${session.id}`;
@@ -110,7 +96,6 @@ describe('sessionService', () => {
         expect(result2).to.above(4 * 50 * 1000);
 
     }).timeout(10000)
-
 
     it('deleteSession', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -142,7 +127,6 @@ describe('sessionService', () => {
         const result = await simpleRedis.sismember(sidtunkey, '123');
         expect(result).to.equal(1);
 
-
     }).timeout(10000)
     it('removeTunnel', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
@@ -156,7 +140,6 @@ describe('sessionService', () => {
         const sidtunkey = `/session/tunnel/${session.id}`;
         const result = await simpleRedis.sismember(sidtunkey, '123');
         expect(result).to.equal(0);
-
 
     }).timeout(10000)
 
@@ -172,7 +155,6 @@ describe('sessionService', () => {
         const keys = await sessionService.getSessionKeys();
         expect(keys.length).to.equal(3);
 
-
     }).timeout(10000)
 
     it('getAllValidSessions', async () => {
@@ -186,7 +168,6 @@ describe('sessionService', () => {
 
         const keys = await sessionService.getAllValidSessions(() => true);
         expect(keys.length).to.equal(3);
-
 
     }).timeout(10000);
 })

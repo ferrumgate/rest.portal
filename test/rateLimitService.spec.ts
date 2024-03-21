@@ -1,9 +1,8 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { RedisService } from '../src/service/redisService';
-import { RateLimitService } from '../src/service/rateLimitService';
 import { ConfigService } from '../src/service/configService';
+import { RateLimitService } from '../src/service/rateLimitService';
+import { RedisService } from '../src/service/redisService';
 import { Util } from '../src/util';
 
 chai.use(chaiHttp);
@@ -20,7 +19,6 @@ describe('rateLimitService integration', () => {
     after(async () => {
 
     })
-
 
     it('check limit', async () => {
         //will not throw ex

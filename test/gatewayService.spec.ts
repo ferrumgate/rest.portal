@@ -1,19 +1,15 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { ConfigService } from '../src/service/configService';
-import { Util } from '../src/util';
-import { RedisService } from '../src/service/redisService';
-import { GatewayDetail } from '../src/model/network';
 import os from 'os';
+import { GatewayDetail } from '../src/model/network';
+import { ConfigService } from '../src/service/configService';
 import { GatewayService } from '../src/service/gatewayService';
-
+import { RedisService } from '../src/service/redisService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -94,7 +90,5 @@ describe('gatewayService', async () => {
 
     }).timeout(5000);
 
-
 })
-
 

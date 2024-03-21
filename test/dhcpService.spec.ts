@@ -1,25 +1,13 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { TunnelService } from '../src/service/tunnelService';
+import { Gateway, Network } from '../src/model/network';
 import { ConfigService } from '../src/service/configService';
+import { DhcpService } from '../src/service/dhcpService';
 import { RedisService } from '../src/service/redisService';
 import { Util } from '../src/util';
-import { User } from '../src/model/user';
-import { Tunnel } from '../src/model/tunnel';
-import { Gateway, Network } from '../src/model/network';
-import { AuthSession } from '../src/model/authSession';
-import { DhcpService } from '../src/service/dhcpService';
-
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 describe('dhcpService', () => {
 
@@ -57,7 +45,6 @@ describe('dhcpService', () => {
         await configService.saveGateway(gateway);
         const dhcp = new DhcpService(configService, simpleRedis);
 
-
         const { network, ip } = await dhcp.getEmptyIp(gateway.id);
         expect(network).exist;
         expect(ip).exist;
@@ -69,8 +56,6 @@ describe('dhcpService', () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
 
-
-
         const dhcp = new DhcpService(configService, simpleRedis);
         for (let i = 1; i < 100; ++i) {
             const { trackId } = await dhcp.getEmptyTrackId();
@@ -80,15 +65,11 @@ describe('dhcpService', () => {
             dhcp.lastUsedTrackId = i;
         }
 
-
-
     }).timeout(10000)
 
     it('getEmptyTrackId will return unique trackId', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         const configService = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
-
-
 
         const dhcp = new DhcpService(configService, simpleRedis);
         for (let i = 1; i < 100; ++i) {
@@ -99,14 +80,11 @@ describe('dhcpService', () => {
             dhcp.lastUsedTrackId = i;
         }
 
-
-
     }).timeout(10000)
 
     it('getEmptyIp will throw because of finished ip pool', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
-
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -128,7 +106,6 @@ describe('dhcpService', () => {
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
 
-
         for (let i = 0; i < 255; ++i)
             await simpleRedis.set(`/tunnel/ip/192.168.0.${i}`, i);
         let isError = false;
@@ -141,10 +118,5 @@ describe('dhcpService', () => {
         expect(isError).to.be.true;
 
     }).timeout(10000)
-
-
-
-
-
 
 })

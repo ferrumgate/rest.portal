@@ -1,15 +1,9 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { InputService } from '../src/service/inputService';
 
-
-
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('inputService ', async () => {
 
@@ -38,7 +32,6 @@ describe('inputService ', async () => {
 
     }).timeout(5000);
 
-
     it('checkPasswordPolicy meets requirements', (done) => {
         const inputService = new InputService();
         let error = false;
@@ -62,7 +55,6 @@ describe('inputService ', async () => {
         }
         expect(error).to.be.true;
 
-
         error = false;
         try {
             expect(inputService.checkEmail('abdd@yahoo.com'));
@@ -74,7 +66,6 @@ describe('inputService ', async () => {
 
     }).timeout(5000);
 
-
     it('checkCidr ', (done) => {
         const inputService = new InputService();
         let error = false;
@@ -84,7 +75,6 @@ describe('inputService ', async () => {
             error = true;
         }
         expect(error).to.be.true;
-
 
         error = false;
         try {
@@ -105,7 +95,6 @@ describe('inputService ', async () => {
 
     }).timeout(5000);
 
-
     it('checkIp ', (done) => {
         const inputService = new InputService();
         let error = false;
@@ -123,9 +112,7 @@ describe('inputService ', async () => {
         expect(result4).to.be.false;
         done();
 
-
     }).timeout(5000);
-
 
     it('checkDomain ', (done) => {
         const inputService = new InputService();
@@ -136,7 +123,6 @@ describe('inputService ', async () => {
             error = true;
         }
         expect(error).to.be.true;
-
 
         error = false;
         try {
@@ -168,7 +154,6 @@ describe('inputService ', async () => {
         }
         expect(error).to.be.true;
 
-
         error = false;
         try {
             expect(inputService.checkUrl('https://secure.ferrumgate.zero'));
@@ -181,7 +166,6 @@ describe('inputService ', async () => {
 
     }).timeout(5000);
 
-
     it('checkHost ', (done) => {
         const inputService = new InputService();
         let error = false;
@@ -192,7 +176,6 @@ describe('inputService ', async () => {
         }
         expect(error).to.be.false;
 
-
         error = false;
         try {
             expect(inputService.checkHost('https://secure.ferrumgate.zero'));
@@ -200,7 +183,6 @@ describe('inputService ', async () => {
             error = true;
         }
         expect(error).to.be.true;
-
 
         error = false;
         try {
@@ -214,8 +196,5 @@ describe('inputService ', async () => {
 
     }).timeout(5000);
 
-
-
 })
-
 

@@ -1,24 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
-import { Network } from '../src/model/network';
-
-
-import { IpIntelligence, IpIntelligenceList, IpIntelligenceListStatus, IpIntelligenceSource } from '../src/model/ipIntelligence';
-import { ESService } from '../src/service/esService';
 import { ExpressApp } from '../src';
 import { SSLCertificate, SSLCertificateEx } from '../src/model/cert';
-import exp from 'constants';
-
-
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -29,9 +18,6 @@ function expectToDeepEqual(a: any, b: any) {
     delete b.id;
     expect(a).to.deep.equal(b);
 }
-
-
-
 
 /**
  * authenticated user api tests
@@ -63,7 +49,6 @@ describe('pkiApi', async () => {
         await appService.configService.setIsConfigured(1);
     })
 
-
     beforeEach(async () => {
         appService.configService.config.users = [];
         appService.configService.config.networks = [];
@@ -78,7 +63,6 @@ describe('pkiApi', async () => {
     after(async () => {
         await expressApp.stop();
     })
-
 
     it('check authoration as admin role', async () => {
         //prepare data
@@ -97,8 +81,6 @@ describe('pkiApi', async () => {
             isEnabled: true, labels: [], usages: []
         }
 
-
-
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -116,7 +98,6 @@ describe('pkiApi', async () => {
 
     }).timeout(50000);
 
-
     it('GET /pki/intermediate', async () => {
 
         await appService.configService.init();
@@ -132,7 +113,6 @@ describe('pkiApi', async () => {
         }
 
         await configService.saveInSSLCertificate(item);
-
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -153,16 +133,12 @@ describe('pkiApi', async () => {
 
     }).timeout(50000);
 
-
     it('GET /pki/ca', async () => {
 
         await appService.configService.init();
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
-
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -191,10 +167,8 @@ describe('pkiApi', async () => {
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
 
-
         const item = (await configService.getInSSLCertificateAll()).filter(x => x.category == 'tls').at(0);
         expect(item).exist;
-
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -217,11 +191,7 @@ describe('pkiApi', async () => {
         // const tmp = `/tmp/${randomFilename}`;
         // fs.writeFileSync(tmp, buffer);
 
-
-
     }).timeout(50000);
-
-
 
     it('DELETE /pki/intermediate', async () => {
 
@@ -259,8 +229,6 @@ describe('pkiApi', async () => {
         expect(certs2.length).to.equal(2);
 
     }).timeout(50000);
-
-
 
     it('PUT /pki/intermediate', async () => {
 
@@ -315,7 +283,6 @@ describe('pkiApi', async () => {
 
         await configService.saveInSSLCertificate(item2);
 
-
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .put(`/api/pki/intermediate`)
@@ -331,11 +298,7 @@ describe('pkiApi', async () => {
 
         expect(response.status).to.equal(400);
 
-
-
     }).timeout(50000);
-
-
 
     it('POST /pki/intermediate', async () => {
 
@@ -351,7 +314,6 @@ describe('pkiApi', async () => {
             isEnabled: true, labels: [],
             publicCrt: 'akey', usages: []
         }
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -372,14 +334,7 @@ describe('pkiApi', async () => {
         expect(response.body.name).to.equal('abc');
         expect(response.body.publicCrt).not.equal('akey');
 
-
-
-
-
     }).timeout(50000);
-
-
-
 
     it('GET /pki/cert/web', async () => {
 
@@ -416,8 +371,6 @@ describe('pkiApi', async () => {
 
     }).timeout(50000);
 
-
-
     it('DELETE /pki/cert/web', async () => {
 
         await appService.configService.init();
@@ -433,7 +386,6 @@ describe('pkiApi', async () => {
             , usages: []
         }
         await configService.setWebSSLCertificate(item);
-
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -455,18 +407,12 @@ describe('pkiApi', async () => {
 
     }).timeout(50000);
 
-
-
     it('PUT /pki/cert/web', async () => {
 
         await appService.configService.init();
         await appService.configService.saveUser(user);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-
-
-
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -491,10 +437,6 @@ describe('pkiApi', async () => {
         expect(cert.publicCrt).to.equal('akey');
         expect(cert.privateKey).to.equal('de');
 
-
-
-
-
         //certs not changed
         response = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -518,11 +460,7 @@ describe('pkiApi', async () => {
         expect(cert2.publicCrt).to.equal('akey');
         expect(cert2.privateKey).to.equal('de');
 
-
-
-
     }).timeout(50000);
-
 
     it('DELETE /pki/cert/web/letsencrypt', async () => {
 
@@ -539,7 +477,6 @@ describe('pkiApi', async () => {
             , usages: [], letsEncrypt: {} as any
         }
         await configService.setWebSSLCertificate(item);
-
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -561,7 +498,6 @@ describe('pkiApi', async () => {
 
     }).timeout(50000);
 
-
     it.skip('POST /pki/cert/web/letsencrypt', async () => {
         //for testing 
         //etc host local.ferrumgate.com MACHINE_IP
@@ -580,7 +516,6 @@ describe('pkiApi', async () => {
         }
         await configService.setUrl('http://local.ferrumgate.com');
         await configService.setWebSSLCertificate(item);
-
 
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
@@ -605,15 +540,5 @@ describe('pkiApi', async () => {
 
     }).timeout(50000);
 
-
-
-
-
-
-
-
-
-
 })
-
 

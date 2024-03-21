@@ -1,18 +1,12 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
-import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
 import { Util } from '../src/util';
-import { Gateway } from '../src/model/network';
 import { esHost, esPass, esUser } from './common.spec';
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 /**
  * authenticated user api tests
@@ -74,7 +68,6 @@ describe('summaryApi', async () => {
         ];
     })
 
-
     it('/summary/config only admin call', async () => {
 
         const session = await sessionService.createSession({ id: 'user2' } as any, false, '1.1.1.1', 'local');
@@ -103,7 +96,6 @@ describe('summaryApi', async () => {
         expect(response.status).to.equal(401);
 
     }).timeout(50000);
-
 
     it('/summary/config', async () => {
 
@@ -135,8 +127,6 @@ describe('summaryApi', async () => {
 
     }).timeout(50000);
 
-
-
     it('/summary/active only admin call', async () => {
 
         const session = await sessionService.createSession({ id: 'user2' } as any, false, '1.1.1.1', 'local');
@@ -158,7 +148,6 @@ describe('summaryApi', async () => {
         expect(response.status).to.equal(401);
 
     }).timeout(50000);
-
 
     it('/summary/active', async () => {
 
@@ -186,12 +175,10 @@ describe('summaryApi', async () => {
 
     }).timeout(50000);
 
-
     it('/summary/logintry', async () => {
 
         const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'web', grants: [] }, { id: 'admin', sid: session.id }, 'ferrum')
-
 
         //prepare data
 
@@ -211,7 +198,6 @@ describe('summaryApi', async () => {
         expect(response.body.aggs).exist;
 
     }).timeout(50000);
-
 
     it('/summary/createtunnel', async () => {
 
@@ -257,8 +243,6 @@ describe('summaryApi', async () => {
 
     }).timeout(50000);
 
-
-
     it('/summary/userloginsuccess', async () => {
 
         const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');
@@ -280,7 +264,6 @@ describe('summaryApi', async () => {
         expect(response.body.aggs).exist;
 
     }).timeout(50000);
-
 
     it('/summary/userloginfailed', async () => {
 
@@ -304,7 +287,6 @@ describe('summaryApi', async () => {
 
     }).timeout(50000);
 
-
     it('/summary/user/logintry', async () => {
 
         const session = await sessionService.createSession({ id: 'admin' } as any, false, '1.1.1.1', 'local');
@@ -326,8 +308,6 @@ describe('summaryApi', async () => {
         expect(response.body.aggs).exist;
 
     }).timeout(50000);
-
-
 
     it('/summary/user/logintryhours', async () => {
 
@@ -351,12 +331,5 @@ describe('summaryApi', async () => {
 
     }).timeout(50000);
 
-
-
-
-
-
-
 })
-
 

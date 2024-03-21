@@ -1,20 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
-import { AuthLocal } from '../src/model/authSettings';
+import { AppService } from '../src/service/appService';
 import { Email, EmailService } from '../src/service/emailService';
-import { Redis } from 'ioredis';
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('registerApi', async () => {
     const expressApp = new ExpressApp();
@@ -47,8 +40,6 @@ describe('registerApi', async () => {
     afterEach(async () => {
         appService.emailService = emailService;
     })
-
-
 
     it('POST /register will return 400 bad argument', async () => {
         //we must send right paramters
@@ -157,7 +148,6 @@ describe('registerApi', async () => {
         expect(response.status).to.equal(400);
     }).timeout(5000);
 
-
     it('POST /register will return 400 because of invalid password', async () => {
         class MockEmail extends EmailService {
             override  async send(email: Email): Promise<void> {
@@ -179,7 +169,6 @@ describe('registerApi', async () => {
         })
         expect(response.status).to.equal(400);
     }).timeout(5000);
-
 
     it('POST /register will return 200 because allready user exits, will send a reset password email', async () => {
         class MockEmail extends EmailService {
@@ -205,8 +194,6 @@ describe('registerApi', async () => {
         expect(response.status).to.equal(200);
     }).timeout(5000);
 
-
-
     it('POST /register/invite will return 400 because of sended parameters', async () => {
         class MockEmail extends EmailService {
             override  async send(email: Email): Promise<void> {
@@ -215,7 +202,6 @@ describe('registerApi', async () => {
         }
         appService.emailService = new MockEmail(configService);
         //we must send right paramters
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -264,7 +250,6 @@ describe('registerApi', async () => {
         appService.emailService = new MockEmail(configService);
         //we must send right paramters
 
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/api/register/invite')
@@ -278,7 +263,6 @@ describe('registerApi', async () => {
         })
         expect(response.status).to.equal(401);
     }).timeout(5000);
-
 
     it('POST /register/invite will return 400 password policy', async () => {
         class MockEmail extends EmailService {
@@ -303,7 +287,6 @@ describe('registerApi', async () => {
         })
         expect(response.status).to.equal(400);
     }).timeout(5000);
-
 
     it('POST /register/invite will return 200', async () => {
         class MockEmail extends EmailService {
@@ -331,8 +314,5 @@ describe('registerApi', async () => {
         expect(user).exist;
     }).timeout(5000);
 
-
-
 })
-
 

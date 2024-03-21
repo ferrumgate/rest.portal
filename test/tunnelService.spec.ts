@@ -1,25 +1,17 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { TunnelService } from '../src/service/tunnelService';
-import { ConfigService } from '../src/service/configService';
-import { RedisService } from '../src/service/redisService';
-import { Util } from '../src/util';
-import { User } from '../src/model/user';
-import { Tunnel } from '../src/model/tunnel';
-import { Gateway, Network } from '../src/model/network';
 import { AuthSession } from '../src/model/authSession';
+import { Gateway, Network } from '../src/model/network';
+import { Tunnel } from '../src/model/tunnel';
+import { User } from '../src/model/user';
+import { ConfigService } from '../src/service/configService';
 import { DhcpService } from '../src/service/dhcpService';
-
-
-
+import { RedisService } from '../src/service/redisService';
+import { TunnelService } from '../src/service/tunnelService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 describe('tunnelService', () => {
 
@@ -31,11 +23,9 @@ describe('tunnelService', () => {
 
     })
 
-
     it('create tunnel will throw exception because of not found session', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
-
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -69,13 +59,11 @@ describe('tunnelService', () => {
         } catch (err) { isError = true; };
         expect(isError).to.be.true;
 
-
     }).timeout(10000)
 
     it('create tunnel will return with out error', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
-
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -126,14 +114,11 @@ describe('tunnelService', () => {
         expect(session.authenticatedTime).exist;
         expect(session.assignedClientIp).to.equal('192.168.0.1');
 
-
     }).timeout(10000)
-
 
     it('renewIp', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
-
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -156,7 +141,6 @@ describe('tunnelService', () => {
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
 
-
         const dhcp = new DhcpService(configService2, simpleRedis);
         const tunnel = new TunnelService(configService2, simpleRedis, dhcp);
         const user: User = { id: 'adfaf' } as User;
@@ -176,14 +160,11 @@ describe('tunnelService', () => {
         const newtunnel: Tunnel = await simpleRedis.hgetAll('/tunnel/id/randomtunnelid');
         expect(newtunnel.assignedClientIp).to.equal('192.168.0.2');
 
-
     }).timeout(10000)
-
 
     it('confirm', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
-
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -206,7 +187,6 @@ describe('tunnelService', () => {
         await configService2.saveNetwork(net);
         await configService2.saveGateway(gateway);
 
-
         const dhcp = new DhcpService(configService2, simpleRedis);
         const tunnel = new TunnelService(configService2, simpleRedis, dhcp);
         const user: User = { id: 'adfaf' } as User;
@@ -224,14 +204,11 @@ describe('tunnelService', () => {
         //let exists = await simpleRedis.sismember(`/tunnel/configure/12345`, 'randomtunnelid');
         //expect(exists == 1).to.be.true;
 
-
     }).timeout(10000)
-
 
     it('alive', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
-
 
         const net: Network = {
             id: '1ksfasdfasf',
@@ -277,16 +254,11 @@ describe('tunnelService', () => {
         ttl1 = await simpleRedis.ttl('/gateway/1234/tun/tun0');
         expect(ttl1).to.be.greaterThan(2 * 60 * 1000);
 
-
     }).timeout(10000)
-
-
-
 
     it('getAllTunnels', async () => {
         const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
         const configService2 = new ConfigService('mn4xq0zeryusnagsdkbb2a68r7uu3nn25q4i91orj3ofkgb42d6nw5swqd7sz4fm', filename);
-
 
         const dhcp = new DhcpService(configService2, simpleRedis);
         const tunnel = new TunnelService(configService2, simpleRedis, dhcp);
@@ -308,12 +280,6 @@ describe('tunnelService', () => {
         const tunnelKeys = await tunnel.getTunnelKeys();
         expect(tunnelKeys.length).to.equal(2);
 
-
-
     }).timeout(10000)
-
-
-
-
 
 })

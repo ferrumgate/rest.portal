@@ -1,16 +1,14 @@
-
 import chai from 'chai';
-import { WebSocketServer } from '../src/ws/webSocketServer';
-import ws from 'ws';
-import { WebSocketClient } from '../src/ws/webSocketClient';
 import http from 'http';
+import ws from 'ws';
 import { ConfigService } from '../src/service/configService';
-import { Util } from '../src/util';
-import { RedisService } from '../src/service/redisService';
 import { RateLimitService } from '../src/service/rateLimitService';
+import { RedisService } from '../src/service/redisService';
+import { Util } from '../src/util';
+import { WebSocketClient } from '../src/ws/webSocketClient';
+import { WebSocketServer } from '../src/ws/webSocketServer';
 
 const expect = chai.expect;
-
 
 describe('ws server client ', () => {
 
@@ -50,9 +48,6 @@ describe('ws server client ', () => {
             origin: 'https://websocket.org'
         });
 
-
-
-
     }).timeout(120000);
 
     it('create a server and connect and disconnect2', (done) => {
@@ -80,15 +75,11 @@ describe('ws server client ', () => {
             await client.close();
         });
 
-
         wclient = new ws('ws://localhost:3001/', {
             origin: 'https://websocket.org'
         });
 
-
-
     }).timeout(10000);
-
 
     it('create a server and connect and disconnect with http', (done) => {
 
@@ -119,13 +110,7 @@ describe('ws server client ', () => {
             origin: 'https://websocket.org'
         });
 
-
-
     }).timeout(10000);
-
-
-
-
 
     it('if client is not authenticated it is closed', (done) => {
 
@@ -152,12 +137,10 @@ describe('ws server client ', () => {
 
         });
 
-
         wclient = new ws('ws://localhost:3003/api/deneme', {
             origin: 'https://websocket.org'
         });
 
     }).timeout(75000);
-
 
 })

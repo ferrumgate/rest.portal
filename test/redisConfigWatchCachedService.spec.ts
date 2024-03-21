@@ -1,19 +1,12 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-
-import fs, { watch } from 'fs';
-import { RedisService } from '../src/service/redisService';
-
-import { RedisConfigWatchCachedService } from '../src/service/redisConfigWatchCachedService';
-import { SystemLogService } from '../src/service/systemLogService';
+import fs from 'fs';
 import { Tunnel } from '../src/model/tunnel';
 import { RedisConfigService } from '../src/service/redisConfigService';
+import { RedisConfigWatchCachedService } from '../src/service/redisConfigWatchCachedService';
+import { RedisService } from '../src/service/redisService';
+import { SystemLogService } from '../src/service/systemLogService';
 import { Util } from '../src/util';
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -29,7 +22,6 @@ describe('RedisConfigWatchCachedService', () => {
             await fs.rmSync(tmpfolder, { recursive: true, force: true });
         fs.mkdirSync(tmpfolder);
     })
-
 
     class MockConfig extends RedisConfigWatchCachedService {
         /**
@@ -60,7 +52,6 @@ describe('RedisConfigWatchCachedService', () => {
         return { val1: tunnel1, val2: tunnel2 };
     }
 
-
     it('checkifDataExits', async () => {
         const systemlog = new SystemLogService(new RedisService(), new RedisService(), encKey);
         //save default settings like user and network
@@ -76,16 +67,9 @@ describe('RedisConfigWatchCachedService', () => {
 
         expect(cache.get(conf.users[0].id)).exist;
 
-
-
         expect(cache.get(conf.networks[0].id)).exist;
 
-
-
-
-
     }).timeout(100000)
-
 
     it('checkifDataExits', async () => {
         const systemlog = new SystemLogService(new RedisService(), new RedisService(), encKey);
@@ -116,11 +100,7 @@ describe('RedisConfigWatchCachedService', () => {
         expect(cache.get(conf.services[0].id)).exist;
         expect(cache.get<any>(conf.services[0].id).test).to.equal('6')
 
-
-
     }).timeout(100000)
-
-
 
     it('check data after delete', async () => {
         const systemlog = new SystemLogService(new RedisService(), new RedisService(), encKey);
@@ -151,9 +131,6 @@ describe('RedisConfigWatchCachedService', () => {
         await Util.sleep(1000);
         expect(cache.keys().length).to.equal(0);
 
-
     }).timeout(100000)
-
-
 
 })

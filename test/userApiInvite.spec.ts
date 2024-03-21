@@ -1,19 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
 import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
 import { Email, EmailService } from '../src/service/emailService';
-import fs from 'fs';
 import { Util } from '../src/util';
-import { config } from 'process';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('userApiInvite', async () => {
     const expressApp = new ExpressApp();
@@ -56,7 +50,6 @@ describe('userApiInvite', async () => {
         await configService.setEmailSetting({ type: 'empty', fromname: '', pass: '', user: '' })
     })
 
-
     it('POST /user/invite will return 401', async () => {
         //prepare data
         const cloned = Util.clone(user);
@@ -70,8 +63,6 @@ describe('userApiInvite', async () => {
         appService.emailService = new MockEmail(configService);
         const session = await sessionService.createSession({ id: user.id } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: user.id, grants: [] }, { id: user.id, sid: session.id }, 'ferrum')
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -87,9 +78,7 @@ describe('userApiInvite', async () => {
         })
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
 
     it('POST /user/invite will return 400', async () => {
         //prepare data
@@ -105,8 +94,6 @@ describe('userApiInvite', async () => {
         const session = await sessionService.createSession({ id: user.id } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: user.id, grants: [] }, { id: user.id, sid: session.id }, 'ferrum')
 
-
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/api/user/invite')
@@ -120,7 +107,6 @@ describe('userApiInvite', async () => {
                 });
         })
         expect(response.status).to.equal(400);
-
 
     }).timeout(50000);
 
@@ -138,8 +124,6 @@ describe('userApiInvite', async () => {
         const session = await sessionService.createSession({ id: user.id } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: user.id, grants: [] }, { id: user.id, sid: session.id }, 'ferrum')
 
-
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/api/user/invite')
@@ -155,9 +139,7 @@ describe('userApiInvite', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.results.length).to.equal(1);
 
-
     }).timeout(50000);
-
 
     it('POST /user/invite will return 200 with one of them failed ok', async () => {
         //prepare data
@@ -175,8 +157,6 @@ describe('userApiInvite', async () => {
         const session = await sessionService.createSession({ id: user.id } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: user.id, grants: [] }, { id: user.id, sid: session.id }, 'ferrum')
 
-
-
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/api/user/invite')
@@ -193,7 +173,6 @@ describe('userApiInvite', async () => {
 
         expect(response.body.results.length).to.equal(2);
         expect(response.body.results.filter((x: any) => x.errMsg).length).to.equal(1);
-
 
     }).timeout(50000);
 
@@ -218,7 +197,6 @@ describe('userApiInvite', async () => {
          expect(value).to.exist;
      }).timeout(50000);
  
- 
      it('POST /user/confirm will return 401 not found user', async () => {
          //prepare data
          await appService.configService.saveUser(user);
@@ -240,7 +218,5 @@ describe('userApiInvite', async () => {
          expect(value).to.exist;
      }).timeout(50000); */
 
-
 })
-
 

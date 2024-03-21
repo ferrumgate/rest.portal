@@ -1,25 +1,11 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
-import { InputService } from '../src/service/inputService';
-import { RestfullException } from '../src/restfullException';
-import { ErrorCodes } from '../src/restfullException';
-import { CaptchaService } from '../src/service/captchaService';
-import { ConfigService } from '../src/service/configService';
 import { TwoFAService } from '../src/service/twofaService';
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
 
-
-
-
 describe('twoFAService ', async () => {
-
 
     beforeEach(async () => {
 
@@ -35,7 +21,6 @@ describe('twoFAService ', async () => {
 
         const result = service.verifyToken(secret, token || '');
         expect(result).to.be.true;
-
 
     }).timeout(5000);
 
@@ -55,9 +40,7 @@ describe('twoFAService ', async () => {
         }
         expect(isError).to.be.true;
 
-
     }).timeout(5000);
 
 })
-
 

@@ -1,18 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { EventBufferedExecutor } from '../src/service/appService';
-import { Util } from '../src/util';
-import { LetsEncryptService } from '../src/service/letsEncryptService';
-import { ConfigService } from '../src/service/configService';
-import { SystemLogService } from '../src/service/systemLogService';
-import { RedisService } from '../src/service/redisService';
-import { ExpressApp } from '../src';
 import fs from 'fs';
+import { ExpressApp } from '../src';
+import { ConfigService } from '../src/service/configService';
+import { LetsEncryptService } from '../src/service/letsEncryptService';
+import { RedisService } from '../src/service/redisService';
+import { SystemLogService } from '../src/service/systemLogService';
+import { Util } from '../src/util';
 import { esHost, esPass, esUser } from './common.spec';
-
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -37,12 +32,10 @@ describe('LetsEncryptService', async () => {
         await expressApp.stop();
     })
 
-
     beforeEach((done) => {
 
         done();
     })
-
 
     it('parse', async () => {
 
@@ -69,16 +62,13 @@ describe('LetsEncryptService', async () => {
         expect(result?.key).to.equal('h6eR60tMfe9bSngoRhoGYhcI8nucC4K8964F8V1_6oo');
         expect(result?.value).to.equal('h6eR60tMfe9bSngoRhoGYhcI8nucC4K8964F8V1_6oo.7yYpMMEOzCm3TJVd2vJQH5U6Lj7g91gZs_vdBBcLIi4');
 
-
     }).timeout(50000);
-
 
     //for testing below tests
     //run before
     // docker run --net=host  -e "PEBBLE_VA_NOSLEEP=1" letsencrypt/pebble
 
     it('createCertificate will throw challenge error', async () => {
-
 
         const folder = `/tmp/acme-challegence`
         const lets = new LetsEncryptService(configService, redis, systemlog, folder);
@@ -90,12 +80,9 @@ describe('LetsEncryptService', async () => {
         }
         expect(errorOccured).to.be.true;
 
-
     }).timeout(50000);
 
-
     it('createCertificate will return success', async () => {
-
 
         const folder = `/tmp/acme-challenge`
         const lets = new LetsEncryptService(configService, redis, systemlog, folder);
@@ -103,11 +90,9 @@ describe('LetsEncryptService', async () => {
         const result = await lets.createCertificate('local.ferrumgate.com', 'test@ferrumgate.com', 'http', 'https://localhost:14000/dir');
         expect(result.privateKey).exist;
 
-
     }).timeout(50000);
 
     it('renew will return success', async () => {
-
 
         const folder = `/tmp/acme-challenge`
         const lets = new LetsEncryptService(configService, redis, systemlog, folder);
@@ -119,9 +104,6 @@ describe('LetsEncryptService', async () => {
         expect(result2.privateKey).exist;
         expect(result.privateKey != result2.privateKey).to.be.true;
 
-
     }).timeout(50000);
-
-
 
 });

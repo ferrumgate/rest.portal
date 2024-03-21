@@ -1,22 +1,15 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import * as odiff from 'deep-object-diff'
-import { RedisService } from '../src/service/redisService';
+import * as odiff from 'deep-object-diff';
 import { AuditService, ObjectDiffer } from '../src/service/auditService';
-import { AuditLog } from '../src/model/auditLog';
-import { Util } from '../src/util';
-import { ESService } from '../src/service/esService';
 import { ConfigService } from '../src/service/configService';
+import { ESService } from '../src/service/esService';
+import { RedisService } from '../src/service/redisService';
+import { Util } from '../src/util';
 import { esHost, esPass, esUser } from './common.spec';
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
-
-
 
 describe('auditService ', async () => {
     const streamKey = '/logs/audit';
@@ -41,8 +34,6 @@ describe('auditService ', async () => {
         const msgStr = msgList.join(',');
         expect(msgStr).to.equal('.added.surname: null >>> 22,.added.role.sur: null >>> xx,.deleted.gsm: 34 >>> null,.updated.name: aborted >>> ab,.updated.role.name: acb >>> def,.updated.test.1: 3 >>> 2,.updated.test.2: 4 >>> 3');
 
-
-
     }).timeout(5000);
 
     it('object differ calculate', async () => {
@@ -57,8 +48,6 @@ describe('auditService ', async () => {
         msg.forEach((value, key) => msgList.push(key + ': ' + value));
         const msgStr = msgList.join(',');
         expect(msgStr).to.equal('.updated.name: aborted >>> null');
-
-
 
     }).timeout(5000);
 
@@ -75,7 +64,6 @@ describe('auditService ', async () => {
         const msgStr = msgList.join(',');
         expect(msgStr).to.equal('.added.surname: null >>> 22,.added.role.sur: null >>> xx,.deleted.gsm: 34 >>> null,.deleted.ops.1: { .name: dea } >>> null,.updated.name: aborted >>> ab,.updated.role.name: acb >>> def,.updated.test.1: 3 >>> 2,.updated.test.2: 4 >>> 3,.updated.ops.0.name: deneme >>> dea2');
     })
-
 
     it('saveToRedis', async () => {
 
@@ -98,7 +86,6 @@ describe('auditService ', async () => {
         expect(obj).deep.equal(audit);
         await auditService.stop();
 
-
     }).timeout(20000);
 
     it('executeTryCatch', async () => {
@@ -112,7 +99,6 @@ describe('auditService ', async () => {
             throw new Error('this is will be ignored')
         })
         await auditService.stop();
-
 
     }).timeout(20000);
 
@@ -138,7 +124,6 @@ describe('auditService ', async () => {
             { id: 'someid', username: 'auser' } as any,
             before, 'user deleted', 'username');
 
-
         await Util.sleep(1000);
         const items = await redis.xread(streamKey, 10, '0', 1000);
         expect(items.length).to.equal(1);
@@ -155,7 +140,6 @@ describe('auditService ', async () => {
         expect(obj.messageDetail).exist;
         expect(obj.tags).exist;
         await auditService.stop();
-
 
     }).timeout(20000);
 
@@ -181,7 +165,6 @@ describe('auditService ', async () => {
             { id: 'someid', username: 'auser' } as any,
             before, after, 'user updated', 'username');
 
-
         await Util.sleep(1000);
         const items = await redis.xread(streamKey, 10, '0', 1000);
         expect(items.length).to.equal(1);
@@ -199,20 +182,7 @@ describe('auditService ', async () => {
         expect(obj.tags).exist;
         await auditService.stop();
 
-
     }).timeout(20000);
 
-
-
-
-
-
-
-
-
-
-
-
 })
-
 

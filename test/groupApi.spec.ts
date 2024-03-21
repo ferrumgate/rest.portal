@@ -1,18 +1,13 @@
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { AppService } from '../src/service/appService';
 import { ExpressApp } from '../src/index';
-import { User } from '../src/model/user';
-import { Util } from '../src/util';
 import { Group } from '../src/model/group';
-
-
+import { User } from '../src/model/user';
+import { AppService } from '../src/service/appService';
+import { Util } from '../src/util';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
 
 function expectToDeepEqual(a: any, b: any) {
     delete a.insertDate;
@@ -92,7 +87,6 @@ describe('groupApi', async () => {
         await redisService.flushAll();
     })
 
-
     it('check authorazion as admin role', async () => {
         //prepare data
         const { group1, group2, group3, user1 } = createSampleData();
@@ -102,7 +96,6 @@ describe('groupApi', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -119,7 +112,6 @@ describe('groupApi', async () => {
 
     }).timeout(50000);
 
-
     it('GET /group/:id returns 200', async () => {
         //prepare data
         const { group1, group2, group3, user1 } = createSampleData();
@@ -127,7 +119,6 @@ describe('groupApi', async () => {
 
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
 
         await appService.configService.saveGroup(group1);
         await appService.configService.saveGroup(group2);
@@ -175,9 +166,7 @@ describe('groupApi', async () => {
         //specific return, why one gets an unknown 
         expect(response.status).to.equal(401);
 
-
     }).timeout(50000);
-
 
     it('GET /group?search=bla returns 200', async () => {
         //prepare data
@@ -191,8 +180,6 @@ describe('groupApi', async () => {
         await appService.configService.saveGroup(group1);
         await appService.configService.saveGroup(group2);
         await appService.configService.saveGroup(group3);
-
-
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -239,7 +226,6 @@ describe('groupApi', async () => {
 
     }).timeout(50000);
 
-
     it('PUT /group returns 200', async () => {
         //prepare data
         const { group1, group2, group3, user1 } = createSampleData();
@@ -274,8 +260,6 @@ describe('groupApi', async () => {
 
     }).timeout(50000);
 
-
-
     it('POST /group returns 200', async () => {
         //prepare data
         const { group1, group2, group3, user1 } = createSampleData();
@@ -308,7 +292,6 @@ describe('groupApi', async () => {
         expectToDeepEqual(response.body, group1);
 
     }).timeout(50000);
-
 
     /* it('GET /group/users returns 200', async () => {
         //prepare data
@@ -344,15 +327,10 @@ describe('groupApi', async () => {
         })
         expect(response.status).to.equal(200);
 
-
         expect(response.body.items).exist;
         expect(response.body.items[0].id).to.equal(user1.id);
 
     }).timeout(50000); */
 
-
-
-
 })
-
 
