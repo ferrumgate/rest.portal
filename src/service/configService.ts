@@ -2278,6 +2278,31 @@ export class ConfigService {
         const config = this.clone(this.config.dns.records);
         return config;
     }
+    async getDnsRecordsBy(page: number = 0, pageSize: number = 0, search?: string,
+        ids?: string[]) {
+        let filteredRecords = !search ? this.config.dns.records :
+            this.config.dns.records.filter(x => {
+                let caseInsensitivie = search.toLowerCase();
+                if (x.fqdn.toLowerCase().includes(caseInsensitivie))
+                    return true;
+                if (x.ip.includes(caseInsensitivie))
+                    return true;
+                if (x.labels?.find(x => x.toLowerCase().includes(caseInsensitivie)))
+                    return true;
+                return false;
+            })
+        if (ids && ids.length) {
+            filteredRecords = filteredRecords.filter(x => ids.includes(x.id));
+        }
+        filteredRecords.sort((a, b) => {
+            return a.fqdn.localeCompare(b.fqdn)
+        })
+        const totalSize = filteredRecords.length;
+        if (pageSize)
+            filteredRecords = filteredRecords.slice(page * pageSize, (page + 1) * pageSize);
+        return { items: filteredRecords, total: totalSize };
+
+    }
     async getDnsRecord(id: string) {
         this.isReady(); this.isReadable();
         const source = this.config.dns.records.find(x => x.id == id);

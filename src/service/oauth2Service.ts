@@ -20,7 +20,8 @@ export interface Payload {
 
 export const config = {
 
-    JWT_TOKEN_EXPIRY_SECONDS: 5 * 60,
+    JWT_ACCESS_TOKEN_EXPIRY_SECONDS: 5 * 60,
+    JWT_REFRESH_TOKEN_EXPIRY_SECONDS: 15 * 60,
     JWT_SING_OPTIONS: { algorithm: 'RS256' } as JWT.SignOptions,
     JWT_VERIFY_OPTIONS: { algorithms: ['RS256'] } as JWT.VerifyOptions,
 }
@@ -40,7 +41,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
     private generatePayload(type: "access" | "refresh", user: OAuth2Server.User, client: OAuth2Server.Client): Payload {
         let expire = new Date();
-        expire.setSeconds(expire.getSeconds() + type == 'access' ? config.JWT_TOKEN_EXPIRY_SECONDS : config.JWT_TOKEN_EXPIRY_SECONDS * 2);
+        expire.setSeconds(expire.getSeconds() + type == 'access' ? config.JWT_ACCESS_TOKEN_EXPIRY_SECONDS : config.JWT_REFRESH_TOKEN_EXPIRY_SECONDS);
         let targetUser = { id: user.id, sid: user.sid } as any;
 
         let payload = {

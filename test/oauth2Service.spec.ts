@@ -94,8 +94,10 @@ describe('oauth2Service ', async () => {
     }).timeout(5000);
 
     it('generateAccessToken, getAccessToken will throw error because of time', async () => {
-        const backup = config.JWT_TOKEN_EXPIRY_SECONDS;
-        config.JWT_TOKEN_EXPIRY_SECONDS = 1;
+        const backup = config.JWT_ACCESS_TOKEN_EXPIRY_SECONDS;
+        const backupRefreshTokenExpiry = config.JWT_REFRESH_TOKEN_EXPIRY_SECONDS;
+        config.JWT_ACCESS_TOKEN_EXPIRY_SECONDS = 1;
+        config.JWT_REFRESH_TOKEN_EXPIRY_SECONDS = 1;
         const oauthService = new OAuth2Service(configService, sessionService);
         const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
         const token = await oauthService.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: 'someid', sid: session.id }, 'ferrum');
@@ -109,7 +111,8 @@ describe('oauth2Service ', async () => {
         }
         expect(isError).to.be.true;
         //set backup again
-        config.JWT_TOKEN_EXPIRY_SECONDS = backup;
+        config.JWT_ACCESS_TOKEN_EXPIRY_SECONDS = backup;
+        config.JWT_REFRESH_TOKEN_EXPIRY_SECONDS = backupRefreshTokenExpiry;
 
     }).timeout(5000);
 

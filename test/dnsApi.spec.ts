@@ -125,6 +125,32 @@ describe('dnsApi', async () => {
 
         await appService.configService.saveDnsRecord(item);
 
+
+        const item2: DnsRecord = {
+            id: Util.randomNumberString(),
+            fqdn: 'www2.test.com',
+            ip: '1.2.3.5',
+            labels: [],
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(),
+            isEnabled: true
+        }
+
+        await appService.configService.saveDnsRecord(item2);
+
+
+        const item3: DnsRecord = {
+            id: Util.randomNumberString(),
+            fqdn: 'www3.test.com',
+            ip: '1.2.3.6',
+            labels: [],
+            updateDate: new Date().toISOString(),
+            insertDate: new Date().toISOString(),
+            isEnabled: true
+        }
+
+        await appService.configService.saveDnsRecord(item3);
+
         // test search 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -141,6 +167,24 @@ describe('dnsApi', async () => {
         expect(response.body.items).exist;
 
         expectToDeepEqual(response.body.items[0], item);
+
+
+        //search by parameter and paging
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/api/dns/record?page=0&pageSize=2&search=5`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body.items).exist;
+        expect(response.body.items.length).to.equal(1);
+        expect(response.body.total).to.equal(1);
 
     }).timeout(50000);
 

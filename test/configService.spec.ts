@@ -2193,7 +2193,7 @@ describe('configService', async () => {
 
     });
 
-    it('getDnsRecord/saveDnsRecord/deleteDnsRecord', async () => {
+    it('getDnsRecord/getDnsRecordBy/saveDnsRecord/deleteDnsRecord', async () => {
 
         //first create a config and save to a file
         let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
@@ -2228,7 +2228,32 @@ describe('configService', async () => {
         await configService.deleteDnsRecord(item.id);
         const filter3 = await configService.getDnsRecords();
         expect(filter3.length).to.equal(0);
+        //getDnsRecordBy
 
+        await configService.saveDnsRecord({ id: Util.randomNumberString(), fqdn: 'www.ferrumgate.com', ip: '1.2.3.4', insertDate: '', updateDate: '', isEnabled: true });
+        await configService.saveDnsRecord({ id: Util.randomNumberString(), fqdn: 'www2.ferrumgate.com', ip: '1.2.3.5', insertDate: '', updateDate: '', isEnabled: true });
+        await configService.saveDnsRecord({ id: Util.randomNumberString(), fqdn: 'www3.ferrumgate.com', ip: '1.2.3.6', insertDate: '', updateDate: '', isEnabled: true });
+        await configService.saveDnsRecord({ id: Util.randomNumberString(), fqdn: 'www4.ferrumgate.com', ip: '1.2.3.7', insertDate: '', updateDate: '', isEnabled: true });
+        await configService.saveDnsRecord({ id: Util.randomNumberString(), fqdn: 'www5.ferrumgate.com', ip: '1.2.3.8', insertDate: '', updateDate: '', isEnabled: true });
+
+        const results = await configService.getDnsRecordsBy();
+        expect(results.items.length).to.equal(5);
+        expect(results.total).to.equal(5);
+
+        const results2 = await configService.getDnsRecordsBy(1, 2);
+        expect(results2.items.length).to.equal(2);
+        expect(results2.items[0].fqdn).to.equal('www3.ferrumgate.com');
+        expect(results2.total).to.equal(5);
+
+        const results3 = await configService.getDnsRecordsBy(0, 2, 'www3');
+        expect(results3.items.length).to.equal(1);
+        expect(results3.items[0].fqdn).to.equal('www3.ferrumgate.com');
+        expect(results3.total).to.equal(1);
+
+        const results4 = await configService.getDnsRecordsBy(0, 2, '1.2.3.8');
+        expect(results4.items.length).to.equal(1);
+        expect(results4.items[0].fqdn).to.equal('www5.ferrumgate.com');
+        expect(results4.total).to.equal(1);
     });
 
 });

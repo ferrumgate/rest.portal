@@ -2532,6 +2532,16 @@ export class RedisConfigService extends ConfigService {
         this.config.dns.records = await this.rGetAll('dns/records');
         return await super.getDnsRecords();
     }
+
+    override async getDnsRecordsBy(page: number = 0, pageSize: number = 0, search?: string,
+        ids?: string[]) {
+        this.isReady();
+        this.config.dns.records = [];
+        const records = await this.rGetAll<DnsRecord>('dns/records');
+        this.config.dns.records = records;
+        return await super.getDnsRecordsBy(page, pageSize, search, ids);
+
+    }
     override async getDnsRecord(id: string) {
         this.isReady();
         this.config.dns.records = [];

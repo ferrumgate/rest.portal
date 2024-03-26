@@ -16,26 +16,32 @@ export const routerDnsAuthenticated = express.Router();
 
 // dns/records
 
+interface DnsRecordSearch {
+    search: string,
+    page: number;
+    pageSize: number;
+    ids: string[]
+}
+
 routerDnsAuthenticated.get('/record',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),
     asyncHandler(async (req: any, res: any, next: any) => {
-        const search = req.query.search;
+
+        const query: DnsRecordSearch = {
+            search: req.query.search || '',
+            ids: Util.convertToArray(req.query.ids),
+            page: Util.convertToNumber(req.query.page),
+            pageSize: Util.convertToNumber(req.query.pageSize),
+        }
+
         logger.info(`query dns records`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
 
-        let lists: DnsRecord[] = await configService.getDnsRecords();
-        if (search) {
-            lists = lists.filter(x => {
-                if (x.fqdn.toLowerCase().includes(search)) return true;
-                if (x.ip.includes(search)) return true;
-                if (x.labels?.includes(search)) return true;
-                return false;
-            })
-        }
-        return res.status(200).json({ items: lists, });
+        let list = await configService.getDnsRecordsBy(query.page, query.pageSize, query.search, query.ids);
+        return res.status(200).json({ items: list.items, total: list.total });
 
     }))
 
