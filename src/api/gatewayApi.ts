@@ -79,10 +79,6 @@ routerGatewayAuthenticated.get('/',
         const gatewayService = appService.gatewayService;
         let items: Gateway[] = [];
 
-
-
-
-
         if (search) {
             const gateways = await configService.getGatewaysBy(search.toLowerCase());
             items = items.concat(gateways);
@@ -121,6 +117,7 @@ routerGatewayAuthenticated.get('/',
 
     }))
 
+
 routerGatewayAuthenticated.delete('/:id',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -151,7 +148,6 @@ routerGatewayAuthenticated.delete('/:id',
         return res.status(200).json({});
 
     }))
-
 
 
 routerGatewayAuthenticated.put('/',
@@ -202,10 +198,8 @@ routerGatewayAuthenticated.post('/',
         const inputService = appService.inputService;
         const auditService = appService.auditService;
 
-
         const input = req.body as Gateway;
         input.id = Util.randomNumberString(16);
-
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
@@ -217,7 +211,4 @@ routerGatewayAuthenticated.post('/',
         return res.status(200).json(safe);
 
     }))
-
-
-
 

@@ -5,7 +5,7 @@ import { AuthCommon, BaseLocal, BaseOAuth } from '../src/model/authSettings';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
 import { Group } from '../src/model/group';
-import { Gateway, Network } from '../src/model/network';
+import { Gateway, Network, Node } from '../src/model/network';
 import { Service } from '../src/model/service';
 import { User } from '../src/model/user';
 import { ConfigService } from '../src/service/configService';
@@ -2254,6 +2254,43 @@ describe('configService', async () => {
         expect(results4.items.length).to.equal(1);
         expect(results4.items[0].fqdn).to.equal('www5.ferrumgate.com');
         expect(results4.total).to.equal(1);
+    });
+
+    it('getNode saveNode', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        let node: Node = {
+            id: '231a0932',
+            name: 'myserver',
+            labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        await configService.saveNode(node);
+        const nodeDb = await configService.getNode(node.id);
+        expect(exclude(nodeDb)).to.deep.equal(exclude(node));
+
+    });
+    it('deleteNode', async () => {
+
+        //first create a config and save to a file
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+
+        let node: Node = {
+            id: '231a0932',
+            name: 'myserver',
+            labels: [],
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+
+        await configService.saveNode(node);
+        await configService.deleteNode(node.id);
+        const nodeDb = await configService.getNode(node.id);
+        expect(nodeDb).not.exist;
     });
 
 });

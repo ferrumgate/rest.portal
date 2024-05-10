@@ -33,6 +33,7 @@ import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "
 import { ErrorCodes, RestfullException } from "./restfullException";
 import { AppService, AppSystemService } from "./service/appService";
 import { Util } from "./util";
+import { routerNodeAuthenticated } from "./api/nodeApi";
 
 
 const bodyParser = require('body-parser');
@@ -536,6 +537,15 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'dnsDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'dnsCaptcha', 50),
             routerDnsAuthenticated);
+
+        this.app.use('/api/node',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'node', 1000),
+            asyncHandlerWithArgs(rateLimit, 'nodeHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'nodeDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'nodeCaptcha', 50),
+            routerNodeAuthenticated);
 
 
         this.app.use('/api/*', function (req: any, res: any) {

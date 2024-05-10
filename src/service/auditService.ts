@@ -15,7 +15,7 @@ import { ESSetting } from "../model/esSetting";
 import { FqdnIntelligenceList, FqdnIntelligenceSource } from "../model/fqdnIntelligence";
 import { Group } from "../model/group";
 import { IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
-import { Gateway, Network } from "../model/network";
+import { Gateway, Network, Node } from "../model/network";
 import { Service } from "../model/service";
 import { User } from "../model/user";
 import { Util } from "../util";
@@ -504,6 +504,17 @@ export class AuditService {
             `dns record deleted`,
             `${before?.fqdn}`,)
 
+    }
+
+    async logSaveNode(currentSession: AuthSession, currentUser: User, before?: Node, after?: Node) {
+        await this.executeSave(currentSession, currentUser, before, after,
+            `node ${before ? 'updated' : 'created'}`,
+            `${before?.name || after?.name}`)
+    }
+    async logDeleteNode(currentSession: AuthSession, currentUser: User, before?: Node) {
+        await this.executeDelete(currentSession, currentUser, before,
+            `node deleted`,
+            `${before?.name || after?.name}`)
     }
 
 

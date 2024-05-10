@@ -9,7 +9,7 @@ export { FqdnIntelligence, FqdnIntelligenceList, fqdnCategories, fqdnCategoriesM
 export { Group } from './model/group';
 export { IpIntelligence, IpIntelligenceList } from './model/ipIntelligence';
 export { LetsEncrypt, LetsEncryptChallenge } from './model/letsEncrypt';
-export { Gateway, GatewayDetail, Network, cloneGateway, cloneNetwork } from './model/network';
+export { Gateway, GatewayDetail, Network, cloneGateway, cloneNetwork, Node, cloneNode } from './model/network';
 export { Service, ServiceHost, ServicePort } from './model/service';
 export { Tunnel } from './model/tunnel';
 export { User } from './model/user';
