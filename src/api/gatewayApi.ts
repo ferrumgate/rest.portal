@@ -43,7 +43,8 @@ function gatewayDetailToGateway(x: GatewayDetail) {
         name: x.hostname || 'unknown',
         insertDate: new Date().toISOString(),
         labels: [], updateDate: new Date().toISOString(),
-        isEnabled: true
+        isEnabled: true,
+        nodeId: x.nodeId
 
     }
     return gateway;
@@ -175,6 +176,7 @@ routerGatewayAuthenticated.put('/',
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
+        input.nodeId = notRegistered?.nodeId || input.nodeId;
         const safe = cloneGateway(input);
 
         const { before, after } = await configService.saveGateway(safe);

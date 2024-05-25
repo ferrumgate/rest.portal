@@ -1,3 +1,7 @@
+#curl -u $ES_USER:$ES_PASS http://$IP/_cat/indices
+#curl -X DELETE "localhost:9200/my-index-000001?pretty"
+#BLA=$((LINE-3))
+#head -n -$BLA
 # username elastic
 # password 123456
 #IP=192.168.88.250:9200

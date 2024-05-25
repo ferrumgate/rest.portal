@@ -669,5 +669,18 @@ describe('util ', () => {
         expect(val3.port).not.exist;
 
     });
+    it('resolveHostname', async () => {
+        const ip = await Util.resolveHostname('www.google.com');
+        expect(ip).to.exist;
+
+        const ip2 = await Util.resolveHostname('1.1.1.1');
+        expect(ip2).to.exist;
+
+        const ip3 = await Util.resolveHostname('www2.google.com');
+        expect(ip3).not.exist;
+    })
+
+
+
 
 });

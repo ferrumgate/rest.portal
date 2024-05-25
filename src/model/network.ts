@@ -6,7 +6,7 @@ export interface Gateway {
     name: string;
     labels: string[];
     networkId?: string;
-    hostId?: string;
+    nodeId?: string;
     isEnabled?: boolean;
     insertDate: string;
     updateDate: string;
@@ -14,6 +14,7 @@ export interface Gateway {
 
 export interface GatewayDetail {
     id: string;
+    nodeId: string,
     arch?: string;
     cpusCount?: number,
     cpuInfo?: string,
@@ -78,7 +79,8 @@ export function cloneGateway(gate: Gateway): Gateway {
     return {
         id: gate.id, labels: gate.labels, name: gate.name,
         networkId: gate.networkId, isEnabled: gate.isEnabled,
-        insertDate: gate.insertDate, updateDate: gate.updateDate
+        insertDate: gate.insertDate, updateDate: gate.updateDate,
+        nodeId: gate.nodeId
     }
 }
 
@@ -112,6 +114,23 @@ export interface NodeDetail {
     interfaces: string,
     lastSeen: number,
     roles?: string;
+    nodeIp?: string,
+    nodePort?: string,
+    nodeIpw?: string,
+    nodePortw?: string,
+    nodePublicKey?: string,
+    redisPass?: string,
+    redisIntelPass?: string,
+    esUser?: string,
+    esPass?: string,
+    esIntelUser?: string,
+    esIntelPass?: string,
+    encryptKey?: string,
+    ferrumCloudId?: string,
+    ferrumCloudUrl?: string,
+    ferrumCloudToken?: string,
+
+
 }
 
 

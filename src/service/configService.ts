@@ -2421,9 +2421,46 @@ export class ConfigService {
         return await this.createTrackEvent(finded, this.config.nodes[findedIndex]);
     }
 
+    async getFerrumCloudId() {
+        return process.env.FERRUM_CLOUD_ID || '';
+    }
+    async getFerrumCloudToken() {
+        return process.env.FERRUM_CLOUD_TOKEN || '';
+    }
+    async getFerrumCloudUrl() {
+        return process.env.FERRUM_CLOUD_URL || '';
+    }
+    async getFerrumCloudIp() {
+        return process.env.FERRUM_CLOUD_IP || '';
+    }
+    async getFerrumCloudPort() {
+        return process.env.FERRUM_CLOUD_PORT || '';
+    }
 
-
-
+    async getEsIntelPass() {
+        return process.env.ES_INTEL_PASS || '';
+    }
+    async getEsIntelUser() {
+        return process.env.ES_INTEL_USER || '';
+    }
+    async getEsPass() {
+        return process.env.ES_PASS || '';
+    }
+    async getEsUser() {
+        return process.env.ES_USER || '';
+    }
+    async getRedisIntelPass() {
+        return process.env.REDIS_INTEL_PASS || '';
+    }
+    async getRedisPass() {
+        return process.env.REDIS_PASS || '';
+    }
+    async getEncryptKey() {
+        return process.env.ENCRYPT_KEY || '';
+    }
+    async getClusterNodePublicKey() {
+        return process.env.CLUSTER_NODE_PUBLIC_KEY || '';
+    }
 
 
 }

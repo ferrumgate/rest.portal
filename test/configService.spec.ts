@@ -1,6 +1,7 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
+import sinon from 'sinon';
 import { AuthCommon, BaseLocal, BaseOAuth } from '../src/model/authSettings';
 import { AuthenticationRule } from '../src/model/authenticationPolicy';
 import { AuthorizationRule } from '../src/model/authorizationPolicy';
@@ -13,6 +14,7 @@ import { Util } from '../src/util';
 import { DevicePosture } from '../src/model/authenticationProfile';
 import { ConfigWatch } from '../src/model/config';
 import { DnsRecord } from '../src/model/dns';
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -2291,6 +2293,60 @@ describe('configService', async () => {
         await configService.deleteNode(node.id);
         const nodeDb = await configService.getNode(node.id);
         expect(nodeDb).not.exist;
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should get FerrumCloudId', async () => {
+        const expected = 'testId';
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        sinon.stub(process, 'env').value({ FERRUM_CLOUD_ID: expected });
+
+        const result = await configService.getFerrumCloudId();
+
+        expect(result).to.equal(expected);
+    });
+
+    it('should get FerrumCloudToken', async () => {
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const expected = 'testToken';
+        sinon.stub(process, 'env').value({ FERRUM_CLOUD_TOKEN: expected });
+
+        const result = await configService.getFerrumCloudToken();
+
+        expect(result).to.equal(expected);
+    });
+
+    it('should get FerrumCloudUrl', async () => {
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const expected = 'testUrl';
+        sinon.stub(process, 'env').value({ FERRUM_CLOUD_URL: expected });
+
+        const result = await configService.getFerrumCloudUrl();
+
+        expect(result).to.equal(expected);
+    });
+
+    it('should get FerrumCloudIp', async () => {
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const expected = 'testIp';
+        sinon.stub(process, 'env').value({ FERRUM_CLOUD_IP: expected });
+
+        const result = await configService.getFerrumCloudIp();
+
+        expect(result).to.equal(expected);
+    });
+
+    it('should get FerrumCloudPort', async () => {
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const expected = 'testPort';
+        sinon.stub(process, 'env').value({ FERRUM_CLOUD_PORT: expected });
+
+        const result = await configService.getFerrumCloudPort();
+
+        expect(result).to.equal(expected);
     });
 
 });

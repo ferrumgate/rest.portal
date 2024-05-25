@@ -323,40 +323,40 @@ describe('nodeApi', async () => {
     }).timeout(50000);
 
 
-    it('POST /node/alive returns 200', async () => {
-
-
-        await appService.configService.saveUser(user);
-        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
-        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
-
-        const node: NodeDetail = {
-            id: Util.randomNumberString(),
-            lastSeen: new Date().toISOString()
-        } as unknown as NodeDetail;
-
-
-        let response: any = await new Promise((resolve: any, reject: any) => {
-            chai.request(app)
-                .post(`/api/node/alive`)
-                .set(`Authorization`, `Bearer ${token}`)
-                .send(node)
-                .end((err, res) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(res);
-                });
-        })
-        expect(response.status).to.equal(200);
-
-        const items = await nodeService.getAllAlive();
-        expect(items.length).to.equal(1);
-        const item = await nodeService.getAliveById(node.id);
-        expect(item).exist;
-
-
-    }).timeout(50000);
+    /*     it('POST /node/alive returns 200', async () => {
+    
+    
+            await appService.configService.saveUser(user);
+            const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+            const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] }, { id: 'someid', sid: session.id }, 'ferrum')
+    
+            const node: NodeDetail = {
+                id: Util.randomNumberString(),
+                lastSeen: new Date().toISOString()
+            } as unknown as NodeDetail;
+    
+    
+            let response: any = await new Promise((resolve: any, reject: any) => {
+                chai.request(app)
+                    .post(`/api/node/alive`)
+                    .set(`Authorization`, `Bearer ${token}`)
+                    .send(node)
+                    .end((err, res) => {
+                        if (err)
+                            reject(err);
+                        else
+                            resolve(res);
+                    });
+            })
+            expect(response.status).to.equal(200);
+    
+            const items = await nodeService.getAllAlive();
+            expect(items.length).to.equal(1);
+            const item = await nodeService.getAliveById(node.id);
+            expect(item).exist;
+    
+    
+        }).timeout(50000); */
 
 
 

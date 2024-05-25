@@ -37,6 +37,7 @@ describe('gatewayService', async () => {
         const redisService = new RedisService();
         let detail: GatewayDetail = {
             id: Util.randomNumberString(),
+            nodeId: Util.randomNumberString(),
             arch: os.arch(),
             cpusCount: os.cpus().length,
             cpuInfo: os.cpus().find(x => x)?.model,
@@ -64,6 +65,7 @@ describe('gatewayService', async () => {
         const redisService = new RedisService();
         let detail: GatewayDetail = {
             id: Util.randomNumberString(),
+            nodeId: Util.randomNumberString(),
             arch: os.arch(),
             cpusCount: os.cpus().length,
             cpuInfo: os.cpus().find(x => x)?.model,

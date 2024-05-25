@@ -31,7 +31,7 @@ routerNodeAuthenticated.get('/alive',
         });
     }))
 
-routerNodeAuthenticated.post('/alive',
+/* routerNodeAuthenticated.post('/alive',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(authorizeAsAdmin),//TODO change to token later
@@ -46,7 +46,7 @@ routerNodeAuthenticated.post('/alive',
         return res.status(200).json({
         });
     }))
-
+ */
 routerNodeAuthenticated.get('/:id',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),

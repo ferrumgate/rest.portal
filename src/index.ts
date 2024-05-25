@@ -34,6 +34,7 @@ import { ErrorCodes, RestfullException } from "./restfullException";
 import { AppService, AppSystemService } from "./service/appService";
 import { Util } from "./util";
 import { routerNodeAuthenticated } from "./api/nodeApi";
+import { routerCloudAuthenticated } from "./api/cloudApi";
 
 
 const bodyParser = require('body-parser');
@@ -93,12 +94,12 @@ export class ExpressApp {
                     "font-src": ["'self'", "https:", "data:"],
                     "form-action": ["'self'"],
                     "frame-ancestors": ["'self'"],
-                    "img-src": ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
+                    "img-src": ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com", "https://*.ferrumgate.com", "https://*.ferrumdome.com", "https://*.ferrumdome.net"],
                     "object-src": ["'none'"],
-                    "script-src": ["'self'", "'unsafe-inline'", "https://*.googletagmanager.com"],
+                    "script-src": ["'self'", "'unsafe-inline'", "https://*.googletagmanager.com", "https://*.ferrumgate.com", "https://*.ferrumdome.com", "https://*.ferrumdome.net"],
                     "script-src-attr": ["'self'", "'unsafe-inline'"],
                     "style-src": ["'self'", "https:", "'unsafe-inline'"],
-                    "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com"],
+                    "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://*.ferrumgate.com", "https://*.ferrumdome.com", "https://*.ferrumdome.net"],
                     'upgrade-insecure-requests': null
                 }
             },
@@ -546,6 +547,15 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'nodeDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'nodeCaptcha', 50),
             routerNodeAuthenticated);
+
+        this.app.use('/api/cloud',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'cloud', 1000),
+            asyncHandlerWithArgs(rateLimit, 'cloudHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'cloudDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'cloudCaptcha', 50),
+            routerCloudAuthenticated);
 
 
         this.app.use('/api/*', function (req: any, res: any) {

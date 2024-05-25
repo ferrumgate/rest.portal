@@ -19,6 +19,7 @@ import dir from 'recursive-readdir';
 import { ZipAFolder } from 'zip-a-folder';
 import { logger } from './common';
 import { TimeZone } from './model/timezone';
+import Dns from 'dns/promises';
 const decompressTargz = require('decompress-targz');
 const decompressUnzip = require('decompress-unzip');
 const mergeFiles = require('merge-files');
@@ -680,10 +681,14 @@ export const Util = {
     },
     sha256(content: string) {
         return createHash('sha256').update(content).digest('base64')
+    },
+    resolveHostname: async (hostname: string) => {
+        if (!hostname) return null;
+        if (isIPv4(hostname) || isIPv6(hostname))
+            return hostname;
+        let records = await Dns.resolve(hostname);
+        return records.length > 0 ? records[0] : null;
     }
-
-
-
 
 
 }
