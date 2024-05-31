@@ -96,7 +96,7 @@ export class ExpressApp {
                     "frame-ancestors": ["'self'"],
                     "img-src": ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com", "https://*.ferrumgate.com", "https://*.ferrumdome.com", "https://*.ferrumdome.net"],
                     "object-src": ["'none'"],
-                    "script-src": ["'self'", "'unsafe-inline'", "https://*.googletagmanager.com", "https://*.ferrumgate.com", "https://*.ferrumdome.com", "https://*.ferrumdome.net"],
+                    "script-src": ["'self'", "'unsafe-inline'", "blob:", "https://*.googletagmanager.com", "https://*.ferrumgate.com", "https://*.ferrumdome.com", "https://*.ferrumdome.net"],
                     "script-src-attr": ["'self'", "'unsafe-inline'"],
                     "style-src": ["'self'", "https:", "'unsafe-inline'"],
                     "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://*.ferrumgate.com", "https://*.ferrumdome.com", "https://*.ferrumdome.net"],

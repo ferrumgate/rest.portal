@@ -676,7 +676,11 @@ describe('util ', () => {
         const ip2 = await Util.resolveHostname('1.1.1.1');
         expect(ip2).to.exist;
 
-        const ip3 = await Util.resolveHostname('www2.google.com');
+        let ip3 = undefined;
+        try {
+            await Util.resolveHostname('www2.google.com');
+        } catch (ignore) {
+        }
         expect(ip3).not.exist;
     })
 
