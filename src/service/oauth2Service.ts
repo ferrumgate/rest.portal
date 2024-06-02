@@ -140,7 +140,6 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
         let token = {
             accessTokenExpiresAt: new Date(decoded.expires),
-            accessTokenExpiresAtTime: decoded.expires,
             user: { id: user?.id, sid: session.id },
             client: decoded.client,
             type: decoded.type,
@@ -199,7 +198,6 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
         let token = {
             refreshTokenExpiresAt: new Date(decoded.expires),
-            refreshTokenExpiresAtTime: decoded.expires,
             user: { id: user?.id, sid: session.id },
             client: decoded.client,
             type: decoded.type,

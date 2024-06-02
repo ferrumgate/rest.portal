@@ -774,8 +774,8 @@ describe('authApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
-        expect(response.body.accessTokenExpiresAtTime >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
-        expect(response.body.refreshTokenExpiresAtTime >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
+        expect(new Date(response.body.accessTokenExpiresAt).getTime() >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
+        expect(new Date(response.body.refreshTokenExpiresAt).getTime() >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
 
     }).timeout(50000);
 
@@ -856,8 +856,8 @@ describe('authApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
-        expect(response.body.accessTokenExpiresAtTime >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
-        expect(response.body.refreshTokenExpiresAtTime >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
+        expect(new Date(response.body.accessTokenExpiresAt).getTime() >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
+        expect(new Date(response.body.refreshTokenExpiresAt).getTime() >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
 
     }).timeout(50000);
 
