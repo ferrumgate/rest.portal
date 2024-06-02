@@ -37,7 +37,8 @@ export interface BaseLdap extends BaseAuthId, BaseAuth {
     //this is a security flag, be carefull
     saveNewUser?: boolean;
     syncGroups?: boolean;
-
+    tlsCaRoot?: string;
+    tlsValidateCert?: boolean;
 
 }
 export interface BaseSaml extends BaseAuthId, BaseAuth {

@@ -314,7 +314,9 @@ function copyAuthLdap(auth: BaseLdap): BaseLdap {
             insertDate: auth.insertDate,
             updateDate: auth.updateDate,
             saveNewUser: auth.saveNewUser,
-            syncGroups: auth.syncGroups
+            syncGroups: auth.syncGroups,
+            tlsCaRoot: auth.tlsCaRoot,
+            tlsValidateCert: auth.tlsValidateCert
 
         }
     throw new Error('not implemented copyAuthLdap');

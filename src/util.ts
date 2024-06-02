@@ -688,6 +688,31 @@ export const Util = {
             return hostname;
         let records = await Dns.resolve(hostname);
         return records.length > 0 ? records[0] : null;
+    },
+    splitCertFile(file: string): string[] {
+
+        let finalList: string[] = [];
+        if (!file) return finalList;
+        const lines = file.split('\n')
+        let tmp: string[] = [];
+        let findedStartPoint = false;
+        for (const l of lines) {
+            if (l.startsWith('-----BEGIN CERTIFICATE-----')) {
+                findedStartPoint = true;
+                tmp.push(l);
+            } else
+                if (findedStartPoint && l.startsWith('-----END CERTIFICATE-----')) {
+                    findedStartPoint = false;
+                    tmp.push(l + '\n');
+
+                    finalList.push(tmp.join('\n'));
+                    tmp = [];
+                } else if (findedStartPoint) {
+                    tmp.push(l);
+                }
+        }
+        return finalList
+
     }
 
 

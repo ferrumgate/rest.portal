@@ -161,7 +161,7 @@ describe('cloudApi', async () => {
         sinon.stub(appService.configService, 'getFerrumCloudPort').resolves('test5');
         sinon.stub(Util, 'resolveHostname').resolves('1.1.1.1');
 
-        sinon.stub(Axios, 'get').resolves({ data: workers });
+        sinon.stub(Axios, 'get').resolves({ data: { items: workers } });
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -176,7 +176,7 @@ describe('cloudApi', async () => {
         });
 
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(workers);
+        expect(response.body).to.deep.equal({ items: workers });
     }).timeout(50000);
 
     it('POST /cloud/worker returns 200', async () => {
@@ -213,7 +213,7 @@ describe('cloudApi', async () => {
         sinon.stub(appService.configService, 'getFerrumCloudPort').resolves('test5');
         sinon.stub(Util, 'resolveHostname').resolves('1.1.1.1');
 
-        sinon.stub(Axios, 'post').resolves({ data: workers });
+        sinon.stub(Axios, 'post').resolves({ data: { items: workers } });
 
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
@@ -229,6 +229,6 @@ describe('cloudApi', async () => {
         });
 
         expect(response.status).to.equal(200);
-        expect(response.body).to.deep.equal(workers);
+        expect(response.body).to.deep.equal({ items: workers });
     }).timeout(50000);
 });

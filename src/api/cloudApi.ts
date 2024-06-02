@@ -137,7 +137,7 @@ routerCloudAuthenticated.post('/worker',
 
 async function getCloudWorkers(ferrumCloudId: string, ferrumCloudUrl: string, ferrumCloudToken: string): Promise<any> {
 
-    /* let options: AxiosRequestConfig = {
+    let options: AxiosRequestConfig = {
         timeout: 15 * 1000,
         headers: {
             Authorization: `${ferrumCloudToken}`,
@@ -147,16 +147,16 @@ async function getCloudWorkers(ferrumCloudId: string, ferrumCloudUrl: string, fe
     const verificationURL = `${ferrumCloudUrl}/api/cloud/worker`
 
     const response = await Axios.get(verificationURL, options);
-    return response.data; */
-    if (fs.existsSync('/tmp/cloudWorkers.json')) {
+    return response.data as { items: CloudWorker[] };
+    /* if (fs.existsSync('/tmp/cloudWorkers.json')) {
         return JSON.parse(await fsp.readFile('/tmp/cloudWorkers.json', 'utf-8'));
-    }
-    return [];
+    } 
+    return [];*/
 }
 
 async function saveCloudWorkers(ferrumCloudId: string, ferrumCloudUrl: string, ferrumCloudToken: string, cloudWorkers: CloudWorker[]): Promise<any> {
 
-    /* let options: AxiosRequestConfig = {
+    let options: AxiosRequestConfig = {
         timeout: 15 * 1000,
         headers: {
             Authorization: `${ferrumCloudToken}`,
@@ -166,6 +166,6 @@ async function saveCloudWorkers(ferrumCloudId: string, ferrumCloudUrl: string, f
     const verificationURL = `${ferrumCloudUrl}/api/cloud/worker`
 
     const response = await Axios.post(verificationURL, { workers: cloudWorkers }, options);
-    return response.data; */
-    await fsp.writeFile('/tmp/cloudWorkers.json', JSON.stringify(cloudWorkers));
+    return response.data;
+    //await fsp.writeFile('/tmp/cloudWorkers.json', JSON.stringify(cloudWorkers));
 }

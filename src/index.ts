@@ -606,31 +606,7 @@ export class ExpressApp {
 
 
     }
-    splitCertFile(file: string): string[] {
 
-        let finalList: string[] = [];
-        if (!file) return finalList;
-        const lines = file.split('\n')
-        let tmp: string[] = [];
-        let findedStartPoint = false;
-        for (const l of lines) {
-            if (l.startsWith('-----BEGIN CERTIFICATE-----')) {
-                findedStartPoint = true;
-                tmp.push(l);
-            } else
-                if (findedStartPoint && l.startsWith('-----END CERTIFICATE-----')) {
-                    findedStartPoint = false;
-                    tmp.push(l + '\n');
-
-                    finalList.push(tmp.join('\n'));
-                    tmp = [];
-                } else if (findedStartPoint) {
-                    tmp.push(l);
-                }
-        }
-        return finalList
-
-    }
     async start() {
         await this.init();
 
@@ -692,7 +668,7 @@ export class ExpressApp {
 
                     if (fs.existsSync(`${certsfolder}/ca_root.crt`)) {
                         const caroot = fs.readFileSync(`${certsfolder}/ca_root.crt`);
-                        let carootCerts = this.splitCertFile(caroot.toString());
+                        let carootCerts = Util.splitCertFile(caroot.toString());
                         carootCerts.forEach(x => {
                             options.ca.push(Buffer.from(x))
                             logger.info("adding certificate from ca_root.crt")
@@ -702,7 +678,7 @@ export class ExpressApp {
                     }
                     if (fs.existsSync(`${certsfolder}/ca_bundle.crt`)) {
                         const cabundle = fs.readFileSync(`${certsfolder}/ca_bundle.crt`);
-                        let cabundleCerts = this.splitCertFile(cabundle.toString());
+                        let cabundleCerts = Util.splitCertFile(cabundle.toString());
                         cabundleCerts.forEach(x => {
 
                             options.ca.push(Buffer.from(x))
@@ -722,7 +698,7 @@ export class ExpressApp {
                         ca: []
                     }
                     if (web.chainCrt) {
-                        let chainCerts = this.splitCertFile(web.chainCrt || '');
+                        let chainCerts = Util.splitCertFile(web.chainCrt || '');
                         chainCerts.forEach(x => {
                             options.ca.push(x as any)
                             logger.info("adding certificate from chain")
