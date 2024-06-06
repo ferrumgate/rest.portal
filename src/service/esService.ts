@@ -234,6 +234,13 @@ export class ESService {
             logger.error(err);
         }
     }
+    getIndexName(index: string) {
+
+        let ferrumCloudId = process.env.FERRUM_CLOUD_ID;
+        if (ferrumCloudId && !index.startsWith(`${ferrumCloudId}-`))
+            return `${ferrumCloudId}-${index}`;
+        return index;
+    }
 
 
     async search(request: any): Promise<any> {
@@ -244,7 +251,7 @@ export class ESService {
     }
     async getAllIndexes() {
         await this.createClient();
-        const indexes = await this.client.cat.indices({ format: 'json' });
+        const indexes = await this.client.cat.indices({ format: 'json', index: this.getIndexName('*') });
         return indexes.filter(x => x.index).map(x => x.index) as string[];
     }
     async reset() {
@@ -255,13 +262,14 @@ export class ESService {
 
     }
     async deleteIndexes(indexes: string[]) {
-        await this.client.indices.delete({ index: indexes, ignore_unavailable: true })
+        const preparedIndexes = indexes.map(x => this.getIndexName(x) || x);
+        await this.client.indices.delete({ index: preparedIndexes, ignore_unavailable: true })
     }
 
     async flush(index?: string) {
         await this.createClient();
         await this.client.indices.flush({
-            index: index,
+            index: index ? this.getIndexName(index) : index,
             force: true
         });
     }
@@ -270,9 +278,7 @@ export class ESService {
     ////audit 
     async auditCreateIndexIfNotExits(item: AuditLog): Promise<[ESAuditLog, string]> {
         await this.createClient();
-        let date = Date.now();
-        // let index = 'ferrum-audit-' + dateformat(item.insertDate, 'yyyymmdd');
-        let index = 'ferrumgate-audit';
+        let index = this.getIndexName('ferrumgate-audit');
         let esitem: ESAuditLog =
         {
             ...item
@@ -290,8 +296,8 @@ export class ESService {
                 body: {
                     settings: {
                         index: {
-                            number_of_replicas: 1,
-                            number_of_shards: 1,
+                            number_of_replicas: Number(process.env.ES_REPLICAS) || 2,
+                            number_of_shards: Number(process.env.ES_SHARDS) || 1,
                             "refresh_interval": this.refreshInterval,
                             translog: {
                                 "durability": "async",
@@ -362,25 +368,31 @@ export class ESService {
 
 
 
-
     async auditSave(items: [ESAuditLog, string][]): Promise<void> {
         await this.createClient();
-        let result: any[] = [];
-        let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
-        mapped.forEach(x => {
-            result = result.concat(x);
+        let indexList = new Set<string>();
+        items.forEach(x => {
+            indexList.add(x[1]);
         });
-        await this.client.bulk({
-            body: result
-        })
+        indexList.forEach(async x => {
+            let result: any[] = [];
+            let mapped = items.filter(y => y[1] == x).map(doc => [{ index: { _index: this.getIndexName(doc[1]) } }, doc[0]])
+            mapped.forEach(x => {
+                result = result.concat(x);
+            });
+            await this.client.bulk({
+                index: this.getIndexName(x),
+                body: result
+            })
+        });
     }
 
 
     ////ip intelligence list 
     async ipIntelligenceListCreateIndexIfNotExits(item: IpIntelligenceListItem): Promise<[ESIpIntelligenceListItem, string]> {
         await this.createClient();
-        let date = Date.now();
-        let index = `ip-intelligence-list-${item.id.toLowerCase()}`;
+
+        let index = this.getIndexName(`ip-intelligence-list-${item.id.toLowerCase()}`);
         let esitem: ESIpIntelligenceListItem =
         {
             ...item
@@ -406,12 +418,9 @@ export class ESService {
                                 "sync_interval": "10s",
                                 "flush_threshold_size": "1gb"
                             }
-
-
                         }
                     },
                     mappings: {
-
 
                         properties: {
                             insertDate: {
@@ -452,21 +461,28 @@ export class ESService {
 
     async ipIntelligenceListItemSave(items: [ESIpIntelligenceListItem, string][]): Promise<void> {
         await this.createClient();
-        let result: any[] = [];
-        let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
-        mapped.forEach(x => {
-            result = result.concat(x);
+        let indexList = new Set<string>();
+        items.forEach(x => {
+            indexList.add(x[1]);
         });
-        await this.client.bulk({
-            body: result
-        })
+        indexList.forEach(async x => {
+            let result: any[] = [];
+            let mapped = items.filter(y => y[1] == x).map(doc => [{ index: { _index: this.getIndexName(doc[1]) } }, doc[0]])
+            mapped.forEach(x => {
+                result = result.concat(x);
+            });
+            await this.client.bulk({
+                index: this.getIndexName(x),
+                body: result
+            })
+        });
     }
 
     async searchIpIntelligenceList(req: SearchIpIntelligenceListRequest) {
         await this.createClient();
         let request = {
             ignore_unavailable: true,
-            index: `ip-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`,
+            index: this.getIndexName(`ip-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`),
             body: {
 
                 size: 0,
@@ -499,7 +515,7 @@ export class ESService {
         await this.createClient();
         if (req.page == undefined) {
             //delete index
-            const del = `ip-intelligence-list-${req.id.toLowerCase()}`;
+            const del = this.getIndexName(`ip-intelligence-list-${req.id.toLowerCase()}`);
             await this.deleteIndexes([del])
             this.ipIntelligenceListIndexes.delete(del);
             return { deletedCount: 1 }
@@ -539,10 +555,33 @@ export class ESService {
 
     async scrollIpIntelligenceList(req: ScrollIpIntelligenceListRequest, cont: () => boolean, callback: (item: IpIntelligenceListItem) => Promise<void>) {
         await this.createClient();
+        //proxy does not support scroll
+        /*  let request = {
+             ignore_unavailable: true,
+             index: this.getIndexName(`ip-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`),
+             scroll: '1m',
+             body: {
+                 query: {
+                     "match_all": {}
+                 }
+ 
+             }
+         };
+ 
+         let { _scroll_id, hits } = await this.client.search(request, {}) as any;
+ 
+         while (cont() && hits && hits.hits.length) {
+             for (const item of hits.hits.map((x: any) => x._source)) {
+                 await callback(item);
+             }
+             let result = await this.client.scroll({ scroll_id: _scroll_id, scroll: '1m' })
+             _scroll_id = result._scroll_id;
+             hits = result.hits;
+         } */
         let request = {
             ignore_unavailable: true,
-            index: `ip-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`,
-            scroll: '1m',
+            index: this.getIndexName(`ip-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`),
+            size: 100000,
             body: {
                 query: {
                     "match_all": {}
@@ -551,19 +590,10 @@ export class ESService {
             }
         };
 
-
-        let { _scroll_id, hits } = await this.client.search(request, {}) as any;
-
-        while (cont() && hits && hits.hits.length) {
-            for (const item of hits.hits.map((x: any) => x._source)) {
-                await callback(item);
-            }
-            let result = await this.client.scroll({ scroll_id: _scroll_id, scroll: '1m' })
-            _scroll_id = result._scroll_id;
-            hits = result.hits;
-
+        let result = await this.client.search(request, {}) as any;
+        for (const item of result.hits.hits.map((x: any) => x._source)) {
+            await callback(item);
         }
-
 
     }
 
@@ -633,7 +663,7 @@ export class ESService {
         await this.createClient();
         let request = {
             ignore_unavailable: true,
-            index: 'ferrumgate-audit',
+            index: this.getIndexName('ferrumgate-audit'),
             body: {
                 from: (req.page || 0) * (req.pageSize || 10),
                 size: (req.pageSize || 10),
@@ -689,7 +719,7 @@ export class ESService {
     ////activity 
     async activityCreateIndexIfNotExits(item: ActivityLog): Promise<[ESActivityLog, string]> {
         await this.createClient();
-        let index = `ferrumgate-activity-${this.dateFormat(item.insertDate)}`;
+        let index = this.getIndexName(`ferrumgate-activity-${this.dateFormat(item.insertDate)}`);
         let esitem: ESActivityLog =
         {
             ...item
@@ -715,8 +745,6 @@ export class ESService {
                                 "sync_interval": "10s",
                                 "flush_threshold_size": "1gb"
                             }
-
-
                         }
                     },
                     mappings: {
@@ -932,14 +960,21 @@ export class ESService {
 
     async activitySave(items: [ESActivityLog, string][]): Promise<void> {
         await this.createClient();
-        let result: any[] = [];
-        let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
-        mapped.forEach(x => {
-            result = result.concat(x);
+        let indexList = new Set<string>();
+        items.forEach(x => {
+            indexList.add(x[1]);
         });
-        await this.client.bulk({
-            body: result
-        })
+        indexList.forEach(async x => {
+            let result: any[] = [];
+            let mapped = items.filter(y => y[1] == x).map(doc => [{ index: { _index: this.getIndexName(doc[1]) } }, doc[0]])
+            mapped.forEach(x => {
+                result = result.concat(x);
+            });
+            await this.client.bulk({
+                index: this.getIndexName(x),
+                body: result
+            })
+        });
     }
 
     dayBefore(miliseconds: number, start?: Date) {
@@ -968,10 +1003,10 @@ export class ESService {
         let sDate = req.startDate ? new Date(req.startDate) : this.dayBefore(this.OneDayMS);
         let eDate = req.endDate ? new Date(req.endDate) : new Date();
         const dates = this.indexCalculator(sDate, eDate);
-        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
-        let cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`);
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith(this.getIndexName('ferrumgate-activity-')));
+        let cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => this.getIndexName(`ferrumgate-activity-${x}`));
         if (!cindexes.length)
-            cindexes = dates.map(x => `ferrumgate-activity-${x}`);
+            cindexes = dates.map(x => this.getIndexName(`ferrumgate-activity-${x}`));
         let request = {
             ignore_unavailable: true,
             index: cindexes,
@@ -1097,8 +1132,8 @@ export class ESService {
 
 
         const dates = this.indexCalculator(new Date(start), new Date(end));
-        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
-        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith(this.getIndexName('ferrumgate-activity-')));
+        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => this.getIndexName(`ferrumgate-activity-${x}`));
         const srequest = this.getSummaryQuery('login try', start, end, 'status', 'day', sreq.timeZone || '+00:00');
         console.log(JSON.stringify(srequest));
         let request = {
@@ -1138,8 +1173,8 @@ export class ESService {
 
 
         const dates = this.indexCalculator(new Date(start), new Date(end));
-        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
-        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith(this.getIndexName('ferrumgate-activity-')));
+        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => this.getIndexName(`ferrumgate-activity-${x}`))
         const srequest = this.getSummaryQuery('2fa check', start, end, 'status', 'day', sreq.timeZone || '+00:00');
         console.log(JSON.stringify(srequest));
         let request = {
@@ -1221,8 +1256,8 @@ export class ESService {
 
 
         const dates = this.indexCalculator(new Date(start), new Date(end));
-        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
-        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith(this.getIndexName('ferrumgate-activity-')));
+        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => this.getIndexName(`ferrumgate-activity-${x}`));
         const srequest = this.getSummaryQueryLoginUser(start, end);
         srequest.query.bool.must.push({
             "term": {
@@ -1259,8 +1294,8 @@ export class ESService {
 
 
         const dates = this.indexCalculator(new Date(start), new Date(end));
-        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
-        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith(this.getIndexName('ferrumgate-activity-')));
+        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => this.getIndexName(`ferrumgate-activity-${x}`))
         const srequest = this.getSummaryQueryLoginUser(start, end);
         srequest.query.bool.must_not.push(
             {
@@ -1292,8 +1327,8 @@ export class ESService {
         const { start, end } = this.getSummaryDates(sreq);
 
         const dates = this.indexCalculator(new Date(start), new Date(end));
-        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
-        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith(this.getIndexName('ferrumgate-activity-')));
+        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => this.getIndexName(`ferrumgate-activity-${x}`));
         const srequest = this.getSummaryQuery('create tunnel', start, end, 'tunType', 'day', sreq.timeZone || '+00:00');
         console.log(JSON.stringify(srequest));
         let request = {
@@ -1324,8 +1359,8 @@ export class ESService {
 
 
         const dates = this.indexCalculator(new Date(start), new Date(end));
-        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
-        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith(this.getIndexName('ferrumgate-activity-')));
+        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => this.getIndexName(`ferrumgate-activity-${x}`));
         const srequest = this.getSummaryQuery('login try', start, end, 'status', 'day', sreq.timeZone || '+00:00');
         console.log(JSON.stringify(srequest));
         let request = {
@@ -1369,8 +1404,8 @@ export class ESService {
 
 
         const dates = this.indexCalculator(new Date(start), new Date(end));
-        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-activity-'));
-        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-activity-${x}`)
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith(this.getIndexName('ferrumgate-activity-')));
+        const cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => this.getIndexName(`ferrumgate-activity-${x}`));
         const srequest = this.getSummaryQuery('login try', start, end, 'status', 'hour', sreq.timeZone || '+00:00');
         console.log(JSON.stringify(srequest));
         let request = {
@@ -1414,7 +1449,7 @@ export class ESService {
     ////device 
     async deviceCreateIndexIfNotExits(item: DeviceLog): Promise<[ESDeviceLog, string]> {
         await this.createClient();
-        let index = `ferrumgate-device-${this.dateFormat(item.insertDate)}`;
+        let index = this.getIndexName(`ferrumgate-device-${this.dateFormat(item.insertDate)}`);
         let esitem: ESDeviceLog =
         {
             ...item
@@ -1539,14 +1574,21 @@ export class ESService {
 
     async deviceSave(items: [ESDeviceLog, string][]): Promise<void> {
         await this.createClient();
-        let result: any[] = [];
-        let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
-        mapped.forEach(x => {
-            result = result.concat(x);
+        let indexList = new Set<string>();
+        items.forEach(x => {
+            indexList.add(x[1]);
         });
-        await this.client.bulk({
-            body: result
-        })
+        indexList.forEach(async x => {
+            let result: any[] = [];
+            let mapped = items.filter(y => y[1] == x).map(doc => [{ index: { _index: this.getIndexName(doc[1]) } }, doc[0]])
+            mapped.forEach(x => {
+                result = result.concat(x);
+            });
+            await this.client.bulk({
+                index: this.getIndexName(x),
+                body: result
+            })
+        });
     }
 
 
@@ -1555,10 +1597,10 @@ export class ESService {
         let sDate = req.startDate ? new Date(req.startDate) : this.dayBefore(this.OneDayMS);
         let eDate = req.endDate ? new Date(req.endDate) : new Date();
         const dates = this.indexCalculator(sDate, eDate);
-        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith('ferrumgate-device-'));
-        let cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => `ferrumgate-device-${x}`);
+        const indexes = (await this.getAllIndexes()).filter(x => x.startsWith(this.getIndexName('ferrumgate-device-')));
+        let cindexes = dates.filter(x => indexes.find(y => y.includes(x))).map(x => this.getIndexName(`ferrumgate-device-${x}`));
         if (!cindexes.length)
-            cindexes = dates.map(x => `ferrumgate-device-${x}`);
+            cindexes = dates.map(x => this.getIndexName(`ferrumgate-device-${x}`));
         let request = {
             ignore_unavailable: true,
             index: cindexes,
@@ -1611,7 +1653,7 @@ export class ESService {
     async fqdnIntelligenceListCreateIndexIfNotExits(item: FqdnIntelligenceListItem): Promise<[ESFqdnIntelligenceListItem, string]> {
         await this.createClient();
         let date = Date.now();
-        let index = `fqdn-intelligence-list-${item.id.toLowerCase()}`;
+        let index = this.getIndexName(`fqdn-intelligence-list-${item.id.toLowerCase()}`);
         let esitem: ESFqdnIntelligenceListItem =
         {
             ...item
@@ -1678,21 +1720,29 @@ export class ESService {
 
     async fqdnIntelligenceListItemSave(items: [ESFqdnIntelligenceListItem, string][]): Promise<void> {
         await this.createClient();
-        let result: any[] = [];
-        let mapped = items.map(doc => [{ index: { _index: doc[1] } }, doc[0]])
-        mapped.forEach(x => {
-            result = result.concat(x);
+
+        let indexList = new Set<string>();
+        items.forEach(x => {
+            indexList.add(x[1]);
         });
-        await this.client.bulk({
-            body: result
-        })
+        indexList.forEach(async x => {
+            let result: any[] = [];
+            let mapped = items.filter(y => y[1] == x).map(doc => [{ index: { _index: this.getIndexName(doc[1]) } }, doc[0]])
+            mapped.forEach(x => {
+                result = result.concat(x);
+            });
+            await this.client.bulk({
+                index: this.getIndexName(x),
+                body: result
+            })
+        });
     }
 
     async searchFqdnIntelligenceList(req: SearchFqdnIntelligenceListRequest) {
         await this.createClient();
         let request = {
             ignore_unavailable: true,
-            index: `fqdn-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`,
+            index: this.getIndexName(`fqdn-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`),
             body: {
 
                 size: 0,
@@ -1724,7 +1774,7 @@ export class ESService {
         await this.createClient();
         if (req.page == undefined) {
             //delete index
-            const del = `fqdn-intelligence-list-${req.id.toLowerCase()}`;
+            const del = this.getIndexName(`fqdn-intelligence-list-${req.id.toLowerCase()}`);
             await this.deleteIndexes([del])
             this.ipIntelligenceListIndexes.delete(del);
             return { deletedCount: 1 }
@@ -1732,7 +1782,7 @@ export class ESService {
             //delete by query
             let request = {
                 ignore_unavailable: true,
-                index: `fqdn-intelligence-list-${req.id.toLowerCase()}`,
+                index: this.getIndexName(`fqdn-intelligence-list-${req.id.toLowerCase()}`),
                 body: {
 
 
@@ -1764,9 +1814,10 @@ export class ESService {
 
     async scrollFqdnIntelligenceList(req: ScrollIpIntelligenceListRequest, cont: () => boolean, callback: (item: FqdnIntelligenceListItem) => Promise<void>) {
         await this.createClient();
-        let request = {
+        //proxy does not support scroll
+        /* let request = {
             ignore_unavailable: true,
-            index: `fqdn-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`,
+            index: this.getIndexName(`fqdn-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`),
             scroll: '1m',
             body: {
                 query: {
@@ -1786,13 +1837,26 @@ export class ESService {
             let result = await this.client.scroll({ scroll_id: _scroll_id, scroll: '1m' })
             _scroll_id = result._scroll_id;
             hits = result.hits;
+        } */
 
+        let request = {
+            ignore_unavailable: true,
+            index: this.getIndexName(`fqdn-intelligence-list-${req.id ? req.id.toLowerCase() : '*'}`),
+            size: 100000,
+            body: {
+                query: {
+                    "match_all": {}
+                }
+
+            }
+        };
+
+
+        let result = await this.client.search(request, {}) as any;
+        for (const item of result.hits.hits.map((x: any) => x._source)) {
+            await callback(item);
         }
-
-
     }
-
-
 }
 
 
@@ -1802,7 +1866,7 @@ export class ESServiceLimited extends ESService {
     }
     override async auditCreateIndexIfNotExits(item: AuditLog): Promise<[ESAuditLog, string]> {
 
-        return [{ ...item }, 'ferrumgate-audit'];
+        return [{ ...item }, this.getIndexName('ferrumgate-audit')];
 
     }
     override async auditSave(items: [ESAuditLog, string][]): Promise<void> {
@@ -1812,7 +1876,7 @@ export class ESServiceLimited extends ESService {
     }
 
     override async activityCreateIndexIfNotExits(item: ActivityLog): Promise<[ESActivityLog, string]> {
-        let index = `ferrumgate-activity-${this.dateFormat(item.insertDate)}`;
+        let index = this.getIndexName(`ferrumgate-activity-${this.dateFormat(item.insertDate)}`);
         let esitem: ESActivityLog =
         {
             ...item
@@ -1825,7 +1889,7 @@ export class ESServiceLimited extends ESService {
     }
 
     override async deviceCreateIndexIfNotExits(item: DeviceLog): Promise<[ESDeviceLog, string]> {
-        let index = `ferrumgate-device-${this.dateFormat(item.insertDate)}`;
+        let index = this.getIndexName(`ferrumgate-device-${this.dateFormat(item.insertDate)}`);
         let esitem: ESDeviceLog =
         {
             ...item
@@ -1892,6 +1956,16 @@ export class ESServiceExtended extends ESService {
         if (this.interval)
             clearIntervalAsync(this.interval);
         this.interval = null;
+    }
+}
+
+export class ESServiceFerrumCloud extends ESService {
+
+    constructor(configService: ConfigService, host?: string, username?: string, password?: string) {
+        super(configService, host, username, password);
+        this.host = process.env.ES_MULTI_HOST;
+        this.username = process.env.ES_MULTI_USER;
+        this.password = process.env.ES_MULTI_PASS;
     }
 }
 

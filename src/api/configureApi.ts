@@ -101,13 +101,12 @@ routerConfigureAuthenticated.post('/',
             throw new RestfullException(412, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrNetworkNotFound, "no default network");
         }
 
-
+        logger.info(`creating default network`);
 
         defaultNetwork.clientNetwork = data.clientNetwork;
         defaultNetwork.serviceNetwork = data.serviceNetwork;
         defaultNetwork.sshHost = data.sshHost;
         await configService.saveNetwork(defaultNetwork);
-
 
         const notJoineds = await getNotJoinedGateways(configService, gatewayService);
         const notJoined = notJoineds.find(x => x);
@@ -115,7 +114,6 @@ routerConfigureAuthenticated.post('/',
             notJoined.networkId = defaultNetwork.id;
             await configService.saveGateway(notJoined);
         }
-
 
         //save default dns
         await saveSystemDnsService(defaultNetwork, configService, auditService, currentSession, user);

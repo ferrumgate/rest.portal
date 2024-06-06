@@ -18,7 +18,7 @@ export { ActivityService } from './service/activityService';
 export { AuditService } from './service/auditService';
 export { ConfigService } from './service/configService';
 export { DeviceService } from './service/deviceService';
-export { ESService, ESServiceExtended, ESServiceLimited } from './service/esService';
+export { ESService, ESServiceExtended, ESServiceLimited, ESServiceFerrumCloud } from './service/esService';
 export { FqdnIntelligenceListService, FqdnIntelligenceService } from './service/fqdnIntelligenceService';
 export { HelperService } from './service/helperService';
 export { InputService } from './service/inputService';
