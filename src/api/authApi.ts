@@ -289,7 +289,7 @@ routerAuth.post('/accesstoken',
             const systemlogService = appService.systemLogService;
             const ipIntelligenceService = appService.ipIntelligenceService;
             //tunnel field is the tunnel tunnel key
-            const request = req.body as { key: string, exchangeKey?: string };
+            const request = req.body as { key: string, exchangeKey?: string, timeInMs?: number };
             if (!request.key) {
                 throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs parameters");
             }
@@ -334,9 +334,9 @@ routerAuth.post('/accesstoken',
              } */
 
 
-            const accessTokenStr = await oauth2Service.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum')
+            const accessTokenStr = await oauth2Service.generateAccessTokenWithTime({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum', request.timeInMs || 0)
             const accessToken = await oauth2Service.getAccessToken(accessTokenStr);
-            const refreshTokenStr = await oauth2Service.generateRefreshToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum');
+            const refreshTokenStr = await oauth2Service.generateRefreshTokenWithTime({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum', request.timeInMs || 0);
             const refreshToken = await oauth2Service.getRefreshToken(refreshTokenStr);
             await redisService.delete(key);
 
@@ -372,6 +372,7 @@ routerAuth.post('/refreshtoken',
     asyncHandlerWithArgs(passportAuthenticate, ['jwt']),
     asyncHandler(async (req: any, res: any, next: any) => {
         try {
+
             const appService = req.appService as AppService;
             const configService = appService.configService;
             const redisService = appService.redisService;
@@ -379,7 +380,7 @@ routerAuth.post('/refreshtoken',
             const sessionService = appService.sessionService;
             const deviceService = appService.deviceService;
             const systemlogService = appService.systemLogService;
-            const request = req.body as { refreshToken: string };
+            const request = req.body as { refreshToken: string, timeInMs?: number };
             if (!request.refreshToken) {
                 throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs parameters");
             }
@@ -426,9 +427,9 @@ routerAuth.post('/refreshtoken',
             await sessionService.setExpire(sid);
             await systemlogService.write({ path: '/system/sessions/alive', type: 'put', val: authSession });
 
-            const accessTokenStr = await oauth2Service.generateAccessToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum')
+            const accessTokenStr = await oauth2Service.generateAccessTokenWithTime({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum', request.timeInMs || 0);
             const accessToken = await oauth2Service.getAccessToken(accessTokenStr);
-            const refreshTokenStr = await oauth2Service.generateRefreshToken({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum');
+            const refreshTokenStr = await oauth2Service.generateRefreshTokenWithTime({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum', request.timeInMs || 0);
             const refreshToken = await oauth2Service.getRefreshToken(refreshTokenStr);
 
             //await saveActivity(req, 'refresh token'); // no need to save

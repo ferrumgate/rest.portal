@@ -755,20 +755,14 @@ describe('authApi', async () => {
 
     }).timeout(50000);
 
-    /* it('POST /auth/accesstoken with tunnel parameter with result 200', async () => {
+
+    it('POST /auth/accesstoken with time result 200', async () => {
 
         await redisService.set(`/auth/access/test`, { userId: 'someid' });
-        await redisService.hset(`/tunnel/id/testsession`, { id: 'testsession', clientIp: '10.0.0.2', tun: 'tun100', gatewayId: gateway.id });
-
-        configService.config.authenticationPolicy.rules.push({
-            action: 'allow', id: Util.randomNumberString(), isEnabled: true,
-            name: 'we need',
-            networkId: gateway.networkId || '', profile: {}, userOrgroupIds: []
-        })
         let response: any = await new Promise((resolve: any, reject: any) => {
             chai.request(app)
                 .post('/api/auth/accesstoken')
-                .send({ key: 'test', tunnelKey: 'testsession' })
+                .send({ key: 'test', timeInMs: 30 * 60 * 1000 })
                 .end((err, res) => {
                     if (err)
                         reject(err);
@@ -777,14 +771,14 @@ describe('authApi', async () => {
                 });
         })
 
-        expect(response.status).to.equal(401);
+        expect(response.status).to.equal(200);
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
+        expect(new Date(response.body.accessTokenExpiresAt).getTime() >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
+        expect(new Date(response.body.refreshTokenExpiresAt).getTime() >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
 
-        const retVAl = await redisService.hgetAll('/tunnel/id/testsession');
-        expect(retVAl.assignedClientIp).exist;
+    }).timeout(50000);
 
-    }).timeout(50000); */
 
     it('POST /auth/refreshtoken with result 200', async () => {
 
@@ -822,6 +816,48 @@ describe('authApi', async () => {
         expect(response.status).to.equal(200);
         expect(response.body.accessToken).exist;
         expect(response.body.refreshToken).exist;
+
+    }).timeout(50000);
+
+
+    it('POST /auth/refreshtoken with time result 200', async () => {
+
+        await redisService.set(`/auth/access/test`, { userId: 'someid' });
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/api/auth/accesstoken')
+                .send({ key: 'test', timeInMs: 30 * 60 * 1000 })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.accessToken).exist;
+        expect(response.body.refreshToken).exist;
+
+        const refreshToken = response.body.refreshToken;
+        response = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .post('/api/auth/refreshtoken')
+                .set('Authorization', `Bearer ${response.body.accessToken}`)
+                .send({ refreshToken: refreshToken, timeInMs: 30 * 60 * 1000 })
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+
+        expect(response.status).to.equal(200);
+        expect(response.body.accessToken).exist;
+        expect(response.body.refreshToken).exist;
+        expect(new Date(response.body.accessTokenExpiresAt).getTime() >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
+        expect(new Date(response.body.refreshTokenExpiresAt).getTime() >= new Date().getTime() + 15 * 60 * 1000).to.be.true;
 
     }).timeout(50000);
 

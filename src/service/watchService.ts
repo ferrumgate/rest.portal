@@ -28,7 +28,18 @@ export class WatchService {
         protected readWriteWait = 1000
     ) {
         this.events = new EventEmitter();
-
+        this.redisStreamService.onEvent({
+            onReady: async () => {
+                logger.info('connected to redis stream');
+            },
+            onError: async (err) => {
+                logger.error(err);
+            },
+            onClose: async () => {
+                logger.info('redis stream closed');
+                this.lastPostReaded = false;
+            }
+        });
     }
 
     // start tail -f
@@ -96,6 +107,7 @@ export class WatchService {
                 this.lastPos = await this.redis.get(this.posKey(), false) || this.lastPos;
                 this.lastPostReaded = true;
             }
+
             while (this.isWorking) {
                 const items = await this.redisStreamService.xread(this.file, 10000, this.lastPos, this.readWriteWait);
                 if (items.length)

@@ -16,6 +16,7 @@ import { InputService } from "./inputService";
 import { IpIntelligenceService } from "./ipIntelligenceService";
 import { LetsEncryptService } from "./letsEncryptService";
 import { LicenceService } from "./licenceService";
+import { NodeService } from "./nodeService";
 import { OAuth2Service } from "./oauth2Service";
 import { PKIService } from "./pkiService";
 import { PolicyService } from "./policyService";
@@ -53,6 +54,7 @@ export class AppService {
     public policyService: PolicyService;
     public auditService: AuditService;
     public gatewayService: GatewayService;
+    public nodeService: NodeService;
     public esService: ESService;
     public esIntelService: ESService;
     public sessionService: SessionService;
@@ -90,6 +92,7 @@ export class AppService {
         deviceService?: DeviceService,
         letsEncryptService?: LetsEncryptService,
         fqdnIntelligenceService?: FqdnIntelligenceService,
+        nodeService?: NodeService
 
     ) {
         //create self signed certificates for JWT
@@ -126,6 +129,7 @@ export class AppService {
         this.deviceService = deviceService || new DeviceService(this.configService, this.redisService, this.redisLocalService, this.esService);
         this.letsEncryptService = letsEncryptService || new LetsEncryptService(this.configService, this.redisService, this.systemLogService, process.env.ACME_CHALLENGE || '/tmp/acme-challenge');
         this.fqdnIntelligenceService = fqdnIntelligenceService || new FqdnIntelligenceService(this.configService, this.redisService, this.inputService, this.esService);
+        this.nodeService = nodeService || new NodeService(this.configService, this.redisService);
 
 
         this.configureES = new EventBufferedExecutor(async () => {

@@ -39,29 +39,32 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
     }
 
-    private generatePayload(type: "access" | "refresh", user: OAuth2Server.User, client: OAuth2Server.Client): Payload {
+    private generatePayload(type: "access" | "refresh", user: OAuth2Server.User, client: OAuth2Server.Client, timeInMs: number = 0): Payload {
         let expire = new Date();
-        expire.setSeconds(expire.getSeconds() + type == 'access' ? config.JWT_ACCESS_TOKEN_EXPIRY_SECONDS : config.JWT_REFRESH_TOKEN_EXPIRY_SECONDS);
+        if (!timeInMs) {
+            expire.setSeconds(expire.getSeconds() + type == 'access' ? config.JWT_ACCESS_TOKEN_EXPIRY_SECONDS : config.JWT_REFRESH_TOKEN_EXPIRY_SECONDS);
+        }
+        else {
+            expire.setMilliseconds(expire.getMilliseconds() + timeInMs);
+        }
         let targetUser = { id: user.id, sid: user.sid } as any;
 
         let payload = {
             expires: expire.getTime(),
             user: targetUser,
-            type: type,
-
+            type: type
         }
         return payload;
     }
 
-    private async generateToken(type: "access" | "refresh", user: OAuth2Server.User, client: OAuth2Server.Client): Promise<string> {
-        let payload = this.generatePayload(type, user, client);
+    private async generateToken(type: "access" | "refresh", user: OAuth2Server.User, client: OAuth2Server.Client, timeInMs: number = 0): Promise<string> {
+        let payload = this.generatePayload(type, user, client, timeInMs);
 
         let secret = (await this.config.getJWTSSLCertificateSensitive()).privateKey || '';
         let token = JWT.sign(payload, secret, config.JWT_SING_OPTIONS);
         return token;
     }
-
-    async generateAccessToken(client: OAuth2Server.Client, user: OAuth2Server.User, scope: string | string[]): Promise<string> {
+    async generateAccessTokenWithTime(client: OAuth2Server.Client, user: OAuth2Server.User, scope: string | string[], timeInMs: number): Promise<string> {
         logger.info(`generateAccessToken`, JSON.stringify(client), JSON.stringify(user))
 
         let findUser = await this.config.getUserById(user.id).catch(err => {
@@ -84,10 +87,14 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
         user.id = findUser.id;
         user.sid = user.sid;
 
-        let token = await this.generateToken("access", user, client);
+        let token = await this.generateToken("access", user, client, timeInMs);
 
         return token;
+    }
 
+    async generateAccessToken(client: OAuth2Server.Client, user: OAuth2Server.User, scope: string | string[]): Promise<string> {
+
+        return await this.generateAccessTokenWithTime(client, user, scope, 0);
     }
 
     async getAccessToken(accessToken: string): Promise<false | "" | 0 | OAuth2Server.Token | null | undefined> {
@@ -95,9 +102,6 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
         logger.info(`getAccessToken ${accessToken.substring(0, 6)}`)
         let decoded = undefined;
         const publicssl = (await this.config.getJWTSSLCertificate()).publicCrt || '';
-        //fs.writeFileSync('/tmp/access' + this.counter, accessToken);
-        //fs.writeFileSync('/tmp/pub' + this.counter, publicssl);
-        //this.counter++;
         try {
             decoded = JWT.verify(accessToken, publicssl, config.JWT_VERIFY_OPTIONS) as any;
 
@@ -140,8 +144,6 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
             client: decoded.client,
             type: decoded.type,
             accessToken: accessToken
-
-
         }
 
 
@@ -149,11 +151,13 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
     }
 
-    async generateRefreshToken(client: OAuth2Server.Client, user: OAuth2Server.User, scope: string | string[]): Promise<string> {
-        logger.info(`generateRefreshToken `, JSON.stringify(client), JSON.stringify(user));
-        let token = await this.generateToken("refresh", user, client);
+    async generateRefreshTokenWithTime(client: OAuth2Server.Client, user: OAuth2Server.User, scope: string | string[], timeInMs: number): Promise<string> {
+        logger.info(`generateRefreshToken  timeInMs: ${timeInMs}`, JSON.stringify(client), JSON.stringify(user));
+        let token = await this.generateToken("refresh", user, client, timeInMs);
         return (token);
-
+    }
+    async generateRefreshToken(client: OAuth2Server.Client, user: OAuth2Server.User, scope: string | string[]): Promise<string> {
+        return await this.generateRefreshTokenWithTime(client, user, scope, 0);
     }
 
     /**

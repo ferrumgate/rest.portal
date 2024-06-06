@@ -15,7 +15,7 @@ import { FqdnIntelligenceList, FqdnIntelligenceSource } from "../model/fqdnIntel
 import { Group } from "../model/group";
 import { IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
 import { LogoSetting } from "../model/logoSetting";
-import { Gateway, Network } from "../model/network";
+import { Gateway, Network, Node } from "../model/network";
 import { Service } from "../model/service";
 import { User } from "../model/user";
 import { ErrorCodes, RestfullException } from "../restfullException";
@@ -40,7 +40,8 @@ export type RPathCount = 'users/*' |
     'gateways/*' |
     'authenticationPolicy/rules/*' |
     'authorizationPolicy/rules/*' |
-    'devicePostures/*';
+    'devicePostures/*' |
+    'nodes/*';
 
 
 
@@ -374,6 +375,13 @@ export class RedisConfigService extends ConfigService {
                 version = 4;
             }
 
+            if (version < 5) {//if not saved before, first installing system
+                logger.info("config service version upgrade to 5");
+                logger.info("create default values");
+                await this.saveV5();
+                version = 5;
+            }
+
 
             clearIntervalAsync(this.timerInterval);
             this.timerInterval = null;
@@ -695,6 +703,14 @@ export class RedisConfigService extends ConfigService {
         const pipeline = await this.redis.multi();
         await this.rSave('version', undefined, 4, pipeline);
         await this.rSaveArray('dns/records', this.config.dns.records || [], pipeline);
+        await pipeline.exec();
+    }
+
+    async saveV5() {
+
+        const pipeline = await this.redis.multi();
+        await this.rSave('version', undefined, 4, pipeline);
+        await this.rSaveArray('nodes', this.config.nodes || [], pipeline);
         await pipeline.exec();
     }
 
@@ -2107,7 +2123,8 @@ export class RedisConfigService extends ConfigService {
         cfg.brand = await this.rGet('brand') || {};
         cfg.dns = {
             records: await this.rGetAll('dns/records')
-        }
+        };
+        cfg.nodes = await this.rGetAll('nodes');
     }
 
     /**
@@ -2165,6 +2182,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('httpToHttpsRedirect', undefined, cfg.httpToHttpsRedirect || false, pipeline);
         await this.rSave('brand', undefined, cfg.brand || {}, pipeline);
         await this.rSaveArray('dns/records', cfg.dns.records || [], pipeline);
+        await this.rSaveArray('nodes', cfg.nodes || [], pipeline);
         await pipeline.exec();
         this.config = this.createConfig();
 
@@ -2583,9 +2601,63 @@ export class RedisConfigService extends ConfigService {
     }
 
 
+    /// Node
+    override async getNode(id: string) {
+        this.isReady();
+        this.config.nodes = [];
+
+        const node = await this.rGetWith<Node>(`nodes`, id);
+        if (node) {
+            this.config.nodes.push(node);
+        }
+        return await super.getNode(id);
+    }
+    override async getNodeCount() {
+        this.isReady();
+        this.config.nodes = [];
+        return await this.rCount('nodes/*')
+    }
+
+    override async getNodesBy(query: string) {
+        this.isReady();
+        this.config.nodes = await this.rGetAll('nodes');
+        return await super.getNodesBy(query);
+    }
+
+    override async getNodesAll() {
+        this.isReady();
+        this.config.nodes = await this.rGetAll('nodes');
+        return await super.getNodesAll();
+    }
+
+    override async saveNode(node: Node) {
+        this.isReady();
+        this.config.nodes = [];
+        const gt = await this.rGetWith<Node>('nodes', node.id);
+        if (gt) this.config.nodes.push(gt);
+        let ret = await super.saveNode(node);
+        const pipeline = await this.redis.multi();
+        await this.rSave('nodes', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+    override async deleteNode(id: string) {
+        this.isReady();
+        this.config.nodes = [];
+        const node = await this.rGetWith<Node>('nodes', id);
+        if (node) {
+            const pipeline = await this.redis.multi();
+            await this.triggerNodeDeleted(node);
+            await this.rDel('nodes', node, pipeline);
+            await this.saveLastUpdateTime(pipeline);
+            await pipeline.exec();
+        }
+        return this.createTrackEvent(node);
+
+    }
 
 }
-
 
 class NodeCacheForUs extends NodeCache {
     override get<T>(key: RPath): T | undefined {
@@ -2771,9 +2843,5 @@ export class RedisCachedConfigService extends RedisConfigService {
         this.nodeCache.set('httpToHttpsRedirect', ret.after);
         return ret;
     }
-
-
-
-
 
 }

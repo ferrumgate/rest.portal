@@ -37,6 +37,11 @@
                 "FERRUM_TRY_ADMIN_PASS": "123456",
                 "FERRUM_TRY_USER1_PASS": "123456",
                 "SERVICE_VALID_RANGES2": "10.10.10.0/24 192.168.88.0/24",
+                "FERRUM_CLOUD_URL": "https://ferrumcloud.com",
+                "FERRUM_CLOUD_ID": "123456",
+                "FERRUM_CLOUD_TOKEN": "123456",
+                "FERRUM_CLOUD_IP": "192.168.88.51",
+                "FERRUM_CLOUD_PORT": "54320"
             },
             "outputCapture": "console",
             "console": "integratedTerminal",

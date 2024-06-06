@@ -124,7 +124,7 @@ routerNetworkAuthenticated.put('/',
         await inputService.checkCidr(input.serviceNetwork);
         if (input.sshHost)
             await inputService.checkHost(input.sshHost);
-        /*   if (input.openVpnHost)
+        /* if (input.openVpnHost)
               await inputService.checkHost(input.openVpnHost);
           if (input.wireguardHost)
               await inputService.checkHost(input.wireguardHost); */

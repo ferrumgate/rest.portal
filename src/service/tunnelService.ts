@@ -140,7 +140,17 @@ export class TunnelService {
             // at the end
             //send every thing ok message to waiting client to finish tunneling
             const authenticationChannel = `/tunnel/authentication/${tunnelKey}`;
-            await this.redisService.publish(authenticationChannel, 'ok:');
+            logger.info(`authenticating tunnel tunnelKey: ${tunnelKey}`);
+            //there must be a better way to do this
+            // when cloud version activated, there is a race condition
+            for (let i = 0; i < 5; i++) {
+                await this.redisService.publish(authenticationChannel, 'ok:');
+                await Util.sleep(250);//wait for sync with client
+            }
+
+
+        } else {
+            logger.warn(`tunnel authenticated time is not valid tunnelKey: ${tunnelKey}`)
         }
 
         return await this.redisService.hgetAll(key) as unknown as Tunnel;

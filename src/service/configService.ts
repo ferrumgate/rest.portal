@@ -17,7 +17,7 @@ import { FqdnIntelligenceList } from "../model/fqdnIntelligence";
 import { Group } from "../model/group";
 import { IpIntelligenceList, IpIntelligenceSource } from "../model/ipIntelligence";
 import { LogoSetting } from "../model/logoSetting";
-import { Gateway, Network } from "../model/network";
+import { Gateway, Network, Node } from "../model/network";
 import { RBAC, RBACDefault } from "../model/rbac";
 import { Service } from "../model/service";
 import { ApiKey, User } from "../model/user";
@@ -25,6 +25,7 @@ import { ErrorCodes, RestfullException } from "../restfullException";
 import { Util } from "../util";
 import { UtilPKI } from "../utilPKI";
 import { HelperService } from "./helperService";
+
 
 
 
@@ -156,7 +157,8 @@ export class ConfigService {
             },
             httpToHttpsRedirect: true,
             brand: {},
-            dns: { records: [] }
+            dns: { records: [] },
+            nodes: [],
 
         }
 
@@ -2346,10 +2348,119 @@ export class ConfigService {
         return this.createTrackEvent(source)
 
     }
+    ///// Node
+    async getNode(id: string) {
+        this.isReady(); this.isReadable();
+        const node = this.config.nodes.find(x => x.id == id);
+        if (!node) {
+            return node;
+        }
+        return this.clone(node);
+    }
+    async getNodeCount() {
+        this.isReady(); this.isReadable();
+        return this.config.nodes.length;
+    }
+    protected async triggerNodeDeleted(node: Node) {
+        const trc = this.createTrackEvent(node);
+        this.emitEvent({ type: 'del', path: 'nodes', val: trc.after, before: trc.before });
+    }
 
+    async deleteNode(id: string) {
+        this.isReady(); this.isWritable();
+        const indexId = this.config.nodes.findIndex(x => x.id == id);
+        const node = this.config.nodes.find(x => x.id == id);
+        if (indexId >= 0 && node) {
+            this.config.nodes.splice(indexId, 1);
+            await this.triggerNodeDeleted(node);
+            await this.saveConfigToFile();
+        }
+        return this.createTrackEvent(node);
 
+    }
 
+    async getNodesBy(query: string) {
+        this.isReady(); this.isReadable();
+        const nodes = this.config.nodes.filter(x => {
+            if (x.labels?.length && x.labels.find(y => y.toLowerCase().includes(query)))
+                return true;
+            if (x.name?.toLowerCase().includes(query))
+                return true;
+            return false;
+        });
+        return nodes;
+    }
 
+    async getNodesAll() {
+        this.isReady(); this.isReadable();
+        return this.config.nodes.map(x => this.clone(x));
+    }
+
+    async saveNode(node: Node) {
+        this.isReady(); this.isWritable();
+        let findedIndex = this.config.nodes.findIndex(x => x.id == node.id);
+        let finded = findedIndex >= 0 ? this.config.nodes[findedIndex] : null;
+        const cloned = this.clone(node);
+        if (!finded) {
+            cloned.insertDate = new Date().toISOString();
+            cloned.updateDate = new Date().toISOString();
+            this.config.nodes.push(cloned);
+            findedIndex = this.config.nodes.length - 1;
+            const trc = this.createTrackEvent(finded, this.config.nodes[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'nodes', val: trc.after, before: trc.before });
+        } else {
+            this.config.nodes[findedIndex] = {
+                ...finded,
+                ...cloned,
+                updateDate: new Date().toISOString()
+            }
+            const trc = this.createTrackEvent(finded, this.config.nodes[findedIndex]);
+            this.emitEvent({ type: 'put', path: 'nodes', val: trc.after, before: trc.before });
+        }
+        await this.saveConfigToFile();
+        return await this.createTrackEvent(finded, this.config.nodes[findedIndex]);
+    }
+
+    async getFerrumCloudId() {
+        return process.env.FERRUM_CLOUD_ID || '';
+    }
+    async getFerrumCloudToken() {
+        return process.env.FERRUM_CLOUD_TOKEN || '';
+    }
+    async getFerrumCloudUrl() {
+        return process.env.FERRUM_CLOUD_URL || '';
+    }
+    async getFerrumCloudIp() {
+        return process.env.FERRUM_CLOUD_IP || '';
+    }
+    async getFerrumCloudPort() {
+        return process.env.FERRUM_CLOUD_PORT || '';
+    }
+
+    async getEsIntelPass() {
+        return process.env.ES_INTEL_PASS || '';
+    }
+    async getEsIntelUser() {
+        return process.env.ES_INTEL_USER || '';
+    }
+    async getEsPass() {
+        return process.env.ES_PASS || '';
+    }
+    async getEsUser() {
+        return process.env.ES_USER || '';
+    }
+    async getRedisIntelPass() {
+        return process.env.REDIS_INTEL_PASS || '';
+    }
+    async getRedisPass() {
+        return process.env.REDIS_PASS || '';
+    }
+    async getEncryptKey() {
+        return process.env.ENCRYPT_KEY || '';
+    }
+    async getClusterNodePublicKey() {
+        return process.env.CLUSTER_NODE_PUBLIC_KEY || '';
+    }
 
 
 }

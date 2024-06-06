@@ -494,4 +494,27 @@ describe('redisService', () => {
 
     }).timeout(20000);
 
+    it('events', async () => {
+
+        const simpleRedis = new RedisService();
+        let isReady = false;
+
+        simpleRedis.onEvent({
+            onReady: async () => {
+                isReady = true;
+            },
+            onError: async (err) => {
+                console.error(err);
+            },
+            onClose: async () => {
+                console.log('onClose');
+            }
+        });
+        await simpleRedis.zadd('test', 'abc', 10);
+        expect(isReady).to.be.true;
+
+    }).timeout(20000);
+
+
+
 })

@@ -43,7 +43,8 @@ function gatewayDetailToGateway(x: GatewayDetail) {
         name: x.hostname || 'unknown',
         insertDate: new Date().toISOString(),
         labels: [], updateDate: new Date().toISOString(),
-        isEnabled: true
+        isEnabled: true,
+        nodeId: x.nodeId
 
     }
     return gateway;
@@ -78,10 +79,6 @@ routerGatewayAuthenticated.get('/',
         const configService = appService.configService;
         const gatewayService = appService.gatewayService;
         let items: Gateway[] = [];
-
-
-
-
 
         if (search) {
             const gateways = await configService.getGatewaysBy(search.toLowerCase());
@@ -121,6 +118,7 @@ routerGatewayAuthenticated.get('/',
 
     }))
 
+
 routerGatewayAuthenticated.delete('/:id',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -153,7 +151,6 @@ routerGatewayAuthenticated.delete('/:id',
     }))
 
 
-
 routerGatewayAuthenticated.put('/',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -179,6 +176,7 @@ routerGatewayAuthenticated.put('/',
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
+        input.nodeId = notRegistered?.nodeId || input.nodeId;
         const safe = cloneGateway(input);
 
         const { before, after } = await configService.saveGateway(safe);
@@ -202,10 +200,8 @@ routerGatewayAuthenticated.post('/',
         const inputService = appService.inputService;
         const auditService = appService.auditService;
 
-
         const input = req.body as Gateway;
         input.id = Util.randomNumberString(16);
-
 
         input.name = input.name || 'gateway';
         input.labels = input.labels || [];
@@ -217,7 +213,4 @@ routerGatewayAuthenticated.post('/',
         return res.status(200).json(safe);
 
     }))
-
-
-
 

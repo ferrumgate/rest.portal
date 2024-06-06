@@ -2,11 +2,11 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
 import os from 'os';
-import { GatewayDetail } from '../src/model/network';
+import { NodeDetail } from '../src/model/network';
 import { ConfigService } from '../src/service/configService';
-import { GatewayService } from '../src/service/gatewayService';
 import { RedisService } from '../src/service/redisService';
 import { Util } from '../src/util';
+import { NodeService } from '../src/service/nodeService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -19,7 +19,7 @@ function expectToDeepEqual(a: any, b: any) {
     expect(a).to.deep.equal(b);
 }
 
-describe('gatewayService', async () => {
+describe('nodeService', async () => {
     const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
     const configService = new ConfigService('kgWn7f1dtNOjuYdjezf0dR5I3HQIMNrGsUqthIsHHPoeqt', filename);
     const redisService = new RedisService();
@@ -35,9 +35,8 @@ describe('gatewayService', async () => {
     it('getAllAlive', async () => {
 
         const redisService = new RedisService();
-        let detail: GatewayDetail = {
+        let detail: NodeDetail = {
             id: Util.randomNumberString(),
-            nodeId: Util.randomNumberString(),
             arch: os.arch(),
             cpusCount: os.cpus().length,
             cpuInfo: os.cpus().find(x => x)?.model,
@@ -53,8 +52,8 @@ describe('gatewayService', async () => {
             lastSeen: new Date().getTime()
 
         }
-        await redisService.hset(`/alive/gateway/id/${detail.id}`, detail);
-        const gw = new GatewayService(configService, redisService);
+        await redisService.hset(`/alive/node/id/${detail.id}`, detail);
+        const gw = new NodeService(configService, redisService);
         const items = await gw.getAllAlive();
         expect(items.length).to.equal(1);
         expectToDeepEqual(items[0], detail);
@@ -63,9 +62,8 @@ describe('gatewayService', async () => {
     it('getAliveById', async () => {
 
         const redisService = new RedisService();
-        let detail: GatewayDetail = {
+        let detail: NodeDetail = {
             id: Util.randomNumberString(),
-            nodeId: Util.randomNumberString(),
             arch: os.arch(),
             cpusCount: os.cpus().length,
             cpuInfo: os.cpus().find(x => x)?.model,
@@ -81,13 +79,13 @@ describe('gatewayService', async () => {
             lastSeen: new Date().getTime()
 
         }
-        await redisService.hset(`/alive/gateway/id/${detail.id}`, detail);
-        const gw = new GatewayService(configService, redisService);
-        const item = await gw.getAliveById(detail.id)
+        await redisService.hset(`/alive/node/id/${detail.id}`, detail);
+        const ns = new NodeService(configService, redisService);
+        const item = await ns.getAliveById(detail.id)
 
         expectToDeepEqual(item, detail);
 
-        const item2 = await gw.getAliveById('unknownid');
+        const item2 = await ns.getAliveById('unknownid');
         expect(item2).not.exist;
 
     }).timeout(5000);
