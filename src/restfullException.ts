@@ -149,6 +149,9 @@ export class ErrorCodesInternal extends ErrorCodes {
     static ErrDevicePostureNotChecked: string = 'ErrDevicePostureNotChecked';
     static ErrSaveNewUserDisabled: string = 'ErrSaveNewUserDisabled';
     static ErrFqdnIntelligenceSourceNotFound: string = "ErrFqdnIntelligenceSourceNotFound";
+    static ErrNodeNotFound: string = "ErrNodeNotFound";
+    static ErrNodeNotValid: string = "ErrNodeNotValid";
+
 
 
 

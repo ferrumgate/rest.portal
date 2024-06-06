@@ -276,6 +276,9 @@ export class RedisConfigWatchService extends ConfigService {
                         case 'dns/records':
                             await this.processArray(this.config.dns.records, path, item, val.id);
                             break;
+                        case 'nodes':
+                            await this.processArray(this.config.nodes, path, item, val.id);
+                            break;
                         default:
                             logger.warn(`not implemented path ${item.path}`);
                             throw new Error(`not implemented path ${item.path}`)

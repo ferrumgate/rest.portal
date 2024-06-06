@@ -1,11 +1,11 @@
 {
   "name": "rest.portal",
-  "version": "1.16.0",
+  "version": "2.0.0",
   "description": "restfull service for management ui",
   "main": "index.js",
   "typings": "lib.d.ts",
   "scripts": {
-    "test": "JENCODE=json CONFIGSERVICE_TYPE=CONFIG  NODE_ENV=development NODE_TEST=true DEBUG2=nock.*  ES_HOST=https://192.168.88.250:9200   ES_USER=elastic ES_PASS=123456 node   ./node_modules/mocha/bin/mocha --exit --timeout 120000 --require ts-node/register  test/**/oauth2Service.spec.ts",
+    "test": "JENCODE=json CONFIGSERVICE_TYPE=CONFIG  NODE_ENV=development NODE_TEST=true DEBUG2=nock.*  ES_HOST=https://192.168.88.250:9200   ES_USER=elastic ES_PASS=123456 node   ./node_modules/mocha/bin/mocha --exit --timeout 120000 --require ts-node/register  test/**/esService.spec.ts",
     "testintegration": "DEBUG=nock.* node ./node_modules/mocha/bin/mocha --exit  --require ts-node/register test/**/*.spec.integration.ts",
     "build": "tsc && cp -R src/service/templates build/src/service/  && cp package.json ./build/src/ && sed -i  s/index.js/lib.js/g ./build/src/package.json",
     "start": "tsc && NODE_ENV=development node ./build/src/index.js",
@@ -120,6 +120,7 @@
     "@types/recursive-readdir": "^2.2.4",
     "@types/semver": "^7.5.8",
     "@types/set-interval-async": "^1.0.3",
+    "@types/sinon": "^17.0.3",
     "@types/validator": "^13.11.9",
     "@types/ws": "^8.5.10",
     "chai": "^4.3.7",
@@ -127,6 +128,7 @@
     "mocha": "^10.3.0",
     "nock": "^13.5.4",
     "rest.portal": "file:build",
+    "sinon": "^18.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^4.9.5"
   }

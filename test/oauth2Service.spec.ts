@@ -177,5 +177,36 @@ describe('oauth2Service ', async () => {
 
     }).timeout(5000);
 
+    it('generateAccessTokenWithTime, getAccessToken returns an access token', async () => {
+
+        const oauthService = new OAuth2Service(configService, sessionService);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+
+        const token = await oauthService.generateAccessTokenWithTime({ id: 'ferrum', grants: ['refresh_token'] }, { id: 'someid', sid: session.id }, 'ferrum', 60 * 60 * 1000);
+        expect(token).to.exist;
+        const tokenAccess = await oauthService.getAccessToken(token) as OAuth2Server.Token;
+        expect(tokenAccess.accessTokenExpiresAt).exist;
+        expect(new Date(Number(tokenAccess.accessTokenExpiresAt)).getTime()).to.be.greaterThan(new Date().getTime() + 50 * 60 * 1000);
+        expect(tokenAccess.user).exist;
+        expect(tokenAccess.user.id).to.equal('someid');
+        expect(tokenAccess.user.sid).to.equal(session.id);
+
+    }).timeout(5000);
+
+    it('generateRefreshTokenWithTime, getRefreshToken returns a refresh token', async () => {
+
+        const oauthService = new OAuth2Service(configService, sessionService);
+        const session = await sessionService.createSession({ id: 'someid' } as User, false, '1.1.1.1', 'local');
+        const token = await oauthService.generateRefreshTokenWithTime({ id: 'ferrum', grants: ['refresh_token'] }, { id: 'someid', sid: session.id }, 'ferrum', 60 * 60 * 1000);
+        expect(token).to.exist;
+        const tokenRefresh = await oauthService.getRefreshToken(token) as OAuth2Server.Token;
+        expect(tokenRefresh.refreshTokenExpiresAt).exist;
+        expect(new Date(Number(tokenRefresh.refreshTokenExpiresAt)).getTime()).to.be.greaterThan(new Date().getTime() + 50 * 60 * 1000);
+        expect(tokenRefresh.user).exist;
+        expect(tokenRefresh.user.id).to.equal('someid');
+        expect(tokenRefresh.user.sid).to.equal(session.id);
+
+    }).timeout(5000);
+
 })
 

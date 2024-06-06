@@ -12,7 +12,7 @@ import { FqdnIntelligence } from "./fqdnIntelligence";
 import { Group } from "./group";
 import { IpIntelligence } from "./ipIntelligence";
 import { LogoSetting } from "./logoSetting";
-import { Gateway, Network } from "./network";
+import { Gateway, Network, Node } from "./network";
 import { RBAC } from "./rbac";
 import { Service } from "./service";
 import { User } from "./user";
@@ -62,7 +62,8 @@ export type RPath =
     'fqdnIntelligence/lists' |
     'httpToHttpsRedirect' |
     'brand' |
-    'dns/records';
+    'dns/records' |
+    'nodes';
 
 
 
@@ -143,4 +144,6 @@ export interface Config {
 
     //dns
     dns: Dns
+    //nodes
+    nodes: Node[]
 }

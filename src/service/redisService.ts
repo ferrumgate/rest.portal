@@ -227,6 +227,12 @@ export class RedisPipelineService {
 
 }
 
+export interface RedisServiceEvents {
+    onError: (err: Error) => Promise<void>;
+    onClose: () => Promise<void>;
+    onReady: () => Promise<void>;
+}
+
 /**
  * @summary redis functions wrapper
  */
@@ -237,6 +243,24 @@ export class RedisService {
 
     constructor(protected host?: string, protected password: string | undefined = undefined, protected type: 'single' | 'cluster' | 'sentinel' = 'single') {
         this.redis = this.createRedisClient(host, password, type);
+
+    }
+    onEvent(events?: RedisServiceEvents) {
+        //events
+        if (events?.onError)
+            this.redis.on('error', async (err) => {
+                await events.onError(err);
+            });
+
+        if (events?.onClose)
+            this.redis.on('close', async () => {
+                await events.onClose();
+            });
+
+        if (events?.onReady)
+            this.redis.on('ready', async () => {
+                await events.onReady();
+            });
 
     }
     clone() {
@@ -269,6 +293,9 @@ export class RedisService {
                     password: password,
                     lazyConnect: true,
                     maxRetriesPerRequest: 5,
+                    keepAlive: 0,
+                    disconnectTimeout: 5000,
+
                 });
                 return redis;
 
@@ -278,14 +305,22 @@ export class RedisService {
                     connectTimeout: 5000,
                     lazyConnect: true,
                     password: password,
-                    maxRetriesPerRequest: 5
+                    maxRetriesPerRequest: 5,
+                    keepAlive: 0,
+                    disconnectTimeout: 5000,
+
                 });
                 return sentinel;
             case 'cluster':
                 let cluster = new IORedis.Cluster(hosts, {
 
                     lazyConnect: true,
-                    redisOptions: { connectTimeout: 5000, maxRetriesPerRequest: 5, password: password }
+                    redisOptions: {
+                        connectTimeout: 5000, maxRetriesPerRequest: 5, password: password,
+                        keepAlive: 0,
+                        disconnectTimeout: 5000,
+
+                    }
                 });
                 return cluster;
 
@@ -488,12 +523,37 @@ export class RedisService {
         arr.unshift(id ? id : '*');
         return await this.redis.xadd(key, ...arr);
     }
+    private async tryWithTimeout(ms: number, func: Promise<any>) {
+        let timerHandle = null;
+        var timer = new Promise((resolve, reject) => {
+            timerHandle = setTimeout(() => {
+                reject(new Error('TryTimeout'));
+            }, ms);
+        });
+        let result = null;
+        try {
+            result = await Promise.race([func, timer]);
+        } catch (err: any) {
+            try {
+                if (err.message == 'TryTimeout') {
+                    this.redis.disconnect(true);
+                }
+            } catch (ignore) {
+            }
+            throw err;
+        } finally {
+            if (timerHandle)
+                clearTimeout(timerHandle);
+        }
+        return result;
+    }
+
 
     async xread(key: string, count: number, pos: string, readtimeout: number) {
-        const result = await this.redis.xread("COUNT", count, 'BLOCK', readtimeout, 'STREAMS', key, pos ? pos : '0');
+        const result = await this.tryWithTimeout(readtimeout * 2, this.redis.xread("COUNT", count, 'BLOCK', readtimeout, 'STREAMS', key, pos ? pos : '0')) as any;
         if (!result?.length || !result[0][1]) return [];
         const items = result[0][1];
-        return items.map(x => {
+        return items.map((x: any) => {
             let obj = {
                 xreadPos: x[0],
             } as any;
@@ -511,13 +571,13 @@ export class RedisService {
         let streams: any = [];
         search.forEach(x => streams.push(x.key));
         search.forEach(x => streams.push(x.pos));
-        const result = await this.redis.xread("COUNT", count, 'BLOCK', readtimeout, 'STREAMS', ...streams);
+        const result = await this.tryWithTimeout(readtimeout * 2, this.redis.xread("COUNT", count, 'BLOCK', readtimeout, 'STREAMS', ...streams));
         if (!result?.length) return [];
         let finalList = [];
         for (let x = 0; x < result.length; ++x) {
             const channel = result[x][0];
             const items = result[x][1];
-            let retItems = items.map(x => {
+            let retItems = items.map((x: any) => {
                 let obj = {
                     xreadPos: x[0],
                 } as any;
@@ -632,7 +692,7 @@ export class RedisService {
     }
 
     async xreadGroup(stream: string, groupname: string, consumername: string, count: number, readtimeout: number) {
-        const result = await this.redis.xreadgroup('GROUP', groupname, consumername, 'COUNT', count, 'BLOCK', readtimeout, 'STREAMS', stream, '>') as any;
+        const result = await this.tryWithTimeout(readtimeout * 2, this.redis.xreadgroup('GROUP', groupname, consumername, 'COUNT', count, 'BLOCK', readtimeout, 'STREAMS', stream, '>')) as any;
         if (!result?.length || !result[0][1]) return [];
         const items = result[0][1];
         return items.map((x: any) => {

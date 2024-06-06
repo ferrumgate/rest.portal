@@ -44,7 +44,12 @@ export function activeDirectoryInit(ldap: BaseLdap, url: string) {
             bindDN: ldap.bindDN,
             bindCredentials: ldap.bindPass,
             searchBase: ldap.searchBase,
-            searchFilter: ldap.searchFilter || `(${ldap.usernameField}={{username}})`
+            searchFilter: ldap.searchFilter || `(${ldap.usernameField}={{username}})`,
+            tlsOptions: ldap.tlsCaRoot ?
+                {
+                    ca: Util.splitCertFile(ldap.tlsCaRoot).map(x => Buffer.from(x)),
+                    rejectUnauthorized: ldap.tlsValidateCert
+                } : undefined,
 
         },
         passReqToCallback: true,

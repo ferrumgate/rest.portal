@@ -19,6 +19,7 @@ import dir from 'recursive-readdir';
 import { ZipAFolder } from 'zip-a-folder';
 import { logger } from './common';
 import { TimeZone } from './model/timezone';
+import Dns from 'dns/promises';
 const decompressTargz = require('decompress-targz');
 const decompressUnzip = require('decompress-unzip');
 const mergeFiles = require('merge-files');
@@ -680,10 +681,39 @@ export const Util = {
     },
     sha256(content: string) {
         return createHash('sha256').update(content).digest('base64')
+    },
+    resolveHostname: async (hostname: string) => {
+        if (!hostname) return null;
+        if (isIPv4(hostname) || isIPv6(hostname))
+            return hostname;
+        let records = await Dns.resolve(hostname);
+        return records.length > 0 ? records[0] : null;
+    },
+    splitCertFile(file: string): string[] {
+
+        let finalList: string[] = [];
+        if (!file) return finalList;
+        const lines = file.split('\n')
+        let tmp: string[] = [];
+        let findedStartPoint = false;
+        for (const l of lines) {
+            if (l.startsWith('-----BEGIN CERTIFICATE-----')) {
+                findedStartPoint = true;
+                tmp.push(l);
+            } else
+                if (findedStartPoint && l.startsWith('-----END CERTIFICATE-----')) {
+                    findedStartPoint = false;
+                    tmp.push(l + '\n');
+
+                    finalList.push(tmp.join('\n'));
+                    tmp = [];
+                } else if (findedStartPoint) {
+                    tmp.push(l);
+                }
+        }
+        return finalList
+
     }
-
-
-
 
 
 }

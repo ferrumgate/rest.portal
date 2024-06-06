@@ -33,6 +33,8 @@ import { asyncHandler, asyncHandlerWithArgs, globalErrorHandler, logger } from "
 import { ErrorCodes, RestfullException } from "./restfullException";
 import { AppService, AppSystemService } from "./service/appService";
 import { Util } from "./util";
+import { routerNodeAuthenticated } from "./api/nodeApi";
+import { routerCloudAuthenticated } from "./api/cloudApi";
 
 
 const bodyParser = require('body-parser');
@@ -92,12 +94,12 @@ export class ExpressApp {
                     "font-src": ["'self'", "https:", "data:"],
                     "form-action": ["'self'"],
                     "frame-ancestors": ["'self'"],
-                    "img-src": ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
+                    "img-src": ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com", "https://*.ferrumgate.com", "https://*.ferrumdome.com", "https://*.ferrumdome.net"],
                     "object-src": ["'none'"],
-                    "script-src": ["'self'", "'unsafe-inline'", "https://*.googletagmanager.com"],
+                    "script-src": ["'self'", "'unsafe-inline'", "blob:", "https://*.googletagmanager.com", "https://*.ferrumgate.com", "https://*.ferrumdome.com", "https://*.ferrumdome.net"],
                     "script-src-attr": ["'self'", "'unsafe-inline'"],
                     "style-src": ["'self'", "https:", "'unsafe-inline'"],
-                    "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com"],
+                    "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://*.ferrumgate.com", "https://*.ferrumdome.com", "https://*.ferrumdome.net"],
                     'upgrade-insecure-requests': null
                 }
             },
@@ -537,6 +539,24 @@ export class ExpressApp {
             asyncHandlerWithArgs(checkCaptcha, 'dnsCaptcha', 50),
             routerDnsAuthenticated);
 
+        this.app.use('/api/node',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'node', 1000),
+            asyncHandlerWithArgs(rateLimit, 'nodeHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'nodeDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'nodeCaptcha', 50),
+            routerNodeAuthenticated);
+
+        this.app.use('/api/cloud',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'cloud', 1000),
+            asyncHandlerWithArgs(rateLimit, 'cloudHourly', 1000),
+            asyncHandlerWithArgs(rateLimit, 'cloudDaily', 5000),
+            asyncHandlerWithArgs(checkCaptcha, 'cloudCaptcha', 50),
+            routerCloudAuthenticated);
+
 
         this.app.use('/api/*', function (req: any, res: any) {
             res.status(404).send('not found')
@@ -586,31 +606,7 @@ export class ExpressApp {
 
 
     }
-    splitCertFile(file: string): string[] {
 
-        let finalList: string[] = [];
-        if (!file) return finalList;
-        const lines = file.split('\n')
-        let tmp: string[] = [];
-        let findedStartPoint = false;
-        for (const l of lines) {
-            if (l.startsWith('-----BEGIN CERTIFICATE-----')) {
-                findedStartPoint = true;
-                tmp.push(l);
-            } else
-                if (findedStartPoint && l.startsWith('-----END CERTIFICATE-----')) {
-                    findedStartPoint = false;
-                    tmp.push(l + '\n');
-
-                    finalList.push(tmp.join('\n'));
-                    tmp = [];
-                } else if (findedStartPoint) {
-                    tmp.push(l);
-                }
-        }
-        return finalList
-
-    }
     async start() {
         await this.init();
 
@@ -672,7 +668,7 @@ export class ExpressApp {
 
                     if (fs.existsSync(`${certsfolder}/ca_root.crt`)) {
                         const caroot = fs.readFileSync(`${certsfolder}/ca_root.crt`);
-                        let carootCerts = this.splitCertFile(caroot.toString());
+                        let carootCerts = Util.splitCertFile(caroot.toString());
                         carootCerts.forEach(x => {
                             options.ca.push(Buffer.from(x))
                             logger.info("adding certificate from ca_root.crt")
@@ -682,7 +678,7 @@ export class ExpressApp {
                     }
                     if (fs.existsSync(`${certsfolder}/ca_bundle.crt`)) {
                         const cabundle = fs.readFileSync(`${certsfolder}/ca_bundle.crt`);
-                        let cabundleCerts = this.splitCertFile(cabundle.toString());
+                        let cabundleCerts = Util.splitCertFile(cabundle.toString());
                         cabundleCerts.forEach(x => {
 
                             options.ca.push(Buffer.from(x))
@@ -702,7 +698,7 @@ export class ExpressApp {
                         ca: []
                     }
                     if (web.chainCrt) {
-                        let chainCerts = this.splitCertFile(web.chainCrt || '');
+                        let chainCerts = Util.splitCertFile(web.chainCrt || '');
                         chainCerts.forEach(x => {
                             options.ca.push(x as any)
                             logger.info("adding certificate from chain")
