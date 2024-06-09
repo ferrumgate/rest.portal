@@ -2516,7 +2516,7 @@ export class RedisConfigService extends ConfigService {
     }
     async setHttpToHttpsRedirect(val: boolean) {
         this.isReady();
-        this.config.httpToHttpsRedirect = await this.rGet<boolean>('domain') || false;
+        this.config.httpToHttpsRedirect = await this.rGet<boolean>('httpToHttpsRedirect') || false;
         const ret = await super.setHttpToHttpsRedirect(val);
         const pipeline = await this.redis.multi();
         await this.rSave('httpToHttpsRedirect', ret.before, ret.after, pipeline);
