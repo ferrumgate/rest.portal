@@ -135,7 +135,7 @@ describe('activityApi ', async () => {
         let test = 60000;
         while (test) {
             //check 
-            const items = await es.searchAuditLogs({});
+            const items = await es.searchActivityLogs({});
             if (items.total)
                 break;
             test -= 5000;

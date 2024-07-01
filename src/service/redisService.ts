@@ -536,7 +536,14 @@ export class RedisService {
         } catch (err: any) {
             try {
                 if (err.message == 'TryTimeout') {
+                    console.log(`closing connection status ${this.redis.status}`);
                     this.redis.disconnect(true);
+                    await new Promise((resolve, reject) => {
+                        setTimeout(() => {
+                            resolve('timeout');
+                        }, 5000)
+                    });
+
                 }
             } catch (ignore) {
             }

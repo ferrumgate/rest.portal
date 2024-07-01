@@ -35,6 +35,7 @@ import { AppService, AppSystemService } from "./service/appService";
 import { Util } from "./util";
 import { routerNodeAuthenticated } from "./api/nodeApi";
 import { routerCloudAuthenticated } from "./api/cloudApi";
+import { routerStatus } from "./api/statusApi";
 
 
 const bodyParser = require('body-parser');
@@ -556,6 +557,14 @@ export class ExpressApp {
             asyncHandlerWithArgs(rateLimit, 'cloudDaily', 5000),
             asyncHandlerWithArgs(checkCaptcha, 'cloudCaptcha', 50),
             routerCloudAuthenticated);
+
+        this.app.use('/api/status',
+            asyncHandler(setAppService),
+            asyncHandler(findClientIp),
+            asyncHandlerWithArgs(rateLimit, 'status', 10000),
+            asyncHandlerWithArgs(rateLimit, 'statusHourly', 10000),
+            asyncHandlerWithArgs(rateLimit, 'statusDaily', 100000),
+            routerStatus);
 
 
         this.app.use('/api/*', function (req: any, res: any) {
