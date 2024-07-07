@@ -340,6 +340,8 @@ routerAuth.post('/accesstoken',
             const refreshToken = await oauth2Service.getRefreshToken(refreshTokenStr);
             await redisService.delete(key);
 
+            await sessionService.setExpire(authSession.id, request.timeInMs || 0);
+
             if (request.exchangeKey) {
                 const exKey = Util.decrypt(configService.getEncKey(), request.exchangeKey);
                 const key = `/exchange/id/${exKey}`
@@ -424,7 +426,7 @@ routerAuth.post('/refreshtoken',
             if (authSession.deviceId) {
                 await deviceService.aliveDevicePosture(authSession.deviceId);
             }
-            await sessionService.setExpire(sid);
+            await sessionService.setExpire(sid, request.timeInMs);
             await systemlogService.write({ path: '/system/sessions/alive', type: 'put', val: authSession });
 
             const accessTokenStr = await oauth2Service.generateAccessTokenWithTime({ id: 'ferrum', grants: ['refresh_token'] }, { id: user.id, sid: authSession.id }, 'ferrum', request.timeInMs || 0);

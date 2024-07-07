@@ -2,7 +2,7 @@ import { Country } from "./country";
 
 export interface IpIntelligenceSource {
     id: string;
-    type: 'ipdata.co' | 'ipapi.com' | 'ipify.org' | string;
+    type: 'ipdata.co' | 'ipapi.com' | 'ipify.org' | 'ferrum' | string;
     name: string;
     insertDate: string;
     updateDate: string;
