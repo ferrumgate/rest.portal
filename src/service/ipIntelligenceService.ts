@@ -304,7 +304,6 @@ export class IpIntelligenceService {
 
 }
 
-
 export class IpIntelligenceListService {
     /**
      *
@@ -739,3 +738,4 @@ export class IpIntelligenceListService {
 
 
 }
+

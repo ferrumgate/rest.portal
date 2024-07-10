@@ -27,6 +27,9 @@ import { ConfigService } from "./configService";
 import { RedLockService } from "./redLockService";
 import { SystemLogService } from "./systemLogService";
 import { WatchItem } from "./watchService";
+import { CloudSetting } from "../model/cloudSetting";
+import { isConfigured } from "log4js";
+import { BusinessHelperService } from "./businessHelperService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -382,11 +385,18 @@ export class RedisConfigService extends ConfigService {
                 version = 5;
             }
 
+            if (version < 6) {//if not saved before, first installing system
+                logger.info("config service version upgrade to 6");
+                logger.info("create default values");
+                await this.saveV6();
+                version = 6;
+            }
 
             clearIntervalAsync(this.timerInterval);
             this.timerInterval = null;
             this.isInitCompleted = true;
             await this.init_trymode();
+            await this.init_cloudMode();
             await this.logWatcherStart()
             await this.afterInit();
             this.events.emit('ready');
@@ -398,6 +408,24 @@ export class RedisConfigService extends ConfigService {
         }
     }
     protected async afterInit() {
+
+    }
+
+    protected async init_cloudMode() {
+        await this.getConfig();
+
+        const cloudId = await this.getFerrumCloudId();
+        const cloudToken = await this.getFerrumCloudToken();
+        const cloudUrl = await this.getFerrumCloudUrl();
+        logger.info(`cloud mode:${process.env.FERRUM_CLOUD_ID} && isConfigured:${this.config.isConfigured}`);
+        if (this.config.isConfigured && cloudId) {
+            const cloudFromDb = await this.getCloud();
+            //if reset or not saved before
+            if (cloudFromDb.cloudUrl != cloudUrl || (!cloudFromDb.cloudId && cloudId)) {
+                //save cloud data into database and ip intelligence
+                await BusinessHelperService.updateCloudSetting(this, cloudId, cloudToken, cloudUrl);
+            }
+        }
 
     }
     protected async init_trymode() {
@@ -709,8 +737,16 @@ export class RedisConfigService extends ConfigService {
     async saveV5() {
 
         const pipeline = await this.redis.multi();
-        await this.rSave('version', undefined, 4, pipeline);
-        await this.rSaveArray('nodes', this.config.nodes || [], pipeline);
+        await
+            await this.rSaveArray('nodes', this.config.nodes || [], pipeline);
+        await pipeline.exec();
+    }
+
+    async saveV6() {
+
+        const pipeline = await this.redis.multi();
+        await this.rSave('version', undefined, 6, pipeline);
+        await this.rSave('cloud', undefined, this.config.cloud || {}, pipeline);
         await pipeline.exec();
     }
 
@@ -2125,6 +2161,7 @@ export class RedisConfigService extends ConfigService {
             records: await this.rGetAll('dns/records')
         };
         cfg.nodes = await this.rGetAll('nodes');
+        cfg.cloud = await this.rGet('cloud') || {};
     }
 
     /**
@@ -2183,6 +2220,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSave('brand', undefined, cfg.brand || {}, pipeline);
         await this.rSaveArray('dns/records', cfg.dns.records || [], pipeline);
         await this.rSaveArray('nodes', cfg.nodes || [], pipeline);
+        await this.rSave('cloud', undefined, cfg.cloud || {}, pipeline);
         await pipeline.exec();
         this.config = this.createConfig();
 
@@ -2657,6 +2695,23 @@ export class RedisConfigService extends ConfigService {
 
     }
 
+    /// cloud
+    override async getCloud(): Promise<CloudSetting> {
+        this.isReady();
+        this.config.cloud = await this.rGet<CloudSetting>('cloud') || {};
+        return await super.getCloud();
+    }
+    override async setCloud(cloud: CloudSetting | {}) {
+        this.isReady();
+        this.config.cloud = await this.rGet<CloudSetting>('cloud') || {};
+        const ret = await super.setCloud(cloud);
+        const pipeline = await this.redis.multi();
+        await this.rSave('cloud', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+
 }
 
 class NodeCacheForUs extends NodeCache {
@@ -2717,6 +2772,9 @@ export class RedisCachedConfigService extends RedisConfigService {
                         break;
                     case 'httpToHttpsRedirect':
                         this.nodeCache.del('httpToHttpsRedirect');
+                        break;
+                    case 'cloud':
+                        this.nodeCache.del('cloud');
                         break;
                     //this is possible 
                     /*                     case 'devicePostures':
@@ -2841,6 +2899,22 @@ export class RedisCachedConfigService extends RedisConfigService {
     override async setHttpToHttpsRedirect(val: boolean) {
         const ret = await super.setHttpToHttpsRedirect(val);
         this.nodeCache.set('httpToHttpsRedirect', ret.after);
+        return ret;
+    }
+
+    // cloud 
+
+    override async getCloud(): Promise<CloudSetting> {
+        const val = this.nodeCache.get<CloudSetting>('cloud');
+        if (val) return val;
+        const sup = await super.getCloud();
+        this.nodeCache.set('cloud', sup);
+        return sup;
+    }
+
+    override async setCloud(cloud: CloudSetting) {
+        const ret = await super.setCloud(cloud);
+        this.nodeCache.set('cloud', ret.after);
         return ret;
     }
 

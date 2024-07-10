@@ -25,6 +25,7 @@ import { ErrorCodes, RestfullException } from "../restfullException";
 import { Util } from "../util";
 import { UtilPKI } from "../utilPKI";
 import { HelperService } from "./helperService";
+import { CloudSetting } from "../model/cloudSetting";
 
 
 
@@ -159,6 +160,7 @@ export class ConfigService {
             brand: {},
             dns: { records: [] },
             nodes: [],
+            cloud: {}
 
         }
 
@@ -2460,6 +2462,26 @@ export class ConfigService {
     }
     async getClusterNodePublicKey() {
         return process.env.CLUSTER_NODE_PUBLIC_KEY || '';
+    }
+
+    /// brand
+    async getCloud(): Promise<CloudSetting> {
+        this.isReady(); this.isReadable();
+        return this.clone(this.config.cloud);
+    }
+    async setCloud(cloud: CloudSetting) {
+        this.isReady(); this.isWritable();
+        let cloned = this.clone(cloud);
+        let prev = this.config.cloud;
+        this.config.cloud = {
+            ...cloned,
+            insertDate: cloned.insertDate || new Date().toISOString(),
+            updateDate: new Date().toISOString()
+        }
+        const trc = this.createTrackEvent(prev, this.config.cloud);
+        this.emitEvent({ type: 'put', path: 'cloud', val: trc.after, before: trc.before })
+        await this.saveConfigToFile();
+        return this.createTrackEvent(prev, this.config.cloud);
     }
 
 

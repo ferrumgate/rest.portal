@@ -5,6 +5,7 @@ import { AuthorizationPolicy } from "./authorizationPolicy";
 import { BrandSetting } from "./brandSetting";
 import { Captcha } from "./captcha";
 import { SSLCertificate, SSLCertificateEx } from "./cert";
+import { CloudSetting } from "./cloudSetting";
 import { Dns } from "./dns";
 import { EmailSetting } from "./emailSetting";
 import { ESSetting } from "./esSetting";
@@ -63,7 +64,8 @@ export type RPath =
     'httpToHttpsRedirect' |
     'brand' |
     'dns/records' |
-    'nodes';
+    'nodes' |
+    'cloud';
 
 
 
@@ -146,4 +148,6 @@ export interface Config {
     dns: Dns
     //nodes
     nodes: Node[]
+    //cloud
+    cloud: CloudSetting
 }

@@ -2882,5 +2882,27 @@ describe('redisConfigService', async () => {
 
     });
 
+    it('getCloud/setCloud', async () => {
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.cloud = {};
+        await configService.init();
+        const result = await configService.getCloud();
+        expect(result).exist;
+        expect(Object.keys(result).length).to.equal(0);
+
+        await configService.setCloud({ cloudId: '123' });
+        const result2 = await configService.getCloud();
+        expect(result2).exist;
+        expect(result2.cloudId).to.equal('123');
+
+        await configService.setCloud({ cloudToken: '123' });
+        const result3 = await configService.getCloud();
+        expect(result3).exist;
+        expect(result3.cloudToken).to.equal('123');
+
+
+    });
+
+
 });
 

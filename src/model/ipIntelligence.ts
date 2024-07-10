@@ -107,6 +107,6 @@ export function cloneIpIntelligenceList(obj: IpIntelligenceList): IpIntelligence
 export function cloneIpIntelligenceSource(obj: IpIntelligenceSource): IpIntelligenceSource {
     return {
         id: obj.id, insertDate: obj.insertDate, updateDate: obj.updateDate, name: obj.name, type: obj.type,
-        apiKey: obj.apiKey
+        apiKey: obj.apiKey, url: obj.url
     }
 }
