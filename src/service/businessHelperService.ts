@@ -4,7 +4,8 @@ import { ConfigService } from "./configService";
 export class BusinessHelperService {
     static async updateCloudSetting(configService: ConfigService, cloudId: string, cloudToken: string, cloudUrl: string) {
         await configService.setCloud({
-            cloudId: cloudId, cloudToken: cloudToken,
+            cloudId: cloudId,
+            cloudToken: cloudToken,
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             cloudUrl: cloudUrl

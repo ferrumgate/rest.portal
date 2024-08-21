@@ -30,6 +30,7 @@ import { WatchItem } from "./watchService";
 import { CloudSetting } from "../model/cloudSetting";
 import { isConfigured } from "log4js";
 import { BusinessHelperService } from "./businessHelperService";
+import { ExternalConfig } from "../model/externalConfig";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -747,6 +748,7 @@ export class RedisConfigService extends ConfigService {
         const pipeline = await this.redis.multi();
         await this.rSave('version', undefined, 6, pipeline);
         await this.rSave('cloud', undefined, this.config.cloud || {}, pipeline);
+        await this.rSave('externalConfig', undefined, this.config.externalConfig || {}, pipeline);
         await pipeline.exec();
     }
 
@@ -2162,6 +2164,7 @@ export class RedisConfigService extends ConfigService {
         };
         cfg.nodes = await this.rGetAll('nodes');
         cfg.cloud = await this.rGet('cloud') || {};
+        cfg.externalConfig = await this.rGet('externalConfig') || {};
     }
 
     /**
@@ -2221,6 +2224,7 @@ export class RedisConfigService extends ConfigService {
         await this.rSaveArray('dns/records', cfg.dns.records || [], pipeline);
         await this.rSaveArray('nodes', cfg.nodes || [], pipeline);
         await this.rSave('cloud', undefined, cfg.cloud || {}, pipeline);
+        await this.rSave('externalConfig', undefined, cfg.externalConfig || {}, pipeline);
         await pipeline.exec();
         this.config = this.createConfig();
 
@@ -2707,6 +2711,22 @@ export class RedisConfigService extends ConfigService {
         const ret = await super.setCloud(cloud);
         const pipeline = await this.redis.multi();
         await this.rSave('cloud', ret.before, ret.after, pipeline);
+        await this.saveLastUpdateTime(pipeline);
+        await pipeline.exec();
+        return ret;
+    }
+    //external config
+    override async getExternalConfig(): Promise<ExternalConfig> {
+        this.isReady();
+        this.config.externalConfig = await this.rGet<ExternalConfig>('externalConfig') || {};
+        return await super.getExternalConfig();
+    }
+    override async setExternalConfig(eConfig: ExternalConfig | {}) {
+        this.isReady();
+        this.config.externalConfig = await this.rGet<ExternalConfig>('externalConfig') || {};
+        const ret = await super.setExternalConfig(eConfig);
+        const pipeline = await this.redis.multi();
+        await this.rSave('externalConfig', ret.before, ret.after, pipeline);
         await this.saveLastUpdateTime(pipeline);
         await pipeline.exec();
         return ret;

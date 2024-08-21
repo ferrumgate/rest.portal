@@ -651,85 +651,100 @@ export class ExpressApp {
         this.httpServer = null;
     }
     httpsHash = '';
-    async startHttps() {
+    async startHttps(force = false) {
         const ca = await this.appService.configService.getCASSLCertificate();
         const int = (await this.appService.configService.getInSSLCertificateAll()).filter(x => x.category == 'tls').find(x => x.usages.includes("for web"));
         const web = await this.appService.configService.getWebSSLCertificateSensitive();
-        if (web.publicCrt && web.privateKey) {
-            let hash = Util.sha256(web.publicCrt + web.privateKey);
-            if (hash != this.httpsHash) {//if changed
+        const isWebCertExits = (web.publicCrt && web.privateKey);
+        let hash = '';
+        let isServerClosed = false;
+        const certsfolder = this.appService.getCertsFolder();
+        const privFile = `${certsfolder}/private.key`;
+        const pubFile = `${certsfolder}/public.crt`;
+        let certFileExits = false;
+        if (fs.existsSync(certsfolder) && fs.existsSync(privFile) && fs.existsSync(pubFile)) {
+            certFileExits = true;
+            hash = Util.sha256(fs.readFileSync(pubFile).toString() + fs.readFileSync(privFile).toString());
+            logger.info(`file certs from ${certsfolder} ${privFile} ${pubFile}`)
+            const options: { key: Buffer, cert: Buffer, ca: Buffer[] } = {
+                key: fs.readFileSync(privFile),
+                cert: fs.readFileSync(pubFile),
+                ca: []
+            }
+
+            if (fs.existsSync(`${certsfolder}/ca_root.crt`)) {
+                hash = Util.sha256(hash + fs.readFileSync(`${certsfolder}/ca_root.crt`).toString());
+                logger.info(`file found ca_root.crt from ${certsfolder}`)
+                const caroot = fs.readFileSync(`${certsfolder}/ca_root.crt`);
+                let carootCerts = Util.splitCertFile(caroot.toString());
+                carootCerts.forEach(x => {
+                    options.ca.push(Buffer.from(x))
+                    logger.info("adding certificate from ca_root.crt")
+                    logger.info(`${x}`)
+                });
+
+            }
+            if (fs.existsSync(`${certsfolder}/ca_bundle.crt`)) {
+                hash = Util.sha256(hash + fs.readFileSync(`${certsfolder}/ca_bundle.crt`).toString());
+                logger.info(`file found ca_bundle.crt from ${certsfolder}`)
+                const cabundle = fs.readFileSync(`${certsfolder}/ca_bundle.crt`);
+                let cabundleCerts = Util.splitCertFile(cabundle.toString());
+                cabundleCerts.forEach(x => {
+
+                    options.ca.push(Buffer.from(x))
+                    logger.info("adding certificate from ca_bundle.crt")
+                    logger.info(`${x}`)
+                });
+            }
+            if (hash != this.httpsHash) {
                 if (this.httpsServer)
                     this.httpsServer.close();
                 this.httpsServer = null;
-                //fs.writeFileSync('/tmp/web.cert', web.publicCrt || '');
-                //fs.writeFileSync('/tmp/in.cert', int?.publicCrt || '');
-                //fs.writeFileSync('/tmp/ca.cert', ca.publicCrt || '');
-                const certsfolder = process.env.NODE_ENV == 'development' ? '/tmp/ferrumgate/certs' : '/var/lib/ferrumgate/certs'
-                const privFile = `${certsfolder}/private.key`;
-                const pubFile = `${certsfolder}/public.crt`;
-                fs.mkdirSync(certsfolder, { recursive: true });
-                if (fs.existsSync(certsfolder) && fs.existsSync(privFile) && fs.existsSync(pubFile)) {
-                    const options: { key: Buffer, cert: Buffer, ca: Buffer[] } = {
-                        key: fs.readFileSync(privFile),
-                        cert: fs.readFileSync(pubFile),
-                        ca: []
-                    }
 
-                    if (fs.existsSync(`${certsfolder}/ca_root.crt`)) {
-                        const caroot = fs.readFileSync(`${certsfolder}/ca_root.crt`);
-                        let carootCerts = Util.splitCertFile(caroot.toString());
-                        carootCerts.forEach(x => {
-                            options.ca.push(Buffer.from(x))
-                            logger.info("adding certificate from ca_root.crt")
-                            logger.info(`${x}`)
-                        });
-
-                    }
-                    if (fs.existsSync(`${certsfolder}/ca_bundle.crt`)) {
-                        const cabundle = fs.readFileSync(`${certsfolder}/ca_bundle.crt`);
-                        let cabundleCerts = Util.splitCertFile(cabundle.toString());
-                        cabundleCerts.forEach(x => {
-
-                            options.ca.push(Buffer.from(x))
-                            logger.info("adding certificate from ca_bundle.crt")
-                            logger.info(`${x}`)
-                        });
-                    }
-                    logger.info("https started with custom certificates")
-                    this.httpsServer = https.createServer(options, this.app);
-
-                }
-                else {
-                    logger.info("https started with our certificates")
-                    const options: { key: Buffer | string, cert: Buffer | string, ca: Buffer[] | string[] } = {
-                        key: web.privateKey,
-                        cert: web.publicCrt,
-                        ca: []
-                    }
-                    if (web.chainCrt) {
-                        let chainCerts = Util.splitCertFile(web.chainCrt || '');
-                        chainCerts.forEach(x => {
-                            options.ca.push(x as any)
-                            logger.info("adding certificate from chain")
-                            logger.info(`${x}`)
-                        });
-                    } else {
-                        logger.info("adding certificate from chain")
-                        if (ca.publicCrt)
-                            options.ca.push(ca.publicCrt as any);
-                        if (int?.publicCrt)
-                            options.ca.push(int.publicCrt as any)
-                    }
-
-                    this.httpsServer = https.createServer(options, this.app);
-                }
-
-                this.httpsServer.listen(this.ports, () => {
-                    logger.info('service ssl started on ', this.ports);
-                })
                 this.httpsHash = hash;
+                logger.info("https started with custom certificates")
+                this.httpsServer = https.createServer(options, this.app);
+                isServerClosed = true;
+            }
+
+        }
+        else if ((web.publicCrt && web.privateKey)) {
+            logger.info("https started with our certificates")
+            const options: { key: Buffer | string, cert: Buffer | string, ca: Buffer[] | string[] } = {
+                key: web.privateKey,
+                cert: web.publicCrt,
+                ca: []
+            }
+            if (web.chainCrt) {
+                let chainCerts = Util.splitCertFile(web.chainCrt || '');
+                chainCerts.forEach(x => {
+                    options.ca.push(x as any)
+                    logger.info("adding certificate from chain")
+                    logger.info(`${x}`)
+                });
+            } else {
+                logger.info("adding certificate from chain")
+                if (ca.publicCrt)
+                    options.ca.push(ca.publicCrt as any);
+                if (int?.publicCrt)
+                    options.ca.push(int.publicCrt as any)
+            }
+            hash = Util.sha256(web.publicCrt + web.privateKey);
+            if (hash != this.httpsHash) {
+                if (this.httpsServer)
+                    this.httpsServer.close();
+                this.httpsServer = null;
+
+                this.httpsHash = hash;
+                logger.info("https started with custom certificates")
+                this.httpsServer = https.createServer(options, this.app);
+                isServerClosed = true;
             }
         }
+        if (this.httpsHash && isServerClosed)
+            this.httpsServer.listen(this.ports, () => {
+                logger.info('service ssl started on ', this.ports);
+            })
 
     }
     async reconfigure() {

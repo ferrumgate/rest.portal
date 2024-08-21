@@ -2903,6 +2903,26 @@ describe('redisConfigService', async () => {
 
     });
 
+    it('getExternalConfig/setExternalConfig', async () => {
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.cloud = {};
+        await configService.init();
+        const result = await configService.getExternalConfig();
+        expect(result).exist;
+        expect(Object.keys(result).length).to.equal(0);
+
+        await configService.setExternalConfig({ ids: ['test'] });
+        const result2 = await configService.getExternalConfig();
+        expect(result2).exist;
+        expect(result2.ids?.at(0)).to.equal('test');
+
+        result2.ids?.push('12345');
+        await configService.setExternalConfig(result2);
+        const result3 = await configService.getExternalConfig();
+        expect(result3).exist;
+        expect(result3.ids?.at(1)).to.equal('12345');
+    });
+
 
 });
 

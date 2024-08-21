@@ -9,6 +9,7 @@ import { CloudSetting } from "./cloudSetting";
 import { Dns } from "./dns";
 import { EmailSetting } from "./emailSetting";
 import { ESSetting } from "./esSetting";
+import { ExternalConfig } from "./externalConfig";
 import { FqdnIntelligence } from "./fqdnIntelligence";
 import { Group } from "./group";
 import { IpIntelligence } from "./ipIntelligence";
@@ -65,7 +66,8 @@ export type RPath =
     'brand' |
     'dns/records' |
     'nodes' |
-    'cloud';
+    'cloud' |
+    'externalConfig';
 
 
 
@@ -150,4 +152,6 @@ export interface Config {
     nodes: Node[]
     //cloud
     cloud: CloudSetting
+    // external config ids
+    externalConfig: ExternalConfig;
 }

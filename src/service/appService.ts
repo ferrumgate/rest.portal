@@ -31,6 +31,7 @@ import { TemplateService } from "./templateService";
 import { TunnelService } from "./tunnelService";
 import { TwoFAService } from "./twofaService";
 import { WatchItem } from "./watchService";
+import fs from 'fs';
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
@@ -195,7 +196,7 @@ export class AppService {
         await ExpressApp.do.reconfigure();
 
     }
-
+    certFolderWatcher: fs.FSWatcher | null = null;
     async start() {
 
 
@@ -237,10 +238,20 @@ export class AppService {
         });
         await this.configureES.push('');
 
+        //watch cert folder
+        const certFolder = this.getCertsFolder();
+        this.certFolderWatcher = fs.watch(certFolder, async (eventType, filename) => {
+            logger.info(`${certFolder} event occured type is: ${eventType} filename:${filename}`);
+            setTimeout(async () => {
+                await this.configureHttps.push('certs');
+            }, 1 * 60 * 1000);
+        });
+
 
 
     }
     async stop() {
+        await this.certFolderWatcher?.close();
         await this.configureES.stop();
         await this.configureHttps.stop();
         await this.configurePKI.stop();
@@ -248,6 +259,11 @@ export class AppService {
         await this.systemLogService.stop(true);
         await this.activityService.stop();
         await this.auditService.stop();
+    }
+    public getCertsFolder() {
+        const certsfolder = process.env.NODE_ENV == 'development' ? '/tmp/ferrumgate/certs' : '/var/lib/ferrumdome/certs'
+        fs.mkdirSync(certsfolder, { recursive: true });
+        return certsfolder;
     }
 
 
@@ -271,7 +287,7 @@ export class AppSystemService {
     constructor(app: AppService, scheduledTasks?: ScheduledTasksService
     ) {
         //this.redisSlaveWatcher = redisSlaveWatcher || new RedisWatcherService(process.env.REDIS_SLAVE_HOST || 'localhost:6379', process.env.REDIS_SLAVE_PASS);
-        this.scheduledTasks = scheduledTasks || new ScheduledTasksService();
+        this.scheduledTasks = scheduledTasks || new ScheduledTasksService(app.configService);
         //  this.configPublicListener = configPublic || new ConfigPublicListener(app.configService, this.createRedisSlave(), this.redisSlaveWatcher);
 
 
