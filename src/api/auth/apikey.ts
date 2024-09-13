@@ -4,7 +4,7 @@ import { logger } from '../../common';
 import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restfullException';
 import { AppService } from '../../service/appService';
 import { HelperService } from '../../service/helperService';
-import { attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
+import { attachActivitySession, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
 
 const name = 'headerapikey';
 export function apiKeyInit() {
@@ -17,7 +17,6 @@ export function apiKeyInit() {
             try {
 
                 attachActivitySource(req, name);
-
                 logger.info(`passport local with apikey: ${apikey.substring(0, 10)}`);
                 const appService = req.appService as AppService;
                 const configService = appService.configService;
@@ -45,6 +44,8 @@ export function apiKeyInit() {
                 // TODO we need session
                 if (user)
                     req.currentSession = await sessionService.createFakeSession(user, false, req.clientIp, name);
+
+                attachActivitySession(req, req.currentSession);
 
                 await saveActivity(req, 'login try');
                 return done(null, user);

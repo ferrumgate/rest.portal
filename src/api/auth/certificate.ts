@@ -5,7 +5,7 @@ import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../../restful
 import { AppService } from '../../service/appService';
 import { HelperService } from '../../service/helperService';
 import { UtilPKI } from '../../utilPKI';
-import { attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
+import { attachActivitySession, attachActivitySource, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from './commonAuth';
 
 const name = 'headercert';
 export function certInit() {
@@ -42,13 +42,19 @@ export function certInit() {
                 attachActivityUser(req, user);
                 attachActivityUsername(req, user?.username);
                 HelperService.isValidUser(user);
-
+                // check if certificate exists at user
+                const sensitiveData=await configService.getUserSensitiveData(user?.id||'')
+                if(sensitiveData?.cert?.publicCrt != cert)
+                    throw new RestfullException(401, ErrorCodes.ErrCertificateVerifyFailed, ErrorCodesInternal.ErrCertificateVerifyFailed, 'cert is absent');
                 //set user to request object
                 req.currentUser = user;
 
                 // TODO we need session
                 if (user)
                     req.currentSession = await sessionService.createFakeSession(user, false, req.clientIp, name);
+                
+                attachActivitySession(req, req.currentSession);
+
 
                 await saveActivity(req, 'login try');
                 return done(null, user);

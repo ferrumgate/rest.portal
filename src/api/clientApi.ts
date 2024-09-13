@@ -94,6 +94,10 @@ routerClientTunnelAuthenticated.post('/',
             attachActivitySession(req, session);
 
             const tunnelKey = req.body.tunnelKey || req.query.tunnelKey;
+            // we can use this client to identify the device, and manage dhcp service more effectively
+            // but we can not trust this value, because it can be changed by client
+            // or client version does not send it
+            const clientId = req.body.clientId || req.query.clientId;
             logger.info(`creating tunnel for ${tunnelKey}`);
             attachActivityTunnel(req, { id: tunnelKey } as Tunnel);
 

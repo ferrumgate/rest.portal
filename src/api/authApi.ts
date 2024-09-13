@@ -17,7 +17,7 @@ import { passportAuthenticate, passportAuthenticateFromReqProviderName, passport
 
 
 export const routerAuth = express.Router();
-async function execute2FA(req: any) {
+async function execute2FA(req: any, override2FA=false) {
     const currentUser: User = req.currentUser as User;
     const randomKey = Util.randomNumberString(48);
     const appService = req.appService as AppService;
@@ -25,7 +25,7 @@ async function execute2FA(req: any) {
     const redisService = appService.redisService;
     const twoFAService = appService.twoFAService;
     const sensitiveData = await configService.getUserSensitiveData(currentUser.id);
-    if (currentUser.is2FA && sensitiveData.twoFASecret) {
+    if (!override2FA && currentUser.is2FA && sensitiveData.twoFASecret) {
         const rKey = `/auth/2fa/${randomKey}`;
         await redisService.set(rKey, { userId: currentUser.id, activity: req.activity }, { ttl: 60 * 1000 });
         return { key: randomKey };
@@ -49,7 +49,9 @@ routerAuth.post('/',
 
         const currentUser: User = req.currentUser as User;
         logger.info(`authenticated user: ${currentUser.username}`);
-        const two2FA = await execute2FA(req);
+        const authMethod = req.activity.authSource;
+        //don't activate 2FA for headerapikey and headercert
+        const two2FA = await execute2FA(req, authMethod == 'headerapikey' || authMethod == 'headercert');
         return res.status(200).json({ key: two2FA.key, is2FA: currentUser.is2FA || false });
     })
 );
@@ -291,6 +293,7 @@ routerAuth.post('/accesstoken',
             //tunnel field is the tunnel tunnel key
             const request = req.body as { key: string, exchangeKey?: string, timeInMs?: number };
             if (!request.key) {
+                attachActivity(req, { });// important
                 throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "needs parameters");
             }
             logger.info(`getting access token with key ${request.key}`);
@@ -424,7 +427,7 @@ routerAuth.post('/refreshtoken',
             await sessionService.setSession(sid, { lastSeen: new Date().toISOString() })
             //device posture must alive
             if (authSession.deviceId) {
-                await deviceService.aliveDevicePosture(authSession.deviceId);
+                await deviceService.aliveDevicePosture(authSession.deviceId, request.timeInMs);
             }
             await sessionService.setExpire(sid, request.timeInMs);
             await systemlogService.write({ path: '/system/sessions/alive', type: 'put', val: authSession });

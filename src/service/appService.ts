@@ -25,7 +25,7 @@ import { RedisCachedConfigService } from "./redisConfigService";
 import { RedisService } from "./redisService";
 import { SessionService } from "./sessionService";
 import { SummaryService } from "./summaryService";
-import { ScheduledTasksService } from "./system/sheduledTasksService";
+import { ScheduledTasksService } from "./system/scheduledTasksService";
 import { SystemLogService } from "./systemLogService";
 import { TemplateService } from "./templateService";
 import { TunnelService } from "./tunnelService";
@@ -261,7 +261,7 @@ export class AppService {
         await this.auditService.stop();
     }
     public getCertsFolder() {
-        const certsfolder = process.env.NODE_ENV == 'development' ? '/tmp/ferrumgate/certs' : '/var/lib/ferrumdome/certs'
+        const certsfolder = process.env.NODE_ENV == 'development' ? '/tmp/ferrumgate/certs' : '/var/lib/ferrumgate/certs'
         fs.mkdirSync(certsfolder, { recursive: true });
         return certsfolder;
     }

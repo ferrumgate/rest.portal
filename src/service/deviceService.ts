@@ -29,9 +29,9 @@ export class DeviceService {
         const key = `/device/posture/id/${id}`;
         return await this.redisService.get(key, true) as ClientDevicePosture;
     }
-    async aliveDevicePosture(id: string) {
+    async aliveDevicePosture(id: string, timeInMS?: number) {
         const key = `/device/posture/id/${id}`;
-        await this.redisService.expire(key, 5 * 60 * 1000);
+        await this.redisService.expire(key, timeInMS || 5 * 60 * 1000);
     }
     async convertDevicePostureToDeviceLog(item: ClientDevicePosture, user?: User, network?: Network) {
         let device: DeviceLog = {

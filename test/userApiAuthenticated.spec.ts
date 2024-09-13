@@ -777,6 +777,75 @@ describe('userApiAuthenticated', async () => {
 
     }).timeout(50000);
 
+    it('GET /user/current/sensitiveData will return 200 user has apikey and cert', async () => {
+        //prepare data
+        await appService.configService.init();
+        const user = getSampleUser();
+        user.apiKey = { key: 'akey' };
+        user.cert = {
+            publicCrt: 'adfaf',
+            privateKey: 'asdfafa'
+        } as SSLCertificate;
+
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/api/user/current/sensitiveData`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey.key).to.equal('akey');
+        expect(response.body.cert).exist;
+        expect(response.body.cert.publicCrt).to.equal('adfaf');
+        expect(response.body.cert.privateKey).not.exist;
+
+
+    }).timeout(50000);
+
+    it('GET /user/current/sensitiveData will return 200, user does not has apikey and cert', async () => {
+        //prepare data
+        //user api key is empty and cert is empty
+        const user = getSampleUser();
+        delete user.apiKey;
+        delete user.cert;
+        const session = await sessionService.createSession(user, false, '1.2.3.4', 'local');
+        await appService.configService.saveUser(user);
+        const token = await appService.oauth2Service.generateAccessToken({ id: 'some', grants: [] },
+            { id: user.id, sid: session.id }, 'ferrum')
+
+        let response: any = await new Promise((resolve: any, reject: any) => {
+            chai.request(app)
+                .get(`/api/user/current/sensitiveData`)
+                .set(`Authorization`, `Bearer ${token}`)
+                .end((err, res) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(res);
+                });
+        })
+        expect(response.status).to.equal(200);
+        expect(response.body).exist;
+        expect(response.body.apiKey).exist;
+        console.log(response.body);
+        expect(response.body.apiKey.key).not.equal('akey');
+        expect(response.body.cert).exist;
+        expect(response.body.cert.publicCrt).not.equal('adfaf');
+        expect(response.body.cert.privateKey).not.exist;    
+
+    }).timeout(50000);
+
     it('GET /user/:id/sensitiveData will return 200', async () => {
         //prepare data
         await appService.configService.init();
