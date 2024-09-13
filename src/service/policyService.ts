@@ -406,6 +406,13 @@ export class PolicyService {
         return false;
 
     }
+    async isDevicePostureOsVersionAllowed(clientDp: ClientDevicePosture, dp: DevicePosture) {
+
+        if (!dp.osVersions?.length) return true;
+        if (!clientDp.os?.version) return false;
+        return dp.osVersions.filter(x => x.release).some(x => semvr.satisfies(clientDp.os.version, '>= ' + x.release));
+
+    }
 
 
 
@@ -432,6 +439,10 @@ export class PolicyService {
         for (const dp of filteredDevicePostures) {
             if (dp.os != clientDp.platform) {
                 //follow = { errorNumber: PolicyAuthnErrors.DevicePostureOsTypeNotAllowed, error: ErrorCodesInternal.ErrDevicePostureOsTypeNotAllowed }
+                continue;
+            }
+            if (!await this.isDevicePostureOsVersionAllowed(clientDp, dp)) {
+                follow = { errorNumber: PolicyAuthnErrors.DevicePostureOsTypeNotAllowed, error: ErrorCodesInternal.ErrDevicePostureClientVersionNotAllowed }
                 continue;
             }
             if (!await this.isDevicePostureClientVersionAllowed(clientDp, dp)) {

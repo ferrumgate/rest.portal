@@ -1110,6 +1110,32 @@ describe('policyService ', async () => {
 
     })
 
+    it('isDevicePostureOsVersionAllowed', async () => {
+
+        const redisService = new RedisService();
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const inputService = new InputService();
+        const esService = new ESService(configService, host, user, pass, '1s');
+
+        const ipintel = new IpIntelligenceService(configService, redisService, inputService, esService);
+        await configService.setES({ host: host, user: user, pass: pass })
+        configService.config.authenticationPolicy.rules = [];
+
+        const policy = new PolicyService(configService, ipintel)
+
+        expect(await policy.isDevicePostureOsVersionAllowed({} as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureOsVersionAllowed({ os: { version: '1.2.3' } } as any, {} as any)).to.be.true
+        expect(await policy.isDevicePostureOsVersionAllowed({ os: { version: '1.2.3' } } as any, { osVersions: [] } as any)).to.be.true
+        expect(await policy.isDevicePostureOsVersionAllowed({ os: { version: '1.2.3' } } as any, { osVersions: [{ release: '1.2.3', name: 'darwin' }] } as any)).to.be.true
+        expect(await policy.isDevicePostureOsVersionAllowed({ os: { version: '1.2.3' } } as any, { osVersions: [{ release: '2.2.3', name: 'darwin' }] } as any)).to.be.false
+        expect(await policy.isDevicePostureOsVersionAllowed({ os: { version: '09.2.113' } } as any, { osVersions: [{ release: '2.20.3', name: 'darwin' }] } as any)).to.be.false
+        expect(await policy.isDevicePostureOsVersionAllowed({ os: { version: '1.2.3' } } as any, { osVersions: [{ release: '1.2.4', name: 'darwin' }] } as any)).to.be.false;
+        expect(await policy.isDevicePostureOsVersionAllowed({ os: { version: '1.2.3' } } as any, { osVersions: [{ release: '1.2.4', name: 'darwin' }, { release: '1.2.3', name: 'darwin' }] } as any)).to.be.true;
+
+
+    })
+
+
     it('isDevicePostureClientVersionAllowed', async () => {
 
         const redisService = new RedisService();
@@ -1375,6 +1401,25 @@ describe('policyService ', async () => {
                 } as any
             )
         expect(result.result).to.be.true;
+
+        //os version matches
+        posture1.osVersions = [{ name: 'darwin', release: '1.2.3' }];
+        result =
+            await policy.isDevicePostureAllowed(
+                {
+                    profile: { device: { postures: ['123', '1234'] } }
+                } as any,
+                {} as any,
+                [
+                    posture1
+                ],
+                {
+                    platform: 'win32',
+                    os: { version: '1.2.3' },
+                } as any
+            )
+        expect(result.result).to.be.true;
+        delete posture1.osVersions;//delete again
 
         ////antivirus check
         posture1.antivirusList = [{ name: 'general' }];
