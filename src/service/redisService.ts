@@ -243,7 +243,7 @@ export class RedisService {
 
     constructor(protected host?: string, protected password: string | undefined = undefined, protected type: 'single' | 'cluster' | 'sentinel' = 'single') {
         this.redis = this.createRedisClient(host, password, type);
-
+        this.redis.setMaxListeners(100);
     }
     onEvent(events?: RedisServiceEvents) {
         //events
@@ -536,7 +536,14 @@ export class RedisService {
         } catch (err: any) {
             try {
                 if (err.message == 'TryTimeout') {
+                    console.log(`closing connection status ${this.redis.status}`);
                     this.redis.disconnect(true);
+                    await new Promise((resolve, reject) => {
+                        setTimeout(() => {
+                            resolve('timeout');
+                        }, 5000)
+                    });
+
                 }
             } catch (ignore) {
             }

@@ -2,7 +2,7 @@ import { Country } from "./country";
 
 export interface IpIntelligenceSource {
     id: string;
-    type: 'ipdata.co' | 'ipapi.com' | 'ipify.org' | string;
+    type: 'ipdata.co' | 'ipapi.com' | 'ipify.org' | 'ferrum' | string;
     name: string;
     insertDate: string;
     updateDate: string;
@@ -107,6 +107,6 @@ export function cloneIpIntelligenceList(obj: IpIntelligenceList): IpIntelligence
 export function cloneIpIntelligenceSource(obj: IpIntelligenceSource): IpIntelligenceSource {
     return {
         id: obj.id, insertDate: obj.insertDate, updateDate: obj.updateDate, name: obj.name, type: obj.type,
-        apiKey: obj.apiKey
+        apiKey: obj.apiKey, url: obj.url
     }
 }

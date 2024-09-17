@@ -5,9 +5,11 @@ import { AuthorizationPolicy } from "./authorizationPolicy";
 import { BrandSetting } from "./brandSetting";
 import { Captcha } from "./captcha";
 import { SSLCertificate, SSLCertificateEx } from "./cert";
+import { CloudSetting } from "./cloudSetting";
 import { Dns } from "./dns";
 import { EmailSetting } from "./emailSetting";
 import { ESSetting } from "./esSetting";
+import { ExternalConfig } from "./externalConfig";
 import { FqdnIntelligence } from "./fqdnIntelligence";
 import { Group } from "./group";
 import { IpIntelligence } from "./ipIntelligence";
@@ -63,7 +65,9 @@ export type RPath =
     'httpToHttpsRedirect' |
     'brand' |
     'dns/records' |
-    'nodes';
+    'nodes' |
+    'cloud' |
+    'externalConfig';
 
 
 
@@ -146,4 +150,8 @@ export interface Config {
     dns: Dns
     //nodes
     nodes: Node[]
+    //cloud
+    cloud: CloudSetting
+    // external config ids
+    externalConfig: ExternalConfig;
 }

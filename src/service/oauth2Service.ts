@@ -34,7 +34,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
     /**
      *
      */
-    constructor(private config: ConfigService, private session: SessionService) {
+    constructor(private config: ConfigService, private sessionService: SessionService) {
 
 
     }
@@ -75,7 +75,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
         if (!findUser)
             throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrUserNotFound, 'unauthorized access');
 
-        let findSession = await this.session.getSession(user.sid).catch(err => {
+        let findSession = await this.sessionService.getSession(user.sid).catch(err => {
             logger.fatal(JSON.stringify(err));
             throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodesInternal.ErrSessionNotFound, "internal error");
         })
@@ -128,7 +128,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
         HelperService.isValidUser(user);
 
 
-        let session = await this.session.getSession(decoded.user.sid).catch(err => {
+        let session = await this.sessionService.getSession(decoded.user.sid).catch(err => {
             logger.fatal(JSON.stringify(err));
             throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodes.ErrInternalError, "internal error");
         })
@@ -189,7 +189,7 @@ export class OAuth2Service implements OAuth2Server.RefreshTokenModel {
 
         HelperService.isValidUser(user);
 
-        let session = await this.session.getSession(decoded.user.sid).catch(err => {
+        let session = await this.sessionService.getSession(decoded.user.sid).catch(err => {
             logger.fatal(JSON.stringify(err));
             throw new RestfullException(500, ErrorCodes.ErrInternalError, ErrorCodes.ErrInternalError, "internal error");
         })

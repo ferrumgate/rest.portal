@@ -192,6 +192,38 @@ class IPifyOrg extends IpIntelligenceSourceApi {
 }
 
 
+class FerrumDome extends IpIntelligenceSourceApi {
+    type: string;
+    url: string;
+    constructor(private _url: string, private apiKey: string, type: string) {
+        super();
+        this.type = type;
+        this.url = _url || `https://portal.ferrumdome.com`;
+
+    }
+    override getType(): string {
+        return this.type;
+    }
+    async get(ip: string, timeout = 5000) {
+        let options: AxiosRequestConfig = {
+            timeout: timeout,
+            headers: {
+                DomeApiKey: this.apiKey
+            }
+        };
+
+        const url = `${this.url}/api/cloud/intelligence/ip/${ip}`;
+        const response = await Axios.get(url, options);
+        const data = response.data;
+        return data as IpIntelligenceItem;
+    }
+    override async query(ip: string, timeout: number) {
+        const response = await this.get(ip, timeout);
+        return response;
+    }
+}
+
+
 export class IpIntelligenceService {
     protected api: IpIntelligenceSourceApi | null = null;
     protected apiCount = -1;
@@ -238,6 +270,8 @@ export class IpIntelligenceService {
                 return new IPApiCom(source.apiKey, source.type, { isFreePlan: source.isFreePlan, isSecurityPlan: source.isSecurityPlan });
             case 'ipify.org':
                 return new IPifyOrg(source.apiKey, source.type, { isSecurityPlan: source.isSecurityPlan });
+            case 'ferrum':
+                return new FerrumDome(source.url, source.apiKey, source.type);
             default:
                 throw new Error(`${type} not implemented yet`);
         }
@@ -265,13 +299,10 @@ export class IpIntelligenceService {
             }
             return result;
         }
-        return null;
-
     }
 
 
 }
-
 
 export class IpIntelligenceListService {
     /**
@@ -707,3 +738,4 @@ export class IpIntelligenceListService {
 
 
 }
+

@@ -95,4 +95,6 @@ export class HelperService {
         if (!session)
             throw new RestfullException(401, ErrorCodes.ErrNotFound, ErrorCodesInternal.ErrSessionNotFound, 'no session');
     }
+
+
 } 
