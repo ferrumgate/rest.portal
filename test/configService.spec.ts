@@ -2349,4 +2349,44 @@ describe('configService', async () => {
         expect(result).to.equal(expected);
     });
 
+    it('getCloud/setCloud', async () => {
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const result = await configService.getCloud();
+        expect(result).exist;
+        expect(Object.keys(result).length).to.equal(0);
+
+        await configService.setCloud({ cloudId: '123' });
+        const result2 = await configService.getCloud();
+        expect(result2).exist;
+        expect(result2.cloudId).to.equal('123');
+
+        await configService.setCloud({ cloudToken: '123' });
+        const result3 = await configService.getCloud();
+        expect(result3).exist;
+        expect(result3.cloudToken).to.equal('123');
+
+
+    });
+    it('getExternalConfig/setExternalConfig', async () => {
+        let configService = new ConfigService('AuX165Jjz9VpeOMl3msHbNAncvDYezMg', filename);
+        const result = await configService.getExternalConfig();
+        expect(result).exist;
+        expect(Object.keys(result).length).to.equal(0);
+
+        await configService.setExternalConfig({ ids: ['test'] });
+        const result2 = await configService.getExternalConfig();
+        expect(result2).exist;
+        expect(result2.ids?.at(0)).to.equal('123');
+
+        result2.ids?.push('12345');
+        await configService.setExternalConfig(result2);
+        const result3 = await configService.getExternalConfig();
+        expect(result3).exist;
+        expect(result3.ids?.at(1)).to.equal('12345');
+
+
+    });
+
+
+
 });

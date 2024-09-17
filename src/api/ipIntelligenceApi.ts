@@ -134,7 +134,6 @@ routerIpIntelligenceAuthenticated.post('/source/check',
         const auditService = appService.auditService;
         const ipIntelligence = appService.ipIntelligenceService;
 
-
         await inputService.checkNotEmpty(input.apiKey);
         await ipIntelligence.check(input);
 

@@ -39,7 +39,7 @@ export class SessionService {
         const sidkey = `/session/id/${session.id}`;
         const pipeline = await this.redisService.multi()
         await pipeline.hset(sidkey, session);
-        await this.setExpire(session.id, pipeline);
+        await this.setExpire(session.id, 0, pipeline);
         await pipeline.exec();
         return session;
     }
@@ -89,16 +89,19 @@ export class SessionService {
         const sidkey = `/session/id/${id}`;
         await this.redisService.hset(sidkey, obj);
     }
-    async setExpire(id: string, pipeline?: RedisPipelineService) {
+    async setExpire(id: string, time = 0, pipeline?: RedisPipelineService) {
+        if (time > 24 * 60 * 60 * 1000) {
+            throw new Error('expire time is too long, cannot be long than 24 hours');
+        }
         const sidkey = `/session/id/${id}`;
         const sidtunkey = `/session/tunnel/${id}`;
         if (pipeline) {
-            await pipeline.expire(sidkey, 5 * 60 * 1000);
-            await pipeline.expire(sidtunkey, 5 * 60 * 1000);
+            await pipeline.expire(sidkey, time || 5 * 60 * 1000);
+            await pipeline.expire(sidtunkey, time || 5 * 60 * 1000);
         } else {
 
-            await this.redisService.expire(sidkey, 5 * 60 * 1000);
-            await this.redisService.expire(sidtunkey, 5 * 60 * 1000);
+            await this.redisService.expire(sidkey, time || 5 * 60 * 1000);
+            await this.redisService.expire(sidtunkey, time || 5 * 60 * 1000);
         }
 
     }

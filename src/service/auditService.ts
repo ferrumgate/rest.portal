@@ -34,7 +34,7 @@ export class AuditService {
      */
     public encKey;
     trimInterval: any;
-    removePropertyList = ['id', 'password', 'twoFASecret', 'apiKey', 'privateKey', 'publicCrt'];
+    removePropertyList = ['id', 'password', 'twoFASecret', 'apiKey', 'privateKey', 'publicCrt', 'cloudToken'];
     constructor(private configService: ConfigService, private redisService: RedisService, private esService: ESService) {
         this.encKey = this.configService.getEncKey();
         this.trimInterval = setIntervalAsync(async () => {
