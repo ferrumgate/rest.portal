@@ -1,4 +1,4 @@
-import express from "express";
+import express, { query } from "express";
 import { asyncHandler, asyncHandlerWithArgs, logger } from "../common";
 import { AuthSession } from "../model/authSession";
 import { SSLCertificate, SSLCertificateBase } from "../model/cert";
@@ -15,7 +15,7 @@ import { UtilPKI } from "../utilPKI";
 import { attachActivity, attachActivitySession, attachActivityUser, attachActivityUsername, saveActivity, saveActivityError } from "./auth/commonAuth";
 import { passportAuthenticate, passportInit } from "./auth/passportInit";
 import { authorizeAsAdmin, authorizeAsAdminOrDevOps } from "./commonApi";
-
+import { AuditService } from "../service/auditService";
 
 
 
@@ -281,7 +281,6 @@ routerUserAuthenticated.post('/current/device/posture',
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
     asyncHandler(async (req: any, res: any, next: any) => {
 
-
         logger.info(`save current user device posture`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
@@ -543,7 +542,30 @@ routerUserAuthenticated.put('/current/pass',
     }))
 
 
+routerUserAuthenticated.get('/current/sensitiveData',
+    asyncHandler(passportInit),
+    asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
+    asyncHandler(async (req: any, res: any, next: any) => {
+        const user = req.currentUser as User;
+        const currentSession = req.currentSession as AuthSession;
+        logger.info(`getting user sensitive data`);
+        const appService = req.appService as AppService;
+        const configService = appService.configService;
+        const auditService = appService.auditService;
+        let retData = await getSensitiveData(configService, user.id, true, true);
+        if (!retData.cert?.publicCrt || !retData.apiKey?.key) {
+            let data: InputChangeApiKeyAndCert = {
+                apiKey: { key: retData.apiKey?.key || '' },
+                cert: { publicCrt: retData.cert?.publicCrt, privateKey: retData.cert?.privateKey } as any
+            };
 
+            await changeApiKeyandCert(user, configService, user.id, data, auditService, currentSession);
+
+        }
+        retData = await getSensitiveData(configService, user.id, true, true);
+        return res.status(200).json({ cert: retData.cert, apiKey: retData.apiKey });
+
+    }))
 
 
 
@@ -956,6 +978,73 @@ routerUserAuthenticated.get('/:id/sensitiveData',
         return res.status(200).json(retData);
 
     }))
+
+interface InputChangeApiKeyAndCert {
+    apiKey?: { key: string },
+    cert?: SSLCertificate
+}
+
+async function changeApiKeyandCert(currentUser: User, configService: ConfigService,
+    id: string, input: InputChangeApiKeyAndCert,
+    auditService: AuditService, currentSession: AuthSession) {
+    const user = await configService.getUserById(id);
+    if (!user)
+        throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNotFound, "not found");
+    let before = { username: currentUser.username } as any;
+    let after = { username: currentUser.username } as any;
+    const dataBefore = await configService.getUserSensitiveData(id);
+    let changeApiKey = false;
+    if (input.apiKey) {//change apikey
+        changeApiKey = true;
+        //for audit log
+
+
+        const apiKeyNew = dataBefore.apiKey ? {
+            ...dataBefore.apiKey
+        } : {};
+        apiKeyNew.key = `${id}` + Util.randomNumberString(64);
+        user.apiKey = apiKeyNew;
+
+        //for audit log
+        before.apikey = dataBefore.apiKey?.key ? "a key" : null;
+        after.apikey = "new key";
+
+
+    }
+
+    let changeCert = false;
+    if (input.cert) {//change cert
+        changeCert = true;
+
+
+        const certNew: SSLCertificateBase = dataBefore.cert ? {
+            ...dataBefore.cert,
+            category: 'auth'
+        } : { category: 'auth' };
+        const parentId = input.cert?.parentId || dataBefore.cert?.parentId || (await configService.getInSSLCertificateAllSensitive()).filter(x => x.category == 'auth').at(0)?.id || '';
+        const inCert = await configService.getInSSLCertificateSensitive(parentId);
+        if (!inCert || !inCert.isEnabled)
+            throw new RestfullException(400, ErrorCodes.ErrCertificateIsNotValid, ErrorCodes.ErrCertificateIsNotValid, "cert not found or is not enabled");
+        //1 year certificate
+        const { publicCrt, privateKey } = await UtilPKI.createCertSigned(user.id, 'ferrumgate', 3650, false, [], inCert.publicCrt, inCert.privateKey);
+        certNew.parentId = parentId;
+        certNew.publicCrt = publicCrt;
+        certNew.privateKey = privateKey;
+        user.cert = certNew;
+
+        //for audit log, dont write publicCrt, it is autmatically deleting
+        before.publicCert = dataBefore.cert?.publicCrt ? "a certificate" : null;
+        after.publicCert = "new certificate";
+
+    }
+
+    if (changeApiKey || changeCert) {
+        await configService.saveUser(user);
+        await auditService.logSensitiveData(currentSession, currentUser, before, after);
+    }
+    return { changeApiKey, changeCert };
+
+}
 routerUserAuthenticated.put('/:id/sensitiveData',
     asyncHandler(passportInit),
     asyncHandlerWithArgs(passportAuthenticate, ['jwt', 'headerapikey']),
@@ -966,69 +1055,13 @@ routerUserAuthenticated.put('/:id/sensitiveData',
 
         const currentUser = req.currentUser as User;
         const currentSession = req.currentSession as AuthSession;
-        const input = req.body as { apiKey?: { key: string }, cert?: SSLCertificate }
+        const input = req.body as InputChangeApiKeyAndCert;
 
         logger.info(`updating user sensitive data`);
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const auditService = appService.auditService;
-        const user = await configService.getUserById(id);
-        if (!user)
-            throw new RestfullException(401, ErrorCodes.ErrNotAuthorized, ErrorCodesInternal.ErrNotFound, "not found");
-        let before = { username: currentUser.username } as any;
-        let after = { username: currentUser.username } as any;
-
-        const dataBefore = await configService.getUserSensitiveData(id);
-
-        let changeApiKey = false;
-        if (input.apiKey) {//change apikey
-            changeApiKey = true;
-            //for audit log
-
-
-
-            const apiKeyNew = dataBefore.apiKey ? {
-                ...dataBefore.apiKey
-            } : {};
-            apiKeyNew.key = `${id}` + Util.randomNumberString(64);
-            user.apiKey = apiKeyNew;
-
-            //for audit log
-            before.apikey = dataBefore.apiKey?.key ? "a key" : null;
-            after.apikey = "new key";
-
-
-        }
-
-        let changeCert = false;
-        if (input.cert) {//change cert
-            changeCert = true;
-
-
-            const certNew: SSLCertificateBase = dataBefore.cert ? {
-                ...dataBefore.cert
-            } : { category: 'auth' };
-            const parentId = input.cert.parentId || dataBefore.cert?.parentId || '';
-            const inCert = await configService.getInSSLCertificateSensitive(parentId);
-            if (!inCert || !inCert.isEnabled)
-                throw new RestfullException(400, ErrorCodes.ErrCertificateIsNotValid, ErrorCodes.ErrCertificateIsNotValid, "cert not found or is not enabled");
-            const { publicCrt, privateKey } = await UtilPKI.createCertSigned(user.id, 'ferrumgate', 3650, false, [], inCert.publicCrt, inCert.privateKey);
-            certNew.parentId = parentId;
-            certNew.publicCrt = publicCrt;
-            certNew.privateKey = privateKey;
-            user.cert = certNew;
-
-            //for audit log, dont write publicCrt, it is autmatically deleting
-            before.publicCert = dataBefore.cert?.publicCrt ? "a certificate" : null;
-            after.publicCert = "new certificate";
-
-        }
-
-        if (changeApiKey || changeCert) {
-            await configService.saveUser(user);
-            await auditService.logSensitiveData(currentSession, currentUser, before, after);
-        }
-
+        const { changeApiKey, changeCert } = await changeApiKeyandCert(currentUser, configService, id, input, auditService, currentSession);
 
         const retData = await getSensitiveData(configService, id, changeApiKey, changeCert);
         return res.status(200).json(retData);
