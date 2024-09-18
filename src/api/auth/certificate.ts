@@ -27,14 +27,13 @@ export function certInit() {
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "bad argument");
                 const cert = Buffer.from(certb64, 'base64').toString();
 
-                const isValidCert = await pkiService.authVerify(cert);
-                if (!isValidCert) {
+                const isValidCertChecking = await pkiService.authVerify(cert);
+                if (!isValidCertChecking.result) {
                     throw new RestfullException(401, ErrorCodes.ErrCertificateVerifyFailed, ErrorCodesInternal.ErrCertificateVerifyFailed, 'cert is not valid');
                 }
                 const crt = (await UtilPKI.parseCertificate(cert))[0];
                 const subject = await UtilPKI.parseSubject(crt);
                 const userId = subject['CN'];
-
                 //const user = await configService.getUserByApiKey(apikey);
                 const user = await configService.getUserById(userId);
 
@@ -42,6 +41,11 @@ export function certInit() {
                 attachActivityUser(req, user);
                 attachActivityUsername(req, user?.username);
                 HelperService.isValidUser(user);
+                const sensitiveData = await configService.getUserSensitiveData(userId);
+                if (sensitiveData?.cert?.publicCrt != cert) {
+                    throw new RestfullException(401, ErrorCodes.ErrCertificateVerifyFailed, ErrorCodesInternal.ErrCertificateVerifyFailed, 'cert is not valid');
+                }
+
 
                 //set user to request object
                 req.currentUser = user;

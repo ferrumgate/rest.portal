@@ -17,11 +17,13 @@ export class PKIService {
     }
 
     async reload() {
+        logger.info('pki service reloaded');
         this.caCerts = []
         this.inAuthCerts = [];
         const ca = await this.configService.getCASSLCertificateSensitive();
         if (ca.publicCrt) {
             try {
+                logger.info('loading ca cert');
                 const buffer = UtilPKI.fromPEM(ca.publicCrt);
                 const certificate = pkijs.Certificate.fromBER(buffer);
                 this.caCerts.push(certificate);
@@ -31,6 +33,7 @@ export class PKIService {
         for (const cert of inCerts) {
             if (cert.category == 'auth' && cert.isEnabled && cert.publicCrt) {
                 try {
+                    logger.info('loading auth cert');
                     const buffer = UtilPKI.fromPEM(cert.publicCrt);
                     const certificate = pkijs.Certificate.fromBER(buffer);
                     this.inAuthCerts.push(certificate);

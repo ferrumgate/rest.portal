@@ -181,7 +181,7 @@ export class AppService {
     }
     configurePKI: EventBufferedExecutor;
     public async reconfigurePKI() {
-        //TODO
+        this.pkiService.reload();
 
     }
 
@@ -261,7 +261,7 @@ export class AppService {
         await this.auditService.stop();
     }
     public getCertsFolder() {
-        const certsfolder = process.env.NODE_ENV == 'development' ? '/tmp/ferrumgate/certs' : '/var/lib/ferrumdome/certs'
+        const certsfolder = process.env.NODE_ENV == 'development' ? '/tmp/ferrumgate/certs' : '/var/lib/ferrumgate/certs'
         fs.mkdirSync(certsfolder, { recursive: true });
         return certsfolder;
     }

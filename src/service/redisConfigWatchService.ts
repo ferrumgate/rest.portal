@@ -268,7 +268,7 @@ export class RedisConfigWatchService extends ConfigService {
                             await this.processArray(this.config.fqdnIntelligence.lists, path, item, val.id);
                             break;
                         case 'httpToHttpsRedirect':
-                            this.config.httpToHttpsRedirect = await this.redisConfig.rGet('httpToHttpsRedirect') || false
+                            this.config.httpToHttpsRedirect = await this.redisConfig.rGet(path) || false
                             break;
                         case 'brand':
                             this.config.brand = await this.redisConfig.rGet(path) || {};
@@ -281,6 +281,9 @@ export class RedisConfigWatchService extends ConfigService {
                             break;
                         case 'cloud':
                             this.config.cloud = await this.redisConfig.rGet(path) || {};
+                            break;
+                        case 'externalConfig':
+                            this.config.externalConfig = await this.redisConfig.rGet(path) || {};
                             break;
                         default:
                             logger.warn(`not implemented path ${item.path}`);
