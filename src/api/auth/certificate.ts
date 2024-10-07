@@ -23,12 +23,15 @@ export function certInit() {
                 const sessionService = appService.sessionService;
                 const pkiService = appService.pkiService;
 
-                if (!certb64)
+                if (!certb64) {
+                    logger.warn(`request input cert is empty`);
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "bad argument");
+                }
                 const cert = Buffer.from(certb64, 'base64').toString();
 
                 const isValidCertChecking = await pkiService.authVerify(cert);
                 if (!isValidCertChecking.result) {
+                    logger.warn(`cert verification chain failed`);
                     throw new RestfullException(401, ErrorCodes.ErrCertificateVerifyFailed, ErrorCodesInternal.ErrCertificateVerifyFailed, 'cert is not valid');
                 }
                 const crt = (await UtilPKI.parseCertificate(cert))[0];
@@ -43,6 +46,7 @@ export function certInit() {
                 HelperService.isValidUser(user);
                 const sensitiveData = await configService.getUserSensitiveData(userId);
                 if (sensitiveData?.cert?.publicCrt != cert) {
+                    logger.warn(`user ${user?.name} cert is not same as input`);
                     throw new RestfullException(401, ErrorCodes.ErrCertificateVerifyFailed, ErrorCodesInternal.ErrCertificateVerifyFailed, 'cert is not valid');
                 }
 

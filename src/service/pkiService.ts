@@ -33,7 +33,7 @@ export class PKIService {
         for (const cert of inCerts) {
             if (cert.category == 'auth' && cert.isEnabled && cert.publicCrt) {
                 try {
-                    logger.info('loading auth cert');
+                    logger.info('loading auth cert ' + cert.name);
                     const buffer = UtilPKI.fromPEM(cert.publicCrt);
                     const certificate = pkijs.Certificate.fromBER(buffer);
                     this.inAuthCerts.push(certificate);
@@ -45,6 +45,7 @@ export class PKIService {
     }
 
     async authVerify(cert: string) {
+        logger.info(`cert authVerify with in AuthCount: ${this.inAuthCerts.length} CaAuthCount: ${this.caCerts.length}`);
         return await UtilPKI.verifyCertificate(cert, this.inAuthCerts, this.caCerts, [])
     }
 

@@ -552,6 +552,7 @@ routerUserAuthenticated.get('/current/sensitiveData',
         const appService = req.appService as AppService;
         const configService = appService.configService;
         const auditService = appService.auditService;
+        const pkiService = appService.pkiService;
         let retData = await getSensitiveData(configService, user.id, true, true);
         if (!retData.cert?.publicCrt || !retData.apiKey?.key) {
             let data: InputChangeApiKeyAndCert = {
@@ -563,6 +564,12 @@ routerUserAuthenticated.get('/current/sensitiveData',
 
         }
         retData = await getSensitiveData(configService, user.id, true, true);
+        if (retData.cert?.publicCrt) {
+            const result = await pkiService.authVerify(retData.cert?.publicCrt);
+            if (!result.result) {
+                logger.fatal(`user sensitive data cert could not validated ${result.result}`);
+            }
+        }
         return res.status(200).json({ cert: retData.cert, apiKey: retData.apiKey });
 
     }))
@@ -1026,7 +1033,8 @@ async function changeApiKeyandCert(currentUser: User, configService: ConfigServi
         if (!inCert || !inCert.isEnabled)
             throw new RestfullException(400, ErrorCodes.ErrCertificateIsNotValid, ErrorCodes.ErrCertificateIsNotValid, "cert not found or is not enabled");
         //1 year certificate
-        const { publicCrt, privateKey } = await UtilPKI.createCertSigned(user.id, 'ferrumgate', 3650, false, [], inCert.publicCrt, inCert.privateKey);
+        logger.info(`creating new certificate for user ${user.username} with parent cert ${inCert.name}`);
+        const { publicCrt, privateKey } = await UtilPKI.createCertSigned(user.id, 'ferrumgate', 365, false, [], inCert.publicCrt, inCert.privateKey);
         certNew.parentId = parentId;
         certNew.publicCrt = publicCrt;
         certNew.privateKey = privateKey;

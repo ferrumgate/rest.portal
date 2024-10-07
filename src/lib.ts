@@ -27,7 +27,7 @@ export { LetsEncryptService } from './service/letsEncryptService';
 export { PingService } from './service/pingService';
 export { PolicyService } from './service/policyService';
 export { RedLockService } from './service/redLockService';
-export { RedisCachedConfigService, RedisConfigService } from './service/redisConfigService';
+export { RedisCachedConfigService, RedisConfigService, RedisConfigServiceConfigured } from './service/redisConfigService';
 export { RedisConfigWatchCachedService } from './service/redisConfigWatchCachedService';
 export { RedisConfigWatchService } from './service/redisConfigWatchService';
 export { RedisPipelineService, RedisService, RedisServiceManuel } from './service/redisService';

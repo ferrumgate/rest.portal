@@ -11,7 +11,7 @@ import { Group } from '../src/model/group';
 import { Gateway, Network } from '../src/model/network';
 import { Service } from '../src/model/service';
 import { User } from '../src/model/user';
-import { RedisConfigService } from '../src/service/redisConfigService';
+import { RedisConfigService, RedisConfigServiceConfigured } from '../src/service/redisConfigService';
 import { RedisService } from '../src/service/redisService';
 import { SystemLogService } from '../src/service/systemLogService';
 import { WatchItem } from '../src/service/watchService';
@@ -2922,7 +2922,49 @@ describe('redisConfigService', async () => {
         expect(result3).exist;
         expect(result3.ids?.at(1)).to.equal('12345');
     });
+});
 
 
+
+describe('RedisConfigServiceConfigured', async () => {
+    const redis = new RedisService();
+    const redisStream = new RedisService();
+    const filename = `/tmp/${Util.randomNumberString()}config.yaml`;
+    const encKey = 'AuX165Jjz9VpeOMl3msHbNAncvDYezMg'
+
+    const systemLogService = new SystemLogService(redis, redisStream, encKey, 'test');
+
+    beforeEach(async () => {
+        await redis.flushAll();
+    })
+
+    it('isConfigured returns false', async () => {
+        let configService = new RedisConfigServiceConfigured(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        const result = await configService.getIsConfigured();
+        expect(result).to.be.equal(0);
+    });
+
+    it('isConfigured to be true', async () => {
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.cloud = {};
+        await configService.init();
+        await configService.setIsConfigured(1);
+        let configServiceConfigured = new RedisConfigServiceConfigured(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        await configServiceConfigured.init();
+        const result = await configService.getIsConfigured();
+        expect(result).to.be.equal(1);
+    });
+
+    it('isConfigured to be true after start', async () => {
+        let configService = new RedisConfigService(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        configService.config.cloud = {};
+        await configService.init();
+        await configService.setIsConfigured(1);
+        let configServiceConfigured = new RedisConfigServiceConfigured(redis, redisStream, systemLogService, encKey, 'redisConfig', filename);
+        await configServiceConfigured.start();
+        await Util.sleep(2000);
+        const result = await configService.getIsConfigured();
+        expect(result).to.be.equal(1);
+    });
 });
 

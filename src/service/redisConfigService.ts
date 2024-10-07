@@ -350,6 +350,7 @@ export class RedisConfigService extends ConfigService {
             const versionExits = await this.rExists('version');
             if (versionExits)
                 version = await this.rGet<number>('version') || 0;
+            logger.info("current db version is " + version);
 
             if (version < 1) {//if not saved before, first installing system
                 logger.info("config service not saved before");
@@ -1024,7 +1025,7 @@ export class RedisConfigService extends ConfigService {
         const ret = await super.changeAdminUser(email, password);
         if (!ret?.after) return;
         if (ret?.before)
-            await this.deleteUserIndexes(ret?.before);
+            await this.deleteUserIndexes(ret?.before, pipeline);
         await this.rSave('users', ret?.before, ret?.after, pipeline);
         await this.saveUserIndexes(ret.after, pipeline);
         await this.saveLastUpdateTime(pipeline);
@@ -2938,4 +2939,51 @@ export class RedisCachedConfigService extends RedisConfigService {
         return ret;
     }
 
+}
+
+/**
+ * Redis config service that is already configured
+ */
+export class RedisConfigServiceConfigured extends RedisConfigService {
+    override async start(): Promise<void> {
+        try {
+
+            this.timerInterval = setIntervalAsync(async () => {
+                await this.init();
+            }, 1000)
+
+
+        } catch (err) {
+            logger.error(err);
+        }
+    }
+    override async stop() {
+        if (this.timerInterval)
+            clearIntervalAsync(this.timerInterval);
+        this.timerInterval = null;
+    }
+    override async init(): Promise<void> {
+        try {
+            logger.info("checking if system is configured");
+            if (await this.getIsConfigured()) {
+                logger.info("system is configured");
+                if (this.timerInterval)
+                    clearIntervalAsync(this.timerInterval);
+            }
+        } catch (err: any) {
+            logger.error(err);
+        }
+    }
+    async getIsConfigured(): Promise<number> {
+        if (this.config.isConfigured)
+            return this.config.isConfigured;
+        this.config.isConfigured = await this.rGet('isConfigured') || 0;
+        return this.config.isConfigured;
+    }
+
+    override isReady(): void {
+        if (!this.config.isConfigured) {
+            throw new RestfullException(412, ErrorCodes.ErrSystemIsNotReady, ErrorCodes.ErrSystemIsNotReady, 'system is not ready');
+        }
+    }
 }
