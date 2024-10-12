@@ -118,7 +118,7 @@ export class AppService {
         this.oauth2Service = oauth2 || new OAuth2Service(this.configService, this.sessionService);
         this.dhcpService = dhcp || new DhcpService(this.configService, this.redisService);
         this.tunnelService = tunnel || new TunnelService(this.configService, this.redisService, this.dhcpService);
-        this.esService = es || new ESService(this.configService);
+        this.esService = es || ESService.create(this.configService);
         this.esIntelService = esIntel || AppService.createESIntelService(this.configService);
         this.activityService = activity || new ActivityService(this.redisLocalService, this.esService);
         this.auditService = audit || new AuditService(this.configService, this.redisLocalService, this.esService);
@@ -162,7 +162,7 @@ export class AppService {
         return new RedisService(process.env.REDIS_INTEL_HOST || "localhost:6379", process.env.REDIS_INTEL_PASS);
     }
     static createESIntelService(configService: ConfigService) {
-        return new ESService(configService, process.env.ES_INTEL_HOST || 'https://localhost:9200', process.env.ES_INTEL_USER, process.env.ES_INTEL_PASS);
+        return ESService.create(configService, process.env.ES_INTEL_HOST || 'https://localhost:9200', process.env.ES_INTEL_USER, process.env.ES_INTEL_PASS);
     }
     configureES: EventBufferedExecutor;
     public async reconfigureES() {

@@ -263,6 +263,13 @@ function getEmailSettingFrom(input: EmailSetting): EmailSetting {
         accessKey: input.accessKey,
         secretKey: input.secretKey
     }
+    if (input.type == 'ferrum') return {
+        type: 'ferrum',
+        user: input.user,
+        fromname: input.user,
+        pass: input.pass,
+        url: input.url
+    }
     throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "no way to convert email settings")
 }
 routerConfigAuthenticated.put('/email',
@@ -452,7 +459,7 @@ routerConfigAuthenticated.post('/es/check',
         const auditService = appService.auditService;
         let errMsg = '';
         try {
-            const es = new ESService(configService, input.host, input.user, input.pass);
+            const es = ESService.create(configService, input.host, input.user, input.pass);
             const indexes = await es.getAllIndexes();
         } catch (err: any) {
             logger.error(err);

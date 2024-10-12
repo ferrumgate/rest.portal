@@ -713,6 +713,13 @@ export const Util = {
         }
         return finalList
 
+    },
+    extractDomainFrom(url: string) {
+        const regex = /(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/?\n]+)/g;
+        const match = regex.exec(url);
+        let domain = match ? match[1] : null;
+        if (!domain) return null;
+        return domain.split('.').splice(-2).join('.');
     }
 
 

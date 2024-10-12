@@ -178,11 +178,9 @@ export class TemplateService {
                                   <tr>
                                     <td style="padding-right: 0px;padding-left: 0px;" align="center">
   
-                                      <img align="center" border="0"
-                                        src="${logo}"
-                                        alt="Logo" title="Logo"
-                                        style="outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;clear: both;display: inline-block !important;border: none;height: auto;float: none;width: 22%;max-width: 138.6px;"
-                                        width="138.6" class="v-src-width v-src-max-width" />
+                                     <div style="height:60px">
+
+                                    </div>
   
                                     </td>
                                   </tr>
@@ -542,11 +540,9 @@ export class TemplateService {
                                   <tr>
                                     <td style="padding-right: 0px;padding-left: 0px;" align="center">
   
-                                      <img align="center" border="0"
-                                        src="${logo}"
-                                        alt="Logo" title="Logo"
-                                        style="outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;clear: both;display: inline-block !important;border: none;height: auto;float: none;width: 22%;max-width: 138.6px;"
-                                        width="138.6" class="v-src-width v-src-max-width" />
+                                       <div style="height:60px">
+
+                                    </div>
   
                                     </td>
                                   </tr>
@@ -908,11 +904,9 @@ export class TemplateService {
                                   <tr>
                                     <td style="padding-right: 0px;padding-left: 0px;" align="center">
   
-                                      <img align="center" border="0"
-                                        src="${logo}"
-                                        alt="Logo" title="Logo"
-                                        style="outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;clear: both;display: inline-block !important;border: none;height: auto;float: none;width: 22%;max-width: 138.6px;"
-                                        width="138.6" class="v-src-width v-src-max-width" />
+                                      <div style="height:60px">
+
+                                    </div>
   
                                     </td>
                                   </tr>

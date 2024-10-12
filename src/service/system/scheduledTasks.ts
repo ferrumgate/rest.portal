@@ -4,6 +4,7 @@ import { logger } from '../../common';
 import fs from 'fs';
 import { FerrumCloudConfig } from '../../model/externalConfig';
 import { ConfigService } from '../configService';
+import { Util } from '../../util';
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 export interface ScheduledTask {
@@ -98,7 +99,10 @@ export class ImportExternalConfigTask implements ScheduledTask {
                     }
                     const cloudConfigAsJsonString = Buffer.from(cloudConfigAsBase64String, 'base64').toString('utf8');
                     const cloudConfig: FerrumCloudConfig = JSON.parse(cloudConfigAsJsonString);
+                    const url = await this.configService.getUrl();
+                    const domain = url.split('//')[1].split('/')[0];//find domain
                     const externalConfig = await this.configService.getExternalConfig();
+                    //update captcha data from external config overriding
                     if (cloudConfig.captcha && cloudConfig.captcha.externalId && !externalConfig.ids?.includes(cloudConfig.captcha?.externalId)) {
                         logger.info(`found captcha config`);
                         await this.configService.setCaptcha({ client: cloudConfig.captcha.client, server: cloudConfig.captcha.server });
@@ -106,7 +110,35 @@ export class ImportExternalConfigTask implements ScheduledTask {
                             externalConfig.ids = [];
                         externalConfig.ids.push(cloudConfig.captcha.externalId);
                         await this.configService.setExternalConfig(externalConfig);
+                    }
+                    //update ip intelligence and email config from external config overriding
+                    if (cloudConfig.cloud && cloudConfig.cloud.externalId && !externalConfig.ids?.includes(cloudConfig.cloud?.externalId)) {
+                        logger.info(`found cloud config`);
 
+                        await this.configService.setEmailSetting({
+                            type: 'ferrum',
+                            fromname: `no-reply@${domain}`,
+                            user: cloudConfig.cloud.cloudId || '',
+                            pass: cloudConfig.cloud.cloudToken || '',
+                            url: cloudConfig.cloud.cloudUrl,
+                        });
+
+                        await this.configService.saveIpIntelligenceSource(
+                            {
+                                id: Util.randomNumberString(16),
+                                type: 'ferrum',
+                                name: 'ferrum',
+                                url: cloudConfig.cloud.cloudUrl,
+                                apiKey: (cloudConfig.cloud.cloudId || '') + (cloudConfig.cloud.cloudToken || ''),
+                                insertDate: new Date().toISOString(),
+                                updateDate: new Date().toISOString(),
+                            }
+                        )
+
+                        if (!externalConfig.ids)
+                            externalConfig.ids = [];
+                        externalConfig.ids.push(cloudConfig.cloud.externalId);
+                        await this.configService.setExternalConfig(externalConfig);
                     }
                     this.oldTime = stat.mtime;
                     return true;

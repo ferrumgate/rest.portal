@@ -299,6 +299,7 @@ export class IpIntelligenceService {
             }
             return result;
         }
+        return null;
     }
 
 

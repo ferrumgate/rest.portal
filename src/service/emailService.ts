@@ -6,8 +6,9 @@ import { ErrorCodes, ErrorCodesInternal, RestfullException } from '../restfullEx
 let aws = require("@aws-sdk/client-ses");
 let { defaultProvider } = require("@aws-sdk/credential-provider-node");
 
-
 import { ConfigService } from "./configService";
+import Axios, { AxiosRequestConfig } from "axios";
+import { Util } from '../util';
 
 export interface Attachment {
     filename: string;
@@ -157,6 +158,41 @@ class AWSAccount extends EmailSender {
 
 }
 
+class FerrumDome extends EmailSender {
+    constructor(private name: string, private domain: string,
+        private user: string, private pass: string, private url: string) {
+        super();
+        this.transporter = {
+            sendMail: (mailOptions: any, callback: any) => {
+                let options: AxiosRequestConfig = {
+                    timeout: 5000,
+                    headers: {
+                        DomeApiKey: this.user + this.pass
+                    }
+                };
+                const url = `${this.url}/api/cloud/email`;
+                logger.info(`sending email over ${url}`);
+                Axios.post(url, {
+                    from: `no-reply@${domain}`,
+                    to: mailOptions.to,
+                    cc: mailOptions.cc,
+                    subject: mailOptions.subject,
+                    text: mailOptions.text,
+                    html: mailOptions.html,
+                    attachments: mailOptions.attachments ? mailOptions.attachments.map((x: any) => { return { filename: x.filename, content: x.content.toString('base64') } }) : undefined
+                }, options)
+                    .then((res) => {
+                        callback(null, res.data);
+                    }).catch((err) => {
+                        callback(err, null);
+                    });
+
+            }
+        }
+    }
+
+}
+
 
 /**
  * @summary email sending business
@@ -189,6 +225,12 @@ export class EmailService {
                 case 'aws':
                     this.sender = new AWSAccount('aws', EmailSetting.fromname, EmailSetting.accessKey, EmailSetting.secretKey, EmailSetting.region);
                     break;
+                case 'ferrum':
+                    const url = await this.configService.getUrl();
+                    const domain = Util.extractDomainFrom(url) || '';
+                    this.sender = new FerrumDome('ferrum', domain, EmailSetting.user, EmailSetting.pass, EmailSetting.url);
+                    break;
+
                 default:
                     logger.fatal(`unknown email type`);
                     throw new RestfullException(400, ErrorCodes.ErrBadArgument, ErrorCodes.ErrBadArgument, "empty configuration");
@@ -238,6 +280,11 @@ export class EmailService {
                 break;
             case 'aws':
                 sender = new AWSAccount('aws', EmailSetting.fromname, EmailSetting.accessKey, EmailSetting.secretKey, EmailSetting.region);
+                break;
+            case 'ferrum':
+                const url = await this.configService.getUrl();
+                const domain = Util.extractDomainFrom(url) || '';
+                sender = new FerrumDome('ferrum', domain, EmailSetting.user, EmailSetting.pass, EmailSetting.url);
                 break;
             default:
                 logger.fatal(`unknown email type`);

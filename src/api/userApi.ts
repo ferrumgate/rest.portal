@@ -61,6 +61,7 @@ routerUserEmailConfirm.post('/', asyncHandler(async (req: any, res: any, next: a
         }
         //verify
         userDb.isVerified = true;
+        userDb.isEmailVerified = true;
 
         //audit log and activity logs needs
         req.currentSession = await sessionService.createFakeSession(userDb, false, req.clientIp, userDb.source);
@@ -224,6 +225,8 @@ routerUserResetPassword.post('/', asyncHandler(async (req: any, res: any, next: 
         inputService.checkEmail(user.username);//username must be email, security barrier
 
         user.password = Util.bcryptHash(pass);
+        user.isVerified = true;
+        user.isEmailVerified = true;
         await configService.saveUser(user);
 
         await redisService.delete(rkey);

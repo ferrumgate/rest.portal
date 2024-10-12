@@ -236,7 +236,7 @@ export class ESService {
     }
     getIndexName(index: string) {
 
-        let ferrumCloudId = process.env.FERRUM_CLOUD_ID;
+        let ferrumCloudId = (process.env.FERRUM_CLOUD_ID || '').toLowerCase();
         if (ferrumCloudId && !index.startsWith(`${ferrumCloudId}-`))
             return `${ferrumCloudId}-${index}`;
         return index;
@@ -1857,6 +1857,10 @@ export class ESService {
             await callback(item);
         }
     }
+
+    public static create(configService: ConfigService, host?: string, username?: string, password?: string) {
+        return new ESService(configService, host, username, password);
+    }
 }
 
 
@@ -1915,6 +1919,10 @@ export class ESServiceExtended extends ESService {
     constructor(configService: ConfigService, host?: string, username?: string, password?: string) {
         super(configService, host, username, password);
         this.configService = configService;
+        this.init();
+
+    }
+    protected init() {
         this.configService.events.on('ready', async () => {
             logger.info(`config service is ready`);
             await this.startReconfigureES();
@@ -1926,7 +1934,6 @@ export class ESServiceExtended extends ESService {
             }
         })
         this.startReconfigureES();
-
     }
 
     public async startReconfigureES() {
@@ -1957,8 +1964,13 @@ export class ESServiceExtended extends ESService {
             clearIntervalAsync(this.interval);
         this.interval = null;
     }
+    public static create(configService: ConfigService, host?: string, username?: string, password?: string) {
+        return new ESServiceExtended(configService, host, username, password);
+    }
 }
 
+
+// we don't use them, we need to delete them (FerrumCloud versions)
 export class ESServiceFerrumCloud extends ESService {
 
     constructor(configService: ConfigService, host?: string, username?: string, password?: string) {
@@ -1968,6 +1980,26 @@ export class ESServiceFerrumCloud extends ESService {
         this.password = process.env.ES_MULTI_PASS;
     }
 }
+
+export class ESServiceExtendedFerrumCloud extends ESServiceExtended {
+    constructor(configService: ConfigService, host?: string, username?: string, password?: string) {
+        super(configService, host, username, password);
+        this.host = process.env.ES_MULTI_HOST;
+        this.username = process.env.ES_MULTI_USER;
+        this.password = process.env.ES_MULTI_PASS;
+    }
+    override init() {
+
+    }
+    override async startReconfigureES() {
+
+    }
+    override async stop() {
+
+    }
+
+}
+
 
 
 

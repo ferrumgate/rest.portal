@@ -8,6 +8,8 @@ import { HelperService } from "../service/helperService";
 import { Util } from "../util";
 import { attachActivity, attachActivitySession, attachActivityUser, saveActivity, saveActivityError } from "./auth/commonAuth";
 import { passportAuthenticate, passportAuthenticateFromReqProviderName, passportInit } from "./auth/passportInit";
+import { RBACDefault } from "../model/rbac";
+import { IpIntelligence, IpIntelligenceItem } from "../model/ipIntelligence";
 
 
 
@@ -312,7 +314,16 @@ routerAuth.post('/accesstoken',
 
             // ip intelligence
             //if ip is not local ip, then get ip intelligence data
-            const ipIntel = await ipIntelligenceService.query(req.clientIp);
+            let ipIntel: IpIntelligenceItem | null = null;
+            try {
+                ipIntel = await ipIntelligenceService.query(req.clientIp);
+            } catch (err) {
+                logger.error(`ip intelligence error: ${err}`);
+                //if any error occurs only admin can enter to disable this feature
+                if (!user.roleIds?.includes(RBACDefault.roleAdmin.id)) {
+                    throw err;
+                }
+            }
 
 
             //create a session
