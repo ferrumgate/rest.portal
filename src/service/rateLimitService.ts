@@ -20,13 +20,13 @@ export class RateLimitService {
         let maxlimit = (max || this.baseLimit) * 10;
         const minute = new Date().getUTCMinutes();
         const key = `/ratelimit/${what}/${ip}/${minute}`;
-        logger.info(`checking ratelimit for ${key} max:${maxlimit}`);
+        logger.debug(`checking ratelimit for ${key} max:${maxlimit}`);
         const exists = await this.redis.get(key, false);
         if (exists == null || exists == undefined) {
             await this.redis.set(key, 0, { ttl: 60 * 1000 });
         }
         const value = await this.redis.incr(key);
-        logger.info(`checking ratelimit for ${key} current:${value} max:${maxlimit}`);
+        logger.debug(`checking ratelimit for ${key} current:${value} max:${maxlimit}`);
         if (value > maxlimit) {
             logger.warn(`too many request from ${ip} for ${what}`)
             throw new RestfullException(429, ErrorCodes.ErrTooManyRequests, ErrorCodesInternal.ErrRateLimitReached, `too many requests`);

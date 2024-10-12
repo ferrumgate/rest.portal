@@ -135,8 +135,8 @@ routerIpIntelligenceAuthenticated.post('/source/check',
         const ipIntelligence = appService.ipIntelligenceService;
 
         await inputService.checkNotEmpty(input.apiKey);
-        await ipIntelligence.check(input);
-
+        const result = await ipIntelligence.check(input);
+        logger.info(`ip intelligence source ${input.type} check result: ${JSON.stringify(result)}`);
         return res.status(200).json({});
 
     }))

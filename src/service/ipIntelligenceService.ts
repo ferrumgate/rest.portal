@@ -262,6 +262,7 @@ export class IpIntelligenceService {
         }
         else
             source = type;
+        logger.info(`creating ip intelligence source from ${source.type}`);
         const checkType = source.type;
         switch (checkType) {
             case 'ipdata.co':
@@ -281,7 +282,9 @@ export class IpIntelligenceService {
         const api = await this.getApi(source);
         if (!api)
             throw new Error(`could not create an ip intelligence source for ${source.type}`);
-        return await api.query('1.1.1.1', 3000);
+        const result = await api.query('24.24.24.24', 3000);
+        logger.info(`ip intelligence source ${source.type} for ip 24.24.24.24 check result ${JSON.stringify(result)}`);
+        return result;
     }
 
     async query(ip: string) {

@@ -317,9 +317,13 @@ routerAuth.post('/accesstoken',
             let ipIntel: IpIntelligenceItem | null = null;
             try {
                 ipIntel = await ipIntelligenceService.query(req.clientIp);
+                if (ipIntel?.countryName) {
+                    logger.warn(`${user.username} is from ${req.clientIp} from ${ipIntel.countryName}`);
+                }
             } catch (err) {
                 logger.error(`ip intelligence error: ${err}`);
                 //if any error occurs only admin can enter to disable this feature
+                // admin needs to enter and disable this feature
                 if (!user.roleIds?.includes(RBACDefault.roleAdmin.id)) {
                     throw err;
                 }

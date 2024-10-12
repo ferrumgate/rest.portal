@@ -235,7 +235,10 @@ export class ESService {
         }
     }
     getIndexName(index: string) {
+        return ESService.generateIndexName(index);
+    }
 
+    static generateIndexName(index: string) {
         let ferrumCloudId = (process.env.FERRUM_CLOUD_ID || '').toLowerCase();
         if (ferrumCloudId && !index.startsWith(`${ferrumCloudId}-`))
             return `${ferrumCloudId}-${index}`;
@@ -523,7 +526,7 @@ export class ESService {
             //delete by query
             let request = {
                 ignore_unavailable: true,
-                index: `ip-intelligence-list-${req.id.toLowerCase()}`,
+                index: this.getIndexName(`ip-intelligence-list-${req.id.toLowerCase()}`),
                 body: {
 
 
@@ -1971,7 +1974,7 @@ export class ESServiceExtended extends ESService {
 
 
 // we don't use them, we need to delete them (FerrumCloud versions)
-export class ESServiceFerrumCloud extends ESService {
+/* export class ESServiceFerrumCloud extends ESService {
 
     constructor(configService: ConfigService, host?: string, username?: string, password?: string) {
         super(configService, host, username, password);
@@ -1998,7 +2001,7 @@ export class ESServiceExtendedFerrumCloud extends ESServiceExtended {
 
     }
 
-}
+} */
 
 
 
