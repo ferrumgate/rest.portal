@@ -38,12 +38,12 @@ export class ClearTmpFolderTask implements ScheduledTask {
 
     async clearUploadFolder(oldTime = 24 * 60 * 60 * 1000) {//1 day old
         try {
-            logger.info(`checking files under folder ${this.tmpFolder}`)
+            logger.debug(`checking files under folder ${this.tmpFolder}`)
             const files = await glob(`${this.tmpFolder}/**`, { nodir: true });
             for (const file of files) {
 
                 if (!file) continue;
-                logger.info(`founded file ${file}`);
+                logger.debug(`founded file ${file}`);
                 const stat = await fsp.stat(file);
                 if (new Date().getTime() - stat.birthtimeMs > oldTime) {
                     logger.info(`deleting old file ${file}`);
@@ -84,9 +84,9 @@ export class ImportExternalConfigTask implements ScheduledTask {
 
     async checkConfigFile(): Promise<boolean> {//check config file
         try {
-            logger.info(`checking file under folder ${this.configFile}`)
+            logger.debug(`checking file under folder ${this.configFile}`)
             if (fs.existsSync(this.configFile)) {
-                logger.info(`founded file ${this.configFile}`);
+                logger.debug(`founded file ${this.configFile}`);
                 const stat = await fsp.stat(this.configFile);
                 if (stat.mtime > this.oldTime) {
                     logger.info(`config file updated ${this.configFile}`);
