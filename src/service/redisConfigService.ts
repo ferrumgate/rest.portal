@@ -739,8 +739,8 @@ export class RedisConfigService extends ConfigService {
     async saveV5() {
 
         const pipeline = await this.redis.multi();
-        await
-            await this.rSaveArray('nodes', this.config.nodes || [], pipeline);
+        await this.rSave('version', undefined, 5, pipeline);
+        await this.rSaveArray('nodes', this.config.nodes || [], pipeline);
         await pipeline.exec();
     }
 
@@ -2102,13 +2102,13 @@ export class RedisConfigService extends ConfigService {
         cfg.auth.oauth = {
             providers: await this.rGetAll('auth/oauth/providers')
         }
-        this.config.auth.saml = {
+        cfg.auth.saml = {
             providers: await this.rGetAll('auth/saml/providers')
         }
-        this.config.auth.openId = {
+        cfg.auth.openId = {
             providers: await this.rGetAll('auth/openId/providers')
         }
-        this.config.auth.radius = {
+        cfg.auth.radius = {
             providers: await this.rGetAll('auth/radius/providers')
         }
         cfg.jwtSSLCertificate = await this.rGet('jwtSSLCertificate') || {
