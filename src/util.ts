@@ -156,10 +156,10 @@ export const Util = {
     },
     ipToBigInteger: (ip: string): bigint => {
         if (isIPv4(ip)) {
-            let big = new ipAddress.Address4(ip).bigInteger();
+            let big = new ipAddress.Address4(ip).bigInt();
             return BigInt(big.toString());
         };
-        return BigInt(new ipAddress.Address6(ip).bigInteger().toString());
+        return BigInt(new ipAddress.Address6(ip).bigInt().toString());
 
     },
 
@@ -170,9 +170,9 @@ export const Util = {
     bigIntegerToIp: (ip: bigint): string => {
 
         if (ip <= BigInt(4294967295))
-            return Util.compressIp(ipAddress.Address4.fromBigInteger(new BigInteger(ip.toString())).address);
+            return Util.compressIp(ipAddress.Address4.fromBigInt(ip).address);
         else
-            return Util.compressIp(ipAddress.Address6.fromBigInteger(new BigInteger(ip.toString())).address);
+            return Util.compressIp(ipAddress.Address6.fromBigInt(ip).address);
 
 
     },

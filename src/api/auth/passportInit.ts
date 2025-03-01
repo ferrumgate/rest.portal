@@ -44,7 +44,7 @@ export async function passportInit(req: any, res: any, next: any) {
         const configUrl = new URL(url);
 
         const protocol = req.protocol + ':';
-        if ([protocol != configUrl.protocol]) {
+        if (protocol != configUrl.protocol) {
             url = url.replace(configUrl.protocol, protocol);
         }
         logger.info(`passport init url: ` + url);
